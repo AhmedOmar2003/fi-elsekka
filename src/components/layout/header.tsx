@@ -9,8 +9,11 @@ import { cn } from "../ui/button"
 import {
   Menu, Search, User, ShoppingBag, BadgePercent, X,
   ChevronLeft, Home, LayoutGrid, Package, Phone, Settings, HelpCircle,
-  Info, MessageCircleQuestion
+  Info, MessageCircleQuestion, LogOut, LogIn
 } from "lucide-react"
+import { useCart } from "@/contexts/CartContext"
+import { useAuth } from "@/contexts/AuthContext"
+import { signOut } from "@/services/authService"
 
 // ── Motorcycle SVG Logo Icon ──────────────────────────────────────────────────
 function MotorcycleIcon({ className }: { className?: string }) {
@@ -55,21 +58,29 @@ function MotorcycleIcon({ className }: { className?: string }) {
 }
 
 const DRAWER_ITEMS = [
-  { label: "الرئيسية",       href: "/",           icon: <Home className="w-5 h-5" /> },
-  { label: "الأقسام",       href: "/categories", icon: <LayoutGrid className="w-5 h-5" /> },
-  { label: "حسابي",         href: "/account",    icon: <User className="w-5 h-5" /> },
-  { label: "طلباتي",        href: "/orders",     icon: <Package className="w-5 h-5" /> },
-  { label: "اعرف عنا",      href: "/about",      icon: <Info className="w-5 h-5" /> },
-  { label: "الأسئلة الشائعة", href: "/faq",        icon: <MessageCircleQuestion className="w-5 h-5" /> },
-  { label: "تواصل معنا",    href: "/contact",    icon: <Phone className="w-5 h-5" /> },
-  { label: "الدعم",         href: "/support",    icon: <HelpCircle className="w-5 h-5" /> },
-  { label: "الإعدادات",     href: "/settings",   icon: <Settings className="w-5 h-5" /> },
+  { label: "الرئيسية", href: "/", icon: <Home className="w-5 h-5" /> },
+  { label: "الأقسام", href: "/categories", icon: <LayoutGrid className="w-5 h-5" /> },
+  { label: "حسابي", href: "/account", icon: <User className="w-5 h-5" /> },
+  { label: "طلباتي", href: "/orders", icon: <Package className="w-5 h-5" /> },
+  { label: "اعرف عنا", href: "/about", icon: <Info className="w-5 h-5" /> },
+  { label: "الأسئلة الشائعة", href: "/faq", icon: <MessageCircleQuestion className="w-5 h-5" /> },
+  { label: "تواصل معنا", href: "/contact", icon: <Phone className="w-5 h-5" /> },
+  { label: "الدعم", href: "/support", icon: <HelpCircle className="w-5 h-5" /> },
+  { label: "الإعدادات", href: "/settings", icon: <Settings className="w-5 h-5" /> },
 ]
 
 export function Header() {
   const pathname = usePathname()
+  const { cartCount } = useCart()
+  const { user, profile } = useAuth()
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
-  const [isSearchOpen,     setIsSearchOpen]     = React.useState(false)
+  const [isSearchOpen, setIsSearchOpen] = React.useState(false)
+
+  const handleLogout = async () => {
+    await signOut();
+    window.location.reload();
+  }
 
   React.useEffect(() => {
     const overflow = isMobileMenuOpen || isSearchOpen ? "hidden" : "unset"
@@ -79,7 +90,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-surface-hover bg-background/90 backdrop-blur-lg">
-      
+
       {/* ── Main header row ─────────────────────────────────────────────────── */}
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
 
@@ -129,14 +140,26 @@ export function Header() {
             <BadgePercent className="h-4 w-4" />
             عروض جامدة
           </Link>
-          <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
-            <User className="h-5 w-5" />
-          </Button>
-          <Link href="/cart">
-            <Button variant="ghost" size="icon" className="relative text-gray-300 hover:text-white bg-surface-hover/50 hover:bg-surface-hover rounded-full transition-all">
-              <ShoppingBag className="h-5 w-5" />
-              <span className="absolute -top-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white ring-2 ring-background">0</span>
-            </Button>
+
+          {user ? (
+            <div className="flex items-center gap-2 px-3">
+              <span className="text-sm font-bold text-gray-200">{profile?.full_name || user.email?.split('@')[0]}</span>
+              <Button variant="ghost" size="icon" onClick={handleLogout} className="text-gray-400 hover:text-rose-400" title="تسجيل الخروج">
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Link href="/login">
+              <Button variant="ghost" className="text-gray-300 hover:text-white flex items-center gap-2">
+                <LogIn className="h-4 w-4" />
+                <span>دخول</span>
+              </Button>
+            </Link>
+          )}
+
+          <Link href="/cart" className="relative text-gray-300 hover:text-white bg-surface-hover/50 hover:bg-surface-hover w-10 h-10 flex items-center justify-center rounded-full transition-all">
+            <ShoppingBag className="h-5 w-5" />
+            {cartCount > 0 && <span className="absolute -top-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white ring-2 ring-background">{cartCount}</span>}
           </Link>
         </div>
 
@@ -157,14 +180,13 @@ export function Header() {
           </Link>
 
           {/* Icon 3: Cart (visible on mobile too) */}
-          <Link href="/cart">
-            <button
-              className="relative flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 hover:text-white hover:bg-surface-hover active:scale-95 transition-all"
-              aria-label="السلة"
-            >
-              <ShoppingBag className="h-5 w-5" />
-              <span className="absolute top-1.5 end-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white">0</span>
-            </button>
+          <Link
+            href="/cart"
+            className="relative flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 hover:text-white hover:bg-surface-hover active:scale-95 transition-all"
+            aria-label="السلة"
+          >
+            <ShoppingBag className="h-5 w-5" />
+            {cartCount > 0 && <span className="absolute top-1.5 end-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white">{cartCount}</span>}
           </Link>
         </div>
 
@@ -255,7 +277,7 @@ export function Header() {
 
           {/* Drawer panel (right side in RTL) */}
           <div className="relative ms-auto w-4/5 max-w-xs bg-surface h-full flex flex-col shadow-premium border-s border-surface-hover">
-            
+
             {/* Drawer header with logo */}
             <div className="flex items-center justify-between p-4 border-b border-surface-hover">
               <div className="flex items-center gap-2">
@@ -295,6 +317,34 @@ export function Header() {
                 )
               })}
 
+              {!user ? (
+                <Link
+                  href="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-4 py-3.5 border-b border-surface-hover/50 hover:bg-primary/10 transition-colors text-primary"
+                >
+                  <div className="flex items-center gap-3">
+                    <LogIn className="w-5 h-5" />
+                    <span className="font-bold text-sm">تسجيل الدخول / إنشاء حساب</span>
+                  </div>
+                  <ChevronLeft className="w-4 h-4 text-gray-600" />
+                </Link>
+              ) : (
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    handleLogout()
+                  }}
+                  className="flex w-full items-center justify-between px-4 py-3.5 border-b border-surface-hover/50 hover:bg-rose-500/10 transition-colors text-rose-500"
+                >
+                  <div className="flex items-center gap-3">
+                    <LogOut className="w-5 h-5" />
+                    <span className="font-bold text-sm">تسجيل الخروج</span>
+                  </div>
+                  <ChevronLeft className="w-4 h-4 text-gray-600" />
+                </button>
+              )}
+
               {/* Offers highlight row */}
               <Link
                 href="/offers"
@@ -327,6 +377,7 @@ export function Header() {
           </div>
         </div>
       )}
+
     </header>
   )
 }

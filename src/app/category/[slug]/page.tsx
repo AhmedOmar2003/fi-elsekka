@@ -9,6 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
 import { useParams } from "next/navigation"
+import { Product } from "@/services/productsService"
+import { useProducts } from "@/contexts/ProductsContext"
 
 // Mock data generator for the category page
 const generateMockProducts = (count: number) => {
@@ -38,121 +40,161 @@ export default function CategoryPage() {
   const params = useParams()
   const slug = typeof params.slug === 'string' ? params.slug : 'all'
   const categoryName = CATEGORY_NAMES[slug] || "قسم المنتجات"
-  
+
   const [isFilterOpen, setIsFilterOpen] = React.useState(false)
-  
-  const products = React.useMemo(() => generateMockProducts(12), [])
+  const { products: allProducts, isLoadingProducts: isLoading } = useProducts()
+
+  const mockProducts = React.useMemo(() => generateMockProducts(12), [])
+
+  // Filter by category slug (UUID for real categories, or 'all')
+  const dbProducts = React.useMemo(() => {
+    if (slug === 'all') return allProducts;
+    // Try matching by category_id (UUID) or categories.name
+    return allProducts.filter(p =>
+      p.category_id === slug ||
+      (p.categories as any)?.name === CATEGORY_NAMES[slug]
+    );
+  }, [allProducts, slug]);
+
+  const displayProducts = dbProducts.length > 0 ? dbProducts.map((p, i) => {
+    let price = p.price;
+    let oldPrice: number | undefined = p.specifications?.old_price;
+    let discountBadge = p.specifications?.discount_badge;
+
+    if (p.discount_percentage && p.discount_percentage > 0) {
+      price = Math.round(p.price * (1 - p.discount_percentage / 100));
+      oldPrice = p.price;
+      discountBadge = `خصم ${p.discount_percentage}%`;
+    }
+
+    return {
+      id: p.id,
+      title: p.name,
+      price,
+      oldPrice,
+      discountBadge,
+      rating: p.specifications?.rating || 4.5,
+      reviewsCount: p.specifications?.reviews_count || 10,
+      imageUrl: p.image_url || p.specifications?.image_url || `https://th.bing.com/th/id/OIG${(i % 4) + 1}.random?pid=ImgGn`
+    };
+  }) : mockProducts;
 
   return (
     <>
       <Header />
-      
+
       <main className="flex-1 pb-28 md:pb-8 bg-background min-h-screen">
-        
+
         {/* Page Header */}
         <div className="bg-surface border-b border-surface-hover py-6 md:py-10">
-           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <h1 className="text-3xl md:text-4xl font-black text-foreground">{categoryName}</h1>
-              <p className="mt-2 text-gray-500">تصفح أفضل المنتجات المختارة لك خصيصاً في هذا القسم.</p>
-           </div>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <h1 className="text-3xl md:text-4xl font-black text-foreground">{categoryName}</h1>
+            <p className="mt-2 text-gray-500">تصفح أفضل المنتجات المختارة لك خصيصاً في هذا القسم.</p>
+          </div>
         </div>
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row gap-8">
-            
+
             {/* Mobile Filter Toggle */}
             <div className="flex items-center justify-between mb-4 md:hidden">
-               <span className="text-sm text-gray-400 font-medium">عرض {products.length} منتج</span>
-               <button 
-                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                 className="flex items-center gap-2 bg-surface border border-surface-hover px-4 py-2.5 rounded-xl text-sm font-bold text-gray-200 hover:bg-surface-hover active:scale-95 transition-all"
-               >
-                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-                 تصفية وترتيب
-               </button>
+              <span className="text-sm text-gray-400 font-medium">عرض {displayProducts.length} منتج</span>
+              <button
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className="flex items-center gap-2 bg-surface border border-surface-hover px-4 py-2.5 rounded-xl text-sm font-bold text-gray-200 hover:bg-surface-hover active:scale-95 transition-all"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                تصفية وترتيب
+              </button>
             </div>
 
             {/* Sidebar Filters */}
             <aside className={`md:w-64 shrink-0 flex-col gap-8 ${isFilterOpen ? 'flex' : 'hidden md:flex'}`}>
-              
+
               {/* Sort - visible in sidebar on desktop, inline on mobile if needed */}
               <div className="space-y-4">
-                 <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">الترتيب</h3>
-                 <Select defaultValue="popular" className="w-full">
-                    <option value="popular">الأكثر شعبية</option>
-                    <option value="newest">أضيف حديثاً</option>
-                    <option value="price-low">السعر: من الأقل للأعلى</option>
-                    <option value="price-high">السعر: من الأعلى للأقل</option>
-                 </Select>
+                <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">الترتيب</h3>
+                <Select defaultValue="popular" className="w-full">
+                  <option value="popular">الأكثر شعبية</option>
+                  <option value="newest">أضيف حديثاً</option>
+                  <option value="price-low">السعر: من الأقل للأعلى</option>
+                  <option value="price-high">السعر: من الأعلى للأقل</option>
+                </Select>
               </div>
 
               {/* Price Filter */}
               <div className="space-y-4">
-                 <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">السعر</h3>
-                 <div className="space-y-3">
-                    <div className="flex items-center space-x-3 rtl:space-x-reverse">
-                      <Checkbox id="price-1" />
-                      <Label htmlFor="price-1" className="text-gray-300">أقل من 50 ج.م</Label>
-                    </div>
-                    <div className="flex items-center space-x-3 rtl:space-x-reverse">
-                      <Checkbox id="price-2" />
-                      <Label htmlFor="price-2" className="text-gray-300">50 - 200 ج.م</Label>
-                    </div>
-                    <div className="flex items-center space-x-3 rtl:space-x-reverse">
-                      <Checkbox id="price-3" />
-                      <Label htmlFor="price-3" className="text-gray-300">200 - 500 ج.م</Label>
-                    </div>
-                    <div className="flex items-center space-x-3 rtl:space-x-reverse">
-                      <Checkbox id="price-4" />
-                      <Label htmlFor="price-4" className="text-gray-300">أكثر من 500 ج.م</Label>
-                    </div>
-                 </div>
+                <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">السعر</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                    <Checkbox id="price-1" />
+                    <Label htmlFor="price-1" className="text-gray-300">أقل من 50 ج.م</Label>
+                  </div>
+                  <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                    <Checkbox id="price-2" />
+                    <Label htmlFor="price-2" className="text-gray-300">50 - 200 ج.م</Label>
+                  </div>
+                  <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                    <Checkbox id="price-3" />
+                    <Label htmlFor="price-3" className="text-gray-300">200 - 500 ج.م</Label>
+                  </div>
+                  <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                    <Checkbox id="price-4" />
+                    <Label htmlFor="price-4" className="text-gray-300">أكثر من 500 ج.م</Label>
+                  </div>
+                </div>
               </div>
 
               {/* Brand Filter */}
               <div className="space-y-4">
-                 <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">الماركة</h3>
-                 <div className="space-y-3">
-                    <div className="flex items-center space-x-3 rtl:space-x-reverse">
-                      <Checkbox id="brand-1" />
-                      <Label htmlFor="brand-1" className="text-gray-300">المراعي</Label>
-                    </div>
-                    <div className="flex items-center space-x-3 rtl:space-x-reverse">
-                      <Checkbox id="brand-2" />
-                      <Label htmlFor="brand-2" className="text-gray-300">جهينة</Label>
-                    </div>
-                    <div className="flex items-center space-x-3 rtl:space-x-reverse">
-                      <Checkbox id="brand-3" />
-                      <Label htmlFor="brand-3" className="text-gray-300">بانتين</Label>
-                    </div>
-                 </div>
+                <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">الماركة</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                    <Checkbox id="brand-1" />
+                    <Label htmlFor="brand-1" className="text-gray-300">المراعي</Label>
+                  </div>
+                  <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                    <Checkbox id="brand-2" />
+                    <Label htmlFor="brand-2" className="text-gray-300">جهينة</Label>
+                  </div>
+                  <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                    <Checkbox id="brand-3" />
+                    <Label htmlFor="brand-3" className="text-gray-300">بانتين</Label>
+                  </div>
+                </div>
               </div>
 
               {/* Apply button for mobile */}
               <Button onClick={() => setIsFilterOpen(false)} className="md:hidden mt-4">
-                 تطبيق
+                تطبيق
               </Button>
 
             </aside>
 
             {/* Product Grid */}
             <div className="flex-1">
-               <div className="hidden md:flex justify-between items-center mb-6">
-                 <span className="text-sm text-gray-400">عرض {products.length} نتيجة</span>
-               </div>
-               
-               <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
-                 {products.map((product) => (
-                   <ProductCard key={product.id} {...product} />
-                 ))}
-               </div>
+              <div className="hidden md:flex justify-between items-center mb-6">
+                <span className="text-sm text-gray-400">عرض {displayProducts.length} نتيجة</span>
+              </div>
 
-               {/* Pagination / Load More Dummy */}
-               <div className="mt-12 flex justify-center">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-full font-bold">
-                    حمل منتجات أكتر
-                  </Button>
-               </div>
+              {isLoading ? (
+                <div className="flex justify-center py-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+                  {displayProducts.map((product) => (
+                    <ProductCard key={product.id} {...product} />
+                  ))}
+                </div>
+              )}
+
+              {/* Pagination / Load More Dummy */}
+              <div className="mt-12 flex justify-center">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-full font-bold">
+                  حمل منتجات أكتر
+                </Button>
+              </div>
             </div>
 
           </div>

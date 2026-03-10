@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Tajawal, Cairo } from "next/font/google";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { Providers } from "@/components/providers";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const tajawal = Tajawal({
@@ -30,8 +32,11 @@ export default function RootLayout({
       <body
         className={`${tajawal.variable} ${cairo.variable} font-sans antialiased bg-gray-950 text-gray-100 min-h-screen flex flex-col`}
       >
-        {children}
-        <MobileNav />
+        <Providers>
+          {children}
+          <MobileNav />
+          <Toaster position="top-center" richColors theme="dark" />
+        </Providers>
       </body>
     </html>
   );

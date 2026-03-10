@@ -6,15 +6,9 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import Link from "next/link"
 import { ShoppingBasket, Pill, Shirt, Smartphone, Baby, HomeIcon, Sparkles, ShieldCheck, Zap, Banknote, Clock } from "lucide-react"
-
-const MOCK_CATEGORIES = [
-  { slug: "groceries", name: "سوبر ماركت", icon: <ShoppingBasket className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-500" /> },
-  { slug: "pharmacy", name: "صيدلية", icon: <Pill className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" /> },
-  { slug: "fashion", name: "موضة", icon: <Shirt className="w-8 h-8 sm:w-10 sm:h-10 text-rose-500" /> },
-  { slug: "electronics", name: "إلكترونيات", icon: <Smartphone className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" /> },
-  { slug: "kids", name: "أطفال", icon: <Baby className="w-8 h-8 sm:w-10 sm:h-10 text-purple-500" /> },
-  { slug: "home", name: "البيت", icon: <HomeIcon className="w-8 h-8 sm:w-10 sm:h-10 text-amber-500" /> },
-];
+import { fetchProducts, fetchOffers } from "@/services/productsService"
+import { HomeCategoriesList } from "@/components/ui/home-categories"
+import { PromoBanner } from "@/components/ui/promo-banner"
 
 const MOCK_FEATURED_PRODUCTS = [
   { id: "1", title: "مكرونة الملكة 400 جم حجم عائلي", price: 15, oldPrice: 20, discountBadge: "25% خصم", rating: 4.8, reviewsCount: 124, imageUrl: "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn" },
@@ -30,13 +24,99 @@ const MOCK_BEST_SELLERS = [
   { id: "8", title: "حفاضات أطفال مقاس 4", price: 210, rating: 4.9, reviewsCount: 412, imageUrl: "https://th.bing.com/th/id/OIG3.U_V_W_X_Y_Z_1_2_3_4?pid=ImgGn" },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const [dbProducts, offerProducts] = await Promise.all([
+    fetchProducts(),
+    fetchOffers(),
+  ]);
+
+  const displayProducts = dbProducts.length > 0 ? dbProducts.slice(0, 4).map(p => {
+    let price = p.price;
+    let oldPrice: number | undefined = p.specifications?.old_price;
+    let discountBadge = p.specifications?.discount_badge;
+
+    if (p.discount_percentage && p.discount_percentage > 0) {
+      price = Math.round(p.price * (1 - p.discount_percentage / 100));
+      oldPrice = p.price;
+      discountBadge = `خصم ${p.discount_percentage}%`;
+    }
+
+    return {
+      id: p.id,
+      title: p.name,
+      price,
+      oldPrice,
+      discountBadge,
+      rating: p.specifications?.rating || 4.5,
+      reviewsCount: p.specifications?.reviews_count || 50,
+      imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn"
+    };
+  }) : MOCK_FEATURED_PRODUCTS;
+
+  // Only admin-curated offer products
+  const displayOffers = offerProducts.slice(0, 4).map(p => {
+    let price = p.price;
+    let oldPrice: number | undefined = undefined;
+    let discountBadge: string | undefined = undefined;
+
+    if (p.discount_percentage && p.discount_percentage > 0) {
+      price = Math.round(p.price * (1 - p.discount_percentage / 100));
+      oldPrice = p.price;
+      discountBadge = `خصم ${p.discount_percentage}%`;
+    }
+
+    return {
+      id: p.id,
+      title: p.name,
+      price,
+      oldPrice,
+      discountBadge,
+      rating: p.specifications?.rating || 4.5,
+      reviewsCount: p.specifications?.reviews_count || 50,
+      imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn"
+    };
+  });
+
+  const actualBestSellers = dbProducts.filter(p => p.is_best_seller);
+
+  const displayBestSellers = actualBestSellers.length > 0 ? actualBestSellers.map(p => {
+    let price = p.price;
+    let oldPrice: number | undefined = p.specifications?.old_price;
+    let discountBadge = p.specifications?.discount_badge;
+
+    if (p.discount_percentage && p.discount_percentage > 0) {
+      price = Math.round(p.price * (1 - p.discount_percentage / 100));
+      oldPrice = p.price;
+      discountBadge = `خصم ${p.discount_percentage}%`;
+    }
+
+    return {
+      id: p.id,
+      title: p.name,
+      price,
+      oldPrice,
+      discountBadge,
+      rating: p.specifications?.rating || 4.8,
+      reviewsCount: p.specifications?.reviews_count || 120,
+      imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
+    };
+  }).slice(0, 4) : (dbProducts.length > 4 ? dbProducts.slice(4, 8).map(p => ({
+    id: p.id,
+    title: p.name,
+    price: p.price,
+    oldPrice: p.specifications?.old_price,
+    discountBadge: p.specifications?.discount_badge,
+    rating: p.specifications?.rating || 4.8,
+    reviewsCount: p.specifications?.reviews_count || 120,
+    imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
+  })) : MOCK_BEST_SELLERS);
+
   return (
     <>
       <Header />
-      
+
       <main className="flex-1 pb-24 md:pb-0">
-        
+
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-gradient-to-br from-surface-light via-background to-background pt-12 pb-16 sm:pt-20 sm:pb-24 border-b border-surface-hover">
           <div className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/4 w-[600px] h-[600px] bg-primary/10 blur-[100px] rounded-full pointer-events-none"></div>
@@ -61,33 +141,33 @@ export default function Home() {
                     <Link href="/offers">شوف العروض</Link>
                   </Button>
                 </div>
-                
+
                 {/* Trust mini-badges */}
                 <div className="mt-8 flex flex-wrap items-center justify-center sm:justify-start gap-4 sm:gap-6 text-sm text-gray-400 font-medium">
-                   <div className="flex items-center gap-1.5 bg-surface/50 px-3 py-1.5 rounded-full border border-surface-hover">
-                     <ShieldCheck className="w-5 h-5 text-emerald-500" />
-                     <span>دفع عند الاستلام</span>
-                   </div>
-                   <div className="flex items-center gap-1.5 bg-surface/50 px-3 py-1.5 rounded-full border border-surface-hover">
-                     <Zap className="w-5 h-5 text-amber-500" />
-                     <span>سريع ومضمون</span>
-                   </div>
+                  <div className="flex items-center gap-1.5 bg-surface/50 px-3 py-1.5 rounded-full border border-surface-hover">
+                    <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                    <span>دفع عند الاستلام</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-surface/50 px-3 py-1.5 rounded-full border border-surface-hover">
+                    <Zap className="w-5 h-5 text-amber-500" />
+                    <span>سريع ومضمون</span>
+                  </div>
                 </div>
               </div>
 
               {/* Hero Image Mock */}
               <div className="relative mx-auto mt-8 w-full max-w-md lg:mt-0 lg:max-w-none perspective-1000">
                 <div className="aspect-[4/3] rounded-3xl bg-surface border border-surface-hover/50 p-4 shadow-premium relative overflow-hidden group transform hover:-rotate-y-2 transition-transform duration-700">
-                   <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-secondary/20 opacity-60 mix-blend-overlay"></div>
-                   <img src="https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop" alt="Shopping Box" className="object-cover w-full h-full rounded-2xl group-hover:scale-110 transition-transform duration-1000" />
-                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="text-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
-                         <span className="block text-6xl drop-shadow-2xl">📦</span>
-                         <span className="block mt-6 px-5 py-2.5 bg-background/80 backdrop-blur-xl rounded-full text-foreground font-bold tracking-widest text-sm border border-white/5 shadow-xl">كل حاجة في مكان واحد</span>
-                      </div>
-                   </div>
+                  <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-secondary/20 opacity-60 mix-blend-overlay"></div>
+                  <img src="https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop" alt="Shopping Box" className="object-cover w-full h-full rounded-2xl group-hover:scale-110 transition-transform duration-1000" />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="text-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
+                      <span className="block text-6xl drop-shadow-2xl">📦</span>
+                      <span className="block mt-6 px-5 py-2.5 bg-background/80 backdrop-blur-xl rounded-full text-foreground font-bold tracking-widest text-sm border border-white/5 shadow-xl">كل حاجة في مكان واحد</span>
+                    </div>
+                  </div>
                 </div>
-                
+
                 {/* Floating decor */}
                 <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-rose-500/20 rounded-full blur-2xl animate-float"></div>
                 <div className="absolute -top-6 -left-6 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl animate-float" style={{ animationDelay: "2s" }}></div>
@@ -108,26 +188,22 @@ export default function Home() {
                 عرض كل الأقسام &larr;
               </Link>
             </div>
-            
-            <div className="flex overflow-x-auto pb-4 gap-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 md:grid-cols-6 items-start">
-              {MOCK_CATEGORIES.map((cat) => (
-                <CategoryCard key={cat.slug} {...cat} className="w-[100px] sm:w-auto" />
-              ))}
-            </div>
+
+            <HomeCategoriesList />
           </div>
         </section>
 
         {/* Featured Offers Section */}
         <section className="py-12 bg-surface/30 border-b border-surface-hover">
-           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-8 flex items-end justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                   <span className="relative flex h-3 w-3">
-                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
-                     <span className="relative inline-flex rounded-full h-3 w-3 bg-secondary"></span>
-                   </span>
-                   <h2 className="text-2xl sm:text-3xl font-bold text-foreground">عروض جامدة متتفوتش</h2>
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-secondary"></span>
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-foreground">عروض جامدة متتفوتش</h2>
                 </div>
                 <p className="text-sm text-gray-500">وفر فلوسك واشتري بأسعار زمان</p>
               </div>
@@ -135,49 +211,32 @@ export default function Home() {
                 شوف أكتر
               </Link>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
-              {MOCK_FEATURED_PRODUCTS.map((product) => (
+              {displayOffers.length > 0 ? displayOffers.map((product) => (
                 <ProductCard key={product.id} {...product} />
-              ))}
+              )) : (
+                <div className="col-span-4 text-center py-10 text-gray-500">لا توجد عروض متاحة حالياً</div>
+              )}
             </div>
           </div>
         </section>
 
-        {/* Banner Section */}
-        <section className="py-12 sm:py-16">
-           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-emerald-600 to-primary text-white p-8 sm:p-14 shadow-premium shadow-primary/20 flex flex-col sm:flex-row items-center justify-between group">
-                 <div className="z-10 text-center sm:text-start mb-8 sm:mb-0">
-                    <h3 className="text-3xl sm:text-4xl font-black mb-3 drop-shadow-sm">أطلب أول طلب ليك دلوقتي</h3>
-                    <p className="text-white/90 text-lg sm:text-xl max-w-md font-medium leading-relaxed">
-                       وهديتك 50 جنيه خصم وتوصيل مجاني بالكامل! 
-                       <span className="block mt-3">استخدم كود: <span className="font-mono bg-black/20 px-3 py-1.5 rounded-lg inline-block tracking-widest text-white border border-white/10">AWAL50</span></span>
-                    </p>
-                 </div>
-                 <Button variant="secondary" size="lg" className="rounded-xl text-primary font-bold shadow-xl mx-auto sm:mx-0 w-full sm:w-auto z-10 hover:scale-105 transition-transform h-14 px-8 text-lg" asChild>
-                    <Link href="/login">سجل حساب جديد</Link>
-                 </Button>
-                 
-                 {/* Decorative background elements */}
-                 <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 opacity-10 blur-3xl rounded-full w-96 h-96 bg-white pointer-events-none"></div>
-                 <div className="absolute bottom-0 left-0 translate-y-12 -translate-x-12 opacity-20 blur-2xl rounded-full w-64 h-64 bg-black pointer-events-none"></div>
-              </div>
-           </div>
-        </section>
+        {/* Dynamic Promo Banner (only shown to non-logged-in users) */}
+        <PromoBanner />
 
         {/* Best Sellers Section */}
         <section className="py-12 bg-background">
-           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-8 flex items-end justify-between">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground">الأكثر مبيعاً</h2>
                 <p className="mt-2 text-sm text-gray-500">الناس كلها بتطلب الحاجات دي</p>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
-              {MOCK_BEST_SELLERS.map((product) => (
+              {displayBestSellers.map((product) => (
                 <ProductCard key={product.id} {...product} />
               ))}
             </div>
@@ -186,37 +245,37 @@ export default function Home() {
 
         {/* Delivery Trust Section */}
         <section className="py-20 bg-surface mt-12 relative overflow-hidden">
-           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-           <div className="absolute inset-0 bg-background/50"></div>
-           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-12 sm:gap-8 text-center divide-y md:divide-y-0 md:divide-x md:divide-x-reverse divide-surface-hover">
-                 
-                 <div className="flex flex-col items-center pt-8 md:pt-0 group">
-                    <div className="h-20 w-20 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 text-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/5 group-hover:scale-110 transition-transform duration-500">
-                       <Banknote className="w-10 h-10" />
-                    </div>
-                    <h3 className="text-xl font-heading font-bold mb-3 text-foreground drop-shadow-sm">الدفع وقت الاستلام</h3>
-                    <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">تأكد من طلبك الأول، وبعدين ادفع بطريقتك كاش بأمان تام وطمأنينة.</p>
-                 </div>
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+          <div className="absolute inset-0 bg-background/50"></div>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 sm:gap-8 text-center divide-y md:divide-y-0 md:divide-x md:divide-x-reverse divide-surface-hover">
 
-                 <div className="flex flex-col items-center pt-8 md:pt-0 group">
-                    <div className="h-20 w-20 bg-gradient-to-br from-amber-500/20 to-amber-500/5 border border-amber-500/20 text-amber-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-amber-500/5 group-hover:scale-110 transition-transform duration-500">
-                       <Clock className="w-10 h-10" />
-                    </div>
-                    <h3 className="text-xl font-heading font-bold mb-3 text-foreground drop-shadow-sm">توصيل في الانجاز</h3>
-                    <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">طلباتك هتوصلك في أسرع وقت ممكن، لأن وقتك يهمنا جداً.</p>
-                 </div>
-
-                 <div className="flex flex-col items-center pt-8 md:pt-0 group">
-                    <div className="h-20 w-20 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/20 text-blue-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-500/5 group-hover:scale-110 transition-transform duration-500">
-                       <ShieldCheck className="w-10 h-10" />
-                    </div>
-                    <h3 className="text-xl font-heading font-bold mb-3 text-foreground drop-shadow-sm">جودة مضمونة 100%</h3>
-                    <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">بنختار منتجاتنا بعناية عشان نضمنلك أفضل جودة بأحسن سعر ممكن.</p>
-                 </div>
-
+              <div className="flex flex-col items-center pt-8 md:pt-0 group">
+                <div className="h-20 w-20 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 text-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/5 group-hover:scale-110 transition-transform duration-500">
+                  <Banknote className="w-10 h-10" />
+                </div>
+                <h3 className="text-xl font-heading font-bold mb-3 text-foreground drop-shadow-sm">الدفع وقت الاستلام</h3>
+                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">تأكد من طلبك الأول، وبعدين ادفع بطريقتك كاش بأمان تام وطمأنينة.</p>
               </div>
-           </div>
+
+              <div className="flex flex-col items-center pt-8 md:pt-0 group">
+                <div className="h-20 w-20 bg-gradient-to-br from-amber-500/20 to-amber-500/5 border border-amber-500/20 text-amber-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-amber-500/5 group-hover:scale-110 transition-transform duration-500">
+                  <Clock className="w-10 h-10" />
+                </div>
+                <h3 className="text-xl font-heading font-bold mb-3 text-foreground drop-shadow-sm">توصيل في الانجاز</h3>
+                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">طلباتك هتوصلك في أسرع وقت ممكن، لأن وقتك يهمنا جداً.</p>
+              </div>
+
+              <div className="flex flex-col items-center pt-8 md:pt-0 group">
+                <div className="h-20 w-20 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/20 text-blue-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-500/5 group-hover:scale-110 transition-transform duration-500">
+                  <ShieldCheck className="w-10 h-10" />
+                </div>
+                <h3 className="text-xl font-heading font-bold mb-3 text-foreground drop-shadow-sm">جودة مضمونة 100%</h3>
+                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">بنختار منتجاتنا بعناية عشان نضمنلك أفضل جودة بأحسن سعر ممكن.</p>
+              </div>
+
+            </div>
+          </div>
         </section>
 
       </main>

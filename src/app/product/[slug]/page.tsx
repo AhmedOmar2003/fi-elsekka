@@ -7,44 +7,116 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
-import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart } from "lucide-react"
+import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Tag } from "lucide-react"
+import { fetchProductDetails, Product } from "@/services/productsService"
+import { useCart } from "@/contexts/CartContext"
+import { DiscountCodeInput } from "@/components/ui/discount-code-input"
 
 export default function ProductPage() {
   const params = useParams()
   const router = useRouter()
+  const { addItem } = useCart()
 
-  const [quantity, setQuantity]   = React.useState(1)
-  const [isAdded,  setIsAdded]    = React.useState(false)
+  const [quantity, setQuantity] = React.useState(1)
+  const [isAdded, setIsAdded] = React.useState(false)
   const [isMounted, setIsMounted] = React.useState(false)
+  
+  const [appliedDiscountPrice, setAppliedDiscountPrice] = React.useState<number | null>(null)
+  const [appliedDiscountLabel, setAppliedDiscountLabel] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     const t = setTimeout(() => setIsMounted(true), 80)
     return () => clearTimeout(t)
   }, [])
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    if (dbProduct) {
+      await addItem(dbProduct.id, quantity)
+    }
     setIsAdded(true)
     setTimeout(() => setIsAdded(false), 2000)
   }
 
-  const handleBuyNow = () => {
-    router.push("/checkout")
+  const handleBuyNow = async () => {
+    if (dbProduct) {
+      await addItem(dbProduct.id, quantity)
+    }
+    router.push("/cart")
   }
 
-  const product = {
-    title:          "سماعة بلوتوث لاسلكية عازلة للضوضاء",
-    price:          450,
-    oldPrice:       600,
+  const slugOrId = typeof params.slug === 'string' ? params.slug : ''
+
+  const [dbProduct, setDbProduct] = React.useState<Product | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const loadProduct = async () => {
+      setIsLoading(true)
+      const data = await fetchProductDetails(slugOrId)
+      setDbProduct(data)
+      setIsLoading(false)
+    }
+
+    if (slugOrId) {
+      loadProduct()
+    } else {
+      setIsLoading(false)
+    }
+  }, [slugOrId])
+
+  const product = dbProduct ? (() => {
+    let price = dbProduct.price;
+    let oldPrice: number | undefined = dbProduct.specifications?.old_price || undefined;
+    let discountAmount = dbProduct.specifications?.discount_badge || undefined;
+
+    if (dbProduct.discount_percentage && dbProduct.discount_percentage > 0) {
+      price = Math.round(dbProduct.price * (1 - dbProduct.discount_percentage / 100));
+      oldPrice = dbProduct.price;
+      discountAmount = `وفر ${dbProduct.price - price} ج.م`;
+    }
+
+    return {
+      title: dbProduct.name,
+      price,
+      oldPrice,
+      discountAmount,
+      isBestSeller: dbProduct.is_best_seller,
+      rating: dbProduct.specifications?.rating || 4.9,
+      reviewsCount: dbProduct.specifications?.reviews_count || 120,
+      stock: dbProduct.stock_quantity ? `متوفر ${dbProduct.stock_quantity} قطعة` : (dbProduct.specifications?.stock || "متوفر"),
+      description: dbProduct.description || "لا يوجد وصف متاح لهذا المنتج حالياً.",
+      specs: dbProduct.product_specifications && dbProduct.product_specifications.length > 0
+        ? dbProduct.product_specifications.map(s => ({ label: s.label, value: s.description }))
+        : [
+          { label: "الماركة", value: dbProduct.categories?.name || "عام" },
+        ],
+      features: dbProduct.specifications?.features || [
+        "جودة عالية ومضمونة",
+        "توصيل سريع",
+        "دفع عند الاستلام",
+      ],
+      images: dbProduct.specifications?.images || [
+        dbProduct.image_url || dbProduct.specifications?.image_url || "https://th.bing.com/th/id/OIG3.C_W_T_P_j_B_k_O_d_J_?pid=ImgGn",
+        "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn",
+        "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn",
+      ],
+      category_name: dbProduct.categories?.name || "منتجات"
+    };
+  })() : {
+    title: "سماعة بلوتوث لاسلكية عازلة للضوضاء",
+    price: 450,
+    oldPrice: 600,
     discountAmount: "وفر 150 ج.م",
-    rating:         4.9,
-    reviewsCount:   312,
-    stock:          "متوفر 15 قطعة فقط",
-    description:    "استمتع بتجربة صوتية لا مثيل لها مع سماعة البلوتوث اللاسلكية الجديدة. تصميم مريح للأذن، بطارية تدوم حتى 24 ساعة، وعزل تام للضوضاء الخارجية عشان تفصل براحتك.",
+    isBestSeller: false,
+    rating: 4.9,
+    reviewsCount: 312,
+    stock: "متوفر 15 قطعة فقط",
+    description: "استمتع بتجربة صوتية لا مثيل لها مع سماعة البلوتوث اللاسلكية الجديدة. تصميم مريح للأذن، بطارية تدوم حتى 24 ساعة، وعزل تام للضوضاء الخارجية عشان تفصل براحتك.",
     specs: [
-      { label: "الماركة",       value: "SoundMax"   },
-      { label: "عمر البطارية", value: "24 ساعة"     },
-      { label: "الاتصال",      value: "بلوتوث 5.2" },
-      { label: "الضمان",       value: "سنة واحدة"   },
+      { label: "الماركة", value: "SoundMax" },
+      { label: "عمر البطارية", value: "24 ساعة" },
+      { label: "الاتصال", value: "بلوتوث 5.2" },
+      { label: "الضمان", value: "سنة واحدة" },
     ],
     features: [
       "صوت نقي وبيز قوي",
@@ -57,9 +129,22 @@ export default function ProductPage() {
       "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn",
       "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn",
     ],
+    category_name: "إلكترونيات",
   }
 
   const [activeImage, setActiveImage] = React.useState(0)
+
+  if (isLoading) {
+    return (
+      <>
+        <Header />
+        <main className="flex-1 pb-24 md:pb-8 bg-background flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </main>
+        <Footer />
+      </>
+    )
+  }
 
   return (
     <>
@@ -73,7 +158,7 @@ export default function ProductPage() {
             <ol className="inline-flex items-center gap-1 rtl:space-x-reverse">
               <li><Link href="/" className="hover:text-foreground">الرئيسية</Link></li>
               <li className="text-gray-600">/</li>
-              <li><Link href="/category/electronics" className="hover:text-foreground">إلكترونيات</Link></li>
+              <li><Link href="/categories" className="hover:text-foreground">{product.category_name}</Link></li>
               <li className="text-gray-600"><ChevronRight className="w-3 h-3" /></li>
               <li className="text-gray-500 line-clamp-1 max-w-[180px]">{product.title}</li>
             </ol>
@@ -98,15 +183,14 @@ export default function ProductPage() {
 
               {/* Thumbnails */}
               <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-                {product.images.map((img, idx) => (
+                {product.images.map((img: string, idx: number) => (
                   <button
                     key={idx}
                     onClick={() => setActiveImage(idx)}
-                    className={`relative aspect-[4/3] w-24 sm:w-28 shrink-0 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${
-                      activeImage === idx
-                        ? "border-primary ring-2 ring-primary/20 shadow-md"
-                        : "border-surface-hover hover:border-gray-500 scale-95 opacity-70 hover:opacity-100"
-                    }`}
+                    className={`relative aspect-[4/3] w-24 sm:w-28 shrink-0 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${activeImage === idx
+                      ? "border-primary ring-2 ring-primary/20 shadow-md"
+                      : "border-surface-hover hover:border-gray-500 scale-95 opacity-70 hover:opacity-100"
+                      }`}
                   >
                     <img src={img} className="object-cover w-full h-full" alt="" />
                   </button>
@@ -120,9 +204,16 @@ export default function ProductPage() {
 
               {/* Badges */}
               <div className="flex flex-wrap items-center gap-2 mb-4">
-                <Badge variant="secondary" className="bg-rose-500 text-white font-bold px-3 py-1 shadow-md shadow-rose-500/20">
-                  {product.discountAmount}
-                </Badge>
+                {product.isBestSeller && (
+                  <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1 shadow-md shadow-amber-500/20">
+                    ⭐ الأكثر مبيعاً
+                  </Badge>
+                )}
+                {product.discountAmount && (
+                  <Badge variant="secondary" className="bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-1 shadow-md shadow-rose-500/20">
+                    {product.discountAmount}
+                  </Badge>
+                )}
                 <div className="flex items-center gap-1.5 text-xs text-yellow-500 bg-surface border border-surface-hover px-3 py-1.5 rounded-full font-bold">
                   <Star className="w-4 h-4 fill-current" />
                   <span>{product.rating}</span>
@@ -140,15 +231,30 @@ export default function ProductPage() {
                 <div className="flex flex-col">
                   <span className="text-gray-400 text-sm font-medium mb-1">السعر الحالي</span>
                   <span className="font-heading text-4xl font-black text-primary tracking-tight">
-                    {product.price} <span className="text-lg font-bold">ج.م</span>
+                    {appliedDiscountPrice !== null ? appliedDiscountPrice : product.price} <span className="text-lg font-bold">ج.م</span>
                   </span>
                 </div>
-                {product.oldPrice && (
+                {(appliedDiscountPrice !== null || product.oldPrice) && (
                   <span className="font-heading text-lg text-gray-500 line-through mb-1">
-                    {product.oldPrice} ج.م
+                    {appliedDiscountPrice !== null ? product.price : product.oldPrice} ج.م
                   </span>
                 )}
               </div>
+
+              {/* Discount Code Input */}
+              {product.price > 0 && (
+                <DiscountCodeInput
+                  originalPrice={product.price}
+                  onDiscountApplied={(finalPrice, savedAmount, label) => {
+                    setAppliedDiscountPrice(finalPrice);
+                    setAppliedDiscountLabel(label);
+                  }}
+                  onDiscountRemoved={() => {
+                    setAppliedDiscountPrice(null);
+                    setAppliedDiscountLabel(null);
+                  }}
+                />
+              )}
 
               {/* Stock indicator */}
               <div className="mb-6 flex items-center gap-2 text-sm font-medium">
@@ -166,7 +272,7 @@ export default function ProductPage() {
               <div
                 className="hidden md:block mb-10"
                 style={{
-                  opacity:   isMounted ? 1 : 0,
+                  opacity: isMounted ? 1 : 0,
                   transform: isMounted ? "translateY(0)" : "translateY(16px)",
                   transition: "opacity 0.6s ease-out, transform 0.6s ease-out",
                 }}
@@ -267,7 +373,7 @@ export default function ProductPage() {
                   <h3 className="text-xl font-bold mb-3 pb-2 border-b border-surface-hover">عن المنتج</h3>
                   <p className="text-gray-400 leading-relaxed text-sm md:text-base">{product.description}</p>
                   <ul className="mt-4 space-y-2">
-                    {product.features.map((feature, idx) => (
+                    {product.features.map((feature: string, idx: number) => (
                       <li key={idx} className="flex items-center gap-2 text-sm text-gray-300">
                         <svg className="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -281,10 +387,10 @@ export default function ProductPage() {
                 <section>
                   <h3 className="text-xl font-bold mb-3 pb-2 border-b border-surface-hover">المواصفات</h3>
                   <div className="rounded-xl overflow-hidden border border-surface-hover divide-y divide-surface-hover">
-                    {product.specs.map((spec, idx) => (
+                    {product.specs.map((spec: any, idx: number) => (
                       <div key={idx} className="flex flex-col sm:flex-row sm:items-center bg-surface px-4 py-3">
                         <span className="w-1/3 text-gray-500 text-sm">{spec.label}</span>
-                        <span className="text-foreground text-sm font-medium mt-1 sm:mt-0">{spec.value}</span>
+                        <span className="text-foreground text-sm font-medium mt-1 sm:mt-0">{spec.value || spec.description}</span>
                       </div>
                     ))}
                   </div>
@@ -301,7 +407,7 @@ export default function ProductPage() {
       <div
         className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
         style={{
-          opacity:   isMounted ? 1 : 0,
+          opacity: isMounted ? 1 : 0,
           transform: isMounted ? "translateY(0)" : "translateY(100%)",
           transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
         }}

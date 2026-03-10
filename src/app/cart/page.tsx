@@ -1,156 +1,275 @@
 "use client"
 
-import * as React from "react"
-import Link from "next/link"
-import { Header } from "@/components/layout/header"
-import { Footer } from "@/components/layout/footer"
-import { Button } from "@/components/ui/button"
-import { Trash2, Minus, Plus, Info, ArrowRight } from "lucide-react"
+import React, { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useCart } from '@/contexts/CartContext';
+import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/footer';
+import { Button } from '@/components/ui/button';
+import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CartPage() {
-  const [quantities, setQuantities] = React.useState({ "p1": 1, "p2": 2 })
-  
-  const SUB_TOTAL = (450 * quantities["p1"]) + (65 * quantities["p2"])
-  const SHIPPING = 35
-  const TOTAL = SUB_TOTAL + SHIPPING
+   const { items, cartTotal, cartOriginalTotal, cartDiscountTotal, isLoading, updateQuantity, removeItem } = useCart();
+   const router = useRouter();
+   const [updatingItems, setUpdatingItems] = useState<{ [key: string]: boolean }>({});
 
-  return (
-    <>
-      <Header />
-      <main className="flex-1 pb-36 md:pb-8 min-h-screen bg-background">
-        
-        <div className="bg-surface border-b border-surface-hover py-6 md:py-8">
-           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <h1 className="text-2xl md:text-3xl font-black text-foreground">سلة المشتريات</h1>
-           </div>
-        </div>
+   // Handler for quantity updates to show local loading state
+   const handleUpdateQuantity = async (id: string, newQuantity: number) => {
+      if (newQuantity < 1) {
+         handleRemoveItem(id);
+         return;
+      }
+      setUpdatingItems(prev => ({ ...prev, [id]: true }));
+      await updateQuantity(id, newQuantity);
+      setUpdatingItems(prev => ({ ...prev, [id]: false }));
+   };
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              
-               {/* Cart Items */}
-               <div className="lg:col-span-8 flex flex-col gap-5">
-                  
-                  <div className="flex flex-col sm:flex-row gap-5 p-5 rounded-3xl bg-surface border border-surface-hover shadow-sm hover:shadow-md transition-shadow">
-                     <div className="w-28 h-28 shrink-0 rounded-2xl bg-surface-lighter border border-surface-hover relative overflow-hidden flex items-center justify-center p-3">
-                        <img src="https://th.bing.com/th/id/OIG3.C_W_T_P_j_B_k_O_d_J_?pid=ImgGn" className="object-contain max-w-full max-h-full transition-transform duration-500 hover:scale-110" alt="" />
-                     </div>
-                     <div className="flex-1 flex flex-col justify-between">
-                        <div className="flex justify-between items-start gap-4">
-                           <div>
-                              <h3 className="font-heading font-bold text-foreground leading-tight text-lg mb-1 line-clamp-2">سماعة بلوتوث لاسلكية عازلة للضوضاء</h3>
-                              <p className="text-sm text-gray-400 font-medium mt-1">اللون: أسود</p>
-                           </div>
-                           <button className="text-gray-400 hover:text-rose-500 hover:bg-rose-500/10 p-2.5 rounded-xl transition-colors shrink-0">
-                              <Trash2 className="w-5 h-5" />
-                           </button>
-                        </div>
-                        
-                        <div className="flex items-center justify-between mt-5">
-                           <span className="font-heading font-black text-primary text-2xl tracking-tight">450 <span className="text-sm font-bold">ج.م</span></span>
-                           <div className="flex items-center rounded-xl border border-surface-hover bg-background shadow-sm h-10">
-                             <button onClick={() => setQuantities({...quantities, p1: Math.max(1, quantities.p1 - 1)})} className="px-3 hover:bg-surface text-gray-400 hover:text-foreground h-full rounded-e-xl transition-colors">
-                                <Minus className="w-4 h-4" />
-                             </button>
-                             <span className="w-10 text-center font-bold text-base">{quantities.p1}</span>
-                             <button onClick={() => setQuantities({...quantities, p1: quantities.p1 + 1})} className="px-3 hover:bg-surface text-gray-400 hover:text-foreground h-full rounded-s-xl transition-colors">
-                                <Plus className="w-4 h-4" />
-                             </button>
-                          </div>
-                        </div>
-                     </div>
+   // Handler for removing an item
+   const handleRemoveItem = async (id: string) => {
+      setUpdatingItems(prev => ({ ...prev, [id]: true }));
+      await removeItem(id);
+      setUpdatingItems(prev => ({ ...prev, [id]: false }));
+   };
+
+   const shippingCost: number = 0; // Free shipping for now based on hero banner logic
+   const grandTotal = cartTotal + shippingCost;
+
+   if (isLoading) {
+      return (
+         <>
+            <Header />
+            <main className="min-h-screen bg-background pt-24 pb-16 flex items-center justify-center">
+               <div className="flex flex-col items-center gap-4 text-primary">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                  <p className="animate-pulse font-medium">جاري تحميل السلة...</p>
+               </div>
+            </main>
+            <Footer />
+         </>
+      );
+   }
+
+   return (
+      <>
+         <Header />
+         <main className="min-h-screen bg-background pt-20 pb-24 md:pb-16">
+
+            {/* Decorative background glows */}
+            <div className="fixed top-20 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+
+               {/* Header */}
+               <div className="flex items-center gap-3 mb-8">
+                  <div className="p-3 bg-primary/10 rounded-2xl text-primary">
+                     <ShoppingBag className="w-8 h-8" />
                   </div>
-
-                  <div className="flex flex-col sm:flex-row gap-5 p-5 rounded-3xl bg-surface border border-surface-hover shadow-sm hover:shadow-md transition-shadow">
-                     <div className="w-28 h-28 shrink-0 rounded-2xl bg-surface-lighter border border-surface-hover relative overflow-hidden flex items-center justify-center p-3">
-                        <img src="https://th.bing.com/th/id/OIG4.X_Y_Z_A_B_C_D_E_F_G?pid=ImgGn" className="object-contain max-w-full max-h-full transition-transform duration-500 hover:scale-110" alt="" />
-                     </div>
-                     <div className="flex-1 flex flex-col justify-between">
-                        <div className="flex justify-between items-start gap-4">
-                           <div>
-                              <h3 className="font-heading font-bold text-foreground leading-tight text-lg mb-1 line-clamp-2">زيت عباد الشمس 1 لتر</h3>
-                              <p className="text-sm text-gray-400 font-medium mt-1">الوزن: 1 لتر - الماركة: عافية</p>
-                           </div>
-                           <button className="text-gray-400 hover:text-rose-500 hover:bg-rose-500/10 p-2.5 rounded-xl transition-colors shrink-0">
-                              <Trash2 className="w-5 h-5" />
-                           </button>
-                        </div>
-                        
-                        <div className="flex items-center justify-between mt-5">
-                           <span className="font-heading font-black text-primary text-2xl tracking-tight">65 <span className="text-sm font-bold">ج.م</span></span>
-                           <div className="flex items-center rounded-xl border border-surface-hover bg-background shadow-sm h-10">
-                             <button onClick={() => setQuantities({...quantities, p2: Math.max(1, quantities.p2 - 1)})} className="px-3 hover:bg-surface text-gray-400 hover:text-foreground h-full rounded-e-xl transition-colors">
-                                <Minus className="w-4 h-4" />
-                             </button>
-                             <span className="w-10 text-center font-bold text-base">{quantities.p2}</span>
-                             <button onClick={() => setQuantities({...quantities, p2: quantities.p2 + 1})} className="px-3 hover:bg-surface text-gray-400 hover:text-foreground h-full rounded-s-xl transition-colors">
-                                <Plus className="w-4 h-4" />
-                             </button>
-                          </div>
-                        </div>
-                     </div>
+                  <div>
+                     <h1 className="text-3xl font-heading font-black text-foreground">سلة المشتريات</h1>
+                     <p className="text-gray-400 text-sm mt-1">{items.length} منتجات في السلة</p>
                   </div>
+               </div>
 
-              </div>
+               {items.length === 0 ? (
+                  // Empty State
+                  <div className="bg-surface border border-surface-hover rounded-3xl p-12 flex flex-col items-center justify-center text-center min-h-[50vh]">
+                     <div className="w-24 h-24 bg-surface-hover rounded-full flex items-center justify-center mb-6 text-gray-400">
+                        <ShoppingBag className="w-12 h-12" />
+                     </div>
+                     <h2 className="text-2xl font-bold text-foreground mb-3">سلتك فارغة تماماً!</h2>
+                     <p className="text-gray-400 mb-8 max-w-md">يبدو أنك لم تقم بإضافة أي منتجات إلى سلتك حتى الآن. تصفح أقسامنا واكتشف أفضل العروض.</p>
+                     <Button size="lg" className="rounded-xl px-10 h-14 font-bold text-lg shadow-primary/20 shadow-lg" asChild>
+                        <Link href="/category/all">
+                           تصفح المنتجات الآن
+                           <ArrowRight className="w-5 h-5 mr-2" />
+                        </Link>
+                     </Button>
+                  </div>
+               ) : (
+                  // Filled Cart Grid
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-              {/* Order Summary */}
-              <div className="lg:col-span-4">
-                 <div className="rounded-3xl bg-surface border border-surface-hover p-6 sticky top-24 shadow-premium">
-                    <h3 className="text-xl font-heading font-bold mb-6 text-foreground border-b border-surface-hover pb-4">ملخص الطلب</h3>
-                    
-                    <div className="space-y-4 mb-6 text-base">
-                       <div className="flex justify-between items-center text-gray-300">
-                          <span>المجموع الفرعي ({quantities.p1 + quantities.p2} منتج)</span>
-                          <span className="font-heading font-semibold text-foreground">{SUB_TOTAL} ج.م</span>
-                       </div>
-                       <div className="flex justify-between items-center text-gray-300">
-                          <span>رسوم التوصيل</span>
-                          <span className="font-heading font-semibold text-foreground">{SHIPPING} ج.م</span>
-                       </div>
-                    </div>
+                     {/* Left Column: Cart Items (8 cols) */}
+                     <div className="lg:col-span-8 space-y-4">
+                        <AnimatePresence initial={false}>
+                           {items.map((item) => (
+                              <motion.div
+                                 key={item.id}
+                                 initial={{ opacity: 0, y: 20 }}
+                                 animate={{ opacity: 1, y: 0 }}
+                                 exit={{ opacity: 0, x: -50, scale: 0.95 }}
+                                 layout
+                                 className="bg-surface border border-surface-hover rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row gap-5 items-center sm:items-stretch relative overflow-hidden group"
+                              >
+                                 {/* Item Image */}
+                                 <div className="w-full sm:w-32 h-40 sm:h-32 rounded-2xl bg-white flex-shrink-0 relative overflow-hidden border border-surface-hover/50">
+                                    {item.product?.image_url ? (
+                                       <Image
+                                          src={item.product?.image_url}
+                                          alt={item.product?.name || "Product image"}
+                                          fill
+                                          className="object-contain p-2 group-hover:scale-105 transition-transform duration-500"
+                                       />
+                                    ) : (
+                                       <div className="absolute inset-0 flex items-center justify-center bg-surface-hover text-gray-400">
+                                          <ShoppingBag className="w-8 h-8 opacity-50" />
+                                       </div>
+                                    )}
+                                 </div>
 
-                    <div className="flex justify-between items-center border-t border-surface-hover pt-6 mb-6">
-                       <span className="text-lg font-bold text-foreground">الإجمالي للدفع</span>
-                       <span className="font-heading text-3xl font-black text-primary drop-shadow-sm">{TOTAL} <span className="text-sm">ج.م</span></span>
-                    </div>
+                                 {/* Item Details */}
+                                 <div className="flex-1 flex flex-col justify-between w-full">
+                                    <div className="flex justify-between items-start gap-4 mb-4 sm:mb-0">
+                                       <div>
+                                          <Link href={`/product/${item.product?.slug || item.product_id}`} className="block">
+                                             <h3 className="font-bold text-lg text-foreground hover:text-primary transition-colors line-clamp-2 leading-snug">
+                                                {item.product?.name}
+                                             </h3>
+                                          </Link>
+                                          <div className="mt-2 flex flex-col sm:flex-row sm:items-baseline gap-2">
+                                             <p className="text-secondary font-black text-lg">
+                                                {(() => {
+                                                   const p = item.product;
+                                                   if (!p) return 0;
+                                                   if (p.discount_percentage && p.discount_percentage > 0) {
+                                                      return Math.round(p.price * (1 - p.discount_percentage / 100));
+                                                   }
+                                                   return p.price || 0;
+                                                })().toLocaleString()} ج.م
+                                             </p>
+                                             {item.product?.discount_percentage ? (
+                                                <div className="flex items-center gap-2">
+                                                   <p className="text-sm text-gray-400 line-through">
+                                                      {(item.product.price || 0).toLocaleString()} ج.م
+                                                   </p>
+                                                   <span className="text-xs bg-rose-500/10 text-rose-500 font-bold px-2 py-0.5 rounded">
+                                                      خصم {item.product.discount_percentage}%
+                                                   </span>
+                                                </div>
+                                             ) : null}
+                                          </div>
+                                       </div>
 
-                    <p className="text-sm font-medium text-emerald-500/90 bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl flex items-start gap-3 mb-8">
-                       <Info className="w-5 h-5 shrink-0 mt-0.5" />
-                       <span className="leading-relaxed">الأسعار شاملة ضريبة القيمة المضافة. الدفع كاش عند الاستلام فقط لضمان راحتك وأمانك.</span>
-                    </p>
+                                       {/* Desktop Delete Target */}
+                                       <button
+                                          onClick={() => handleRemoveItem(item.id)}
+                                          disabled={updatingItems[item.id]}
+                                          className="hidden sm:flex text-gray-400 hover:text-rose-500 hover:bg-rose-500/10 p-2.5 rounded-xl transition-colors disabled:opacity-50"
+                                          title="حذف من السلة"
+                                       >
+                                          <Trash2 className="w-5 h-5" />
+                                       </button>
+                                    </div>
 
-                    <Button size="lg" className="w-full h-14 text-xl font-black rounded-2xl shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-shadow" asChild>
-                       <Link href="/checkout">متابعة الشراء</Link>
-                    </Button>
-                    
-                    <div className="mt-5 text-center">
-                       <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-400 hover:text-primary transition-colors group">
-                          <ArrowRight className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                          كمل تسوق
-                       </Link>
-                    </div>
-                 </div>
-              </div>
+                                    {/* Controls Row */}
+                                    <div className="flex items-center justify-between mt-auto">
+                                       {/* Quantity Controller */}
+                                       <div className="flex items-center bg-background border border-surface-hover rounded-xl p-1 shadow-sm">
+                                          <button
+                                             onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                                             disabled={updatingItems[item.id]}
+                                             className="w-8 h-8 flex items-center justify-center text-foreground hover:bg-surface hover:text-rose-500 rounded-lg transition-colors disabled:opacity-50"
+                                          >
+                                             {item.quantity <= 1 ? <Trash2 className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
+                                          </button>
 
-           </div>
-        </div>
+                                          <span className="w-12 text-center font-bold text-sm select-none">
+                                             {updatingItems[item.id] ? (
+                                                <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto"></div>
+                                             ) : (
+                                                item.quantity
+                                             )}
+                                          </span>
 
-      </main>
+                                          <button
+                                             onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                                             disabled={updatingItems[item.id]}
+                                             className="w-8 h-8 flex items-center justify-center text-foreground hover:bg-surface hover:text-primary rounded-lg transition-colors disabled:opacity-50"
+                                          >
+                                             <Plus className="w-4 h-4" />
+                                          </button>
+                                       </div>
 
-      {/* Sticky Mobile Checkout Bar - sits above the fixed bottom nav */}
-      <div className="fixed bottom-[65px] left-0 right-0 z-40 px-4 py-3 bg-surface/95 backdrop-blur-xl border-t border-surface-hover md:hidden">
-         <div className="flex items-center justify-between max-w-lg mx-auto gap-4">
-            <div className="flex flex-col">
-               <span className="text-xs text-gray-400 font-medium">الإجمالي</span>
-               <span className="font-heading font-black text-xl text-primary">{TOTAL} <span className="text-xs">ج.م</span></span>
+                                       {/* Mobile Delete */}
+                                       <button
+                                          onClick={() => handleRemoveItem(item.id)}
+                                          disabled={updatingItems[item.id]}
+                                          className="sm:hidden text-gray-400 hover:text-rose-500 flex items-center gap-1.5 text-sm font-medium transition-colors disabled:opacity-50"
+                                       >
+                                          <Trash2 className="w-4 h-4" />
+                                          حذف
+                                       </button>
+                                    </div>
+                                 </div>
+                              </motion.div>
+                           ))}
+                        </AnimatePresence>
+                     </div>
+
+                     {/* Right Column: Order Summary (4 cols) */}
+                     <div className="lg:col-span-4 max-lg:order-first">
+                        <div className="bg-surface border border-surface-hover rounded-3xl p-6 md:p-8 lg:sticky lg:top-28 shadow-xl shadow-black/5">
+                           <h2 className="text-xl font-bold font-heading text-foreground mb-6 pb-4 border-b border-surface-hover">ملخص الطلب</h2>
+
+                           <div className="space-y-4 mb-6">
+                              <div className="flex justify-between text-gray-400">
+                                 <span>المجموع الأصلي ({items.reduce((t, i) => t + i.quantity, 0)} منتجات)</span>
+                                 <span className="font-bold text-foreground">{cartOriginalTotal.toLocaleString()} ج.م</span>
+                              </div>
+                              {cartDiscountTotal > 0 && (
+                                 <div className="flex justify-between text-rose-400">
+                                    <span>إجمالي الخصم</span>
+                                    <span className="font-bold">- {cartDiscountTotal.toLocaleString()} ج.م</span>
+                                 </div>
+                              )}
+                              <div className="flex justify-between text-gray-400 pt-2 border-t border-surface-hover/50">
+                                 <span>المجموع بعد الخصم</span>
+                                 <span className="font-bold text-foreground">{cartTotal.toLocaleString()} ج.م</span>
+                              </div>
+                              <div className="flex justify-between text-gray-400">
+                                 <span>مصاريف الشحن</span>
+                                 {shippingCost === 0 ? (
+                                    <span className="font-bold text-emerald-500">مجانًا</span>
+                                 ) : (
+                                    <span className="font-bold text-foreground">{shippingCost.toLocaleString()} ج.م</span>
+                                 )}
+                              </div>
+                           </div>
+
+                           <div className="pt-4 border-t border-surface-hover mb-8">
+                              <div className="flex justify-between items-end">
+                                 <span className="text-lg font-bold text-foreground">الإجمالي الكلي</span>
+                                 <div className="text-end">
+                                    <span className="block text-2xl font-black text-primary">{grandTotal.toLocaleString()} ج.م</span>
+                                    <span className="text-[11px] text-gray-500">شامل ضريبة القيمة المضافة إن وجدت</span>
+                                 </div>
+                              </div>
+                           </div>
+
+                           <Button
+                              size="lg"
+                              className="w-full rounded-2xl h-14 font-bold text-lg shadow-primary/20 shadow-lg group"
+                              onClick={() => router.push('/checkout')}
+                           >
+                              متابعة الدفع
+                              <ArrowRight className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+                           </Button>
+
+                           <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
+                              <ShoppingBag className="w-4 h-4" />
+                              تسوق إلكتروني آمن 100%
+                           </div>
+                        </div>
+                     </div>
+
+                  </div>
+               )}
             </div>
-            <Button size="lg" className="flex-1 h-13 text-base font-black rounded-2xl shadow-lg shadow-primary/20" asChild>
-               <Link href="/checkout">ماشي نكمل الطلب ⮞</Link>
-            </Button>
-         </div>
-      </div>
-
-      <Footer />
-    </>
-  )
+         </main>
+         <Footer />
+      </>
+   );
 }
