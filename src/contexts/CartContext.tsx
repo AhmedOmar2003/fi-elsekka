@@ -12,6 +12,7 @@ export interface GuestCartItem {
     id: string;          // local-<timestamp>
     product_id: string;
     quantity: number;
+    applied_price?: number | null;
     product: {
         id: string;
         name: string;
@@ -29,7 +30,7 @@ interface CartContextType {
     cartOriginalTotal: number;
     cartDiscountTotal: number;
     isLoading: boolean;
-    addItem: (productId: string, quantity?: number) => Promise<void>;
+    addItem: (productId: string, quantity?: number, appliedPrice?: number | null) => Promise<void>;
     removeItem: (cartItemId: string) => Promise<void>;
     updateQuantity: (cartItemId: string, quantity: number) => Promise<void>;
     clearCart: () => Promise<void>;
@@ -90,7 +91,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         const guestItems = readGuestCart();
         if (guestItems.length > 0) {
             await Promise.all(
-                guestItems.map(item => addToCart(user.id, item.product_id, item.quantity))
+                guestItems.map(item => addToCart(user.id, item.product_id, item.quantity, item.applied_price))
             );
             clearGuestCart();
         }
@@ -120,7 +121,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }, [user, loadCart]);
 
     // ── Add item ──────────────────────────────────────────────────────────
-    const addItem = async (productId: string, quantity: number = 1) => {
+    const addItem = async (productId: string, quantity: number = 1, appliedPrice?: number | null) => {
         const product = await fetchProductById(productId);
         if (!product) {
             toast.error('عذراً، لم نتمكن من العثور على المنتج.');
@@ -143,6 +144,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
                     id: `local-${Date.now()}`,
                     product_id: productId,
                     quantity,
+                    applied_price: appliedPrice || null,
                     product: {
                         id: productId,
                         name: product.name || 'منتج',
@@ -175,6 +177,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
                     id: `temp-${Date.now()}`, // Temporary ID until RealTime kicks in
                     product_id: productId,
                     quantity,
+                    applied_price: appliedPrice || null,
                     product: {
                         id: productId,
                         name: product.name,
@@ -191,7 +194,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         toast.success(`تم إضافة "${product.name}" بنجاح!`);
 
         // Write to DB, let realtime/loadCart update state
-        await addToCart(user.id, productId, quantity);
+        await addToCart(user.id, productId, quantity, appliedPrice);
     };
 
     // ── Remove item ───────────────────────────────────────────────────────
@@ -246,7 +249,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     // ── Derived values ─────────────────────────────────────────────────────
     const cartCount = items.reduce((t, i) => t + i.quantity, 0);
 
-    const getFinalPrice = (product: any) => {
+    const getFinalPrice = (item: CartItem | GuestCartItem) => {
+        if (item.applied_price != null) return item.applied_price;
+
+        const product = item.product;
         if (!product) return 0;
         if (product.discount_percentage && product.discount_percentage > 0) {
             return Math.round(product.price * (1 - product.discount_percentage / 100));
@@ -255,7 +261,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const cartOriginalTotal = items.reduce((t, i) => t + ((i.product?.price || 0) * i.quantity), 0);
-    const cartTotal = items.reduce((t, i) => t + (getFinalPrice(i.product) * i.quantity), 0);
+    const cartTotal = items.reduce((t, i) => t + (getFinalPrice(i) * i.quantity), 0);
     const cartDiscountTotal = cartOriginalTotal - cartTotal;
 
     return (

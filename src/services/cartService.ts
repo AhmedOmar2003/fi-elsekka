@@ -5,6 +5,7 @@ export interface CartItem {
     id: string;
     product_id: string;
     quantity: number;
+    applied_price?: number | null;
     product?: Product;
 }
 
@@ -16,6 +17,7 @@ export const fetchUserCart = async (userId: string): Promise<CartItem[]> => {
             id,
             product_id,
             quantity,
+            applied_price,
             product:products (*)
         `)
         .eq('user_id', userId)
@@ -33,7 +35,7 @@ export const fetchUserCart = async (userId: string): Promise<CartItem[]> => {
     return (data || []) as unknown as CartItem[];
 };
 
-export const addToCart = async (userId: string, productId: string, quantity: number = 1) => {
+export const addToCart = async (userId: string, productId: string, quantity: number = 1, appliedPrice?: number | null) => {
     // Upsert logic: If item exists, we should ideally increment quantity instead of inserting new.
     // Let's first check if it exists
     const { data: existing } = await supabase
@@ -57,7 +59,8 @@ export const addToCart = async (userId: string, productId: string, quantity: num
             .insert({
                 user_id: userId,
                 product_id: productId,
-                quantity
+                quantity,
+                applied_price: appliedPrice || null
             })
             .select()
             .single();

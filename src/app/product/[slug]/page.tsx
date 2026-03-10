@@ -31,7 +31,7 @@ export default function ProductPage() {
 
   const handleAddToCart = async () => {
     if (dbProduct) {
-      await addItem(dbProduct.id, quantity)
+      await addItem(dbProduct.id, quantity, appliedDiscountPrice)
     }
     setIsAdded(true)
     setTimeout(() => setIsAdded(false), 2000)
@@ -39,7 +39,7 @@ export default function ProductPage() {
 
   const handleBuyNow = async () => {
     if (dbProduct) {
-      await addItem(dbProduct.id, quantity)
+      await addItem(dbProduct.id, quantity, appliedDiscountPrice)
     }
     router.push("/cart")
   }
