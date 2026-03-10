@@ -8,7 +8,8 @@ import { Input } from "../ui/input"
 import { cn } from "../ui/button"
 import {
   Menu, Search, User, ShoppingBag, BadgePercent, X,
-  ChevronLeft, Home, LayoutGrid, Package, Phone, Settings, HelpCircle
+  ChevronLeft, Home, LayoutGrid, Package, Phone, Settings, HelpCircle,
+  Info, MessageCircleQuestion
 } from "lucide-react"
 
 // ── Motorcycle SVG Logo Icon ──────────────────────────────────────────────────
@@ -54,13 +55,15 @@ function MotorcycleIcon({ className }: { className?: string }) {
 }
 
 const DRAWER_ITEMS = [
-  { label: "الرئيسية",    href: "/",           icon: <Home       className="w-5 h-5" /> },
-  { label: "الأقسام",    href: "/categories",  icon: <LayoutGrid className="w-5 h-5" /> },
-  { label: "حسابي",      href: "/account",     icon: <User       className="w-5 h-5" /> },
-  { label: "طلباتي",     href: "/orders",      icon: <Package    className="w-5 h-5" /> },
-  { label: "تواصل معنا", href: "/contact",     icon: <Phone      className="w-5 h-5" /> },
-  { label: "الدعم",      href: "/support",     icon: <HelpCircle className="w-5 h-5" /> },
-  { label: "الإعدادات",  href: "/settings",    icon: <Settings   className="w-5 h-5" /> },
+  { label: "الرئيسية",       href: "/",           icon: <Home className="w-5 h-5" /> },
+  { label: "الأقسام",       href: "/categories", icon: <LayoutGrid className="w-5 h-5" /> },
+  { label: "حسابي",         href: "/account",    icon: <User className="w-5 h-5" /> },
+  { label: "طلباتي",        href: "/orders",     icon: <Package className="w-5 h-5" /> },
+  { label: "اعرف عنا",      href: "/about",      icon: <Info className="w-5 h-5" /> },
+  { label: "الأسئلة الشائعة", href: "/faq",        icon: <MessageCircleQuestion className="w-5 h-5" /> },
+  { label: "تواصل معنا",    href: "/contact",    icon: <Phone className="w-5 h-5" /> },
+  { label: "الدعم",         href: "/support",    icon: <HelpCircle className="w-5 h-5" /> },
+  { label: "الإعدادات",     href: "/settings",   icon: <Settings className="w-5 h-5" /> },
 ]
 
 export function Header() {

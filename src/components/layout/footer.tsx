@@ -54,9 +54,10 @@ export function Footer() {
           <div>
             <h4 className="mb-4 font-semibold text-foreground">خلينا نساعدك</h4>
             <ul className="font-heading space-y-2 text-sm text-gray-400">
+              <li><Link href="/about" className="hover:text-primary transition-colors">اعرف عنا</Link></li>
+              <li><Link href="/faq" className="hover:text-primary transition-colors">الأسئلة الشائعة</Link></li>
               <li><Link href="/account" className="hover:text-primary transition-colors">حسابي</Link></li>
               <li><Link href="/orders" className="hover:text-primary transition-colors">طلباتي</Link></li>
-              <li><Link href="/faq" className="hover:text-primary transition-colors">الأسئلة الشائعة</Link></li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">تواصل معنا</Link></li>
             </ul>
           </div>
