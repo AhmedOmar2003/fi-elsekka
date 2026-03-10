@@ -9,6 +9,15 @@ import { Home, LayoutGrid, ShoppingBag, User } from "lucide-react"
 export function MobileNav() {
   const pathname = usePathname()
 
+  // Hide on detail-focused pages where full attention is needed
+  const isHidden = 
+    pathname.startsWith('/product/') ||
+    pathname.startsWith('/checkout') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/register');
+
+  if (isHidden) return null;
+
   const navItems = [
     {
       name: "الرئيسية",

@@ -17,7 +17,7 @@ export default function CartPage() {
   return (
     <>
       <Header />
-      <main className="flex-1 pb-16 min-h-screen bg-background">
+      <main className="flex-1 pb-36 md:pb-8 min-h-screen bg-background">
         
         <div className="bg-surface border-b border-surface-hover py-6 md:py-8">
            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -136,6 +136,20 @@ export default function CartPage() {
         </div>
 
       </main>
+
+      {/* Sticky Mobile Checkout Bar - sits above the fixed bottom nav */}
+      <div className="fixed bottom-[65px] left-0 right-0 z-40 px-4 py-3 bg-surface/95 backdrop-blur-xl border-t border-surface-hover md:hidden">
+         <div className="flex items-center justify-between max-w-lg mx-auto gap-4">
+            <div className="flex flex-col">
+               <span className="text-xs text-gray-400 font-medium">الإجمالي</span>
+               <span className="font-heading font-black text-xl text-primary">{TOTAL} <span className="text-xs">ج.م</span></span>
+            </div>
+            <Button size="lg" className="flex-1 h-13 text-base font-black rounded-2xl shadow-lg shadow-primary/20" asChild>
+               <Link href="/checkout">ماشي نكمل الطلب ⮞</Link>
+            </Button>
+         </div>
+      </div>
+
       <Footer />
     </>
   )

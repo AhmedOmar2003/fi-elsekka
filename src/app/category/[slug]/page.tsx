@@ -3,7 +3,6 @@
 import * as React from "react"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
-import { MobileNav } from "@/components/layout/mobile-nav"
 import { ProductCard } from "@/components/ui/product-card"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -48,7 +47,7 @@ export default function CategoryPage() {
     <>
       <Header />
       
-      <main className="flex-1 pb-16 md:pb-0 bg-background min-h-screen">
+      <main className="flex-1 pb-28 md:pb-8 bg-background min-h-screen">
         
         {/* Page Header */}
         <div className="bg-surface border-b border-surface-hover py-6 md:py-10">
@@ -62,12 +61,15 @@ export default function CategoryPage() {
           <div className="flex flex-col md:flex-row gap-8">
             
             {/* Mobile Filter Toggle */}
-            <div className="flex items-center justify-between md:hidden">
-               <span className="text-sm text-gray-400">Showing {products.length} products</span>
-               <Button variant="outline" onClick={() => setIsFilterOpen(!isFilterOpen)} className="gap-2">
-                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+            <div className="flex items-center justify-between mb-4 md:hidden">
+               <span className="text-sm text-gray-400 font-medium">عرض {products.length} منتج</span>
+               <button 
+                 onClick={() => setIsFilterOpen(!isFilterOpen)}
+                 className="flex items-center gap-2 bg-surface border border-surface-hover px-4 py-2.5 rounded-xl text-sm font-bold text-gray-200 hover:bg-surface-hover active:scale-95 transition-all"
+               >
+                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
                  تصفية وترتيب
-               </Button>
+               </button>
             </div>
 
             {/* Sidebar Filters */}
@@ -159,7 +161,6 @@ export default function CategoryPage() {
       </main>
 
       <Footer />
-      <MobileNav />
     </>
   )
 }

@@ -27,7 +27,7 @@ export default function CheckoutPage() {
   return (
     <>
       <Header />
-      <main className="flex-1 pb-16 min-h-screen bg-background">
+      <main className="flex-1 pb-8 min-h-screen bg-background">
         
         <div className="bg-surface border-b border-surface-hover py-4 md:py-6">
            <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">

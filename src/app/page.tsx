@@ -4,7 +4,6 @@ import { ProductCard } from "@/components/ui/product-card"
 import { CategoryCard } from "@/components/ui/category-card"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
-import { MobileNav } from "@/components/layout/mobile-nav"
 import Link from "next/link"
 import { ShoppingBasket, Pill, Shirt, Smartphone, Baby, HomeIcon, Sparkles, ShieldCheck, Zap, Banknote, Clock } from "lucide-react"
 
@@ -36,7 +35,7 @@ export default function Home() {
     <>
       <Header />
       
-      <main className="flex-1 pb-16 md:pb-0">
+      <main className="flex-1 pb-24 md:pb-0">
         
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-gradient-to-br from-surface-light via-background to-background pt-12 pb-16 sm:pt-20 sm:pb-24 border-b border-surface-hover">
@@ -223,7 +222,6 @@ export default function Home() {
       </main>
 
       <Footer />
-      <MobileNav />
     </>
   )
 }
