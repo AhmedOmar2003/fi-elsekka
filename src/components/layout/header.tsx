@@ -139,16 +139,7 @@ export function Header() {
 
         {/* ── Mobile top-right utility icons ─────────────────────────────────── */}
         <div className="flex md:hidden items-center gap-0.5 ms-auto">
-          {/* Icon 1: Search */}
-          <button
-            onClick={() => setIsSearchOpen(true)}
-            className="flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 hover:text-white hover:bg-surface-hover active:scale-95 transition-all"
-            aria-label="بحث"
-          >
-            <Search className="h-5 w-5" />
-          </button>
-
-          {/* Icon 2: Offers */}
+          {/* Icon 1: Offers */}
           <Link href="/offers">
             <button
               className="relative flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 hover:text-white hover:bg-surface-hover active:scale-95 transition-all"

@@ -2,6 +2,22 @@ import * as React from "react"
 import Link from "next/link"
 import { Banknote } from "lucide-react"
 
+// Same motorcycle icon as the header
+function MotorcycleIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32" fill="currentColor" className={className} aria-hidden="true">
+      <circle cx="9"  cy="24" r="6" fill="none" stroke="currentColor" strokeWidth="2.5" />
+      <circle cx="9"  cy="24" r="2" />
+      <circle cx="39" cy="24" r="6" fill="none" stroke="currentColor" strokeWidth="2.5" />
+      <circle cx="39" cy="24" r="2" />
+      <path d="M9 24 L14 14 L22 14 L28 10 L36 14 L39 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+      <path d="M17 14 L24 8 L31 8 L36 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      <path d="M38 10 L42 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="26" cy="9" r="2.5" />
+    </svg>
+  )
+}
+
 export function Footer() {
   return (
     <footer className="mt-auto w-full border-t border-surface-hover bg-background pt-10 pb-20 md:pb-10">
@@ -9,13 +25,16 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:gap-12 pl-4">
           
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="mb-4 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white font-bold shadow-md shadow-primary/20">
-                في
+            <Link href="/" className="mb-4 flex items-center gap-2 group">
+              {/* Motorcycle icon badge */}
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20 group-hover:shadow-primary/40 transition-shadow">
+                <MotorcycleIcon className="w-6 h-6" />
               </div>
-              <span className="font-heading text-xl font-black tracking-tight text-foreground">
-                في السكة
-              </span>
+              {/* Brand name + tagline */}
+              <div className="flex flex-col leading-none">
+                <span className="font-heading text-xl font-black tracking-tight text-foreground">في السكة</span>
+                <span className="text-[10px] text-primary font-medium tracking-wide opacity-80">بالسكة الصح</span>
+              </div>
             </Link>
             <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
               صاحبك الجدع في التسوق. كل اللي تحتاجه، من البيت لحد البيت بأسهل طريقة وبأحسن سعر.
