@@ -86,7 +86,7 @@ export default function CheckoutPage() {
          is_default: true
       })
 
-      router.push('/checkout/success')
+      router.push('/order-success')
    }
 
    const isLoading = isAuthLoading || isCartLoading
