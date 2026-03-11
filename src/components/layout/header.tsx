@@ -14,6 +14,8 @@ import {
 import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { signOut } from "@/services/authService"
+import { LogoutModal } from "@/components/ui/logout-modal"
+import { toast } from "sonner"
 
 // ── Motorcycle SVG Logo Icon ──────────────────────────────────────────────────
 function MotorcycleIcon({ className }: { className?: string }) {
@@ -76,10 +78,24 @@ export function Header() {
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
   const [isSearchOpen, setIsSearchOpen] = React.useState(false)
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = React.useState(false)
 
-  const handleLogout = async () => {
+  const handleLogoutClick = () => {
+    setIsLogoutModalOpen(true)
+  }
+
+  const confirmLogout = async () => {
+    setIsLogoutModalOpen(false)
     await signOut();
-    window.location.reload();
+    
+    // Quick success toast before reload to ensure it fires
+    toast.success("تم تسجيل الخروج", {
+      description: "هتوحشنا، مستنيينك ترجع قريب! 👋"
+    })
+    
+    setTimeout(() => {
+      window.location.reload();
+    }, 500)
   }
 
   React.useEffect(() => {
@@ -138,7 +154,7 @@ export function Header() {
           {user ? (
             <div className="flex items-center gap-2 px-3">
               <span className="text-sm font-bold text-gray-200">{profile?.full_name || user.email?.split('@')[0]}</span>
-              <Button variant="ghost" size="icon" onClick={handleLogout} className="text-gray-400 hover:text-rose-400" title="تسجيل الخروج">
+              <Button variant="ghost" size="icon" onClick={handleLogoutClick} className="text-gray-400 hover:text-rose-400" title="تسجيل الخروج">
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -327,7 +343,7 @@ export function Header() {
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false)
-                    handleLogout()
+                    handleLogoutClick()
                   }}
                   className="flex w-full items-center justify-between px-4 py-3.5 border-b border-surface-hover/50 hover:bg-rose-500/10 transition-colors text-rose-500"
                 >
@@ -372,6 +388,11 @@ export function Header() {
         </div>
       )}
 
+      <LogoutModal 
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={confirmLogout}
+      />
     </header>
   )
 }

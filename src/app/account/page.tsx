@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/layout/header"
@@ -16,6 +17,8 @@ import {
     User, Package, Settings, LogOut, Camera,
     MapPin, AlertCircle, CheckCircle, Clock, Truck, XCircle, ShoppingBag, Plus, Trash2, Star
 } from "lucide-react"
+import { LogoutModal } from "@/components/ui/logout-modal"
+import { toast } from "sonner"
 
 type Tab = "orders" | "settings" | "addresses"
 
@@ -87,9 +90,21 @@ export default function AccountPage() {
         }
     }, [user])
 
-    const handleLogout = async () => {
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
+
+    const handleLogoutClick = () => {
+        setIsLogoutModalOpen(true)
+    }
+
+    const confirmLogout = async () => {
+        setIsLogoutModalOpen(false)
         await signOut()
-        router.push('/')
+        toast.success("تم تسجيل الخروج", {
+            description: "هتوحشنا، مستنيينك ترجع قريب! 👋"
+        })
+        setTimeout(() => {
+            router.push('/')
+        }, 500)
     }
 
     const handleCancelOrder = async (orderId: string) => {
@@ -211,7 +226,7 @@ export default function AccountPage() {
                         <Button
                             variant="outline"
                             className="rounded-xl gap-2 text-rose-500 border-rose-500/20 hover:border-rose-500/50 hover:bg-rose-500/10 shrink-0"
-                            onClick={handleLogout}
+                            onClick={handleLogoutClick}
                         >
                             <LogOut className="w-4 h-4" />
                             تسجيل الخروج
@@ -400,6 +415,12 @@ export default function AccountPage() {
                 </div>
             </main>
             <Footer />
+
+            <LogoutModal 
+                isOpen={isLogoutModalOpen}
+                onClose={() => setIsLogoutModalOpen(false)}
+                onConfirm={confirmLogout}
+            />
         </>
     )
 }
