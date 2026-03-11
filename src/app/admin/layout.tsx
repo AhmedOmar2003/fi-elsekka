@@ -112,9 +112,33 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
 }
 
 // ── Notification Bell Component ───────────────────────────────
+const NOTIF_STORAGE_KEY = 'admin_notifications';
+const NOTIF_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function loadStoredNotifications(): Notification[] {
+    try {
+        const raw = localStorage.getItem(NOTIF_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed: Notification[] = JSON.parse(raw).map((n: any) => ({ ...n, time: new Date(n.time) }));
+        const cutoff = Date.now() - NOTIF_TTL_MS;
+        return parsed.filter(n => new Date(n.time).getTime() > cutoff); // prune old ones
+    } catch { return []; }
+}
+
+function saveNotifications(notifications: Notification[]) {
+    try {
+        localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(notifications));
+    } catch { }
+}
+
 function NotificationBell() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isOpen, setIsOpen] = useState(false);
+
+    // Load from localStorage on mount
+    useEffect(() => {
+        setNotifications(loadStoredNotifications());
+    }, []);
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -125,7 +149,11 @@ function NotificationBell() {
             time: new Date(),
             read: false,
         };
-        setNotifications(prev => [newNotif, ...prev].slice(0, 30)); // keep last 30
+        setNotifications(prev => {
+            const updated = [newNotif, ...prev].slice(0, 30); // keep last 30
+            saveNotifications(updated);
+            return updated;
+        });
 
         // Browser notification (if permitted)
         if (typeof window !== 'undefined' && Notification.permission === 'granted') {
@@ -172,11 +200,16 @@ function NotificationBell() {
     }, [addNotification]);
 
     const markAllRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        setNotifications(prev => {
+            const updated = prev.map(n => ({ ...n, read: true }));
+            saveNotifications(updated);
+            return updated;
+        });
     };
 
     const clearAll = () => {
         setNotifications([]);
+        saveNotifications([]);
         setIsOpen(false);
     };
 
