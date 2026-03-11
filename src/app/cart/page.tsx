@@ -105,13 +105,13 @@ export default function CartPage() {
                                  className="bg-surface border border-surface-hover rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row gap-5 items-center sm:items-stretch relative overflow-hidden group"
                               >
                                  {/* Item Image */}
-                                 <div className="w-full sm:w-32 h-40 sm:h-32 rounded-2xl bg-white flex-shrink-0 relative overflow-hidden border border-surface-hover/50">
+                                 <div className="w-full sm:w-32 h-40 sm:h-32 rounded-2xl flex-shrink-0 relative overflow-hidden border border-surface-hover/50">
                                     {item.product?.image_url ? (
                                        <Image
                                           src={item.product?.image_url}
                                           alt={item.product?.name || "Product image"}
                                           fill
-                                          className="object-contain p-2 group-hover:scale-105 transition-transform duration-500"
+                                          className="object-cover group-hover:scale-105 transition-transform duration-500"
                                        />
                                     ) : (
                                        <div className="absolute inset-0 flex items-center justify-center bg-surface-hover text-gray-400">
