@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tag, Check, X, Loader2 } from 'lucide-react';
 import { validateDiscountCode, applyDiscount } from '@/services/discountCodesService';
 
@@ -15,6 +15,32 @@ export function DiscountCodeInput({ originalPrice, onDiscountApplied, onDiscount
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [appliedCode, setAppliedCode] = useState('');
     const [message, setMessage] = useState('');
+
+    // Load saved code on mount
+    useEffect(() => {
+        const loadSavedCode = async () => {
+            const savedCode = localStorage.getItem('applied_discount_code');
+            if (savedCode && originalPrice > 0) {
+                setCode(savedCode);
+                setStatus('loading');
+                const discount = await validateDiscountCode(savedCode);
+                
+                if (discount) {
+                    const result = applyDiscount(originalPrice, discount);
+                    setStatus('success');
+                    setAppliedCode(savedCode.trim().toUpperCase());
+                    setMessage(result.label);
+                    onDiscountApplied(result.finalPrice, result.savedAmount, result.label);
+                } else {
+                    setStatus('idle');
+                    localStorage.removeItem('applied_discount_code');
+                }
+            }
+        };
+        
+        loadSavedCode();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Only run once on mount
 
     const handleApply = async () => {
         if (!code.trim()) return;
@@ -32,6 +58,7 @@ export function DiscountCodeInput({ originalPrice, onDiscountApplied, onDiscount
         setStatus('success');
         setAppliedCode(code.trim().toUpperCase());
         setMessage(result.label);
+        localStorage.setItem('applied_discount_code', code.trim().toUpperCase());
         onDiscountApplied(result.finalPrice, result.savedAmount, result.label);
     };
 
@@ -40,6 +67,7 @@ export function DiscountCodeInput({ originalPrice, onDiscountApplied, onDiscount
         setAppliedCode('');
         setStatus('idle');
         setMessage('');
+        localStorage.removeItem('applied_discount_code');
         onDiscountRemoved();
     };
 
