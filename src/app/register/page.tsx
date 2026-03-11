@@ -65,8 +65,13 @@ function RegisterContent() {
     await signIn(email, password)
 
     setTimeout(() => {
-      router.push(redirectParams || "/")
-    }, 1500)
+      // New users get a welcome intro; existing redirect params bypass it
+      if (redirectParams) {
+        router.push(redirectParams)
+      } else {
+        router.push(`/welcome?name=${encodeURIComponent(fullName.split(' ')[0] || 'بصاحبنا')}`)
+      }
+    }, 1200)
   }
 
   return (
