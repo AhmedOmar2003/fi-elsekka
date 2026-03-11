@@ -6,7 +6,8 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { useAuth } from "@/contexts/AuthContext"
 import { fetchUserOrders, Order } from "@/services/ordersService"
-import { Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, ChevronDown, ChevronUp } from "lucide-react"
+import { supabase } from "@/lib/supabase"
+import { Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, ChevronDown, ChevronUp, Wifi } from "lucide-react"
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   pending: {
@@ -118,6 +119,22 @@ export default function OrdersPage() {
       setOrders(data)
       setIsLoading(false)
     })
+
+    // Subscribe to real-time updates on this user's orders
+    const channel = supabase
+      .channel(`orders-user-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          setOrders(prev =>
+            prev.map(o => o.id === payload.new.id ? { ...o, ...payload.new } as Order : o)
+          )
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [user])
 
   if (isAuthLoading || (isLoading && user)) {
@@ -162,9 +179,17 @@ export default function OrdersPage() {
         <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8">
 
           {/* Page header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-heading font-black text-white">طلباتي 📦</h1>
-            <p className="text-sm text-gray-500 mt-1">تابع كل طلباتك وحالتها هنا</p>
+          <div className="mb-6 flex items-center gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-heading font-black text-white">طلباتي 📦</h1>
+                <span className="flex items-center gap-1 text-emerald-400 text-xs font-bold bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  مباشر
+                </span>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">تابع كل طلباتك وحالتها هنا — تتحدث تلقائياً</p>
+            </div>
           </div>
 
           {/* Orders list */}
