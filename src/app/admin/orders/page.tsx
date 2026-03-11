@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { fetchAdminOrders, fetchOrderDetails, updateOrderStatus } from '@/services/adminService';
-import { ShoppingCart, ChevronDown, X, Package } from 'lucide-react';
+import { ShoppingCart, ChevronDown, X, Package, Download, Filter } from 'lucide-react';
 import Image from 'next/image';
 
 const STATUSES = [
@@ -16,12 +16,49 @@ function statusMeta(val: string) {
     return STATUSES.find(s => s.value === val) || { label: val, color: 'text-gray-400 bg-white/5 border-white/10' };
 }
 
+function exportToCSV(orders: any[], statusFilter: string) {
+    const filtered = statusFilter === 'all' ? orders : orders.filter(o => o.status === statusFilter);
+    const statusLabel = statusFilter === 'all' ? 'الكل' : (STATUSES.find(s => s.value === statusFilter)?.label || statusFilter);
+
+    const headers = ['رقم الطلب', 'اسم العميل', 'البريد الإلكتروني', 'التليفون', 'المدينة', 'المنطقة', 'العنوان', 'الإجمالي (ج.م)', 'الحالة', 'تاريخ الطلب'];
+
+    const rows = filtered.map(order => [
+        order.id,
+        order.users?.full_name || '—',
+        order.users?.email || '—',
+        order.shipping_address?.phone || order.users?.phone || '—',
+        order.shipping_address?.city || '—',
+        order.shipping_address?.area || '—',
+        order.shipping_address?.street || order.shipping_address?.address || '—',
+        order.total_amount || 0,
+        statusMeta(order.status).label,
+        new Date(order.created_at).toLocaleString('ar-EG'),
+    ]);
+
+    const csvContent = [headers, ...rows]
+        .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+    // Add BOM for Arabic characters in Excel
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `orders_${statusFilter}_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
 export default function AdminOrdersPage() {
     const [orders, setOrders] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
     const [orderItems, setOrderItems] = useState<any[]>([]);
     const [loadingDetail, setLoadingDetail] = useState(false);
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
     const load = async () => {
         setIsLoading(true);
@@ -42,18 +79,66 @@ export default function AdminOrdersPage() {
 
     const handleStatusChange = async (orderId: string, newStatus: string) => {
         await updateOrderStatus(orderId, newStatus);
-        // Optimistic update
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
         if (selectedOrder?.id === orderId) {
             setSelectedOrder((prev: any) => ({ ...prev, status: newStatus }));
         }
     };
 
+    const displayedOrders = filterStatus === 'all' ? orders : orders.filter(o => o.status === filterStatus);
+
     return (
         <div className="space-y-5">
-            <div>
-                <h1 className="text-2xl font-heading font-black text-white">الطلبات</h1>
-                <p className="text-sm text-gray-400 mt-0.5">{orders.length} طلب إجمالي</p>
+            {/* Header */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h1 className="text-2xl font-heading font-black text-white">الطلبات</h1>
+                    <p className="text-sm text-gray-400 mt-0.5">{displayedOrders.length} طلب {filterStatus !== 'all' ? `(${statusMeta(filterStatus).label})` : 'إجمالي'}</p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                    {/* Status Filter */}
+                    <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
+                        <button
+                            onClick={() => setFilterStatus('all')}
+                            className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${filterStatus === 'all' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}
+                        >الكل</button>
+                        {STATUSES.map(s => (
+                            <button
+                                key={s.value}
+                                onClick={() => setFilterStatus(s.value)}
+                                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${filterStatus === s.value ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}
+                            >{s.label}</button>
+                        ))}
+                    </div>
+
+                    {/* Export Button */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsExportMenuOpen(v => !v)}
+                            className="flex items-center gap-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-4 py-2 rounded-xl text-sm font-bold hover:bg-emerald-500/20 transition-all"
+                        >
+                            <Download className="w-4 h-4" />
+                            تصدير CSV
+                            <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                        {isExportMenuOpen && (
+                            <div className="absolute left-0 top-full mt-1 bg-[#0d1117] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-20 min-w-[180px]">
+                                <button
+                                    onClick={() => { exportToCSV(orders, 'all'); setIsExportMenuOpen(false); }}
+                                    className="w-full text-right px-4 py-2.5 text-sm text-white hover:bg-white/5 transition-colors font-bold"
+                                >📦 كل الطلبات</button>
+                                {STATUSES.map(s => (
+                                    <button
+                                        key={s.value}
+                                        onClick={() => { exportToCSV(orders, s.value); setIsExportMenuOpen(false); }}
+                                        className="w-full text-right px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 transition-colors"
+                                    >{s.label}</button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
 
             <div className="bg-[#0a0e14] border border-white/5 rounded-2xl overflow-hidden">
@@ -73,12 +158,12 @@ export default function AdminOrdersPage() {
                         <tbody className="divide-y divide-white/5">
                             {isLoading ? (
                                 [...Array(5)].map((_, i) => (
-                                    <tr key={i}><td colSpan={6} className="px-4 py-3"><div className="h-10 bg-white/5 rounded-lg animate-pulse" /></td></tr>
+                                    <tr key={i}><td colSpan={7} className="px-4 py-3"><div className="h-10 bg-white/5 rounded-lg animate-pulse" /></td></tr>
                                 ))
-                            ) : orders.length === 0 ? (
-                                <tr><td colSpan={7} className="text-center text-gray-500 py-12">لا توجد طلبات بعد</td></tr>
+                            ) : displayedOrders.length === 0 ? (
+                                <tr><td colSpan={7} className="text-center text-gray-500 py-12">لا توجد طلبات في هذا التصنيف</td></tr>
                             ) : (
-                                orders.map((order) => {
+                                displayedOrders.map((order) => {
                                     const sm = statusMeta(order.status);
                                     return (
                                         <tr key={order.id} className="hover:bg-white/3 transition-colors">
@@ -98,7 +183,6 @@ export default function AdminOrdersPage() {
                                                 {(order.total_amount || 0).toLocaleString()} ج.م
                                             </td>
                                             <td className="px-4 py-3">
-                                                {/* Status dropdown */}
                                                 <div className="relative inline-block">
                                                     <select
                                                         value={order.status}
@@ -150,6 +234,13 @@ export default function AdminOrdersPage() {
                                 <p className="font-bold text-white">{selectedOrder.users?.full_name || 'غير معروف'}</p>
                                 <p className="text-xs text-gray-300 font-mono">{selectedOrder.shipping_address?.phone || selectedOrder.users?.phone || 'لا يوجد رقم'}</p>
                                 <p className="text-xs text-gray-400">{selectedOrder.users?.email}</p>
+                                {selectedOrder.shipping_address?.city && (
+                                    <p className="text-xs text-gray-400">
+                                        {selectedOrder.shipping_address.city}
+                                        {selectedOrder.shipping_address.area ? ` — ${selectedOrder.shipping_address.area}` : ''}
+                                        {selectedOrder.shipping_address.street ? ` — ${selectedOrder.shipping_address.street}` : ''}
+                                    </p>
+                                )}
                             </div>
 
                             {/* Status */}
