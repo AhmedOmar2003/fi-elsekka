@@ -99,15 +99,25 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-    const { user, isLoading } = useAuth();
+    const { user, profile, isLoading } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    
+    const isLoginPage = pathname === '/admin/login';
 
     useEffect(() => {
-        if (!isLoading && !user) {
-            router.replace('/');
+        if (!isLoading) {
+            // Check if not logged in or doesn't have admin role
+            const isUnauthorized = !user || profile?.role !== 'admin';
+            
+            if (isUnauthorized && !isLoginPage) {
+                router.replace('/admin/login');
+            } else if (!isUnauthorized && isLoginPage) {
+                router.replace('/admin');
+            }
         }
-    }, [user, isLoading, router]);
+    }, [user, profile, isLoading, router, isLoginPage]);
 
     if (isLoading) {
         return (
@@ -116,8 +126,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
         );
     }
+    
+    if (isLoginPage) {
+        return <div className="min-h-screen bg-[#05070a]">{children}</div>;
+    }
 
-    if (!user) return null;
+    if (!user || profile?.role !== 'admin') return null;
 
     return (
         <div className="min-h-screen bg-[#05070a] flex">
