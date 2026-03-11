@@ -105,18 +105,12 @@ export function Header() {
 
         {/* ── Logo ──────────────────────────────────────────────────────────── */}
         <Link href="/" className="flex items-center gap-2 shrink-0 group">
-          {/* Icon badge */}
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-white shadow-lg shadow-primary/30 group-hover:shadow-primary/50 transition-shadow">
             <MotorcycleIcon className="w-7 h-7" />
           </div>
-          {/* Brand name — hidden on very small screens, shown sm+ */}
-          <div className="hidden sm:flex flex-col leading-none">
-            <span className="font-heading font-black text-lg tracking-tight text-foreground leading-tight">
-              في السكة
-            </span>
-            <span className="text-[10px] text-primary font-medium tracking-wide opacity-80">
-              بالسكة الصح
-            </span>
+          <div className="hidden sm:flex items-baseline gap-0 leading-none" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
+            <span className="font-black text-2xl text-white">فِي&nbsp;</span>
+            <span className="font-black text-2xl text-primary" style={{ textShadow: '0 1px 8px rgba(16,185,129,0.5)' }}>السِّكَّةِ</span>
           </div>
         </Link>
 
@@ -381,3 +375,4 @@ export function Header() {
     </header>
   )
 }
+

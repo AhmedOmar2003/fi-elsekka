@@ -26,14 +26,12 @@ export function Footer() {
           
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="mb-4 flex items-center gap-2 group">
-              {/* Motorcycle icon badge */}
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20 group-hover:shadow-primary/40 transition-shadow">
                 <MotorcycleIcon className="w-6 h-6" />
               </div>
-              {/* Brand name + tagline */}
-              <div className="flex flex-col leading-none">
-                <span className="font-heading text-xl font-black tracking-tight text-foreground">في السكة</span>
-                <span className="text-[10px] text-primary font-medium tracking-wide opacity-80">بالسكة الصح</span>
+              <div className="flex items-baseline gap-0 leading-none" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
+                <span className="font-black text-2xl text-white">فِي&nbsp;</span>
+                <span className="font-black text-2xl text-primary" style={{ textShadow: '0 1px 8px rgba(16,185,129,0.5)' }}>السِّكَّةِ</span>
               </div>
             </Link>
             <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
