@@ -7,7 +7,7 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { signUp } from "@/services/authService"
+import { signUp, signIn } from "@/services/authService"
 import { UserPlus, AlertCircle, CheckCircle } from "lucide-react"
 
 export default function RegisterPage() {
@@ -60,10 +60,13 @@ function RegisterContent() {
     setSuccess(true)
     setIsLoading(false)
 
-    // Automatically navigate after short delay as auto-login on signup is often true depending on Supabase settings
+    // Explicitly sign in after signUp to create an active session.
+    // This ensures AuthContext fires SIGNED_IN and the header shows the user's name.
+    await signIn(email, password)
+
     setTimeout(() => {
-      router.push(redirectParams || "/account")
-    }, 2000)
+      router.push(redirectParams || "/")
+    }, 1500)
   }
 
   return (
@@ -84,7 +87,7 @@ function RegisterContent() {
             <CheckCircle className="w-8 h-8 text-emerald-500" />
           </div>
           <h2 className="text-xl font-bold text-foreground">تم إنشاء الحساب بنجاح!</h2>
-          <p className="text-gray-400 text-sm">جاري تحويلك للصفحة الرئيسية...</p>
+          <p className="text-gray-400 text-sm">جاري تحويلك للمتجر لتبدأ التسوق...</p>
         </div>
       ) : (
         <form onSubmit={handleRegister} className="space-y-5">
