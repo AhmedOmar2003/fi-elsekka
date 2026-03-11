@@ -32,7 +32,7 @@ export function HomeCategoriesList() {
             {sortedCategories.map((cat) => {
                 const design = getCategoryDesign(cat.name);
                 return (
-                    <div key={cat.id} className="snap-start shrink-0 w-[28vw] min-w-[100px] sm:w-auto sm:min-w-0">
+                    <div key={cat.id} className="snap-start shrink-0 w-[25vw] min-w-[82px] sm:w-auto sm:min-w-0">
                         <CategoryCard
                             slug={cat.id}
                             name={cat.name}
