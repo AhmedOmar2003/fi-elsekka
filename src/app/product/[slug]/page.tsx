@@ -421,9 +421,17 @@ export default function ProductPage() {
           <div className="flex items-center justify-between mb-3 px-1">
             <div className="flex flex-col">
               <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">سعر الوحدة</span>
-              <span className="font-heading font-black text-primary text-2xl leading-none">
-                {product.price} <span className="text-sm font-bold">ج.م</span>
-              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="font-heading font-black text-primary text-2xl leading-none">
+                  {appliedDiscountPrice !== null ? appliedDiscountPrice : product.price} <span className="text-sm font-bold">ج.م</span>
+                </span>
+                {appliedDiscountPrice !== null && (
+                  <span className="text-sm text-gray-500 line-through">{product.price} ج.م</span>
+                )}
+              </div>
+              {appliedDiscountLabel && (
+                <span className="text-[10px] text-primary font-bold mt-0.5">✅ {appliedDiscountLabel}</span>
+              )}
             </div>
             <div className="flex items-center rounded-2xl border border-surface-hover bg-surface h-11 shadow-inner">
               <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 h-full text-gray-400 hover:text-white hover:bg-surface-hover rounded-e-2xl active:scale-90 transition-all">
