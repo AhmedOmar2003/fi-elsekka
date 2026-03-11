@@ -53,12 +53,12 @@ function WelcomeContent() {
 
     return (
         <div
-            className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center min-h-screen bg-[#050709] overflow-hidden transition-opacity duration-700 ${visible ? 'opacity-100' : 'opacity-0'}`}
+            className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center min-h-[100dvh] bg-[#050709] overflow-hidden transition-opacity duration-700 ${visible ? 'opacity-100' : 'opacity-0'}`}
         >
             {/* Animated background glow blobs */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-emerald-500/5 blur-[120px] animate-pulse" />
-                <div className="absolute bottom-1/4 left-1/4 w-[300px] h-[300px] rounded-full bg-emerald-400/8 blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
+                <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[150vw] sm:w-[600px] h-[150vw] sm:h-[600px] rounded-full bg-emerald-500/5 blur-[80px] sm:blur-[120px] animate-pulse" />
+                <div className="absolute bottom-1/4 left-1/4 w-[100vw] sm:w-[300px] h-[100vw] sm:h-[300px] rounded-full bg-emerald-400/8 blur-[60px] sm:blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
                 {/* Subtle grid */}
                 <div
                     className="absolute inset-0 opacity-[0.03]"

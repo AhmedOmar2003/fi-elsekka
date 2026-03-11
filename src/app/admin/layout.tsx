@@ -142,7 +142,35 @@ function NotificationBell() {
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
+    const playNotificationSound = () => {
+        try {
+            const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            
+            // Soft pleasant 'ding' sound
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, ctx.currentTime); // A5 note
+            osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0, ctx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+            
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.5);
+        } catch (e) {
+            // Ignore: might fail if user hasn't interacted with page yet (browser policy)
+        }
+    };
+
     const addNotification = useCallback((n: Omit<Notification, 'id' | 'time' | 'read'>) => {
+        playNotificationSound();
         const newNotif: Notification = {
             ...n,
             id: Math.random().toString(36).substr(2, 9),
