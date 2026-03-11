@@ -1,20 +1,15 @@
 import type { Metadata } from "next";
-import { Tajawal, Cairo } from "next/font/google";
+import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Providers } from "@/components/providers";
 import { Toaster } from "sonner";
 import "./globals.css";
 
-const tajawal = Tajawal({
+const ibmPlex = IBM_Plex_Sans_Arabic({
   subsets: ["arabic"],
-  weight: ["400", "500"],
-  variable: "--font-tajawal",
-});
-
-const cairo = Cairo({
-  subsets: ["arabic"],
-  weight: ["600", "700"],
-  variable: "--font-cairo",
+  weight: ["100", "200", "300", "400", "500", "600", "700"],
+  variable: "--font-ibm",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -30,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className="dark">
       <body
-        className={`${tajawal.variable} ${cairo.variable} font-sans antialiased bg-gray-950 text-gray-100 min-h-screen flex flex-col`}
+        className={`${ibmPlex.variable} font-sans antialiased bg-gray-950 text-gray-100 min-h-screen flex flex-col`}
       >
         <Providers>
           {children}
