@@ -113,8 +113,8 @@ export async function deleteProduct(id: string) {
 
 // ─── Image Upload ─────────────────────────────────────────────────────────────
 export async function uploadProductImage(file: File): Promise<string | null> {
-    const ext = file.name.split('.').pop();
-    const path = `products/${Date.now()}.${ext}`;
+    const ext = file.name.split('.').pop() || 'png';
+    const path = `products/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`;
     const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true });
     if (error) { logError('uploadProductImage', error); return null; }
     const { data } = supabase.storage.from('product-images').getPublicUrl(path);

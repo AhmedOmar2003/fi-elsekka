@@ -95,11 +95,10 @@ export default function ProductPage() {
         "توصيل سريع",
         "دفع عند الاستلام",
       ],
-      images: dbProduct.specifications?.images || [
-        dbProduct.image_url || dbProduct.specifications?.image_url || "https://th.bing.com/th/id/OIG3.C_W_T_P_j_B_k_O_d_J_?pid=ImgGn",
-        "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn",
-        "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn",
-      ],
+      images: [
+        dbProduct.image_url,
+        ...(dbProduct.images || [])
+      ].filter(Boolean) as string[],
       category_name: dbProduct.categories?.name || "منتجات"
     };
   })() : {

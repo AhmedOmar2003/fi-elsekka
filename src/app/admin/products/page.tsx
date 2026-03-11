@@ -17,6 +17,7 @@ type Product = {
     discount_percentage: number;
     category_id: string | null;
     image_url: string | null;
+    images?: string[];
     description: string | null;
     is_best_seller?: boolean;
     show_in_offers?: boolean;
@@ -29,6 +30,9 @@ type Category = { id: string; name: string };
 const EMPTY_FORM = {
     name: '', description: '', price: '', stock_quantity: '',
     discount_percentage: '', category_id: '', image_url: '',
+    images: ['', '', '', ''],
+    image_file: null as File | null,
+    images_files: [null, null, null, null] as (File | null)[],
     is_best_seller: false,
     show_in_offers: false,
     specs: [] as { id?: string, label: string, description: string }[]
@@ -64,12 +68,21 @@ export default function AdminProductsPage() {
 
     const openEdit = (p: Product) => {
         setEditingId(p.id);
+        const pImages = p.images || [];
         setForm({
             name: p.name, description: p.description || '',
             price: String(p.price), stock_quantity: String(p.stock_quantity || 0),
             discount_percentage: String(p.discount_percentage || 0),
             category_id: p.category_id || '',
             image_url: p.image_url || '',
+            images: [
+                pImages[0] || '',
+                pImages[1] || '',
+                pImages[2] || '',
+                pImages[3] || ''
+            ],
+            image_file: null,
+            images_files: [null, null, null, null],
             is_best_seller: !!p.is_best_seller,
             show_in_offers: !!p.show_in_offers,
             specs: p.product_specifications || [],
@@ -77,13 +90,26 @@ export default function AdminProductsPage() {
         setIsModalOpen(true);
     };
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, index?: number) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        setIsUploading(true);
-        const url = await uploadProductImage(file);
-        if (url) setForm(prev => ({ ...prev, image_url: url }));
-        setIsUploading(false);
+        
+        const previewUrl = URL.createObjectURL(file);
+
+        if (index === undefined) {
+            setForm(prev => ({ ...prev, image_url: previewUrl, image_file: file }));
+        } else {
+            setForm(prev => {
+                const newImages = [...prev.images];
+                newImages[index] = previewUrl;
+                const newFiles = [...prev.images_files];
+                newFiles[index] = file;
+                return { ...prev, images: newImages, images_files: newFiles };
+            });
+        }
+        
+        // Reset file input
+        e.target.value = '';
     };
 
     const [saveError, setSaveError] = useState<string | null>(null);
@@ -94,20 +120,49 @@ export default function AdminProductsPage() {
         setSaveError(null);
         setSaveSuccess(false);
         setIsSaving(true);
-
-        const payload: Record<string, unknown> = {
-            name: form.name.trim(),
-            description: form.description.trim() || null,
-            price: parseFloat(form.price),
-            stock_quantity: parseInt(form.stock_quantity) || 0,
-            discount_percentage: parseFloat(form.discount_percentage) || 0,
-            category_id: form.category_id || null,
-            image_url: form.image_url || null,
-            is_best_seller: form.is_best_seller,
-            show_in_offers: form.show_in_offers,
-        };
+        const loadingToast = toast.loading('جاري حفظ المنتج ورفع الصور...');
 
         try {
+            // Upload main image and extra images concurrently
+            let finalImageUrl = form.image_url;
+            const finalImages = [...form.images];
+
+            const uploadPromises: Promise<void>[] = [];
+
+            if (form.image_file) {
+                uploadPromises.push(
+                    uploadProductImage(form.image_file).then(url => {
+                        if (url) finalImageUrl = url;
+                    })
+                );
+            }
+
+            form.images_files.forEach((file, index) => {
+                if (file) {
+                    uploadPromises.push(
+                        uploadProductImage(file).then(url => {
+                            if (url) finalImages[index] = url;
+                        })
+                    );
+                }
+            });
+
+            if (uploadPromises.length > 0) {
+                await Promise.all(uploadPromises);
+            }
+
+            const payload: Record<string, unknown> = {
+                name: form.name.trim(),
+                description: form.description.trim() || null,
+                price: parseFloat(form.price),
+                stock_quantity: parseInt(form.stock_quantity) || 0,
+                discount_percentage: parseFloat(form.discount_percentage) || 0,
+                category_id: form.category_id || null,
+                image_url: finalImageUrl && !finalImageUrl.startsWith('blob:') ? finalImageUrl : null,
+                images: finalImages.filter(url => url && url.trim() !== '' && !url.startsWith('blob:')),
+                is_best_seller: form.is_best_seller,
+                show_in_offers: form.show_in_offers,
+            };
             let result;
             if (editingId) {
                 result = await updateProduct(editingId, payload);
@@ -120,13 +175,13 @@ export default function AdminProductsPage() {
             if (result?.error) {
                 const msg = (result.error as any).message || JSON.stringify(result.error);
                 setSaveError(`فشل الحفظ: ${msg}`);
-                toast.error(`فشل الحفظ: ${msg}`);
+                toast.error(`فشل الحفظ: ${msg}`, { id: loadingToast });
                 return;
             }
 
             // ✅ Success
             setSaveSuccess(true);
-            toast.success(editingId ? 'تم تعديل المنتج بنجاح ✅' : 'تم إضافة المنتج بنجاح ✅');
+            toast.success(editingId ? 'تم تعديل المنتج بنجاح ✅' : 'تم إضافة المنتج بنجاح ✅', { id: loadingToast });
             setTimeout(() => {
                 setIsModalOpen(false);
                 setSaveSuccess(false);
@@ -136,10 +191,13 @@ export default function AdminProductsPage() {
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'خطأ غير متوقع';
             setSaveError(`فشل الحفظ: ${msg}`);
-            toast.error(`فشل الحفظ: ${msg}`);
+            toast.error(`فشل الحفظ: ${msg}`, { id: loadingToast });
         } finally {
             // ✅ ALWAYS reset the loading state — no more infinite spinner
             setIsSaving(false);
+            if (document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+            }
         }
     };
 
@@ -291,31 +349,76 @@ export default function AdminProductsPage() {
                             </button>
                         </div>
                         <div className="p-5 space-y-4">
-                            {/* Image */}
+                            {/* Images */}
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-2">صورة المنتج</label>
-                                <div
-                                    onClick={() => fileInput.current?.click()}
-                                    className="w-full h-32 rounded-xl border-2 border-dashed border-white/10 hover:border-primary/40 flex items-center justify-center cursor-pointer transition-colors relative overflow-hidden"
-                                >
-                                    {form.image_url ? (
-                                        <Image src={form.image_url} alt="Preview" fill className="object-contain p-2" />
-                                    ) : isUploading ? (
-                                        <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                                    ) : (
-                                        <div className="flex flex-col items-center gap-1.5 text-gray-500">
-                                            <Upload className="w-5 h-5" />
-                                            <span className="text-xs">اضغط لرفع صورة</span>
+                                <label className="block text-sm font-bold text-gray-300 mb-3 border-b border-white/10 pb-2">صور المنتج (صورة أساسية + 4 إضافية)</label>
+                                <div className="space-y-4">
+                                    {/* Main Image */}
+                                    <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+                                        <label className="block text-xs font-bold text-gray-400 mb-2">الصورة الأساسية (الغلاف)</label>
+                                        <div
+                                            onClick={() => fileInput.current?.click()}
+                                            className="w-full h-32 rounded-xl border-2 border-dashed border-white/10 hover:border-primary/40 flex items-center justify-center cursor-pointer transition-colors relative overflow-hidden"
+                                        >
+                                            {form.image_url ? (
+                                                <Image src={form.image_url} alt="Preview Main" fill className="object-contain p-2" />
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-1.5 text-gray-500">
+                                                    <Upload className="w-5 h-5" />
+                                                    <span className="text-xs">اضغط لرفع الغلاف</span>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
+                                        <input type="file" ref={fileInput} accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e)} />
+                                        <input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
+                                            placeholder="أو أدخل رابط الصورة..."
+                                            className="mt-2 w-full bg-[#0a0e14] border border-white/10 rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-primary/50"
+                                        />
+                                    </div>
+
+                                    {/* Extra Images Grid */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {[0, 1, 2, 3].map(index => {
+                                            const imgStr = form.images[index];
+                                            let isValidUrl = false;
+                                            try {
+                                                if (imgStr) {
+                                                    new URL(imgStr);
+                                                    isValidUrl = true;
+                                                }
+                                            } catch (e) {
+                                                isValidUrl = imgStr.startsWith('blob:') || imgStr.startsWith('/');
+                                            }
+
+                                            return (
+                                                <div key={index} className="bg-white/5 p-2.5 rounded-2xl border border-white/5">
+                                                    <label className="block text-[10px] font-bold text-gray-400 mb-1.5">صورة إضافية {index + 1}</label>
+                                                    <label className="w-full h-20 rounded-lg border-2 border-dashed border-white/10 hover:border-primary/40 flex items-center justify-center cursor-pointer transition-colors relative overflow-hidden block">
+                                                        {isValidUrl ? (
+                                                            <Image src={imgStr} alt={`Preview Extra ${index + 1}`} fill className="object-contain p-1" />
+                                                        ) : imgStr ? (
+                                                            <img src={imgStr} alt={`Preview Extra ${index + 1}`} className="object-contain p-1 w-full h-full" />
+                                                        ) : (
+                                                            <Upload className="w-4 h-4 text-gray-500" />
+                                                        )}
+                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, index)} />
+                                                </label>
+                                                <input value={form.images[index]} onChange={e => {
+                                                    const val = e.target.value;
+                                                    setForm(f => {
+                                                        const newImages = [...f.images];
+                                                        newImages[index] = val;
+                                                        return { ...f, images: newImages };
+                                                    });
+                                                }}
+                                                    placeholder="أو رابط الصورة..."
+                                                    className="mt-1.5 w-full bg-[#0a0e14] border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-gray-300 focus:outline-none focus:border-primary/50"
+                                                />
+                                            </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                                <input type="file" ref={fileInput} accept="image/*" className="hidden" onChange={handleImageUpload} />
-                                {form.image_url && (
-                                    <input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
-                                        placeholder="أو أدخل رابط الصورة..."
-                                        className="mt-2 w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-primary/50"
-                                    />
-                                )}
                             </div>
 
                             {[

@@ -18,6 +18,7 @@ export interface Product {
     stock_quantity?: number;
     is_best_seller?: boolean;
     show_in_offers?: boolean;
+    images?: string[];
     categories?: Pick<Category, 'name'>;
     product_specifications?: { id: string; label: string; description: string }[];
     specs?: { label: string; description: string }[];
