@@ -108,12 +108,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     useEffect(() => {
         if (!isLoading) {
-            // Check if not logged in or doesn't have admin role
-            const isUnauthorized = !user || profile?.role !== 'admin';
-            
-            if (isUnauthorized && !isLoginPage) {
+            if (!user && !isLoginPage) {
                 router.replace('/admin/login');
-            } else if (!isUnauthorized && isLoginPage) {
+            } else if (user && isLoginPage) {
                 router.replace('/admin');
             }
         }
@@ -131,7 +128,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return <div className="min-h-screen bg-[#05070a]">{children}</div>;
     }
 
-    if (!user || profile?.role !== 'admin') return null;
+    if (!user) return null;
+
+    if (profile && profile.role !== 'admin') {
+        return (
+            <div className="min-h-screen bg-[#05070a] flex flex-col items-center justify-center p-4">
+                <div className="w-16 h-16 rounded-full bg-rose-500/20 flex items-center justify-center mb-4">
+                    <span className="text-rose-500 text-2xl">🔒</span>
+                </div>
+                <h1 className="text-2xl font-black text-white mb-2">غير مصرح لك بالدخول</h1>
+                <p className="text-gray-400 text-sm mb-6 text-center max-w-sm">
+                    هذا الحساب لا يمتلك صلاحيات إدارة النظام. تأكد من تشغيل كود SQL لتحويل هذا الحساب إلى مدير.
+                </p>
+                <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-xs text-left w-full max-w-md overflow-x-auto" dir="ltr">
+                    <pre className="text-gray-300 font-mono">
+{`UPDATE public.users 
+SET role = 'admin' 
+WHERE email = '${user.email}';`}
+                    </pre>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#05070a] flex">

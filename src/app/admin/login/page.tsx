@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signIn } from '@/services/authService';
+import { signIn, signOut } from '@/services/authService';
 import { Loader2, Lock, Mail, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -11,6 +11,11 @@ export default function AdminLogin() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+
+    // Force clear any existing user session when entering the admin login page
+    useEffect(() => {
+        signOut();
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
