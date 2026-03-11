@@ -159,11 +159,11 @@ function NotificationBell() {
             osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
             
             gainNode.gain.setValueAtTime(0, ctx.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+            gainNode.gain.linearRampToValueAtTime(1.0, ctx.currentTime + 0.05); // Increased volume from 0.3 to 1.0
+            gainNode.gain.exponentialRampToValueAtTime(0.05, ctx.currentTime + 0.5); // Slower decay
             
             osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.5);
+            osc.stop(ctx.currentTime + 0.6);
         } catch (e) {
             // Ignore: might fail if user hasn't interacted with page yet (browser policy)
         }
