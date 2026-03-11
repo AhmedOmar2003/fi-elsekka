@@ -12,9 +12,9 @@ import { Label } from "@/components/ui/label"
 import { useAuth } from "@/contexts/AuthContext"
 import { fetchUserOrders, updateOrderStatus, updateUserProfile, Order } from "@/services/ordersService"
 import { fetchUserDeliveryAddresses, saveDeliveryAddress, updateDeliveryAddress, deleteDeliveryAddress, setDefaultDeliveryAddress, DeliveryInfo } from "@/services/deliveryService"
-import { signOut, updateAuthEmail, updateAuthPassword } from "@/services/authService"
+import { signOut, updateAuthEmail, updateAuthPassword, uploadAvatar } from "@/services/authService"
 import {
-    User, Package, Settings, LogOut, Camera,
+    User, Package, Settings, LogOut, Camera, Loader2,
     MapPin, AlertCircle, CheckCircle, Clock, Truck, XCircle, ShoppingBag, Plus, Trash2, Star
 } from "lucide-react"
 import { LogoutModal } from "@/components/ui/logout-modal"
@@ -32,7 +32,10 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
 
 export default function AccountPage() {
     const router = useRouter()
-    const { user, profile, isLoading } = useAuth()
+    const { user, profile, isLoading, refreshProfile } = useAuth()
+
+    const fileInputRef = React.useRef<HTMLInputElement>(null)
+    const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false)
 
     const [activeTab, setActiveTab] = React.useState<Tab>("orders")
     const [orders, setOrders] = React.useState<Order[]>([])
@@ -105,6 +108,40 @@ export default function AccountPage() {
         setTimeout(() => {
             router.push('/')
         }, 500)
+    }
+
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !user) return
+
+        setIsUploadingAvatar(true)
+        const toastId = toast.loading("جاري رفع الصورة...")
+
+        try {
+            const { publicUrl, error } = await uploadAvatar(user.id, file)
+            
+            if (error || !publicUrl) {
+                console.error("Upload error:", error)
+                toast.error("فشل رفع الصورة", { id: toastId })
+                return
+            }
+
+            const { error: profileError } = await updateUserProfile(user.id, { profile_picture: publicUrl })
+            if (profileError) {
+                toast.error("حدث خطأ أثناء حفظ الصورة", { id: toastId })
+                return
+            }
+
+            await refreshProfile()
+            toast.success("تم تحديث صورة الحساب بنجاح", { id: toastId })
+        } catch (err) {
+            toast.error("حدث خطأ غير متوقع", { id: toastId })
+        } finally {
+            setIsUploadingAvatar(false)
+            if (fileInputRef.current) {
+                fileInputRef.current.value = ""
+            }
+        }
     }
 
     const handleCancelOrder = async (orderId: string) => {
@@ -210,12 +247,28 @@ export default function AccountPage() {
                     {/* Profile Header */}
                     <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5 mb-10 bg-surface border border-surface-hover rounded-3xl p-6 md:p-8 shadow-premium">
                         <div className="relative shrink-0">
-                            <div className="w-20 h-20 rounded-2xl bg-primary/20 flex items-center justify-center text-primary text-3xl font-black border-2 border-primary/30 select-none">
+                            <div className="w-20 h-20 rounded-2xl bg-primary/20 text-primary text-3xl font-black border-2 border-primary/30 flex items-center justify-center select-none overflow-hidden isolate relative">
+                                {isUploadingAvatar && (
+                                    <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center">
+                                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                    </div>
+                                )}
                                 {profile?.profile_picture ? (
-                                    <img src={profile.profile_picture} className="w-full h-full object-cover rounded-2xl" alt="Profile" />
+                                    <img src={profile.profile_picture} className="w-full h-full object-cover rounded-2xl z-0" alt="Profile" />
                                 ) : initials}
                             </div>
-                            <button className="absolute -bottom-2 -right-2 w-8 h-8 bg-surface border border-surface-hover rounded-xl flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/40 transition-colors">
+                            <input 
+                                type="file" 
+                                hidden 
+                                ref={fileInputRef} 
+                                accept="image/*" 
+                                onChange={handleAvatarChange} 
+                            />
+                            <button 
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploadingAvatar}
+                                className="absolute -bottom-2 -right-2 w-8 h-8 bg-surface border border-surface-hover rounded-xl flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/40 transition-colors disabled:opacity-50"
+                            >
                                 <Camera className="w-4 h-4" />
                             </button>
                         </div>

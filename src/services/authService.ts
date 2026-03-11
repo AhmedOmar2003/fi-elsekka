@@ -73,3 +73,30 @@ export const updateAuthPassword = async (newPassword: string) => {
     const { data, error } = await supabase.auth.updateUser({ password: newPassword });
     return { data, error };
 };
+
+export const uploadAvatar = async (userId: string, file: File) => {
+    try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${userId}-${Date.now()}.${fileExt}`;
+        const filePath = `avatars/${fileName}`;
+
+        // Upload the file to the 'avatars' bucket
+        const { error: uploadError, data } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, file, { upsert: true });
+
+        if (uploadError) {
+            console.error('Avatar upload error:', uploadError);
+            return { publicUrl: null, error: uploadError };
+        }
+
+        // Get the public URL
+        const { data: publicUrlData } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(filePath);
+
+        return { publicUrl: publicUrlData.publicUrl, error: null };
+    } catch (e) {
+        return { publicUrl: null, error: e };
+    }
+};
