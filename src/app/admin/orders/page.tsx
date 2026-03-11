@@ -83,6 +83,8 @@ export default function AdminOrdersPage() {
         if (selectedOrder?.id === orderId) {
             setSelectedOrder((prev: any) => ({ ...prev, status: newStatus }));
         }
+        // Reset filter to 'all' so the updated order doesn't disappear from view
+        setFilterStatus('all');
     };
 
     const displayedOrders = filterStatus === 'all' ? orders : orders.filter(o => o.status === filterStatus);
