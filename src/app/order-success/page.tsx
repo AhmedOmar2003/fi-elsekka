@@ -63,12 +63,10 @@ function Particle({ style }: { style: React.CSSProperties }) {
 
 export default function OrderSuccessPage() {
   const [show, setShow] = useState(false)
-  const [bikePos, setBikePos] = useState(false)
 
   useEffect(() => {
     const t1 = setTimeout(() => setShow(true), 200)
-    const t2 = setTimeout(() => setBikePos(true), 600)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
+    return () => { clearTimeout(t1) }
   }, [])
 
   return (
@@ -105,15 +103,23 @@ export default function OrderSuccessPage() {
               {[...Array(8)].map((_, i) => (
                 <div
                   key={i}
-                  className="h-0.5 w-6 bg-primary/20 animate-pulse"
-                  style={{ animationDelay: `${i * 0.1}s` }}
+                  className="h-0.5 w-6 bg-primary/20"
+                  style={{ animation: `pulse 1s ease-in-out infinite`, animationDelay: `${i * 0.1}s` }}
                 />
               ))}
             </div>
 
-            <div
-              className={`transition-all duration-1000 ${bikePos ? 'translate-x-4' : '-translate-x-24'}`}
-            >
+            {/* Motorcycle — continuous back and forth */}
+            <style>{`
+              @keyframes bikeRide {
+                0%   { transform: translateX(-60px) scaleX(1); }
+                48%  { transform: translateX(60px) scaleX(1); }
+                50%  { transform: translateX(60px) scaleX(-1); }
+                98%  { transform: translateX(-60px) scaleX(-1); }
+                100% { transform: translateX(-60px) scaleX(1); }
+              }
+            `}</style>
+            <div style={{ animation: 'bikeRide 2.8s ease-in-out infinite' }}>
               <MotorcycleIcon className="w-32 h-24 text-primary drop-shadow-lg" />
             </div>
           </div>
