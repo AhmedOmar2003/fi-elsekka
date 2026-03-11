@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { HeartCrack } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 
@@ -9,6 +10,12 @@ interface LogoutModalProps {
 }
 
 export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
@@ -20,9 +27,9 @@ export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
     }
   }, [isOpen])
 
-  if (!isOpen) return null
+  if (!isOpen || !mounted) return null
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
       {/* Backdrop */}
       <div 
@@ -65,6 +72,7 @@ export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
