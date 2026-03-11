@@ -181,12 +181,12 @@ export default function ProductPage() {
               </div>
 
               {/* Thumbnails */}
-              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0">
                 {product.images.map((img: string, idx: number) => (
                   <button
                     key={idx}
                     onClick={() => setActiveImage(idx)}
-                    className={`relative aspect-[4/3] w-24 sm:w-28 shrink-0 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${activeImage === idx
+                    className={`snap-start relative aspect-[4/3] w-[28vw] min-w-[80px] sm:w-28 shrink-0 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${activeImage === idx
                       ? "border-primary ring-2 ring-primary/20 shadow-md"
                       : "border-surface-hover hover:border-gray-500 scale-95 opacity-70 hover:opacity-100"
                       }`}
