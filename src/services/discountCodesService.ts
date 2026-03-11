@@ -6,13 +6,17 @@ export interface DiscountCode {
     discount_percentage: number | null;
     discount_amount: number | null;
     is_active: boolean;
+    max_uses: number | null;       // null = unlimited
+    used_count: number;
+    expires_at: string | null;     // ISO datetime string, null = no expiry
     created_at: string;
 }
 
 /**
- * Validates a discount code and returns the discount record if valid.
+ * Validates a discount code and returns the discount record if valid,
+ * also checking expiry and usage limits.
  */
-export const validateDiscountCode = async (code: string): Promise<DiscountCode | null> => {
+export const validateDiscountCode = async (code: string): Promise<{ discount: DiscountCode | null; error?: string }> => {
     const { data, error } = await supabase
         .from('discount_codes')
         .select('*')
@@ -20,8 +24,21 @@ export const validateDiscountCode = async (code: string): Promise<DiscountCode |
         .eq('is_active', true)
         .maybeSingle();
 
-    if (error || !data) return null;
-    return data as DiscountCode;
+    if (error || !data) return { discount: null, error: 'كود الخصم غير صحيح أو غير موجود.' };
+
+    const discount = data as DiscountCode;
+
+    // Check expiry
+    if (discount.expires_at && new Date(discount.expires_at) < new Date()) {
+        return { discount: null, error: 'انتهت صلاحية هذا الكود.' };
+    }
+
+    // Check usage limit
+    if (discount.max_uses !== null && discount.used_count >= discount.max_uses) {
+        return { discount: null, error: 'تم استنفاد استخدامات هذا الكود.' };
+    }
+
+    return { discount };
 };
 
 /**
@@ -60,8 +77,8 @@ export const fetchAllDiscountCodes = async (): Promise<DiscountCode[]> => {
     return data || [];
 };
 
-export const createDiscountCode = async (payload: Omit<DiscountCode, 'id' | 'created_at'>) => {
-    return supabase.from('discount_codes').insert([{ ...payload, code: payload.code.toUpperCase() }]).select().single();
+export const createDiscountCode = async (payload: Omit<DiscountCode, 'id' | 'created_at' | 'used_count'>) => {
+    return supabase.from('discount_codes').insert([{ ...payload, code: payload.code.toUpperCase(), used_count: 0 }]).select().single();
 };
 
 export const updateDiscountCode = async (id: number, payload: Partial<Omit<DiscountCode, 'id' | 'created_at'>>) => {

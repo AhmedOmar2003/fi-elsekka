@@ -23,7 +23,7 @@ export function DiscountCodeInput({ originalPrice, onDiscountApplied, onDiscount
             if (savedCode && originalPrice > 0) {
                 setCode(savedCode);
                 setStatus('loading');
-                const discount = await validateDiscountCode(savedCode);
+                const { discount, error } = await validateDiscountCode(savedCode);
                 
                 if (discount) {
                     const result = applyDiscount(originalPrice, discount);
@@ -33,7 +33,9 @@ export function DiscountCodeInput({ originalPrice, onDiscountApplied, onDiscount
                     onDiscountApplied(result.finalPrice, result.savedAmount, result.label);
                 } else {
                     setStatus('idle');
+                    // Code is expired or maxed — remove it from storage
                     localStorage.removeItem('applied_discount_code');
+                    if (error) setMessage(error);
                 }
             }
         };
@@ -46,11 +48,11 @@ export function DiscountCodeInput({ originalPrice, onDiscountApplied, onDiscount
         if (!code.trim()) return;
         setStatus('loading');
 
-        const discount = await validateDiscountCode(code);
+        const { discount, error } = await validateDiscountCode(code);
 
         if (!discount) {
             setStatus('error');
-            setMessage('الكود غير صالح أو منتهي. تحقق من الكود وحاول مجدداً.');
+            setMessage(error || 'الكود غير صالح. تحقق من الكود وحاول مجدداً.');
             return;
         }
 
