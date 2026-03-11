@@ -44,10 +44,8 @@ export function ProductCard({
     <div className={cn("group flex flex-col overflow-hidden rounded-3xl bg-surface border border-surface-hover transition-all duration-300 hover:border-primary/30 hover:shadow-premium hover:-translate-y-1 touch-manipulation", className)}>
       <Link href={`/product/${id}`} className="relative aspect-[4/3] sm:aspect-[3/2] w-full overflow-hidden bg-surface-lighter">
 
-        {/* Placeholder for Next Image */}
-        <div className="absolute inset-0 flex items-center justify-center p-6">
-          {/* Using object-contain for now but landscape container forces a wider look */}
-          <img src={imageUrl} alt={title} className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <img src={imageUrl} alt={title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
         </div>
 
         {/* Badges */}
