@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useCart } from "@/contexts/CartContext"
 import { createOrder } from "@/services/ordersService"
 import { getDefaultDeliveryAddress, saveDeliveryAddress } from "@/services/deliveryService"
+import { incrementDiscountCodeUsage } from "@/services/discountCodesService"
 
 export default function CheckoutPage() {
    const router = useRouter()
@@ -85,6 +86,13 @@ export default function CheckoutPage() {
          city, area, address,
          is_default: true
       })
+
+      // Increment usage count for the applied discount code, if any
+      const appliedCode = localStorage.getItem('applied_discount_code');
+      if (appliedCode) {
+         await incrementDiscountCodeUsage(appliedCode);
+         localStorage.removeItem('applied_discount_code');
+      }
 
       router.push('/order-success')
    }

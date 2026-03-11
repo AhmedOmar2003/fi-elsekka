@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from 'react';
-import { Ticket, Plus, Pencil, Trash2, X, ToggleLeft, ToggleRight, Percent, CircleDollarSign, Users, Clock } from 'lucide-react';
+import { Ticket, Plus, Pencil, Trash2, X, ToggleLeft, ToggleRight, Percent, CircleDollarSign, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { fetchAllDiscountCodes, createDiscountCode, updateDiscountCode, deleteDiscountCode, DiscountCode } from '@/services/discountCodesService';
 
@@ -11,7 +11,6 @@ const EMPTY_FORM = {
     discount_value: '',
     is_active: true,
     max_uses: '',          // empty = unlimited
-    expires_at: '',        // empty = no expiry (datetime-local format)
 };
 
 export default function AdminDiscountsPage() {
@@ -42,21 +41,12 @@ export default function AdminDiscountsPage() {
         const type = c.discount_amount ? 'amount' : 'percentage';
         const val = c.discount_amount ? c.discount_amount : (c.discount_percentage || 0);
 
-        // Convert ISO string to datetime-local format
-        let expiresAt = '';
-        if (c.expires_at) {
-            const d = new Date(c.expires_at);
-            // datetime-local requires YYYY-MM-DDTHH:mm
-            expiresAt = d.toISOString().slice(0, 16);
-        }
-
         setForm({
             code: c.code,
             discount_type: type,
             discount_value: String(val),
             is_active: c.is_active,
             max_uses: c.max_uses !== null ? String(c.max_uses) : '',
-            expires_at: expiresAt,
         });
         setIsModalOpen(true);
     };
@@ -77,7 +67,7 @@ export default function AdminDiscountsPage() {
             discount_amount: form.discount_type === 'amount' ? val : null,
             is_active: form.is_active,
             max_uses: form.max_uses.trim() !== '' ? parseInt(form.max_uses) : null,
-            expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
+            expires_at: null,
         };
 
         const { error } = editingId
@@ -116,15 +106,6 @@ export default function AdminDiscountsPage() {
         }
     };
 
-    const formatDate = (isoStr: string | null) => {
-        if (!isoStr) return '—';
-        const d = new Date(isoStr);
-        const now = new Date();
-        const expired = d < now;
-        const formatted = d.toLocaleString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        return <span className={expired ? 'text-rose-400' : 'text-amber-400'}>{formatted}{expired ? ' (منتهي)' : ''}</span>;
-    };
-
     return (
         <div className="space-y-5">
             {/* Header */}
@@ -148,7 +129,6 @@ export default function AdminDiscountsPage() {
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500">الكود</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500">قيمة الخصم</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 hidden md:table-cell">الاستخدام</th>
-                                <th className="px-4 py-3 text-xs font-bold text-gray-500 hidden md:table-cell">ينتهي في</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500">الحالة</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 text-center">إجراءات</th>
                             </tr>
@@ -156,11 +136,11 @@ export default function AdminDiscountsPage() {
                         <tbody className="divide-y divide-white/5">
                             {isLoading ? (
                                 [...Array(3)].map((_, i) => (
-                                    <tr key={i}><td colSpan={6} className="px-4 py-4"><div className="h-10 bg-white/5 rounded-lg animate-pulse" /></td></tr>
+                                    <tr key={i}><td colSpan={5} className="px-4 py-4"><div className="h-10 bg-white/5 rounded-lg animate-pulse" /></td></tr>
                                 ))
                             ) : codes.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="text-center py-16">
+                                    <td colSpan={5} className="text-center py-16">
                                         <Ticket className="w-10 h-10 mx-auto mb-3 text-gray-700" />
                                         <p className="text-gray-500">لا توجد أكواد خصم بعد، أضف الكود الأول!</p>
                                     </td>
@@ -175,13 +155,15 @@ export default function AdminDiscountsPage() {
                                     <td className="px-4 py-3 text-primary font-bold tracking-tight">
                                         {c.discount_percentage ? `${c.discount_percentage}%` : `${c.discount_amount} ج.م`}
                                     </td>
-                                    <td className="px-4 py-3 hidden md:table-cell text-gray-400 text-xs">
-                                        <span className="font-mono">{c.used_count}</span>
-                                        {c.max_uses !== null && <span className="text-gray-600"> / {c.max_uses}</span>}
-                                        {c.max_uses === null && <span className="text-gray-600"> / ∞</span>}
-                                    </td>
-                                    <td className="px-4 py-3 hidden md:table-cell text-xs">
-                                        {formatDate(c.expires_at)}
+                                    <td className="px-4 py-3 hidden md:table-cell">
+                                        <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                                            <Users className="w-3.5 h-3.5 text-gray-600" />
+                                            <span className="font-mono font-bold text-white">{c.used_count}</span>
+                                            {c.max_uses !== null
+                                                ? <span className="text-gray-600">/ {c.max_uses} استخدام</span>
+                                                : <span className="text-gray-600">/ ∞ بلا حد</span>
+                                            }
+                                        </span>
                                     </td>
                                     <td className="px-4 py-3">
                                         <button onClick={() => handleToggleActive(c)}
@@ -210,8 +192,8 @@ export default function AdminDiscountsPage() {
             {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="bg-[#0a0e14] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between p-5 border-b border-white/5 bg-[#0a0e14] sticky top-0">
+                    <div className="bg-[#0a0e14] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl">
+                        <div className="flex items-center justify-between p-5 border-b border-white/5 bg-[#0a0e14]">
                             <h2 className="font-heading font-black text-white flex items-center gap-2">
                                 <Ticket className="w-5 h-5 text-primary" />
                                 {editingId ? 'تعديل كود الخصم' : 'إضافة كود جديد'}
@@ -220,7 +202,7 @@ export default function AdminDiscountsPage() {
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
-                        <div className="p-5 space-y-4">
+                        <div className="p-5 space-y-5">
                             {/* Code */}
                             <div>
                                 <label className="block text-xs font-bold text-gray-400 mb-1.5">الكود (إنجليزي فقط)</label>
@@ -263,23 +245,13 @@ export default function AdminDiscountsPage() {
 
                             {/* Max Uses */}
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-1.5 flex items-center gap-1.5">
-                                    <Users className="w-3.5 h-3.5 text-primary" /> الحد الأقصى للاستخدام (اتركه فارغاً = بلا حد)
+                                <label className="block text-xs font-bold text-gray-400 mb-1.5">
+                                    <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-primary" /> الحد الأقصى للاستخدام (اتركه فارغاً = بلا حد)</span>
                                 </label>
                                 <input type="number" min="1" value={form.max_uses}
                                     onChange={e => setForm({ ...form, max_uses: e.target.value })}
                                     placeholder="مثال: 100"
                                     className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50" dir="ltr" />
-                            </div>
-
-                            {/* Expires At */}
-                            <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-1.5 flex items-center gap-1.5">
-                                    <Clock className="w-3.5 h-3.5 text-amber-400" /> تاريخ انتهاء الكود (اتركه فارغاً = بلا انتهاء)
-                                </label>
-                                <input type="datetime-local" value={form.expires_at}
-                                    onChange={e => setForm({ ...form, expires_at: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50 [color-scheme:dark]" />
                             </div>
 
                             {/* Active Toggle */}

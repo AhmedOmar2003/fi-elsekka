@@ -89,3 +89,22 @@ export const updateDiscountCode = async (id: number, payload: Partial<Omit<Disco
 export const deleteDiscountCode = async (id: number) => {
     return supabase.from('discount_codes').delete().eq('id', id);
 };
+
+/**
+ * Increments the used_count for a discount code after a successful order.
+ */
+export const incrementDiscountCodeUsage = async (code: string): Promise<void> => {
+    const { data } = await supabase
+        .from('discount_codes')
+        .select('id, used_count')
+        .eq('code', code.trim().toUpperCase())
+        .maybeSingle();
+
+    if (!data) return;
+
+    await supabase
+        .from('discount_codes')
+        .update({ used_count: (data.used_count || 0) + 1 })
+        .eq('id', data.id);
+};
+
