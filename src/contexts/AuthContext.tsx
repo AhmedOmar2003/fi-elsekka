@@ -53,25 +53,73 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     useEffect(() => {
-        // Use ONLY onAuthStateChange as the single source of truth.
-        // This avoids concurrent getSession() + onAuthStateChange() calls
-        // that cause the "Lock broken" AbortError.
+        let mounted = true;
+
+        const initializeAuth = async () => {
+            try {
+                // 1. Explicitly fetch the session on mount to guarantee we resolve `isLoading`
+                const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+                
+                if (!mounted) return;
+
+                if (error) {
+                    console.error("AuthContext: getSession error", error);
+                }
+
+                setSession(initialSession);
+                setUser(initialSession?.user ?? null);
+
+                if (initialSession?.user) {
+                    await loadProfile(initialSession.user.id);
+                } else {
+                    setProfile(null);
+                }
+            } catch (err) {
+                console.error("AuthContext: initialization error", err);
+            } finally {
+                if (mounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        // Initialize immediately
+        initializeAuth();
+
+        // 2. Listen for future auth events
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event, newSession) => {
+            async (event, newSession) => {
+                if (!mounted) return;
+
+                // Explicitly handle SIGNED_OUT to guarantee state wipes
+                if (event === 'SIGNED_OUT') {
+                    setSession(null);
+                    setUser(null);
+                    setProfile(null);
+                    setIsLoading(false);
+                    return;
+                }
+
+                // For other events, update state
                 setSession(newSession);
                 setUser(newSession?.user ?? null);
 
                 if (newSession?.user) {
-                    await loadProfile(newSession.user.id);
+                     // Don't block UI for profile updates on subsequent events
+                    loadProfile(newSession.user.id);
                 } else {
                     setProfile(null);
                 }
-
+                
+                // Ensure isLoading is false once an event fires
                 setIsLoading(false);
             }
         );
 
-        return () => { subscription.unsubscribe(); };
+        return () => { 
+            mounted = false;
+            subscription.unsubscribe(); 
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

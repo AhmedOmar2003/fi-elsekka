@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import { fetchAdminStats, fetchRecentOrders } from '@/services/adminService';
 import { Users, Package, ShoppingCart, TrendingUp, ArrowLeft, Clock, ChevronRight } from 'lucide-react';
 
@@ -15,15 +16,23 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 export default function AdminPage() {
     const [stats, setStats] = useState({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalRevenue: 0 });
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
+    const { user, isLoading: isAuthLoading } = useAuth();
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        if (isAuthLoading) return;
+        if (!user) {
+            setIsLoading(false);
+            return;
+        }
+
+        setIsLoading(true);
         Promise.all([fetchAdminStats(), fetchRecentOrders(6)]).then(([s, o]) => {
             setStats(s);
             setRecentOrders(o);
             setIsLoading(false);
         });
-    }, []);
+    }, [user, isAuthLoading]);
 
     const METRIC_CARDS = [
         { label: 'المستخدمون', value: stats.totalUsers, icon: Users, color: 'text-violet-400', bg: 'bg-violet-400/10', href: '/admin/users' },

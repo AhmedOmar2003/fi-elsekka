@@ -343,9 +343,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 router.replace('/admin');
             }
         }
-    }, [user, profile, isLoading, router, isLoginPage]);
+    }, [user, isLoading, router, isLoginPage]);
 
-    if (isLoading) {
+    // Don't render anything if we're not loaded or if a redirect is imminent
+    if (isLoading || (!user && !isLoginPage)) {
         return (
             <div className="min-h-screen bg-[#05070a] flex items-center justify-center">
                 <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>

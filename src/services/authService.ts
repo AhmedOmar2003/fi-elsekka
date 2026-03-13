@@ -36,8 +36,26 @@ export const signOut = async () => {
     if (typeof window !== 'undefined') {
         localStorage.removeItem('guestCart');
     }
+    
+    // Attempt to sign out on the server
     const { error } = await supabase.auth.signOut();
-    return { error };
+    
+    if (error) {
+        console.warn('Server signOut failed, forcing local session clear:', error.message);
+        // Force local wipe if server wipe fails (e.g. due to expired token)
+        await supabase.auth.signOut({ scope: 'local' });
+        
+        // Failsafe: clear standard supabase auth keys from local storage
+        if (typeof window !== 'undefined') {
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                    localStorage.removeItem(key);
+                }
+            });
+        }
+    }
+    
+    return { error: null }; // Always succeed from the client's perspective
 };
 
 export const getSession = async () => {
