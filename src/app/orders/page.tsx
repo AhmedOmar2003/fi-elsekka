@@ -141,8 +141,20 @@ export default function OrdersPage() {
     return (
       <>
         <Header />
-        <main className="flex-1 pb-24 md:pb-12 bg-background min-h-[80vh] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary" />
+        <main className="flex-1 pb-24 md:pb-12 bg-background min-h-[80vh]">
+          <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8 space-y-4">
+            <div className="h-9 w-40 rounded-xl bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+            {[1,2,3].map(i => (
+              <div key={i} className="bg-surface border border-surface-hover rounded-2xl p-4 sm:p-5 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-surface-hover shrink-0 relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-36 rounded-lg bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                  <div className="h-3 w-24 rounded-full bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                </div>
+                <div className="h-7 w-24 rounded-xl bg-surface-hover shrink-0 relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+              </div>
+            ))}
+          </div>
         </main>
         <Footer />
       </>

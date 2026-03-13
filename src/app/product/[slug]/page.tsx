@@ -238,8 +238,47 @@ export default function ProductPage() {
     return (
       <>
         <Header />
-        <main className="flex-1 pb-24 md:pb-8 bg-background flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <main className="flex-1 pb-24 md:pb-8 bg-background">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+            {/* Breadcrumb skeleton */}
+            <div className="flex gap-2 items-center mb-6">
+              <div className="h-4 w-16 rounded-full bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+              <div className="h-4 w-4 rounded-full bg-surface-hover" />
+              <div className="h-4 w-24 rounded-full bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+            </div>
+
+            {/* Main grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-14">
+              {/* Image gallery skeleton */}
+              <div className="flex flex-col gap-3">
+                <div className="aspect-square w-full rounded-3xl bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                <div className="flex gap-2">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="h-20 flex-1 rounded-2xl bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                  ))}
+                </div>
+              </div>
+
+              {/* Product details skeleton */}
+              <div className="flex flex-col gap-4">
+                <div className="h-5 w-24 rounded-full bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                <div className="h-8 w-3/4 rounded-xl bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                <div className="h-8 w-1/2 rounded-xl bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                <div className="h-12 w-40 rounded-2xl bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent mt-2" />
+                <div className="h-px w-full bg-surface-hover my-2" />
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="h-4 w-4 rounded-full bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                    <div className={`h-4 rounded-lg bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent ${i % 2 === 0 ? 'w-48' : 'w-36'}`} />
+                  </div>
+                ))}
+                <div className="flex gap-3 mt-4">
+                  <div className="h-14 flex-1 rounded-2xl bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                  <div className="h-14 w-14 rounded-2xl bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                </div>
+              </div>
+            </div>
+          </div>
         </main>
         <Footer />
       </>

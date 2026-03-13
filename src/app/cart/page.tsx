@@ -41,10 +41,46 @@ export default function CartPage() {
       return (
          <>
             <Header />
-            <main className="min-h-screen bg-background pt-24 pb-16 flex items-center justify-center">
-               <div className="flex flex-col items-center gap-4 text-primary">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-                  <p className="animate-pulse font-medium">جاري تحميل السلة...</p>
+            <main className="min-h-screen bg-background pt-20 pb-24 md:pb-16">
+               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+                  {/* Header skeleton */}
+                  <div className="flex items-center gap-3 mb-8">
+                     <div className="w-14 h-14 rounded-2xl bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                     <div className="space-y-2">
+                        <div className="h-7 w-48 rounded-xl bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                        <div className="h-4 w-28 rounded-full bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                     </div>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                     {/* Items skeleton */}
+                     <div className="lg:col-span-8 space-y-4">
+                        {[1,2,3].map(i => (
+                           <div key={i} className="bg-surface border border-surface-hover rounded-3xl p-4 sm:p-5 flex gap-5">
+                              <div className="w-28 h-28 rounded-2xl bg-surface-hover shrink-0 relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                              <div className="flex-1 flex flex-col gap-3">
+                                 <div className="h-5 w-3/4 rounded-lg bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                                 <div className="h-4 w-24 rounded-lg bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                                 <div className="mt-auto flex items-center justify-between">
+                                    <div className="h-10 w-28 rounded-xl bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                                 </div>
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                     {/* Summary skeleton */}
+                     <div className="lg:col-span-4">
+                        <div className="bg-surface border border-surface-hover rounded-3xl p-6 space-y-4">
+                           <div className="h-6 w-32 rounded-xl bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                           {[1,2,3].map(i => (
+                              <div key={i} className="flex justify-between">
+                                 <div className="h-4 w-24 rounded-full bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                                 <div className="h-4 w-16 rounded-full bg-surface-hover relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+                              </div>
+                           ))}
+                           <div className="h-14 w-full rounded-2xl bg-primary/20 relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent mt-4" />
+                        </div>
+                     </div>
+                  </div>
                </div>
             </main>
             <Footer />
