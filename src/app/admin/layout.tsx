@@ -9,7 +9,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import {
     LayoutDashboard, Package, Tag, ShoppingCart, Users,
     Menu, X, LogOut, ChevronRight, Bell, Settings, Bike, Megaphone, Ticket,
-    UserPlus, ShoppingBag, CheckCircle2, Clock, Truck, XCircle, Loader2, ShieldAlert, MessageSquare
+    UserPlus, ShoppingBag, CheckCircle2, Clock, Truck, XCircle, Loader2, ShieldAlert, MessageSquare, Star
 } from 'lucide-react';
 import { signOut } from '@/services/authService';
 import { supabase } from '@/lib/supabase';
@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 // ── Types ────────────────────────────────────────────────────
 interface Notification {
     id: string;
-    type: 'new_order' | 'new_user' | 'order_delivered';
+    type: 'new_order' | 'new_user' | 'order_delivered' | 'new_review';
     title: string;
     body: string;
     time: Date;
@@ -225,9 +225,23 @@ function NotificationBell() {
             })
             .subscribe();
 
+        // Subscribe to new reviews
+        const reviewsChannel = supabase
+            .channel('admin-reviews-listener')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reviews' }, (payload) => {
+                addNotification({
+                    type: 'new_review',
+                    title: '⭐ تقييم جديد!',
+                    body: `تم إضافة تقييم جديد (${payload.new.rating} نجوم) بواسطة ${payload.new.user_name || 'مستخدم'}`,
+                    link: '/admin/reviews',
+                });
+            })
+            .subscribe();
+
         return () => {
             supabase.removeChannel(ordersChannel);
             supabase.removeChannel(usersChannel);
+            supabase.removeChannel(reviewsChannel);
         };
     }, [addNotification]);
 
@@ -249,6 +263,7 @@ function NotificationBell() {
         switch (type) {
             case 'new_order': return <ShoppingBag className="w-4 h-4 text-primary" />;
             case 'new_user': return <UserPlus className="w-4 h-4 text-emerald-400" />;
+            case 'new_review': return <Star className="w-4 h-4 text-yellow-500" />;
             case 'order_delivered': return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
         }
     };

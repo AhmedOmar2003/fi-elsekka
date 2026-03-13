@@ -64,3 +64,8 @@ CREATE POLICY "Auth users can upload review images"
 CREATE POLICY "Public read review images"
     ON storage.objects FOR SELECT
     USING (bucket_id = 'review-images');
+
+-- ═══════════════════════════════════════════════════
+-- Realtime (Enable to get admin notification alerts)
+-- ═══════════════════════════════════════════════════
+-- ALTER PUBLICATION supabase_realtime ADD TABLE public.reviews;
