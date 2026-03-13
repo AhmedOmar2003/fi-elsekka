@@ -6,6 +6,7 @@ import {
     AlertCircle, Image as ImageIcon, CheckCircle2, MoreVertical, Package
 } from 'lucide-react'
 import { fetchAllReviews, deleteReview } from '@/services/reviewsService'
+import { invalidateReviewsCache } from '@/app/actions/reviewActions'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -51,6 +52,7 @@ export default function AdminReviewsPage() {
         
         const success = await deleteReview(reviewToDelete)
         if (success) {
+            await invalidateReviewsCache()
             toast.success("تم حذف التقييم بنجاح")
             setReviews(reviews.filter(r => r.id !== reviewToDelete))
         } else {
