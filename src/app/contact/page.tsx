@@ -27,7 +27,7 @@ export default function ContactPage() {
         <div className="bg-surface border-b border-surface-hover py-12 md:py-16">
            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
               <h1 className="text-3xl md:text-4xl font-black text-foreground mb-4">كلمنا، إحنا دايماً في الخدمة</h1>
-              <p className="text-gray-400 max-w-2xl mx-auto">
+              <p className="text-gray-500 max-w-2xl mx-auto">
                  عندك استفسار؟ مشكلة في طلبك؟ أو حتى اقتراح لينا؟ ماتترددش تبعتلنا، فريق الدعم موجود عشان يسمعك ויرد عليك.
               </p>
            </div>
@@ -48,7 +48,7 @@ export default function ContactPage() {
                           </div>
                           <div>
                              <p className="font-semibold text-foreground">البريد الإلكتروني</p>
-                             <p className="text-gray-400 mt-1" dir="ltr">support@fielsekka.com</p>
+                             <p className="text-gray-500 mt-1" dir="ltr">support@fielsekka.com</p>
                           </div>
                        </div>
                        
@@ -58,7 +58,7 @@ export default function ContactPage() {
                           </div>
                           <div>
                              <p className="font-semibold text-foreground">خدمة العملاء (واتساب)</p>
-                             <p className="text-gray-400 mt-1" dir="ltr">+20 100 000 0000</p>
+                             <p className="text-gray-500 mt-1" dir="ltr">+20 100 000 0000</p>
                              <p className="text-xs text-emerald-500 mt-1">متاحين يومياً من 9 ص لـ 10 م</p>
                           </div>
                        </div>
@@ -67,7 +67,7 @@ export default function ContactPage() {
 
                  <div className="bg-surface border border-surface-hover rounded-3xl p-6">
                     <h3 className="font-bold text-foreground mb-2">عندك سؤال سريع؟</h3>
-                    <p className="text-sm text-gray-400 mb-4">ممكن تلاقي إجابة سؤالك جاهزة في صفحة الأسئلة الشائعة، من غير ما تستنى.</p>
+                    <p className="text-sm text-gray-500 mb-4">ممكن تلاقي إجابة سؤالك جاهزة في صفحة الأسئلة الشائعة، من غير ما تستنى.</p>
                     <Button variant="outline" className="w-full">
                        شوف الأسئلة الشائعة
                     </Button>

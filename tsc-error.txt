@@ -1,0 +1,19 @@
+src/app/product/[slug]/page.tsx(583,32): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/app/product/[slug]/page.tsx(595,29): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/app/product/[slug]/page.tsx(711,20): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/app/product/[slug]/page.tsx(713,17): error TS17002: Expected corresponding JSX closing tag for 'main'.
+src/app/product/[slug]/page.tsx(715,15): error TS17015: Expected corresponding closing tag for JSX fragment.
+src/app/product/[slug]/page.tsx(716,11): error TS1109: Expression expected.
+src/app/product/[slug]/page.tsx(717,7): error TS1109: Expression expected.
+src/app/product/[slug]/page.tsx(722,16): error TS1136: Property assignment expected.
+src/app/product/[slug]/page.tsx(724,20): error TS1005: ';' expected.
+src/app/product/[slug]/page.tsx(725,21): error TS1005: ';' expected.
+src/app/product/[slug]/page.tsx(726,9): error TS1109: Expression expected.
+src/app/product/[slug]/page.tsx(727,7): error TS1109: Expression expected.
+src/app/product/[slug]/page.tsx(729,14): error TS1005: ';' expected.
+src/app/product/[slug]/page.tsx(729,99): error TS1109: Expression expected.
+src/app/product/[slug]/page.tsx(788,7): error TS1128: Declaration or statement expected.
+src/app/product/[slug]/page.tsx(791,5): error TS1128: Declaration or statement expected.
+src/app/product/[slug]/page.tsx(791,7): error TS1109: Expression expected.
+src/app/product/[slug]/page.tsx(792,3): error TS1109: Expression expected.
+src/app/product/[slug]/page.tsx(793,1): error TS1128: Declaration or statement expected.

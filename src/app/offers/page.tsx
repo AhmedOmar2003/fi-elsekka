@@ -27,8 +27,8 @@ export default async function OffersPage() {
       price,
       oldPrice,
       discountBadge,
-      rating: p.specifications?.rating || 4.5,
-      reviewsCount: p.specifications?.reviews_count || 50,
+      rating: p.specifications?.rating,
+      reviewsCount: p.specifications?.reviews_count,
       imageUrl: p.image_url || "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn"
     };
   });

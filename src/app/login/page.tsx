@@ -76,7 +76,7 @@ function LoginContent() {
   return (
     <div className="w-full max-w-md bg-surface border border-surface-hover rounded-3xl p-6 sm:p-10 shadow-premium">
       <h1 className="text-3xl font-black text-foreground mb-2 text-center">أهلاً بيك تاني! 👋</h1>
-      <p className="text-gray-400 text-center mb-8">سجل دخول عشان تتابع طلباتك وتشوف مشترياتك</p>
+      <p className="text-gray-500 text-center mb-8">سجل دخول عشان تتابع طلباتك وتشوف مشترياتك</p>
 
       {errorMsg && (
         <div className="mb-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 p-4 rounded-xl flex flex-col gap-3 text-sm">
@@ -105,7 +105,7 @@ function LoginContent() {
       <form onSubmit={handleLogin} className="space-y-5">
 
         <div className="space-y-2">
-          <label className="text-sm font-bold text-gray-300 px-1">البريد الإلكتروني</label>
+          <label className="text-sm font-bold text-foreground px-1">البريد الإلكتروني</label>
           <Input
             type="email"
             value={email}
@@ -118,7 +118,7 @@ function LoginContent() {
 
         <div className="space-y-2">
           <div className="flex justify-between px-1">
-            <label className="text-sm font-bold text-gray-300">كلمة المرور</label>
+            <label className="text-sm font-bold text-foreground">كلمة المرور</label>
             <Link href="#" className="text-sm font-bold text-primary hover:underline">نسيت كلمة المرور؟</Link>
           </div>
           <Input
@@ -148,7 +148,7 @@ function LoginContent() {
         </Button>
       </form>
 
-      <div className="mt-8 text-center text-gray-400 text-sm">
+      <div className="mt-8 text-center text-gray-500 text-sm">
         معندكش حساب؟ {" "}
         <Link href={`/register${redirectParams ? `?redirect=${redirectParams}` : ''}`} className="text-primary font-bold hover:underline">
           أنشئ حساب جديد

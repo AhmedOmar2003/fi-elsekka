@@ -9,18 +9,22 @@ import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ProductCard } from "@/components/ui/product-card"
 import { useAuth } from "@/contexts/AuthContext"
+import { useFavorites } from "@/contexts/FavoritesContext"
 import { fetchUserOrders, updateOrderStatus, updateUserProfile, Order } from "@/services/ordersService"
+import { fetchUserFavorites } from "@/services/favoritesService"
 import { fetchUserDeliveryAddresses, saveDeliveryAddress, updateDeliveryAddress, deleteDeliveryAddress, setDefaultDeliveryAddress, DeliveryInfo } from "@/services/deliveryService"
+import { Product } from "@/services/productsService"
 import { signOut, updateAuthEmail, updateAuthPassword, uploadAvatar } from "@/services/authService"
 import {
     User, Package, Settings, LogOut, Camera, Loader2,
-    MapPin, AlertCircle, CheckCircle, Clock, Truck, XCircle, ShoppingBag, Plus, Trash2, Star
+    MapPin, AlertCircle, CheckCircle, Clock, Truck, XCircle, ShoppingBag, Plus, Trash2, Star, Heart
 } from "lucide-react"
 import { LogoutModal } from "@/components/ui/logout-modal"
 import { toast } from "sonner"
 
-type Tab = "orders" | "settings" | "addresses"
+type Tab = "orders" | "favorites" | "addresses" | "settings"
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
     pending: { label: "قيد المراجعة", color: "text-yellow-500 bg-yellow-500/10", icon: <Clock className="w-4 h-4" /> },
@@ -40,6 +44,11 @@ export default function AccountPage() {
     const [activeTab, setActiveTab] = React.useState<Tab>("orders")
     const [orders, setOrders] = React.useState<Order[]>([])
     const [ordersLoading, setOrdersLoading] = React.useState(true)
+
+    // Favorites state
+    const { favoriteIds, toggleFavorite, clearAllFavorites } = useFavorites()
+    const [favProducts, setFavProducts] = React.useState<Product[]>([])
+    const [favLoading, setFavLoading] = React.useState(false)
 
     // Addresses state
     const [addresses, setAddresses] = React.useState<DeliveryInfo[]>([])
@@ -92,6 +101,17 @@ export default function AccountPage() {
             })
         }
     }, [user])
+
+    // Load favorite products when tab is opened
+    React.useEffect(() => {
+        if (user && activeTab === 'favorites') {
+            setFavLoading(true)
+            fetchUserFavorites(user.id).then(data => {
+                setFavProducts(data)
+                setFavLoading(false)
+            })
+        }
+    }, [user, activeTab, favoriteIds])
 
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
 
@@ -274,7 +294,7 @@ export default function AccountPage() {
                         </div>
                         <div className="flex-1 text-center sm:text-start">
                             <h1 className="text-2xl font-black text-foreground">{displayName}</h1>
-                            <p className="text-gray-400 text-sm mt-0.5">{user.email}</p>
+                            <p className="text-gray-500 text-sm mt-0.5">{user.email}</p>
                         </div>
                         <Button
                             variant="outline"
@@ -288,13 +308,16 @@ export default function AccountPage() {
 
                     {/* Tabs */}
                     <div className="flex gap-2 bg-surface border border-surface-hover p-1.5 rounded-2xl mb-6 w-fit flex-wrap">
-                        <button onClick={() => setActiveTab("orders")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "orders" ? "bg-primary text-white shadow-lg" : "text-gray-400 hover:text-foreground"}`}>
+                        <button onClick={() => setActiveTab("orders")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "orders" ? "bg-primary text-white shadow-lg" : "text-gray-500 hover:text-foreground"}`}>
                             <Package className="w-4 h-4" /> طلباتي
                         </button>
-                        <button onClick={() => setActiveTab("addresses")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "addresses" ? "bg-primary text-white shadow-lg" : "text-gray-400 hover:text-foreground"}`}>
+                        <button onClick={() => setActiveTab("favorites")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "favorites" ? "bg-secondary text-white shadow-lg" : "text-gray-500 hover:text-foreground"}`}>
+                            <Heart className="w-4 h-4" /> مفضلتي
+                        </button>
+                        <button onClick={() => setActiveTab("addresses")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "addresses" ? "bg-primary text-white shadow-lg" : "text-gray-500 hover:text-foreground"}`}>
                             <MapPin className="w-4 h-4" /> عناويني
                         </button>
-                        <button onClick={() => setActiveTab("settings")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "settings" ? "bg-primary text-white shadow-lg" : "text-gray-400 hover:text-foreground"}`}>
+                        <button onClick={() => setActiveTab("settings")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "settings" ? "bg-primary text-white shadow-lg" : "text-gray-500 hover:text-foreground"}`}>
                             <Settings className="w-4 h-4" /> الإعدادات
                         </button>
                     </div>
@@ -312,7 +335,7 @@ export default function AccountPage() {
                                         <ShoppingBag className="w-9 h-9 text-gray-500" />
                                     </div>
                                     <h3 className="text-xl font-bold text-foreground mb-2">مفيش طلبات لحد دلوقتي</h3>
-                                    <p className="text-gray-400 mb-6">ابدأ التسوق وهيبان طلباتك هنا!</p>
+                                    <p className="text-gray-500 mb-6">ابدأ التسوق وهيبان طلباتك هنا!</p>
                                     <Button asChild className="rounded-xl px-8">
                                         <Link href="/categories">اكتشف المنتجات</Link>
                                     </Button>
@@ -326,11 +349,11 @@ export default function AccountPage() {
                                         <div className="flex items-start justify-between gap-4 mb-4">
                                             <div>
                                                 <p className="text-xs text-gray-500 mb-0.5">رقم الطلب</p>
-                                                <p className="font-mono text-sm text-gray-300 font-bold">{order.id.split('-')[0].toUpperCase()}</p>
+                                                <p className="font-mono text-sm text-foreground font-bold">{order.id.split('-')[0].toUpperCase()}</p>
                                             </div>
                                             <div className="text-center">
                                                 <p className="text-xs text-gray-500 mb-0.5">التاريخ</p>
-                                                <p className="text-sm text-gray-300">{dateStr}</p>
+                                                <p className="text-sm text-foreground">{dateStr}</p>
                                             </div>
                                             <div className="text-center">
                                                 <p className="text-xs text-gray-500 mb-0.5">الإجمالي</p>
@@ -346,7 +369,7 @@ export default function AccountPage() {
                                         {order.order_items && order.order_items.length > 0 && (
                                             <div className="border-t border-surface-hover pt-4 mb-4 space-y-2">
                                                 {order.order_items.map(item => (
-                                                    <div key={item.id} className="flex justify-between text-sm text-gray-300">
+                                                    <div key={item.id} className="flex justify-between text-sm text-foreground">
                                                         <span>{(item as any).product?.name || "منتج"} <span className="text-gray-500">x{item.quantity}</span></span>
                                                         <span className="font-bold text-foreground">{(item.price_at_purchase * item.quantity).toFixed(0)} ج.م</span>
                                                     </div>
@@ -371,6 +394,87 @@ export default function AccountPage() {
                         </div>
                     )}
 
+                    {/* Favorites Tab */}
+                    {activeTab === "favorites" && (
+                        <div>
+                            {favLoading ? (
+                                <div className="flex items-center justify-center min-h-48">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-secondary"></div>
+                                </div>
+                            ) : favProducts.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-center">
+                                    <div className="w-20 h-20 bg-surface rounded-2xl flex items-center justify-center mb-4 border border-surface-hover">
+                                        <Heart className="w-9 h-9 text-gray-500" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-foreground mb-2">مفيش منتجات في مفضلتك لحد دلوقتي</h3>
+                                    <p className="text-gray-500 mb-6">اضغط على القلب على أي منتج عشان تضيفه للمفضلة!</p>
+                                    <Button asChild className="rounded-xl px-8">
+                                        <Link href="/category/all">اكتشف المنتجات</Link>
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div>
+                                    {/* Header with count + clear all */}
+                                    <div className="flex items-center justify-between mb-4">
+                                        <p className="text-gray-500 text-sm">{favProducts.length} منتج في مفضلتك</p>
+                                        <button
+                                            onClick={async () => {
+                                                if (confirm('متأكد إنك عاوز تمسح كل المفضلة؟')) {
+                                                    await clearAllFavorites()
+                                                    setFavProducts([])
+                                                }
+                                            }}
+                                            className="flex items-center gap-1.5 text-xs font-bold text-rose-500 hover:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1.5 rounded-xl transition-all active:scale-95"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                            مسح الكل
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+                                        {favProducts.map(product => {
+                                            let price = product.price;
+                                            let oldPrice: number | undefined = (product.specifications as any)?.old_price;
+                                            let discountBadge = (product.specifications as any)?.discount_badge;
+
+                                            if (product.discount_percentage && product.discount_percentage > 0) {
+                                                price = Math.round(product.price * (1 - product.discount_percentage / 100));
+                                                oldPrice = product.price;
+                                                discountBadge = `خصم ${product.discount_percentage}%`;
+                                            }
+
+                                            return (
+                                                <div key={product.id} className="relative group/fav">
+                                                    <ProductCard
+                                                        id={product.id}
+                                                        title={product.name}
+                                                        price={price}
+                                                        oldPrice={oldPrice}
+                                                        discountBadge={discountBadge}
+                                                        imageUrl={product.image_url || (product.specifications as any)?.image_url || ''}
+                                                        rating={(product.specifications as any)?.rating}
+                                                        reviewsCount={(product.specifications as any)?.reviews_count}
+                                                    />
+                                                    {/* Remove from favorites button */}
+                                                    <button
+                                                        onClick={async () => {
+                                                            await toggleFavorite(product.id)
+                                                            setFavProducts(prev => prev.filter(p => p.id !== product.id))
+                                                        }}
+                                                        className="absolute top-2 right-2 z-30 flex items-center gap-1 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-lg opacity-0 group-hover/fav:opacity-100 transition-opacity active:scale-90"
+                                                        title="إزالة من المفضلة"
+                                                    >
+                                                        <XCircle className="w-3.5 h-3.5" />
+                                                        إزالة
+                                                    </button>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Addresses Tab */}
                     {activeTab === "addresses" && (
                         <div className="space-y-4">
@@ -386,7 +490,7 @@ export default function AccountPage() {
                                                     {addr.is_default && <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-lg flex items-center gap-1"><Star className="w-3 h-3" /> افتراضي</span>}
                                                 </div>
                                                 <p className="font-bold text-foreground text-sm">{addr.address}</p>
-                                                <p className="text-gray-400 text-sm">{addr.area && `${addr.area}، `}{addr.city}</p>
+                                                <p className="text-gray-500 text-sm">{addr.area && `${addr.area}، `}{addr.city}</p>
                                                 {addr.phone_number && <p className="text-gray-500 text-xs mt-1" dir="ltr">{addr.phone_number}</p>}
                                             </div>
                                             <div className="flex sm:flex-col gap-2 shrink-0">
@@ -442,7 +546,7 @@ export default function AccountPage() {
                                 <div className="space-y-2 md:col-span-2 border-t border-surface-hover pt-4 mt-2">
                                     <Label>البريد الإلكتروني (لتسجيل الدخول)</Label>
                                     <Input value={emailInput} onChange={e => setEmailInput(e.target.value)} type="email" dir="ltr" className="text-right" />
-                                    <p className="text-[11px] text-gray-400">إذا قمت بتغييره، سيتم إرسال رسالة تأكيد لمعظم الحسابات.</p>
+                                    <p className="text-[11px] text-gray-500">إذا قمت بتغييره، سيتم إرسال رسالة تأكيد لمعظم الحسابات.</p>
                                 </div>
                                 <div className="space-y-2 md:col-span-2">
                                     <Label>كلمة المرور الجديدة</Label>

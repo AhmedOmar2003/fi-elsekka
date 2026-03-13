@@ -223,10 +223,9 @@ export default function AdminProductsPage() {
 
     return (
         <div className="space-y-5">
-            {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h1 className="text-2xl font-heading font-black text-white">المنتجات</h1>
+                    <h1 className="text-2xl font-heading font-black text-foreground">المنتجات</h1>
                     <p className="text-sm text-gray-400 mt-0.5">{products.length} منتج في المتجر</p>
                 </div>
                 <button
@@ -244,16 +243,16 @@ export default function AdminProductsPage() {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="بحث عن منتج..."
-                    className="w-full bg-[#0a0e14] border border-white/5 rounded-xl pr-9 pl-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                    className="w-full bg-surface border border-surface-hover rounded-xl pr-9 pl-4 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
                 />
             </div>
 
             {/* Table */}
-            <div className="bg-[#0a0e14] border border-white/5 rounded-2xl overflow-hidden">
+            <div className="bg-surface border border-surface-hover rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-right">
                         <thead>
-                            <tr className="border-b border-white/5">
+                            <tr className="border-b border-surface-hover">
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 text-right">المنتج</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 text-right hidden sm:table-cell">القسم</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 text-right">السعر</th>
@@ -262,10 +261,10 @@ export default function AdminProductsPage() {
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 text-center">إجراءات</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-surface-hover">
                             {isLoading ? (
                                 [...Array(5)].map((_, i) => (
-                                    <tr key={i}><td colSpan={6} className="px-4 py-4"><div className="h-10 bg-white/5 rounded-lg animate-pulse" /></td></tr>
+                                    <tr key={i}><td colSpan={6} className="px-4 py-4"><div className="h-10 bg-surface-hover rounded-lg animate-pulse" /></td></tr>
                                 ))
                             ) : filtered.length === 0 ? (
                                 <tr><td colSpan={6} className="text-center text-gray-500 py-12">لا توجد منتجات</td></tr>
@@ -275,7 +274,7 @@ export default function AdminProductsPage() {
                                         ? p.price * (1 - p.discount_percentage / 100)
                                         : null;
                                     return (
-                                        <tr key={p.id} className="hover:bg-white/3 transition-colors">
+                                        <tr key={p.id} className="hover:bg-surface-hover transition-colors">
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-3">
                                                     {p.image_url ? (
@@ -283,15 +282,15 @@ export default function AdminProductsPage() {
                                                             <Image src={p.image_url} alt={p.name} width={40} height={40} className="object-contain w-full h-full p-0.5" />
                                                         </div>
                                                     ) : (
-                                                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-                                                            <ImageOff className="w-4 h-4 text-gray-600" />
+                                                        <div className="w-10 h-10 rounded-xl bg-surface-hover flex items-center justify-center shrink-0">
+                                                            <ImageOff className="w-4 h-4 text-gray-500" />
                                                         </div>
                                                     )}
-                                                    <span className="font-bold text-white line-clamp-1">{p.name}</span>
+                                                    <span className="font-bold text-foreground line-clamp-1">{p.name}</span>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 hidden sm:table-cell">
-                                                <span className="px-2.5 py-1 bg-white/5 rounded-lg text-xs text-gray-300 font-medium">
+                                                <span className="px-2.5 py-1 bg-surface-hover rounded-lg text-xs text-gray-500 font-medium">
                                                     {p.categories?.name || '—'}
                                                 </span>
                                             </td>
@@ -340,25 +339,25 @@ export default function AdminProductsPage() {
 
             {/* Add/Edit Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="bg-[#0a0e14] border border-white/10 rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
-                        <div className="flex items-center justify-between p-5 border-b border-white/5 sticky top-0 bg-[#0a0e14]">
-                            <h2 className="font-heading font-black text-white">{editingId ? 'تعديل المنتج' : 'إضافة منتج جديد'}</h2>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                    <div className="bg-surface border border-surface-hover rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+                        <div className="flex items-center justify-between p-5 border-b border-surface-hover sticky top-0 bg-surface z-10">
+                            <h2 className="font-heading font-black text-foreground">{editingId ? 'تعديل المنتج' : 'إضافة منتج جديد'}</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
                         <div className="p-5 space-y-4">
                             {/* Images */}
                             <div>
-                                <label className="block text-sm font-bold text-gray-300 mb-3 border-b border-white/10 pb-2">صور المنتج (صورة أساسية + 4 إضافية)</label>
+                                <label className="block text-sm font-bold text-gray-500 mb-3 border-b border-surface-hover pb-2">صور المنتج (صورة أساسية + 4 إضافية)</label>
                                 <div className="space-y-4">
                                     {/* Main Image */}
-                                    <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
-                                        <label className="block text-xs font-bold text-gray-400 mb-2">الصورة الأساسية (الغلاف)</label>
+                                    <div className="bg-surface-hover p-3 rounded-2xl border border-surface-hover">
+                                        <label className="block text-xs font-bold text-gray-500 mb-2">الصورة الأساسية (الغلاف)</label>
                                         <div
                                             onClick={() => fileInput.current?.click()}
-                                            className="w-full h-32 rounded-xl border-2 border-dashed border-white/10 hover:border-primary/40 flex items-center justify-center cursor-pointer transition-colors relative overflow-hidden"
+                                            className="w-full h-32 rounded-xl border-2 border-dashed border-gray-400/30 hover:border-primary/40 flex items-center justify-center cursor-pointer transition-colors relative overflow-hidden"
                                         >
                                             {form.image_url ? (
                                                 <Image src={form.image_url} alt="Preview Main" fill className="object-contain p-2" />
@@ -372,7 +371,7 @@ export default function AdminProductsPage() {
                                         <input type="file" ref={fileInput} accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e)} />
                                         <input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
                                             placeholder="أو أدخل رابط الصورة..."
-                                            className="mt-2 w-full bg-[#0a0e14] border border-white/10 rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-primary/50"
+                                            className="mt-2 w-full bg-surface border border-surface-hover rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary/50"
                                         />
                                     </div>
 
@@ -391,9 +390,9 @@ export default function AdminProductsPage() {
                                             }
 
                                             return (
-                                                <div key={index} className="bg-white/5 p-2.5 rounded-2xl border border-white/5">
-                                                    <label className="block text-[10px] font-bold text-gray-400 mb-1.5">صورة إضافية {index + 1}</label>
-                                                    <label className="w-full h-20 rounded-lg border-2 border-dashed border-white/10 hover:border-primary/40 flex items-center justify-center cursor-pointer transition-colors relative overflow-hidden block">
+                                                <div key={index} className="bg-surface-hover p-2.5 rounded-2xl border border-surface-hover">
+                                                    <label className="block text-[10px] font-bold text-gray-500 mb-1.5">صورة إضافية {index + 1}</label>
+                                                    <label className="w-full h-20 rounded-lg border-2 border-dashed border-gray-400/30 hover:border-primary/40 flex items-center justify-center cursor-pointer transition-colors relative overflow-hidden block">
                                                         {isValidUrl ? (
                                                             <Image src={imgStr} alt={`Preview Extra ${index + 1}`} fill className="object-contain p-1" />
                                                         ) : imgStr ? (
@@ -412,7 +411,7 @@ export default function AdminProductsPage() {
                                                     });
                                                 }}
                                                     placeholder="أو رابط الصورة..."
-                                                    className="mt-1.5 w-full bg-[#0a0e14] border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-gray-300 focus:outline-none focus:border-primary/50"
+                                                    className="mt-1.5 w-full bg-surface border border-surface-hover rounded-lg px-2 py-1.5 text-[10px] text-foreground focus:outline-none focus:border-primary/50"
                                                 />
                                             </div>
                                             );
@@ -429,14 +428,14 @@ export default function AdminProductsPage() {
                                 { key: 'discount_percentage', label: 'الخصم (%)', placeholder: '0', type: 'number' },
                             ].map(({ key, label, placeholder, type }) => (
                                 <div key={key}>
-                                    <label className="block text-xs font-bold text-gray-400 mb-1.5">{label}</label>
+                                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{label}</label>
                                     {type === 'textarea' ? (
                                         <textarea
                                             rows={3}
                                             value={(form as any)[key]}
                                             onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                                             placeholder={placeholder}
-                                            className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50 resize-none"
+                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50 resize-none"
                                         />
                                     ) : (
                                         <input
@@ -444,7 +443,7 @@ export default function AdminProductsPage() {
                                             value={(form as any)[key]}
                                             onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                                             placeholder={placeholder}
-                                            className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50"
+                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
                                         />
                                     )}
                                 </div>
@@ -456,9 +455,9 @@ export default function AdminProductsPage() {
                                     type="checkbox"
                                     checked={form.is_best_seller}
                                     onChange={e => setForm(f => ({ ...f, is_best_seller: e.target.checked }))}
-                                    className="w-4 h-4 rounded text-primary bg-white/5 border-white/10 accent-primary"
+                                    className="w-4 h-4 rounded text-primary bg-surface border-surface-hover accent-primary"
                                 />
-                                <span className="text-sm font-bold text-white">⭐ تمييز كمنتج الأكثر مبيعاً (Best Seller)</span>
+                                <span className="text-sm font-bold text-foreground">⭐ تمييز كمنتج الأكثر مبيعاً (Best Seller)</span>
                             </label>
 
                             {/* Show in Offers */}
@@ -467,20 +466,20 @@ export default function AdminProductsPage() {
                                     type="checkbox"
                                     checked={form.show_in_offers}
                                     onChange={e => setForm(f => ({ ...f, show_in_offers: e.target.checked }))}
-                                    className="w-4 h-4 rounded text-rose-500 bg-white/5 border-white/10 accent-rose-500"
+                                    className="w-4 h-4 rounded text-rose-500 bg-surface border-surface-hover accent-rose-500"
                                 />
-                                <span className="text-sm font-bold text-white">🔥 إظهار في قسم العروض</span>
+                                <span className="text-sm font-bold text-foreground">🔥 إظهار في قسم العروض</span>
                             </label>
 
                             {/* Category */}
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-1.5">القسم</label>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">القسم</label>
                                 <div className="relative">
                                     <Tag className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                     <select
                                         value={form.category_id}
                                         onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}
-                                        className="w-full bg-white/5 border border-white/5 rounded-xl pr-9 pl-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary/50 appearance-none"
+                                        className="w-full bg-surface border border-surface-hover rounded-xl pr-9 pl-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 appearance-none"
                                     >
                                         <option value="">— بدون قسم —</option>
                                         {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -489,9 +488,9 @@ export default function AdminProductsPage() {
                             </div>
 
                             {/* Specifications */}
-                            <div className="pt-4 border-t border-white/5">
+                            <div className="pt-4 border-t border-surface-hover">
                                 <div className="flex items-center justify-between mb-3">
-                                    <label className="block text-sm font-bold text-white">المواصفات الإضافية (اختياري)</label>
+                                    <label className="block text-sm font-bold text-foreground">المواصفات الإضافية (اختياري)</label>
                                     <button
                                         type="button"
                                         onClick={() => setForm(f => ({ ...f, specs: [...f.specs, { label: '', description: '' }] }))}
@@ -502,7 +501,7 @@ export default function AdminProductsPage() {
                                 </div>
                                 <div className="space-y-3">
                                     {form.specs.map((spec, idx) => (
-                                        <div key={idx} className="flex gap-2 items-start p-3 bg-white/3 rounded-xl border border-white/5">
+                                        <div key={idx} className="flex gap-2 items-start p-3 bg-surface-hover rounded-xl border border-surface-hover">
                                             <div className="flex-1 space-y-2">
                                                 <input
                                                     value={spec.label}
@@ -512,7 +511,7 @@ export default function AdminProductsPage() {
                                                         setForm(f => ({ ...f, specs: newSpecs }));
                                                     }}
                                                     placeholder="الاسم (مثل: اللون, الماركة, الخامة)"
-                                                    className="w-full bg-[#0a0e14] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-primary/50 focus:outline-none"
+                                                    className="w-full bg-surface border border-surface-hover rounded-lg px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
                                                 />
                                                 <input
                                                     value={spec.description}
@@ -522,7 +521,7 @@ export default function AdminProductsPage() {
                                                         setForm(f => ({ ...f, specs: newSpecs }));
                                                     }}
                                                     placeholder="القيمة (مثل: أحمر, Apple, قطن 100%)"
-                                                    className="w-full bg-[#0a0e14] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-primary/50 focus:outline-none"
+                                                    className="w-full bg-surface border border-surface-hover rounded-lg px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
                                                 />
                                             </div>
                                             <button
@@ -539,7 +538,7 @@ export default function AdminProductsPage() {
                                         </div>
                                     ))}
                                     {form.specs.length === 0 && (
-                                        <p className="text-xs text-gray-500 text-center py-4 bg-white/5 rounded-xl border border-dashed border-white/10">
+                                        <p className="text-xs text-gray-500 text-center py-4 bg-surface-hover rounded-xl border border-dashed border-gray-400/30">
                                             لا يوجد مواصفات مضافة بعد.
                                         </p>
                                     )}
@@ -547,7 +546,7 @@ export default function AdminProductsPage() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-3 p-5 border-t border-white/5">
+                        <div className="flex flex-col gap-3 p-5 border-t border-surface-hover">
                             {/* Error banner */}
                             {saveError && (
                                 <div className="flex items-start gap-2 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium px-3 py-2.5 rounded-xl">
@@ -562,7 +561,7 @@ export default function AdminProductsPage() {
                                 </div>
                             )}
                             <div className="flex items-center gap-3">
-                                <button onClick={() => { setIsModalOpen(false); setSaveError(null); }} className="flex-1 py-2.5 rounded-xl border border-white/10 text-sm font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                                <button onClick={() => { setIsModalOpen(false); setSaveError(null); }} className="flex-1 py-2.5 rounded-xl border border-surface-hover text-sm font-bold text-gray-500 hover:text-foreground hover:bg-surface-hover transition-all">
                                     إلغاء
                                 </button>
                                 <button

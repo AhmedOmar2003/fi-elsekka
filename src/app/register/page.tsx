@@ -77,7 +77,7 @@ function RegisterContent() {
   return (
     <div className="w-full max-w-md bg-surface border border-surface-hover rounded-3xl p-6 sm:p-10 shadow-premium">
       <h1 className="text-3xl font-black text-foreground mb-2 text-center">أهلاً بيك في السكة! ✨</h1>
-      <p className="text-gray-400 text-center mb-8">إنشئ حساب جديد عشان تبدأ رحلة التسوق بتاعتك</p>
+      <p className="text-gray-500 text-center mb-8">إنشئ حساب جديد عشان تبدأ رحلة التسوق بتاعتك</p>
 
       {errorMsg && (
         <div className="mb-6 bg-rose-500/10 border border-rose-500/20 text-rose-500 p-4 rounded-xl flex items-start gap-3 text-sm">
@@ -92,13 +92,13 @@ function RegisterContent() {
             <CheckCircle className="w-8 h-8 text-emerald-500" />
           </div>
           <h2 className="text-xl font-bold text-foreground">تم إنشاء الحساب بنجاح!</h2>
-          <p className="text-gray-400 text-sm">جاري تحويلك للمتجر لتبدأ التسوق...</p>
+          <p className="text-gray-500 text-sm">جاري تحويلك للمتجر لتبدأ التسوق...</p>
         </div>
       ) : (
         <form onSubmit={handleRegister} className="space-y-5">
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-300 px-1">الاسم بالكامل</label>
+            <label className="text-sm font-bold text-foreground px-1">الاسم بالكامل</label>
             <Input
               type="text"
               value={fullName}
@@ -110,7 +110,7 @@ function RegisterContent() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-300 px-1">البريد الإلكتروني</label>
+            <label className="text-sm font-bold text-foreground px-1">البريد الإلكتروني</label>
             <Input
               type="email"
               value={email}
@@ -122,7 +122,7 @@ function RegisterContent() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-300 px-1">كلمة المرور</label>
+            <label className="text-sm font-bold text-foreground px-1">كلمة المرور</label>
             <Input
               type="password"
               value={password}
@@ -153,7 +153,7 @@ function RegisterContent() {
       )}
 
       {!success && (
-        <div className="mt-8 text-center text-gray-400 text-sm">
+        <div className="mt-8 text-center text-gray-500 text-sm">
           عندك حساب بالفعل؟ {" "}
           <Link href={`/login${redirectParams ? `?redirect=${redirectParams}` : ''}`} className="text-primary font-bold hover:underline">
             تسجيل الدخول

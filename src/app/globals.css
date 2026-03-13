@@ -1,23 +1,50 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
-:root {
-  /* Richer, darker background with a slight cool tint */
-  --background: #05070a; 
-  --foreground: #f0fdf4;
-  
-  /* Brand colors */
-  --brand-primary: #10b981; /* bright modern emerald */
-  --brand-primary-hover: #059669; /* deeper hover */
-  --brand-primary-glow: rgba(16, 185, 129, 0.2);
-  
-  --brand-secondary: #f43f5e; /* vibrant rose for offers */
-  --brand-secondary-hover: #e11d48;
-  
-  /* Surface colors that provide contrast against the deep background */
-  --brand-surface: #0a0e14; 
-  --brand-surface-light: #151a23; 
-  --brand-surface-lighter: #1e2430;
+@layer base {
+  :root {
+    /* Light Mode (Clean, soft whites and light grays) */
+    --background: #f8fafc; /* slate-50 */
+    --foreground: #0f172a; /* slate-900 */
+    
+    /* Brand colors (Unchanged for identity) */
+    --brand-primary: #10b981; 
+    --brand-primary-hover: #059669; 
+    --brand-primary-glow: rgba(16, 185, 129, 0.2);
+    
+    --brand-secondary: #f43f5e; 
+    --brand-secondary-hover: #e11d48;
+    
+    /* Surfaces */
+    --brand-surface: #ffffff; /* pure white cards */
+    --brand-surface-light: #f1f5f9; /* slate-100 for hover */
+    --brand-surface-lighter: #e2e8f0; /* slate-200 */
+    
+    /* Borders */
+    --brand-surface-border: #e2e8f0;
+  }
+
+  .dark {
+    /* Dark Mode (Original Deep, rich styling) */
+    --background: #05070a; 
+    --foreground: #f0fdf4;
+    
+    /* Brand Colors (Same across themes) */
+    --brand-primary: #10b981; 
+    --brand-primary-hover: #059669; 
+    --brand-primary-glow: rgba(16, 185, 129, 0.2);
+    
+    --brand-secondary: #f43f5e; 
+    --brand-secondary-hover: #e11d48;
+    
+    /* Surfaces */
+    --brand-surface: #0a0e14; 
+    --brand-surface-light: #151a23; 
+    --brand-surface-lighter: #1e2430;
+
+    /* Borders */
+    --brand-surface-border: rgba(255, 255, 255, 0.05);
+  }
 }
 
 @theme inline {
@@ -30,10 +57,11 @@
   --color-surface: var(--brand-surface);
   --color-surface-hover: var(--brand-surface-light);
   --color-surface-lighter: var(--brand-surface-lighter);
+  --color-surface-border: var(--brand-surface-border);
   
   /* Premium UI shadows */
   --shadow-glow-primary: 0 0 20px -5px var(--brand-primary-glow);
-  --shadow-premium: rgba(0, 0, 0, 0.3) 0px 10px 30px -5px, rgba(0, 0, 0, 0.2) 0px 5px 15px -5px;
+  --shadow-premium: rgba(0, 0, 0, 0.05) 0px 10px 30px -5px, rgba(0, 0, 0, 0.03) 0px 5px 15px -5px;
   
   /* Animations */
   --animate-float: float 6s ease-in-out infinite;

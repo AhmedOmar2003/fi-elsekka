@@ -49,8 +49,7 @@ export default function AdminSettingsPage() {
                 type={type}
                 value={value}
                 onChange={e => onChange(e.target.value)}
-                placeholder={placeholder}
-                className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50"
+                className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
             />
         </div>
     );
@@ -58,14 +57,14 @@ export default function AdminSettingsPage() {
     const Toggle = ({ label, description, value, onChange }: {
         label: string; description?: string; value: boolean; onChange: (v: boolean) => void;
     }) => (
-        <label className={`flex items-center justify-between gap-4 p-3.5 rounded-xl border cursor-pointer transition-all ${value ? 'bg-primary/5 border-primary/20' : 'bg-white/3 border-white/5 hover:border-white/10'}`}>
+        <label className={`flex items-center justify-between gap-4 p-3.5 rounded-xl border cursor-pointer transition-all ${value ? 'bg-primary/5 border-primary/20' : 'bg-surface-hover border-surface-hover hover:border-primary/30'}`}>
             <div>
-                <span className="text-sm font-bold text-white block">{label}</span>
+                <span className="text-sm font-bold text-foreground block">{label}</span>
                 {description && <span className="text-xs text-gray-500 mt-0.5 block">{description}</span>}
             </div>
             <div
                 onClick={() => onChange(!value)}
-                className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${value ? 'bg-primary' : 'bg-white/10'}`}
+                className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${value ? 'bg-primary' : 'bg-gray-400/30 dark:bg-white/10'}`}
             >
                 <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${value ? 'right-0.5' : 'left-0.5'}`} />
             </div>
@@ -77,8 +76,8 @@ export default function AdminSettingsPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-heading font-black text-white">الإعدادات</h1>
-                    <p className="text-sm text-gray-400 mt-0.5">إعدادات عامة للوحة الإدارة والموقع</p>
+                    <h1 className="text-2xl font-heading font-black text-foreground">الإعدادات</h1>
+                    <p className="text-sm text-gray-500 mt-0.5">إعدادات عامة للوحة الإدارة والموقع</p>
                 </div>
                 <button
                     onClick={handleSave}
@@ -90,10 +89,10 @@ export default function AdminSettingsPage() {
             </div>
 
             {/* Site Info */}
-            <div className="bg-[#0a0e14] border border-white/5 rounded-2xl p-5 space-y-4">
+            <div className="bg-surface border border-surface-hover rounded-2xl p-5 space-y-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                     <Globe className="w-4 h-4 text-primary" />
-                    <h2 className="text-sm font-black text-white">معلومات الموقع</h2>
+                    <h2 className="text-sm font-black text-foreground">معلومات الموقع</h2>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="اسم الموقع" value={settings.siteName} onChange={v => setSettings(s => ({ ...s, siteName: v }))} placeholder="في السكة" />
@@ -104,10 +103,10 @@ export default function AdminSettingsPage() {
             </div>
 
             {/* Shipping */}
-            <div className="bg-[#0a0e14] border border-white/5 rounded-2xl p-5 space-y-4">
+            <div className="bg-surface border border-surface-hover rounded-2xl p-5 space-y-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                    <ShieldCheck className="w-4 h-4 text-amber-400" />
-                    <h2 className="text-sm font-black text-white">إعدادات الشحن</h2>
+                    <ShieldCheck className="w-4 h-4 text-amber-500" />
+                    <h2 className="text-sm font-black text-foreground">إعدادات الشحن</h2>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field
@@ -128,10 +127,10 @@ export default function AdminSettingsPage() {
             </div>
 
             {/* Notifications */}
-            <div className="bg-[#0a0e14] border border-white/5 rounded-2xl p-5 space-y-3">
+            <div className="bg-surface border border-surface-hover rounded-2xl p-5 space-y-3 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                    <Bell className="w-4 h-4 text-blue-400" />
-                    <h2 className="text-sm font-black text-white">إعدادات الإشعارات</h2>
+                    <Bell className="w-4 h-4 text-blue-500" />
+                    <h2 className="text-sm font-black text-foreground">إعدادات الإشعارات</h2>
                 </div>
                 <Toggle
                     label="إشعارات الطلبات الجديدة"
@@ -148,10 +147,10 @@ export default function AdminSettingsPage() {
             </div>
 
             {/* System */}
-            <div className="bg-[#0a0e14] border border-white/5 rounded-2xl p-5 space-y-3">
+            <div className="bg-surface border border-surface-hover rounded-2xl p-5 space-y-3 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                    <Palette className="w-4 h-4 text-rose-400" />
-                    <h2 className="text-sm font-black text-white">إعدادات النظام</h2>
+                    <Palette className="w-4 h-4 text-rose-500" />
+                    <h2 className="text-sm font-black text-foreground">إعدادات النظام</h2>
                 </div>
                 <Toggle
                     label="وضع الصيانة"
@@ -159,9 +158,9 @@ export default function AdminSettingsPage() {
                     value={settings.maintenanceMode}
                     onChange={v => setSettings(s => ({ ...s, maintenanceMode: v }))}
                 />
-                <div className="mt-4 p-3.5 bg-white/3 rounded-xl border border-white/5 flex items-center justify-between">
+                <div className="mt-4 p-3.5 bg-surface-hover rounded-xl border border-surface-hover flex items-center justify-between">
                     <div>
-                        <p className="text-xs font-bold text-white">إدارة قاعدة البيانات</p>
+                        <p className="text-xs font-bold text-foreground">إدارة قاعدة البيانات</p>
                         <p className="text-[11px] text-gray-500 mt-0.5">فتح Supabase Dashboard مباشرةً</p>
                     </div>
                     <a

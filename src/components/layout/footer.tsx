@@ -30,8 +30,8 @@ export function Footer() {
                 <MotorcycleIcon className="w-6 h-6" />
               </div>
               <div className="flex items-baseline gap-0 leading-none" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
-                <span className="font-black text-2xl text-white">فِي&nbsp;</span>
-                <span className="font-black text-2xl text-primary" style={{ textShadow: '0 1px 8px rgba(16,185,129,0.5)' }}>السِّكَّةِ</span>
+                <span className="font-black text-2xl text-foreground drop-shadow-sm">فِي&nbsp;</span>
+                <span className="font-black text-2xl text-primary drop-shadow-sm">السِّكَّةِ</span>
               </div>
             </Link>
             <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
@@ -41,7 +41,7 @@ export function Footer() {
 
           <div>
             <h4 className="mb-4 font-semibold text-foreground">الأقسام</h4>
-            <ul className="font-heading space-y-2 text-sm text-gray-400">
+            <ul className="font-heading space-y-2 text-sm text-gray-500">
               <li><Link href="/category/groceries" className="hover:text-primary transition-colors">سوبر ماركت</Link></li>
               <li><Link href="/category/electronics" className="hover:text-primary transition-colors">إلكترونيات</Link></li>
               <li><Link href="/category/pharmacy" className="hover:text-primary transition-colors">صيدلية</Link></li>
@@ -51,7 +51,7 @@ export function Footer() {
 
           <div>
             <h4 className="mb-4 font-semibold text-foreground">خلينا نساعدك</h4>
-            <ul className="font-heading space-y-2 text-sm text-gray-400">
+            <ul className="font-heading space-y-2 text-sm text-gray-500">
               <li><Link href="/about" className="hover:text-primary transition-colors">اعرف عنا</Link></li>
               <li><Link href="/faq" className="hover:text-primary transition-colors">الأسئلة الشائعة</Link></li>
               <li><Link href="/account" className="hover:text-primary transition-colors">حسابي</Link></li>
@@ -68,7 +68,7 @@ export function Footer() {
                </div>
                <div>
                   <p className="font-heading text-sm font-semibold text-foreground">ادفع وانت مطمن</p>
-                  <p className="text-xs text-gray-400">كل طلباتنا الدفع فيها كاش لما تستلم</p>
+                  <p className="text-xs text-gray-500">كل طلباتنا الدفع فيها كاش لما تستلم</p>
                </div>
              </div>
           </div>
@@ -77,8 +77,8 @@ export function Footer() {
         <div className="mt-12 flex flex-col items-center justify-between border-t border-surface-hover pt-8 pb-4 text-center sm:flex-row text-xs text-gray-500">
           <p>حقوق النشر &copy; {new Date().getFullYear()} في السكة. كل الحقوق محفوظة.</p>
           <div className="mt-4 flex gap-4 sm:mt-0">
-             <Link href="/terms" className="hover:text-gray-300">الشروط والأحكام</Link>
-             <Link href="/privacy" className="hover:text-gray-300">سياسة الخصوصية</Link>
+             <Link href="/terms" className="hover:text-foreground transition-colors">الشروط والأحكام</Link>
+             <Link href="/privacy" className="hover:text-foreground transition-colors">سياسة الخصوصية</Link>
           </div>
         </div>
       </div>

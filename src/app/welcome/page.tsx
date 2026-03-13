@@ -53,7 +53,7 @@ function WelcomeContent() {
 
     return (
         <div
-            className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center min-h-[100dvh] bg-[#050709] overflow-hidden transition-opacity duration-700 ${visible ? 'opacity-100' : 'opacity-0'}`}
+            className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center min-h-[100dvh] bg-background overflow-hidden transition-opacity duration-700 ${visible ? 'opacity-100' : 'opacity-0'}`}
         >
             {/* Animated background glow blobs */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -91,14 +91,14 @@ function WelcomeContent() {
                 </div>
 
                 {/* Welcome text */}
-                <h1 className="text-4xl sm:text-5xl font-black text-white leading-tight mb-3">
+                <h1 className="text-4xl sm:text-5xl font-black text-foreground leading-tight mb-3">
                     أهلاً وسهلاً
                 </h1>
                 <h2 className="text-2xl sm:text-3xl font-bold text-emerald-400 mb-6">
                     {name} 👋
                 </h2>
 
-                <p className="text-gray-300 text-base sm:text-lg leading-relaxed mb-3 max-w-sm">
+                <p className="text-gray-500 text-base sm:text-lg leading-relaxed mb-3 max-w-sm">
                     يشرفنا إنضمامك لعيلة <span className="text-emerald-400 font-bold">في السكة</span>. إحنا متحمسين ليك وجاهزين لتوصيل أي طلب بأسرع وقت وأحسن جودة.
                 </p>
 
@@ -141,7 +141,7 @@ function WelcomeContent() {
 export default function WelcomePage() {
     return (
         <Suspense fallback={
-            <div className="fixed inset-0 bg-[#050709] flex items-center justify-center">
+            <div className="fixed inset-0 bg-background flex items-center justify-center">
                 <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-emerald-500" />
             </div>
         }>

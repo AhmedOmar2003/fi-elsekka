@@ -128,16 +128,16 @@ export default function OrderSuccessPage() {
           <div
             className={`transition-all duration-700 delay-300 ${show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
           >
-            <h1 className="text-3xl sm:text-4xl font-heading font-black text-white mb-3 leading-tight">
+            <h1 className="text-3xl sm:text-4xl font-heading font-black text-foreground mb-3 leading-tight">
               طلبك في الطريق! 🚀
             </h1>
 
             {/* Motivational message card */}
             <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-3xl p-6 mb-6 text-right shadow-xl shadow-primary/5">
-              <p className="text-lg font-bold text-white leading-relaxed mb-3">
+              <p className="text-lg font-bold text-foreground leading-relaxed mb-3">
                 🏍️ المندوب انطلق نحوك!
               </p>
-              <p className="text-gray-300 leading-relaxed text-sm sm:text-base">
+              <p className="text-gray-500 leading-relaxed text-sm sm:text-base">
                 طلبك تحت أيدينا دلوقتي وماشي في أسرع وقت. المندوب الشاطر بتاعنا هيكون عندك في أقرب وقت ممكن.
               </p>
               <div className="mt-4 pt-4 border-t border-primary/10">
@@ -161,7 +161,7 @@ export default function OrderSuccessPage() {
                   key={i}
                   className={`rounded-2xl p-3 border text-center transition-all ${step.done
                     ? 'bg-primary/10 border-primary/30 text-primary'
-                    : 'bg-white/3 border-white/5 text-gray-500'
+                    : 'bg-surface-hover/50 border-surface-hover text-gray-500'
                     }`}
                 >
                   <div className="text-2xl mb-1">{step.icon}</div>
@@ -179,7 +179,7 @@ export default function OrderSuccessPage() {
                 </button>
               </Link>
               <Link href="/orders">
-                <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 active:scale-95 transition-all text-white font-bold px-8 py-3.5 rounded-2xl">
+                <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-surface hover:bg-surface-hover border border-surface-border active:scale-95 transition-all text-foreground font-bold px-8 py-3.5 rounded-2xl">
                   تابع طلباتي
                 </button>
               </Link>

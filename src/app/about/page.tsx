@@ -34,7 +34,7 @@ export default function AboutUsPage() {
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto leading-relaxed text-balance">
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-500 max-w-2xl mx-auto leading-relaxed text-balance">
             إحنا مش مجرد متجر أونلاين، إحنا فكرنا إزاي نوفر عليك المشوار والتعب، ونجيبلك كل اللي بتحبه وتثق فيه لحد باب بيتك، وبأسهل طريقة ممكنة.
           </p>
         </section>
@@ -58,7 +58,7 @@ export default function AboutUsPage() {
               <h2 className="text-3xl sm:text-4xl font-heading font-black text-foreground mb-4 sm:mb-6">
                 إزاي بدأنا الحكاية؟
               </h2>
-              <div className="space-y-4 sm:space-y-6 text-base sm:text-lg text-gray-400 leading-relaxed text-justify sm:text-start">
+              <div className="space-y-4 sm:space-y-6 text-base sm:text-lg text-gray-500 leading-relaxed text-justify sm:text-start">
                 <p>
                   الفكرة دايماً كانت بتبدأ من احتياج بسيط. كنا بنشوف إزاي الناس بتعاني عشان تلاقي كذا منتج من أماكن مختلفة، ومصاريف الشحن بتكتر، والوقت بيضيع. فكرنا... ليه ميبقاش في مكان واحد يلم كل ده؟
                 </p>
@@ -97,7 +97,7 @@ export default function AboutUsPage() {
               <h3 className="font-heading font-bold text-xl sm:text-2xl text-foreground mb-3">
                 سرعة في التوصيل
               </h3>
-              <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
+              <p className="text-sm sm:text-base text-gray-500 leading-relaxed">
                 عارفين إنك مستعجل، عشان كده بنحاول دايماً نوصل طلبك في أسرع وقت ممكن وبأعلى معايير الأمان.
               </p>
             </div>
@@ -110,7 +110,7 @@ export default function AboutUsPage() {
               <h3 className="font-heading font-bold text-xl sm:text-2xl text-foreground mb-3">
                 دفع آمن ١٠٠٪
               </h3>
-              <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
+              <p className="text-sm sm:text-base text-gray-500 leading-relaxed">
                 وفرنالك خدمة "الدفع عند الاستلام" عشان تدفع براحتك لما المنتج يوصلك وتتأكد منه بنفسك من غير أي بطاقات بنكية.
               </p>
             </div>
@@ -123,7 +123,7 @@ export default function AboutUsPage() {
               <h3 className="font-heading font-bold text-xl sm:text-2xl text-foreground mb-3">
                 جودة مضمونة
               </h3>
-              <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
+              <p className="text-sm sm:text-base text-gray-500 leading-relaxed">
                 بنختار المنتجات والموردين بعناية شديدة عشان نضمنلك تاخد أفضل جودة وأحسن سعر في السوق من غير مفاجآت.
               </p>
             </div>

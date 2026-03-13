@@ -30,14 +30,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl" className="dark">
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body
-        className={`${ibmPlex.variable} ${lalezar.variable} font-sans antialiased bg-gray-950 text-gray-100 min-h-screen flex flex-col`}
+        className={`${ibmPlex.variable} ${lalezar.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col transition-colors duration-300`}
       >
         <Providers>
           {children}
           <MobileNav />
-          <Toaster position="top-center" richColors theme="dark" />
+          <Toaster className="font-sans" position="top-center" richColors />
         </Providers>
       </body>
     </html>

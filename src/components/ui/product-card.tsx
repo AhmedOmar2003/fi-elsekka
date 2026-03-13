@@ -2,10 +2,10 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Badge } from "./badge"
 import { Button, cn } from "./button"
 import { Heart, Star, ShoppingCart, Check } from "lucide-react"
 import { useCart } from "@/contexts/CartContext"
+import { useFavorites } from "@/contexts/FavoritesContext"
 
 export interface ProductCardProps {
   id: string;
@@ -31,13 +31,21 @@ export function ProductCard({
   className,
 }: ProductCardProps) {
   const { addItem } = useCart()
+  const { isFavorite, toggleFavorite } = useFavorites()
   const [isAdded, setIsAdded] = React.useState(false)
+  const fav = isFavorite(id)
 
   const handleAddToCart = async (e: React.MouseEvent) => {
-    e.preventDefault() // prevent navigating to product detail
+    e.preventDefault()
     await addItem(id, 1)
     setIsAdded(true)
     setTimeout(() => setIsAdded(false), 2000)
+  }
+
+  const handleToggleFav = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    await toggleFavorite(id)
   }
 
   return (
@@ -48,18 +56,27 @@ export function ProductCard({
           <img src={imageUrl} alt={title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
         </div>
 
-        {/* Badges */}
+        {/* Discount Badge */}
         <div className="absolute top-3 right-3 flex flex-col gap-1 z-10">
           {discountBadge && (
-            <Badge variant="secondary" className="bg-secondary text-white font-bold px-2.5 py-1 shadow-lg shadow-secondary/20 rounded-lg">
+            <span className="inline-flex items-center rounded-full bg-secondary text-white font-bold px-2.5 py-1 shadow-lg shadow-secondary/20 text-xs">
               {discountBadge}
-            </Badge>
+            </span>
           )}
         </div>
 
-        {/* Favorite Icon */}
-        <button className="absolute top-3 left-3 p-2 rounded-full bg-background/80 backdrop-blur-md text-gray-400 hover:text-secondary opacity-0 transition-opacity duration-300 group-hover:opacity-100 sm:opacity-100 shadow-md ring-1 ring-white/10 z-10">
-          <Heart className="w-5 h-5 transition-transform active:scale-95" />
+        {/* Favorite Heart Button */}
+        <button
+          onClick={handleToggleFav}
+          aria-label={fav ? "إزالة من المفضلة" : "أضف للمفضلة"}
+          className={cn(
+            "absolute top-3 left-3 p-2 rounded-full backdrop-blur-md shadow-md ring-1 ring-black/5 z-10 transition-all duration-200 active:scale-90",
+            fav
+              ? "bg-secondary/10 text-secondary opacity-100"
+              : "bg-background/80 text-gray-400 hover:text-secondary opacity-0 group-hover:opacity-100 sm:opacity-100"
+          )}
+        >
+          <Heart className={cn("w-5 h-5 transition-transform", fav && "fill-current")} />
         </button>
 
         {/* Subtle premium gradient overlay on image hover */}
@@ -71,7 +88,7 @@ export function ProductCard({
         {rating && (
           <div className="flex items-center gap-1 mb-2 text-[11px] font-semibold text-yellow-500">
             <Star className="w-3.5 h-3.5 fill-current" />
-            <span className="text-gray-300">{rating} <span className="mr-1 hidden sm:inline text-gray-500">({reviewsCount})</span></span>
+            <span className="text-foreground">{rating} <span className="mr-1 hidden sm:inline text-gray-500">({reviewsCount})</span></span>
           </div>
         )}
 
@@ -89,7 +106,7 @@ export function ProductCard({
             {oldPrice && (
               <span className="text-xs font-heading text-gray-500 line-through">{oldPrice} ج.م</span>
             )}
-            {!oldPrice && <span className="h-4"></span> /* Maintain consistent height */}
+            {!oldPrice && <span className="h-4"></span>}
           </div>
 
           <Button

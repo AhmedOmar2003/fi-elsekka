@@ -41,8 +41,8 @@ export default function AdminUsersPage() {
         <div className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h1 className="text-2xl font-heading font-black text-white">المستخدمون</h1>
-                    <p className="text-sm text-gray-400 mt-0.5">{users.length} مستخدم مسجّل</p>
+                    <h1 className="text-2xl font-heading font-black text-foreground">المستخدمون</h1>
+                    <p className="text-sm text-gray-500 mt-0.5">{users.length} مستخدم مسجّل</p>
                 </div>
             </div>
 
@@ -53,16 +53,16 @@ export default function AdminUsersPage() {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="بحث بالاسم أو الإيميل..."
-                    className="w-full bg-[#0a0e14] border border-white/5 rounded-xl pr-9 pl-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                    className="w-full bg-surface border border-surface-hover rounded-xl pr-9 pl-4 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
                 />
             </div>
 
             {/* Table */}
-            <div className="bg-[#0a0e14] border border-white/5 rounded-2xl overflow-hidden">
+            <div className="bg-surface border border-surface-hover rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-right">
                         <thead>
-                            <tr className="border-b border-white/5">
+                            <tr className="border-b border-surface-hover">
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500">المستخدم</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 hidden sm:table-cell">الإيميل</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 hidden md:table-cell">رقم الهاتف</th>
@@ -70,10 +70,10 @@ export default function AdminUsersPage() {
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 text-center">حذف</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-surface-hover">
                             {isLoading ? (
                                 [...Array(6)].map((_, i) => (
-                                    <tr key={i}><td colSpan={5} className="px-4 py-3"><div className="h-10 bg-white/5 rounded-lg animate-pulse" /></td></tr>
+                                    <tr key={i}><td colSpan={5} className="px-4 py-3"><div className="h-10 bg-surface-hover rounded-lg animate-pulse" /></td></tr>
                                 ))
                             ) : filtered.length === 0 ? (
                                 <tr>
@@ -84,22 +84,22 @@ export default function AdminUsersPage() {
                                 </tr>
                             ) : (
                                 filtered.map((user) => (
-                                    <tr key={user.id} className="hover:bg-white/3 transition-colors">
+                                    <tr key={user.id} className="hover:bg-surface-hover transition-colors">
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary font-black text-xs shrink-0">
+                                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs shrink-0">
                                                     {user.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '?'}
                                                 </div>
-                                                <span className="font-bold text-white text-sm">{user.full_name || '—'}</span>
+                                                <span className="font-bold text-foreground text-sm">{user.full_name || '—'}</span>
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 hidden sm:table-cell">
-                                            <div className="flex items-center gap-1.5 text-gray-400 text-xs">
+                                            <div className="flex items-center gap-1.5 text-gray-500 text-xs">
                                                 <Mail className="w-3 h-3" />
                                                 {user.email}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 hidden md:table-cell text-gray-400 text-xs">
+                                        <td className="px-4 py-3 hidden md:table-cell text-gray-500 text-xs">
                                             {user.phone || '—'}
                                         </td>
                                         <td className="px-4 py-3 hidden lg:table-cell">

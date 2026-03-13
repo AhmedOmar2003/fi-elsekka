@@ -13,7 +13,7 @@ const STATUSES = [
 ];
 
 function statusMeta(val: string) {
-    return STATUSES.find(s => s.value === val) || { label: val, color: 'text-gray-400 bg-white/5 border-white/10' };
+    return STATUSES.find(s => s.value === val) || { label: val, color: 'text-gray-500 bg-surface-hover border-surface-hover' };
 }
 
 function exportToCSV(orders: any[], statusFilter: string) {
@@ -94,22 +94,22 @@ export default function AdminOrdersPage() {
             {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h1 className="text-2xl font-heading font-black text-white">الطلبات</h1>
-                    <p className="text-sm text-gray-400 mt-0.5">{displayedOrders.length} طلب {filterStatus !== 'all' ? `(${statusMeta(filterStatus).label})` : 'إجمالي'}</p>
+                    <h1 className="text-2xl font-heading font-black text-foreground">الطلبات</h1>
+                    <p className="text-sm text-gray-500 mt-0.5">{displayedOrders.length} طلب {filterStatus !== 'all' ? `(${statusMeta(filterStatus).label})` : 'إجمالي'}</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
                     {/* Status Filter */}
-                    <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
+                    <div className="flex items-center gap-1 bg-surface-hover border border-surface-hover rounded-xl p-1">
                         <button
                             onClick={() => setFilterStatus('all')}
-                            className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${filterStatus === 'all' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}
+                            className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${filterStatus === 'all' ? 'bg-surface border border-surface-hover text-foreground shadow-sm' : 'text-gray-500 hover:text-foreground'}`}
                         >الكل</button>
                         {STATUSES.map(s => (
                             <button
                                 key={s.value}
                                 onClick={() => setFilterStatus(s.value)}
-                                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${filterStatus === s.value ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}
+                                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${filterStatus === s.value ? 'bg-surface border border-surface-hover text-foreground shadow-sm' : 'text-gray-500 hover:text-foreground'}`}
                             >{s.label}</button>
                         ))}
                     </div>
@@ -125,16 +125,16 @@ export default function AdminOrdersPage() {
                             <ChevronDown className="w-3.5 h-3.5" />
                         </button>
                         {isExportMenuOpen && (
-                            <div className="absolute left-0 top-full mt-1 bg-[#0d1117] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-20 min-w-[180px]">
+                            <div className="absolute left-0 top-full mt-1 bg-surface border border-surface-hover rounded-xl overflow-hidden shadow-2xl z-20 min-w-[180px]">
                                 <button
                                     onClick={() => { exportToCSV(orders, 'all'); setIsExportMenuOpen(false); }}
-                                    className="w-full text-right px-4 py-2.5 text-sm text-white hover:bg-white/5 transition-colors font-bold"
+                                    className="w-full text-right px-4 py-2.5 text-sm text-foreground hover:bg-surface-hover transition-colors font-bold"
                                 >📦 كل الطلبات</button>
                                 {STATUSES.map(s => (
                                     <button
                                         key={s.value}
                                         onClick={() => { exportToCSV(orders, s.value); setIsExportMenuOpen(false); }}
-                                        className="w-full text-right px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 transition-colors"
+                                        className="w-full text-right px-4 py-2.5 text-sm text-gray-400 hover:text-foreground hover:bg-surface-hover transition-colors"
                                     >{s.label}</button>
                                 ))}
                             </div>
@@ -143,11 +143,11 @@ export default function AdminOrdersPage() {
                 </div>
             </div>
 
-            <div className="bg-[#0a0e14] border border-white/5 rounded-2xl overflow-hidden">
+            <div className="bg-surface border border-surface-hover rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-right">
                         <thead>
-                            <tr className="border-b border-white/5">
+                            <tr className="border-b border-surface-hover">
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500">رقم الطلب</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500">العميل</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500">التليفون</th>
@@ -157,10 +157,10 @@ export default function AdminOrdersPage() {
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 text-center">تفاصيل</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-surface-hover">
                             {isLoading ? (
                                 [...Array(5)].map((_, i) => (
-                                    <tr key={i}><td colSpan={7} className="px-4 py-3"><div className="h-10 bg-white/5 rounded-lg animate-pulse" /></td></tr>
+                                    <tr key={i}><td colSpan={7} className="px-4 py-3"><div className="h-10 bg-surface-hover rounded-lg animate-pulse" /></td></tr>
                                 ))
                             ) : displayedOrders.length === 0 ? (
                                 <tr><td colSpan={7} className="text-center text-gray-500 py-12">لا توجد طلبات في هذا التصنيف</td></tr>
@@ -168,14 +168,14 @@ export default function AdminOrdersPage() {
                                 displayedOrders.map((order) => {
                                     const sm = statusMeta(order.status);
                                     return (
-                                        <tr key={order.id} className="hover:bg-white/3 transition-colors">
+                                        <tr key={order.id} className="hover:bg-surface-hover transition-colors">
                                             <td className="px-4 py-3">
-                                                <span className="font-mono text-xs text-gray-400">#{order.id.slice(0, 8)}</span>
+                                                <span className="font-mono text-xs text-gray-500">#{order.id.slice(0, 8)}</span>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <p className="font-bold text-white text-xs">{order.users?.full_name || order.users?.email || '—'}</p>
+                                                <p className="font-bold text-foreground text-xs">{order.users?.full_name || order.users?.email || '—'}</p>
                                             </td>
-                                            <td className="px-4 py-3 text-xs text-gray-300 font-mono">
+                                            <td className="px-4 py-3 text-xs text-gray-500 font-mono">
                                                 {order.shipping_address?.phone || order.users?.phone || '—'}
                                             </td>
                                             <td className="px-4 py-3 hidden sm:table-cell text-xs text-gray-500">
@@ -192,7 +192,7 @@ export default function AdminOrdersPage() {
                                                         className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border appearance-none cursor-pointer ${sm.color} bg-transparent focus:outline-none`}
                                                     >
                                                         {STATUSES.map(s => (
-                                                            <option key={s.value} value={s.value} className="bg-[#0a0e14] text-white">{s.label}</option>
+                                                            <option key={s.value} value={s.value} className="bg-surface text-foreground">{s.label}</option>
                                                         ))}
                                                     </select>
                                                 </div>
@@ -217,27 +217,27 @@ export default function AdminOrdersPage() {
             {/* Order Detail Drawer */}
             {selectedOrder && (
                 <div className="fixed inset-0 z-50 flex items-stretch justify-end">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedOrder(null)} />
-                    <div className="relative w-full max-w-md bg-[#0a0e14] border-r border-white/10 flex flex-col h-full shadow-2xl overflow-y-auto">
-                        <div className="flex items-center justify-between p-5 border-b border-white/5 sticky top-0 bg-[#0a0e14] z-10">
+                    <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" onClick={() => setSelectedOrder(null)} />
+                    <div className="relative w-full max-w-md bg-surface border-r border-surface-hover flex flex-col h-full shadow-2xl overflow-y-auto">
+                        <div className="flex items-center justify-between p-5 border-b border-surface-hover sticky top-0 bg-surface z-10">
                             <div>
-                                <h2 className="font-heading font-black text-white">تفاصيل الطلب</h2>
+                                <h2 className="font-heading font-black text-foreground">تفاصيل الطلب</h2>
                                 <p className="text-xs text-gray-500 mt-0.5 font-mono">#{selectedOrder.id.slice(0, 8)}...</p>
                             </div>
-                            <button onClick={() => setSelectedOrder(null)} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5">
+                            <button onClick={() => setSelectedOrder(null)} className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
 
                         <div className="p-5 space-y-5 flex-1">
                             {/* Customer Info */}
-                            <div className="bg-white/3 rounded-xl p-4 space-y-2">
+                            <div className="bg-surface-hover rounded-xl p-4 space-y-2">
                                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">معلومات العميل</p>
-                                <p className="font-bold text-white">{selectedOrder.users?.full_name || 'غير معروف'}</p>
-                                <p className="text-xs text-gray-300 font-mono">{selectedOrder.shipping_address?.phone || selectedOrder.users?.phone || 'لا يوجد رقم'}</p>
-                                <p className="text-xs text-gray-400">{selectedOrder.users?.email}</p>
+                                <p className="font-bold text-foreground">{selectedOrder.users?.full_name || 'غير معروف'}</p>
+                                <p className="text-xs text-gray-500 font-mono">{selectedOrder.shipping_address?.phone || selectedOrder.users?.phone || 'لا يوجد رقم'}</p>
+                                <p className="text-xs text-gray-500">{selectedOrder.users?.email}</p>
                                 {selectedOrder.shipping_address?.city && (
-                                    <p className="text-xs text-gray-400">
+                                    <p className="text-xs text-gray-500">
                                         {selectedOrder.shipping_address.city}
                                         {selectedOrder.shipping_address.area ? ` — ${selectedOrder.shipping_address.area}` : ''}
                                         {selectedOrder.shipping_address.street ? ` — ${selectedOrder.shipping_address.street}` : ''}
@@ -251,7 +251,7 @@ export default function AdminOrdersPage() {
                                 <select
                                     value={selectedOrder.status}
                                     onChange={e => handleStatusChange(selectedOrder.id, e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary/50"
+                                    className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
                                 >
                                     {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                                 </select>
@@ -262,25 +262,25 @@ export default function AdminOrdersPage() {
                                 <p className="text-xs font-bold text-gray-500 mb-3">المنتجات المطلوبة</p>
                                 {loadingDetail ? (
                                     <div className="space-y-2">
-                                        {[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-white/5 rounded-xl animate-pulse" />)}
+                                        {[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-surface-hover rounded-xl animate-pulse" />)}
                                     </div>
                                 ) : orderItems.length === 0 ? (
                                     <p className="text-gray-500 text-sm text-center py-4">لا توجد منتجات</p>
                                 ) : (
                                     <div className="space-y-2">
                                         {orderItems.map((item, i) => (
-                                            <div key={i} className="flex items-center gap-3 bg-white/3 rounded-xl p-3">
+                                            <div key={i} className="flex items-center gap-3 bg-surface-hover rounded-xl p-3">
                                                 {item.products?.image_url ? (
                                                     <div className="w-10 h-10 rounded-lg overflow-hidden bg-white shrink-0">
                                                         <Image src={item.products.image_url} alt={item.products?.name || ''} width={40} height={40} className="object-contain w-full h-full p-0.5" />
                                                     </div>
                                                 ) : (
-                                                    <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                                                        <Package className="w-4 h-4 text-gray-600" />
+                                                    <div className="w-10 h-10 rounded-lg bg-surface border border-surface-hover flex items-center justify-center shrink-0">
+                                                        <Package className="w-4 h-4 text-gray-500" />
                                                     </div>
                                                 )}
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-bold text-white truncate">{item.products?.name}</p>
+                                                    <p className="text-sm font-bold text-foreground truncate">{item.products?.name}</p>
                                                     <p className="text-xs text-gray-500">{item.quantity} × {item.products?.price} ج.م</p>
                                                 </div>
                                                 <p className="text-sm font-black text-primary shrink-0">
@@ -293,8 +293,8 @@ export default function AdminOrdersPage() {
                             </div>
 
                             {/* Total */}
-                            <div className="border-t border-white/5 pt-4 flex items-center justify-between">
-                                <span className="text-sm text-gray-400">الإجمالي الكلي</span>
+                            <div className="border-t border-surface-hover pt-4 flex items-center justify-between">
+                                <span className="text-sm text-gray-500">الإجمالي الكلي</span>
                                 <span className="text-xl font-black text-primary">{(selectedOrder.total_amount || 0).toLocaleString()} ج.م</span>
                             </div>
                         </div>

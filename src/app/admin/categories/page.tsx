@@ -55,8 +55,8 @@ export default function AdminCategoriesPage() {
         <div className="space-y-5">
             <div className="flex items-center justify-between gap-3">
                 <div>
-                    <h1 className="text-2xl font-heading font-black text-white">الأقسام</h1>
-                    <p className="text-sm text-gray-400 mt-0.5">{categories.length} قسم في المتجر</p>
+                    <h1 className="text-2xl font-heading font-black text-foreground">الأقسام</h1>
+                    <p className="text-sm text-gray-500 mt-0.5">{categories.length} قسم في المتجر</p>
                 </div>
                 <button
                     onClick={openNew}
@@ -70,27 +70,27 @@ export default function AdminCategoriesPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {isLoading ? (
                     [...Array(6)].map((_, i) => (
-                        <div key={i} className="h-28 bg-[#0a0e14] rounded-2xl animate-pulse border border-white/5" />
+                        <div key={i} className="h-28 bg-surface-hover rounded-2xl animate-pulse border border-surface-hover" />
                     ))
                 ) : categories.length === 0 ? (
                     <div className="col-span-3 text-center text-gray-500 py-16">لا توجد أقسام بعد. أضف أول قسم!</div>
                 ) : (
                     categories.map((cat) => (
-                        <div key={cat.id} className="bg-[#0a0e14] border border-white/5 rounded-2xl p-5 flex flex-col gap-3 hover:border-white/10 transition-all">
+                        <div key={cat.id} className="bg-surface border border-surface-hover rounded-2xl p-5 flex flex-col gap-3 hover:border-primary/30 transition-all shadow-sm">
                             <div className="flex items-start justify-between gap-2">
                                 <div className="flex items-center gap-2.5">
                                     <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                                         <Tag className="w-4 h-4 text-primary" />
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-white text-sm">{cat.name}</h3>
+                                        <h3 className="font-bold text-foreground text-sm">{cat.name}</h3>
                                         {cat.description && (
                                             <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{cat.description}</p>
                                         )}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
-                                    <button onClick={() => openEdit(cat)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
+                                    <button onClick={() => openEdit(cat)} className="p-1.5 rounded-lg text-gray-400 hover:text-foreground hover:bg-surface-hover transition-colors">
                                         <Pencil className="w-3.5 h-3.5" />
                                     </button>
                                     <button onClick={() => handleDelete(cat.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-400/10 transition-colors">
@@ -99,7 +99,7 @@ export default function AdminCategoriesPage() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <span className="bg-white/5 text-gray-400 px-2.5 py-1 rounded-lg text-xs font-bold">
+                                <span className="bg-surface-hover text-gray-500 px-2.5 py-1 rounded-lg text-xs font-bold">
                                     {cat.products?.length || 0} منتج
                                 </span>
                             </div>
@@ -110,37 +110,37 @@ export default function AdminCategoriesPage() {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="bg-[#0a0e14] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl">
-                        <div className="flex items-center justify-between p-5 border-b border-white/5">
-                            <h2 className="font-heading font-black text-white">{editingId ? 'تعديل القسم' : 'إضافة قسم جديد'}</h2>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                    <div className="bg-surface border border-surface-hover rounded-3xl w-full max-w-md shadow-2xl">
+                        <div className="flex items-center justify-between p-5 border-b border-surface-hover">
+                            <h2 className="font-heading font-black text-foreground">{editingId ? 'تعديل القسم' : 'إضافة قسم جديد'}</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
                         <div className="p-5 space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-1.5">اسم القسم *</label>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">اسم القسم *</label>
                                 <input
                                     value={name}
                                     onChange={e => setName(e.target.value)}
                                     placeholder="مثال: إلكترونيات"
-                                    className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50"
+                                    className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-1.5">الوصف</label>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">الوصف</label>
                                 <textarea
                                     rows={3}
                                     value={description}
                                     onChange={e => setDescription(e.target.value)}
                                     placeholder="وصف مختصر للقسم..."
-                                    className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50 resize-none"
+                                    className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50 resize-none"
                                 />
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 p-5 border-t border-white/5">
-                            <button onClick={() => setIsModalOpen(false)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-sm font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                        <div className="flex items-center gap-3 p-5 border-t border-surface-hover">
+                            <button onClick={() => setIsModalOpen(false)} className="flex-1 py-2.5 rounded-xl border border-surface-hover text-sm font-bold text-gray-500 hover:text-foreground hover:bg-surface-hover transition-all">
                                 إلغاء
                             </button>
                             <button

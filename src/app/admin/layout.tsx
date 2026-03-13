@@ -4,13 +4,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import {
     LayoutDashboard, Package, Tag, ShoppingCart, Users,
     Menu, X, LogOut, ChevronRight, Bell, Settings, Bike, Megaphone, Ticket,
-    UserPlus, ShoppingBag, CheckCircle2, Clock, Truck, XCircle
+    UserPlus, ShoppingBag, CheckCircle2, Clock, Truck, XCircle, Loader2, ShieldAlert, MessageSquare
 } from 'lucide-react';
 import { signOut } from '@/services/authService';
 import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
 
 // ── Types ────────────────────────────────────────────────────
 interface Notification {
@@ -30,6 +33,7 @@ const NAV_ITEMS = [
     { label: 'الأقسام', href: '/admin/categories', icon: Tag },
     { label: 'الطلبات', href: '/admin/orders', icon: ShoppingCart },
     { label: 'المستخدمون', href: '/admin/users', icon: Users },
+    { label: 'التقييمات', href: '/admin/reviews', icon: MessageSquare },
     { label: 'العروض الترويجية', href: '/admin/promotions', icon: Megaphone },
     { label: 'أكواد الخصم', href: '/admin/discounts', icon: Ticket },
 ];
@@ -46,20 +50,20 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
     };
 
     return (
-        <aside className="flex flex-col h-full bg-[#0a0e14] border-r border-white/5">
+        <aside className="flex flex-col h-full bg-surface border-r border-surface-hover">
             {/* Logo */}
-            <div className="flex items-center justify-between p-5 border-b border-white/5">
+            <div className="flex items-center justify-between p-5 border-b border-surface-hover">
                 <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
-                        <Bike className="w-5 h-5 text-white" />
+                        <Bike className="w-5 h-5 text-foreground" />
                     </div>
                     <div>
-                        <p className="font-heading font-black text-white text-sm">في السكة</p>
+                        <p className="font-heading font-black text-foreground text-sm">في السكة</p>
                         <p className="text-[10px] text-primary font-medium">لوحة الإدارة</p>
                     </div>
                 </div>
                 {onClose && (
-                    <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5">
+                    <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-foreground rounded-lg hover:bg-surface-hover">
                         <X className="w-4 h-4" />
                     </button>
                 )}
@@ -77,7 +81,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
                             onClick={onClose}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${isActive
                                 ? 'bg-primary/15 text-primary border border-primary/20'
-                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                : 'text-gray-400 hover:text-foreground hover:bg-surface-hover'
                                 }`}
                         >
                             <Icon className="w-4.5 h-4.5 shrink-0" />
@@ -89,13 +93,13 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
             </nav>
 
             {/* Footer */}
-            <div className="p-4 border-t border-white/5 space-y-1">
+            <div className="p-4 border-t border-surface-hover space-y-1">
                 <div className="flex items-center gap-2.5 px-3 py-2 mb-2">
                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-black text-xs shrink-0">
                         {user?.email?.[0]?.toUpperCase() || 'A'}
                     </div>
                     <div className="min-w-0">
-                        <p className="text-xs font-bold text-white truncate">{user?.email}</p>
+                        <p className="text-xs font-bold text-foreground truncate">{user?.email}</p>
                         <p className="text-[10px] text-primary">مدير النظام</p>
                     </div>
                 </div>
@@ -264,11 +268,11 @@ function NotificationBell() {
         <div className="relative">
             <button
                 onClick={() => { setIsOpen(v => !v); if (!isOpen) markAllRead(); }}
-                className="relative p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                className="relative p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover transition-colors"
             >
                 <Bell className="w-4.5 h-4.5" />
                 {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-rose-500 text-white text-[10px] font-black rounded-full animate-pulse">
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-rose-500 text-foreground text-[10px] font-black rounded-full animate-pulse">
                         {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                 )}
@@ -277,10 +281,10 @@ function NotificationBell() {
             {isOpen && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-                    <div className="absolute left-0 top-full mt-2 w-80 bg-[#0d1117] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                    <div className="absolute left-0 top-full mt-2 w-80 bg-surface border border-surface-hover rounded-2xl shadow-2xl z-50 overflow-hidden">
                         {/* Header */}
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
-                            <h3 className="text-sm font-black text-white">الإشعارات</h3>
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-surface-hover">
+                            <h3 className="text-sm font-black text-foreground">الإشعارات</h3>
                             {notifications.length > 0 && (
                                 <button onClick={clearAll} className="text-[10px] text-gray-500 hover:text-rose-400 transition-colors font-bold">
                                     مسح الكل
@@ -302,13 +306,13 @@ function NotificationBell() {
                                         key={n.id}
                                         href={n.link || '/admin'}
                                         onClick={() => setIsOpen(false)}
-                                        className={`flex items-start gap-3 px-4 py-3 border-b border-white/5 hover:bg-white/3 transition-colors ${!n.read ? 'bg-primary/3' : ''}`}
+                                        className={`flex items-start gap-3 px-4 py-3 border-b border-surface-hover hover:bg-surface-hover transition-colors ${!n.read ? 'bg-primary/5' : ''}`}
                                     >
-                                        <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
+                                        <div className="w-8 h-8 rounded-xl bg-surface-hover flex items-center justify-center shrink-0 mt-0.5">
                                             {getIcon(n.type)}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-bold text-white">{n.title}</p>
+                                            <p className="text-xs font-bold text-foreground">{n.title}</p>
                                             <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{n.body}</p>
                                             <p className="text-[10px] text-gray-600 mt-1">{formatTime(n.time)}</p>
                                         </div>
@@ -348,30 +352,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     // Don't render anything if we're not loaded or if a redirect is imminent
     if (isLoading || (!user && !isLoginPage)) {
         return (
-            <div className="min-h-screen bg-[#05070a] flex items-center justify-center">
+            <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
             </div>
         );
     }
 
     if (isLoginPage) {
-        return <div className="min-h-screen bg-[#05070a]">{children}</div>;
+        return <div className="min-h-screen bg-background">{children}</div>;
     }
 
     if (!user) return null;
 
     if (profile && profile.role !== 'admin') {
         return (
-            <div className="min-h-screen bg-[#05070a] flex flex-col items-center justify-center p-4">
+            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
                 <div className="w-16 h-16 rounded-full bg-rose-500/20 flex items-center justify-center mb-4">
                     <span className="text-rose-500 text-2xl">🔒</span>
                 </div>
-                <h1 className="text-2xl font-black text-white mb-2">غير مصرح لك بالدخول</h1>
-                <p className="text-gray-400 text-sm mb-6 text-center max-w-sm">
+                <h1 className="text-2xl font-black text-foreground mb-2">غير مصرح لك بالدخول</h1>
+                <p className="text-gray-500 text-sm mb-6 text-center max-w-sm">
                     هذا الحساب لا يمتلك صلاحيات إدارة النظام. تأكد من تشغيل كود SQL لتحويل هذا الحساب إلى مدير.
                 </p>
-                <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-xs text-left w-full max-w-md overflow-x-auto" dir="ltr">
-                    <pre className="text-gray-300 font-mono">
+                <div className="bg-surface-hover p-4 rounded-xl border border-surface-hover text-xs text-left w-full max-w-md overflow-x-auto" dir="ltr">
+                    <pre className="text-gray-400 font-mono">
 {`UPDATE public.users 
 SET role = 'admin' 
 WHERE email = '${user.email}';`}
@@ -382,7 +386,7 @@ WHERE email = '${user.email}';`}
     }
 
     return (
-        <div className="min-h-screen bg-[#05070a] flex">
+        <div className="min-h-screen bg-background flex">
             {/* Desktop Sidebar */}
             <div className="hidden lg:flex lg:w-60 shrink-0 h-screen sticky top-0">
                 <div className="w-full overflow-hidden">
@@ -406,10 +410,10 @@ WHERE email = '${user.email}';`}
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
                 {/* Top Bar */}
-                <header className="sticky top-0 z-30 flex items-center justify-between px-4 lg:px-6 h-14 bg-[#05070a]/90 backdrop-blur-lg border-b border-white/5">
+                <header className="sticky top-0 z-30 flex items-center justify-between px-4 lg:px-6 h-14 bg-background/90 backdrop-blur-lg border-b border-surface-hover">
                     <button
                         onClick={() => setIsSidebarOpen(true)}
-                        className="lg:hidden p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5"
+                        className="lg:hidden p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover"
                     >
                         <Menu className="w-5 h-5" />
                     </button>
@@ -420,7 +424,7 @@ WHERE email = '${user.email}';`}
                         {/* Realtime Notification Bell */}
                         <NotificationBell />
                         <Link href="/admin/settings">
-                            <button className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5">
+                            <button className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">
                                 <Settings className="w-4.5 h-4.5" />
                             </button>
                         </Link>

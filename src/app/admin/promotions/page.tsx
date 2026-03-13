@@ -103,17 +103,17 @@ export default function AdminPromotionsPage() {
 
     const field = (key: keyof typeof EMPTY_FORM, label: string, placeholder: string, type: 'text' | 'textarea' = 'text') => (
         <div key={key}>
-            <label className="block text-xs font-bold text-gray-400 mb-1.5">{label}</label>
+            <label className="block text-xs font-bold text-gray-500 mb-1.5">{label}</label>
             {type === 'textarea' ? (
                 <textarea rows={3} value={(form as any)[key]}
                     onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                     placeholder={placeholder}
-                    className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50 resize-none" />
+                    className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50 resize-none" />
             ) : (
                 <input type="text" value={(form as any)[key]}
                     onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                     placeholder={placeholder}
-                    className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50" />
+                    className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50" />
             )}
         </div>
     );
@@ -123,8 +123,8 @@ export default function AdminPromotionsPage() {
             {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h1 className="text-2xl font-heading font-black text-white">العروض الترويجية</h1>
-                    <p className="text-sm text-gray-400 mt-0.5">تحكم في اللافتة الترويجية للزوار الجدد</p>
+                    <h1 className="text-2xl font-heading font-black text-foreground">العروض الترويجية</h1>
+                    <p className="text-sm text-gray-500 mt-0.5">تحكم في اللافتة الترويجية للزوار الجدد</p>
                 </div>
                 <button onClick={openNew}
                     className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
@@ -133,21 +133,21 @@ export default function AdminPromotionsPage() {
             </div>
 
             {/* List */}
-            <div className="bg-[#0a0e14] border border-white/5 rounded-2xl overflow-hidden">
+            <div className="bg-surface border border-surface-hover rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-right">
                         <thead>
-                            <tr className="border-b border-white/5">
+                            <tr className="border-b border-surface-hover">
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500">العنوان</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 hidden sm:table-cell">كود الخصم</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500">الحالة</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 text-center">إجراءات</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-surface-hover">
                             {isLoading ? (
                                 [...Array(3)].map((_, i) => (
-                                    <tr key={i}><td colSpan={4} className="px-4 py-4"><div className="h-10 bg-white/5 rounded-lg animate-pulse" /></td></tr>
+                                    <tr key={i}><td colSpan={4} className="px-4 py-4"><div className="h-10 bg-surface-hover rounded-lg animate-pulse" /></td></tr>
                                 ))
                             ) : promotions.length === 0 ? (
                                 <tr>
@@ -157,29 +157,29 @@ export default function AdminPromotionsPage() {
                                     </td>
                                 </tr>
                             ) : promotions.map(p => (
-                                <tr key={p.id} className="hover:bg-white/3 transition-colors">
+                                <tr key={p.id} className="hover:bg-surface-hover transition-colors">
                                     <td className="px-4 py-3">
-                                        <p className="font-bold text-white">{p.title}</p>
+                                        <p className="font-bold text-foreground">{p.title}</p>
                                         {p.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{p.description}</p>}
                                     </td>
                                     <td className="px-4 py-3 hidden sm:table-cell">
                                         {p.discount_code ? (
-                                            <span className="font-mono bg-white/5 px-2.5 py-1 rounded-lg text-primary text-xs tracking-widest border border-white/5">{p.discount_code}</span>
-                                        ) : <span className="text-gray-600 text-xs">—</span>}
+                                            <span className="font-mono bg-surface-hover px-2.5 py-1 rounded-lg text-primary text-xs tracking-widest border border-surface-hover">{p.discount_code}</span>
+                                        ) : <span className="text-gray-500 text-xs">—</span>}
                                     </td>
                                     <td className="px-4 py-3">
                                         <button onClick={() => handleToggleActive(p)}
-                                            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${p.is_active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' : 'bg-white/5 text-gray-500 border-white/10 hover:bg-white/10'}`}>
+                                            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${p.is_active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20' : 'bg-surface-hover text-gray-500 border-surface-hover hover:bg-surface'}`}>
                                             {p.is_active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
                                             {p.is_active ? 'مفعّل' : 'موقوف'}
                                         </button>
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center justify-center gap-2">
-                                            <button onClick={() => openEdit(p)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
+                                            <button onClick={() => openEdit(p)} className="p-1.5 rounded-lg text-gray-400 hover:text-foreground hover:bg-surface-hover transition-colors">
                                                 <Pencil className="w-3.5 h-3.5" />
                                             </button>
-                                            <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-400/10 transition-colors">
+                                            <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors">
                                                 <Trash2 className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
@@ -193,11 +193,11 @@ export default function AdminPromotionsPage() {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="bg-[#0a0e14] border border-white/10 rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
-                        <div className="flex items-center justify-between p-5 border-b border-white/5 sticky top-0 bg-[#0a0e14]">
-                            <h2 className="font-heading font-black text-white">{editingId ? 'تعديل العرض' : 'إضافة عرض جديد'}</h2>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                    <div className="bg-surface border border-surface-hover rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+                        <div className="flex items-center justify-between p-5 border-b border-surface-hover sticky top-0 bg-surface">
+                            <h2 className="font-heading font-black text-foreground">{editingId ? 'تعديل العرض' : 'إضافة عرض جديد'}</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
@@ -209,12 +209,12 @@ export default function AdminPromotionsPage() {
                             {field('button_link', 'رابط الزر', '/register')}
 
                             {/* Active toggle */}
-                            <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-colors ${form.is_active ? 'bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10' : 'bg-white/3 border-white/10 hover:bg-white/5'}`}>
+                            <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-colors ${form.is_active ? 'bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10' : 'bg-surface-hover border-surface-hover hover:bg-surface'}`}>
                                 <input type="checkbox" checked={form.is_active}
                                     onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))}
                                     className="w-4 h-4 accent-emerald-500" />
                                 <div>
-                                    <span className="text-sm font-bold text-white block">تفعيل هذا العرض</span>
+                                    <span className="text-sm font-bold text-foreground block">تفعيل هذا العرض</span>
                                     <span className="text-xs text-gray-500">سيظهر هذا العرض للزوار غير المسجلين فور التفعيل</span>
                                 </div>
                             </label>

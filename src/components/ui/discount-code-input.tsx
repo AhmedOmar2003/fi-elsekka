@@ -78,7 +78,7 @@ export function DiscountCodeInput({ originalPrice, userId, onDiscountApplied, on
 
     return (
         <div className="mb-6">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2.5 flex items-center gap-1.5">
                 <Tag className="w-3.5 h-3.5 text-primary" />
                 كود الخصم
             </p>
@@ -90,12 +90,11 @@ export function DiscountCodeInput({ originalPrice, userId, onDiscountApplied, on
                     onChange={e => { if (!isApplied) setCode(e.target.value.toUpperCase()); }}
                     onKeyDown={e => { if (e.key === 'Enter' && !isApplied) handleApply(); }}
                     placeholder="أدخل كود الخصم"
-                    disabled={isApplied}
-                    className={`flex-1 bg-surface border rounded-xl px-4 py-3 text-sm font-mono tracking-widest text-white placeholder-gray-600 focus:outline-none transition-colors disabled:opacity-70 disabled:cursor-not-allowed ${isApplied
-                        ? 'border-emerald-500/40 bg-emerald-500/5 text-emerald-400'
+                    className={`flex-1 bg-surface border rounded-xl px-4 py-3 text-sm font-mono tracking-widest text-foreground placeholder-gray-500 focus:outline-none transition-colors disabled:opacity-70 disabled:cursor-not-allowed ${isApplied
+                        ? 'border-emerald-500/40 bg-emerald-500/5 text-emerald-500'
                         : status === 'error'
                             ? 'border-rose-500/40 focus:border-rose-500/60'
-                            : 'border-white/10 focus:border-primary/50'
+                            : 'border-surface-border focus:border-primary/50'
                         }`}
                 />
 

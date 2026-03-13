@@ -60,7 +60,7 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                             </div>
                             <button
                                 onClick={onClose}
-                                className="p-2 text-gray-400 hover:text-white hover:bg-surface-hover rounded-xl transition-colors"
+                                className="p-2 text-gray-500 hover:text-foreground hover:bg-surface-hover rounded-xl transition-colors"
                                 aria-label="إغلاق السلة"
                             >
                                 <X className="w-5 h-5" />
@@ -75,7 +75,7 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                                         <ShoppingCart className="w-10 h-10 text-gray-500" />
                                     </div>
                                     <h3 className="text-xl font-bold text-foreground">عربيتك فاضية!</h3>
-                                    <p className="text-sm text-gray-400 max-w-[200px]">
+                                    <p className="text-sm text-gray-500 max-w-[200px]">
                                         الرفوف مليانة حاجات هتعجبك، ابدأ التسوق دلوقتي.
                                     </p>
                                     <Button onClick={onClose} className="mt-4 rounded-xl">
@@ -128,7 +128,7 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                                                             })().toLocaleString()} ج.م
                                                         </div>
                                                         {item.product?.discount_percentage ? (
-                                                            <span className="text-[10px] text-gray-400 line-through">
+                                                            <span className="text-[10px] text-gray-500 line-through">
                                                                 {((item.product?.price || 0) * item.quantity).toLocaleString()} ج.م
                                                             </span>
                                                         ) : null}
@@ -138,7 +138,7 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                                                     <div className="flex items-center rounded-lg border border-surface-hover bg-background h-8">
                                                         <button
                                                             onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                                                            className="px-2 text-gray-400 hover:text-white active:scale-95 transition-all"
+                                                            className="px-2 text-gray-500 hover:text-foreground active:scale-95 transition-all"
                                                         >
                                                             <Minus className="w-3 h-3" />
                                                         </button>
@@ -147,7 +147,7 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                                                         </span>
                                                         <button
                                                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                            className="px-2 text-gray-400 hover:text-white active:scale-95 transition-all"
+                                                            className="px-2 text-gray-500 hover:text-foreground active:scale-95 transition-all"
                                                         >
                                                             <Plus className="w-3 h-3" />
                                                         </button>
@@ -165,13 +165,13 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                             <div className="border-t border-surface-hover p-4 sm:p-6 bg-surface/50 backdrop-blur-md">
                                 <div className="flex flex-col mb-4">
                                     {cartDiscountTotal > 0 && (
-                                        <div className="flex justify-between items-center text-sm text-gray-400 line-through mb-1">
+                                        <div className="flex justify-between items-center text-sm text-gray-500 line-through mb-1">
                                             <span>المجموع الأصلي</span>
                                             <span>{cartOriginalTotal.toLocaleString()} ج.م</span>
                                         </div>
                                     )}
                                     <div className="flex justify-between items-center">
-                                        <span className="text-gray-300 font-medium">الإجمالي</span>
+                                        <span className="text-foreground font-medium">الإجمالي</span>
                                         <span className="text-2xl font-black text-primary">{cartTotal.toLocaleString()} ج.م</span>
                                     </div>
                                 </div>

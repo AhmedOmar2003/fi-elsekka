@@ -255,8 +255,8 @@ export default function CheckoutPage() {
                            ) : items.map(item => (
                               <div key={item.id} className="flex justify-between py-3 text-sm">
                                  <div className="flex gap-3 items-center">
-                                    <span className="font-heading font-black text-gray-400 w-5">{item.quantity}x</span>
-                                    <span className="text-gray-300 line-clamp-1 font-medium">{item.product?.name || "منتج"}</span>
+                                    <span className="font-heading font-black text-gray-500 w-5">{item.quantity}x</span>
+                                    <span className="text-foreground line-clamp-1 font-medium">{item.product?.name || "منتج"}</span>
                                  </div>
                                  <div className="flex flex-col items-end shrink-0">
                                     <span className="font-heading font-bold text-foreground">
@@ -280,7 +280,7 @@ export default function CheckoutPage() {
                         </div>
 
                         <div className="space-y-4 mb-8 text-base font-medium">
-                           <div className="flex justify-between items-center text-gray-400">
+                           <div className="flex justify-between items-center text-gray-500">
                               <span>المجموع الأصلي</span>
                               <span className="font-heading font-semibold text-foreground">{cartOriginalTotal.toLocaleString()} ج.م</span>
                            </div>

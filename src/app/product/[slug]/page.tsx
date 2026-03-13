@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
-import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Tag } from "lucide-react"
+import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Tag, Camera, Send, MessageSquare, X } from "lucide-react"
 import { fetchProductDetails, Product } from "@/services/productsService"
+import { fetchProductReviews, calcReviewStats, createReview, checkUserPurchased, checkUserReviewed, uploadReviewImage, Review, ReviewStats } from "@/services/reviewsService"
 import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { DiscountCodeInput } from "@/components/ui/discount-code-input"
+import { toast } from "sonner"
 
 export default function ProductPage() {
   const params = useParams()
@@ -65,6 +67,92 @@ export default function ProductPage() {
       setIsLoading(false)
     }
   }, [slugOrId])
+
+  // ── Reviews state ─────────────────────────────────────────
+  const [reviews, setReviews] = React.useState<Review[]>([])
+  const [reviewStats, setReviewStats] = React.useState<ReviewStats>({ averageRating: 0, totalReviews: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } })
+  const [reviewsLoading, setReviewsLoading] = React.useState(true)
+  const [canReview, setCanReview] = React.useState(false)
+  const [alreadyReviewed, setAlreadyReviewed] = React.useState(false)
+  const [showReviewForm, setShowReviewForm] = React.useState(false)
+
+  // Review form state
+  const [reviewRating, setReviewRating] = React.useState(5)
+  const [reviewComment, setReviewComment] = React.useState("")
+  const [reviewImages, setReviewImages] = React.useState<string[]>([])
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [isUploading, setIsUploading] = React.useState(false)
+
+  // Load reviews when product is available
+  React.useEffect(() => {
+    if (!slugOrId) return
+
+    const load = async () => {
+      setReviewsLoading(true)
+      const data = await fetchProductReviews(slugOrId)
+      setReviews(data)
+      setReviewStats(calcReviewStats(data))
+      setReviewsLoading(false)
+
+      if (user) {
+        const [purchased, reviewed] = await Promise.all([
+          checkUserPurchased(user.id, slugOrId),
+          checkUserReviewed(user.id, slugOrId),
+        ])
+        setCanReview(purchased && !reviewed)
+        setAlreadyReviewed(reviewed)
+      }
+    }
+
+    load()
+  }, [slugOrId, user])
+
+  const handleSubmitReview = async () => {
+    if (!user || !dbProduct) return
+    setIsSubmitting(true)
+
+    const { data, error } = await createReview(
+      user.id,
+      dbProduct.id,
+      reviewRating,
+      reviewComment,
+      reviewImages,
+      (user as any).user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم'
+    )
+
+    if (error) {
+      toast.error("حصلت مشكلة", { description: "جرب تاني بعد شوية" })
+    } else if (data) {
+      setReviews(prev => [data, ...prev])
+      setReviewStats(calcReviewStats([data, ...reviews]))
+      setShowReviewForm(false)
+      setCanReview(false)
+      setAlreadyReviewed(true)
+      setReviewComment("")
+      setReviewImages([])
+      setReviewRating(5)
+      toast.success("شكراً على تقييمك! 🎉", { description: "رأيك مهم ليا وهيساعد ناس تاني" })
+    }
+    setIsSubmitting(false)
+  }
+
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (reviewImages.length >= 3) {
+      toast.error("أقصى عدد صور هو 3")
+      return
+    }
+    setIsUploading(true)
+    const url = await uploadReviewImage(file)
+    if (url) {
+      setReviewImages(prev => [...prev, url])
+    } else {
+      toast.error("فشل رفع الصورة")
+    }
+    setIsUploading(false)
+  }
+
 
   const product = dbProduct ? (() => {
     let price = dbProduct.price;
@@ -155,12 +243,12 @@ export default function ProductPage() {
 
         {/* Breadcrumbs */}
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
-          <nav className="flex text-sm text-gray-400" aria-label="Breadcrumb">
+          <nav className="flex text-sm text-gray-500" aria-label="Breadcrumb">
             <ol className="inline-flex items-center gap-1 rtl:space-x-reverse">
               <li><Link href="/" className="hover:text-foreground">الرئيسية</Link></li>
-              <li className="text-gray-600">/</li>
+              <li className="text-gray-400 dark:text-gray-600">/</li>
               <li><Link href="/categories" className="hover:text-foreground">{product.category_name}</Link></li>
-              <li className="text-gray-600"><ChevronRight className="w-3 h-3" /></li>
+              <li className="text-gray-400 dark:text-gray-600"><ChevronRight className="w-3 h-3" /></li>
               <li className="text-gray-500 line-clamp-1 max-w-[180px]">{product.title}</li>
             </ol>
           </nav>
@@ -211,15 +299,22 @@ export default function ProductPage() {
                   </Badge>
                 )}
                 {product.discountAmount && (
-                  <Badge variant="secondary" className="bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-1 shadow-md shadow-rose-500/20">
+                  <Badge className="bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-1 shadow-md shadow-rose-500/20 border-rose-500">
                     {product.discountAmount}
                   </Badge>
                 )}
-                <div className="flex items-center gap-1.5 text-xs text-yellow-500 bg-surface border border-surface-hover px-3 py-1.5 rounded-full font-bold">
+                
+                {/* Dynamic Rating Badge -> Scrolls to reviews */}
+                <a 
+                  href="#reviews" 
+                  className="flex items-center gap-1.5 text-xs text-yellow-500 bg-surface border border-surface-hover px-3 py-1.5 rounded-full font-bold hover:bg-surface-hover transition-colors cursor-pointer"
+                >
                   <Star className="w-4 h-4 fill-current" />
-                  <span>{product.rating}</span>
-                  <span className="text-gray-400 font-medium">({product.reviewsCount} تقييم)</span>
-                </div>
+                  <span>{reviewsLoading ? '...' : reviewStats.averageRating || 'جديد'}</span>
+                  {!reviewsLoading && reviewStats.totalReviews > 0 && (
+                    <span className="text-gray-500 font-medium">({reviewStats.totalReviews} تقييم)</span>
+                  )}
+                </a>
               </div>
 
               {/* Title */}
@@ -230,7 +325,7 @@ export default function ProductPage() {
               {/* Price block */}
               <div className="flex items-end gap-3 mb-6 p-5 rounded-2xl bg-surface-light border border-surface-hover shadow-sm">
                 <div className="flex flex-col">
-                  <span className="text-gray-400 text-sm font-medium mb-1">السعر الحالي</span>
+                  <span className="text-gray-500 text-sm font-medium mb-1">السعر الحالي</span>
                   <span className="font-heading text-4xl font-black text-primary tracking-tight">
                     {appliedDiscountPrice !== null ? appliedDiscountPrice : product.price} <span className="text-lg font-bold">ج.م</span>
                   </span>
@@ -294,18 +389,18 @@ export default function ProductPage() {
 
                     {/* Quantity row */}
                     <div className="flex items-center justify-between mb-5 px-0.5">
-                      <span className="text-sm font-bold text-gray-400">الكمية</span>
+                      <span className="text-sm font-bold text-gray-500">الكمية</span>
                       <div className="flex items-center rounded-2xl border border-surface-hover bg-background h-12 shadow-inner">
                         <button
                           onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          className="px-5 h-full text-gray-400 hover:text-foreground hover:bg-surface-hover rounded-e-2xl active:scale-90 transition-all"
+                          className="px-5 h-full text-gray-500 hover:text-foreground hover:bg-surface-hover rounded-e-2xl active:scale-90 transition-all"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
                         <span className="w-10 text-center font-heading font-black text-xl select-none">{quantity}</span>
                         <button
                           onClick={() => setQuantity(quantity + 1)}
-                          className="px-5 h-full text-gray-400 hover:text-foreground hover:bg-surface-hover rounded-s-2xl active:scale-90 transition-all"
+                          className="px-5 h-full text-gray-500 hover:text-foreground hover:bg-surface-hover rounded-s-2xl active:scale-90 transition-all"
                         >
                           <Plus className="w-4 h-4" />
                         </button>
@@ -327,15 +422,13 @@ export default function ProductPage() {
                       </Button>
                     </div>
 
-                    {/* Buy Now button — unchanged (blue) */}
-                    <Button
-                      variant="secondary"
-                      size="lg"
-                      className="w-full h-14 rounded-2xl text-xl font-black text-white bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-600/20 hover:shadow-blue-600/40 transition-all active:scale-95"
+                    {/* Buy Now button */}
+                    <button
+                      className="w-full h-14 rounded-2xl text-xl font-black text-white bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-600/20 hover:shadow-blue-600/40 transition-all active:scale-95 inline-flex items-center justify-center"
                       onClick={handleBuyNow}
                     >
                       اخلص واشتري دلوقتي
-                    </Button>
+                    </button>
 
                     {/* Trust note */}
                     <p className="mt-4 text-center text-xs text-gray-500 flex items-center justify-center gap-1.5">
@@ -355,7 +448,7 @@ export default function ProductPage() {
                   </div>
                   <div>
                     <p className="font-heading font-bold text-sm text-foreground mb-1">الدفع كاش عند الاستلام</p>
-                    <p className="text-xs text-gray-400 leading-relaxed">عاين المنتج براحتك قبل ما تدفع أي حاجة</p>
+                    <p className="text-xs text-gray-500 leading-relaxed">عاين المنتج براحتك قبل ما تدفع أي حاجة</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-4 rounded-2xl bg-surface/50 border border-surface-hover hover:border-primary/30 transition-colors">
@@ -364,7 +457,7 @@ export default function ProductPage() {
                   </div>
                   <div>
                     <p className="font-heading font-bold text-sm text-foreground mb-1">توصيل سريع ومضمون</p>
-                    <p className="text-xs text-gray-400 leading-relaxed">هنعرفك مصاريف الشحن بالضبط قبل التأكيد</p>
+                    <p className="text-xs text-gray-500 leading-relaxed">هنعرفك مصاريف الشحن بالضبط قبل التأكيد</p>
                   </div>
                 </div>
               </div>
@@ -373,10 +466,10 @@ export default function ProductPage() {
               <div className="space-y-8">
                 <section>
                   <h3 className="text-xl font-bold mb-3 pb-2 border-b border-surface-hover">عن المنتج</h3>
-                  <p className="text-gray-400 leading-relaxed text-sm md:text-base">{product.description}</p>
+                  <p className="text-gray-500 leading-relaxed text-sm md:text-base">{product.description}</p>
                   <ul className="mt-4 space-y-2">
                     {product.features.map((feature: string, idx: number) => (
-                      <li key={idx} className="flex items-center gap-2 text-sm text-gray-300">
+                      <li key={idx} className="flex items-center gap-2 text-sm text-foreground">
                         <svg className="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                         </svg>
@@ -398,11 +491,232 @@ export default function ProductPage() {
                   </div>
                 </section>
               </div>
+              </div>
+            </div>
+
+            {/* ── Reviews Section ────────────────────────────────────────── */}
+            <div className="mt-16 pt-10 border-t border-surface-hover w-full" id="reviews">
+              <div className="flex items-center gap-3 mb-8">
+                <h3 className="text-2xl font-black text-foreground">تقييمات العملاء</h3>
+                <MessageSquare className="w-6 h-6 text-primary" />
+              </div>
+
+              {reviewsLoading ? (
+                <div className="flex justify-center py-10">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+                  
+                  {/* Stats Column - Now on the Right (lg:col-span-4) visually left in RTL */}
+                  <div className="lg:col-span-4 flex flex-col gap-4 order-1">
+                    <div className="bg-[#11161d] rounded-[2rem] p-8 border border-surface-hover shadow-sm">
+                      <div className="text-center mb-8">
+                        <span className="font-heading text-6xl font-black text-white block mb-4 leading-none">{reviewStats.averageRating}</span>
+                        <div className="flex justify-center gap-1 mb-3">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star key={star} className={`w-6 h-6 ${star <= Math.round(reviewStats.averageRating) ? 'fill-[#ffc107] text-[#ffc107]' : 'fill-gray-200 text-gray-200 dark:fill-gray-800 dark:text-gray-800'}`} />
+                          ))}
+                        </div>
+                        <p className="text-sm text-gray-500">بناءً على {reviewStats.totalReviews} تقييم</p>
+                      </div>
+
+                      <div className="space-y-4">
+                        {[5, 4, 3, 2, 1].map(stars => {
+                          const count = reviewStats.distribution[stars] || 0
+                          const percentage = reviewStats.totalReviews > 0 ? (count / reviewStats.totalReviews) * 100 : 0
+                          return (
+                            <div key={stars} className="flex items-center gap-4">
+                              <div className="flex items-center gap-1 w-8 shrink-0 text-sm font-bold text-gray-400 justify-end">
+                                <span>{stars}</span>
+                              </div>
+                              <div className="flex-1 h-3 bg-[#1e2532] rounded-full overflow-hidden relative">
+                                <div className="absolute top-0 bottom-0 left-0 bg-[#ffc107] rounded-full" style={{ width: `${percentage}%` }} />
+                              </div>
+                              <span className="flex items-center gap-1 text-xs text-gray-500 w-8 shrink-0">
+                                <Star className="w-3.5 h-3.5 fill-[#ffc107] text-[#ffc107]" />
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {canReview && !showReviewForm && (
+                      <div className="bg-[#11161d] rounded-[2rem] p-6 border border-surface-hover flex flex-col gap-4 items-center">
+                        <Button
+                          onClick={() => setShowReviewForm(true)}
+                          className="w-full h-14 rounded-2xl font-bold bg-[#10b981] text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 text-base"
+                        >
+                          اكتب تقييمك للمنتج
+                        </Button>
+                      </div>
+                    )}
+
+                    {alreadyReviewed && (
+                      <div className="bg-[#0a2318] border border-[#10b981]/20 rounded-[2rem] p-8 text-center flex flex-col items-center justify-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-[#10b981]/10 flex flex-col items-center justify-center text-[#10b981]">
+                          <Check className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#10b981] text-lg mb-1">شكراً!</p>
+                          <p className="text-sm text-[#10b981]/80">إنت قيمت المنتج ده قبل كده.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {!user && (
+                      <div className="bg-[#11161d] rounded-[2rem] p-6 text-center border border-surface-hover">
+                        <p className="text-sm text-gray-400 mb-4">سجل دخول عشان تقدر تكتب تقييم</p>
+                        <Button asChild variant="outline" className="w-full h-12 rounded-xl border-surface-hover text-white hover:bg-surface-hover">
+                          <Link href="/login">تسجيل الدخول</Link>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                    {/* Reviews List & Form Column - Now on the left (lg:col-span-8) visually right in RTL to take more space */}
+                    <div className="lg:col-span-8 flex flex-col gap-6 order-2">
+                      
+                      {/* Review Form */}
+                      {showReviewForm && (
+                        <div className="bg-[#11161d] rounded-3xl p-6 border border-primary/30 shadow-[0_0_20px_rgba(16,185,129,0.1)] relative origin-top animate-in fade-in zoom-in-95 duration-200">
+                          <button 
+                            onClick={() => setShowReviewForm(false)}
+                            className="absolute top-4 end-4 text-gray-400 hover:text-gray-600 p-1 bg-surface-hover rounded-full"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                          
+                          <h4 className="font-bold text-lg mb-4 text-foreground">تقييمك للمنتج</h4>
+                          
+                          {/* Star picker */}
+                          <div className="flex gap-2 mb-6">
+                            {[1, 2, 3, 4, 5].map(star => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => setReviewRating(star)}
+                                className="focus:outline-none transition-transform hover:scale-110 active:scale-90"
+                              >
+                                <Star className={`w-8 h-8 ${star <= reviewRating ? 'fill-[#ffc107] text-[#ffc107]' : 'fill-gray-200 text-gray-200 dark:fill-gray-800 dark:text-gray-800'}`} />
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Comment box */}
+                          <textarea
+                            value={reviewComment}
+                            onChange={(e) => setReviewComment(e.target.value)}
+                            placeholder="شاركنا رأيك في المنتج بصراحة (اختياري بس بيفرق معانا جداً)..."
+                            className="w-full bg-[#0a0d14] border border-surface-hover rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-h-[120px] resize-y mb-4"
+                          />
+
+                          {/* Image uploads */}
+                          <div className="mb-6">
+                            <p className="text-xs font-bold text-gray-500 mb-2">أضف صور للمنتج من تصويرك (اختياري - متاح 3 صور)</p>
+                            <div className="flex gap-3 flex-wrap">
+                              {reviewImages.map((url, idx) => (
+                                <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-surface-hover group">
+                                  <img src={url} alt="Review" className="w-full h-full object-cover" />
+                                  <button
+                                    onClick={() => setReviewImages(prev => prev.filter((_, i) => i !== idx))}
+                                    className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <X className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              ))}
+                              
+                              {reviewImages.length < 3 && (
+                                <label className={`flex flex-col items-center justify-center w-20 h-20 rounded-xl border-2 border-dashed border-surface-hover hover:border-primary/50 text-gray-400 hover:text-primary transition-colors cursor-pointer ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                                  {isUploading ? (
+                                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-primary"></div>
+                                  ) : (
+                                    <>
+                                      <Camera className="w-6 h-6 mb-1" />
+                                      <span className="text-[10px] font-bold">صورة</span>
+                                    </>
+                                  )}
+                                  <input type="file" accept="image/*" className="hidden" onChange={handleUploadImage} disabled={isUploading} />
+                                </label>
+                              )}
+                            </div>
+                          </div>
+
+                          <Button 
+                            onClick={handleSubmitReview} 
+                            disabled={isSubmitting || isUploading}
+                            className="w-full h-12 rounded-xl font-bold bg-primary text-white gap-2"
+                          >
+                            {isSubmitting ? (
+                              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                            ) : (
+                              <>
+                                <Send className="w-4 h-4 rtl:-scale-x-100" />
+                                <span>نشر التقييم</span>
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* List of reviews */}
+                      {reviews.length === 0 ? (
+                        <div className="bg-[#11161d] rounded-3xl p-10 text-center border border-surface-hover flex flex-col items-center justify-center h-full mt-8">
+                          <MessageSquare className="w-12 h-12 text-gray-300 dark:text-gray-700 mb-4" />
+                          <h4 className="font-bold text-lg text-foreground mb-1">مفيش تقييمات لسه</h4>
+                          <p className="text-gray-500 text-sm">كن أول شخص يشارك رأيه في المنتج ده!</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4 w-full mt-8">
+                          {reviews.map((review) => (
+                            <div key={review.id} className="bg-[#11161d] rounded-3xl p-6 border border-surface-hover transition-all w-full">
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-bold text-base text-white">{review.user_name || 'مستخدم'}</span>
+                                    <span className="flex items-center gap-1 bg-[#0a2318] text-[#10b981] text-xs font-bold px-2 py-1 rounded-md">
+                                      <Check className="w-3.5 h-3.5" />
+                                      مشترى مؤكد
+                                    </span>
+                                  </div>
+                                  <div className="flex gap-1 pl-1 text-[11px] text-gray-400 font-medium whitespace-nowrap">
+                                    {new Date(review.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                  </div>
+                                </div>
+                                <div className="flex gap-1 shrink-0">
+                                  {[1, 2, 3, 4, 5].map(star => (
+                                    <Star key={star} className={`w-4 h-4 ${star <= review.rating ? 'fill-[#ffc107] text-[#ffc107]' : 'fill-gray-200 text-gray-200 dark:fill-gray-800 dark:text-gray-800'}`} />
+                                  ))}
+                                </div>
+                              </div>
+                              
+                              {review.comment && (
+                                <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line mt-2 text-right">
+                                  {review.comment}
+                                </p>
+                              )}
+
+                              {review.images && review.images.length > 0 && (
+                                <div className="flex gap-2 mt-4">
+                                  {review.images.map((img, idx) => (
+                                    <a key={idx} href={img} target="_blank" rel="noopener noreferrer" className="block w-20 h-20 rounded-xl overflow-hidden border border-surface-hover hover:opacity-80 transition-opacity">
+                                      <img src={img} alt="صورة التقييم" className="w-full h-full object-cover" loading="lazy" />
+                                    </a>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
             </div>
-          </div>
-        </div>
-
       </main>
 
       {/* ── MOBILE STICKY PURCHASE BAR ──────────────────────────────────── */}
@@ -436,11 +750,11 @@ export default function ProductPage() {
               )}
             </div>
             <div className="flex items-center rounded-2xl border border-surface-hover bg-surface h-11 shadow-inner">
-              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 h-full text-gray-400 hover:text-white hover:bg-surface-hover rounded-e-2xl active:scale-90 transition-all">
+              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 h-full text-gray-500 hover:text-foreground hover:bg-surface-hover rounded-e-2xl active:scale-90 transition-all">
                 <Minus className="w-4 h-4" />
               </button>
               <span className="w-9 text-center font-heading font-black text-lg select-none">{quantity}</span>
-              <button onClick={() => setQuantity(quantity + 1)} className="px-4 h-full text-gray-400 hover:text-white hover:bg-surface-hover rounded-s-2xl active:scale-90 transition-all">
+              <button onClick={() => setQuantity(quantity + 1)} className="px-4 h-full text-gray-500 hover:text-foreground hover:bg-surface-hover rounded-s-2xl active:scale-90 transition-all">
                 <Plus className="w-4 h-4" />
               </button>
             </div>

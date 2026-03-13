@@ -55,7 +55,7 @@ export default function FAQPage() {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-heading font-black text-foreground mb-3 sm:mb-4 tracking-tight drop-shadow-sm">
             الأسئلة الشائعة
           </h1>
-          <p className="text-sm sm:text-base text-gray-400 max-w-xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-gray-500 max-w-xl mx-auto leading-relaxed">
             جمعنالك هنا أكتر الأسئلة اللي ممكن تدور في بالك عشان نسهل عليك تجربة التسوق في "في السكة". لو في حاجة تانية، إحنا دايماً موجودين!
           </p>
         </section>
@@ -82,7 +82,7 @@ export default function FAQPage() {
                       {faq.question}
                     </span>
                     <div className={`flex items-center justify-center shrink-0 w-8 h-8 rounded-full transition-all duration-300 ${
-                      isOpen ? "bg-primary text-white rotate-180" : "bg-background text-gray-400 group-hover:text-white"
+                      isOpen ? "bg-primary text-white rotate-180" : "bg-background text-gray-500 group-hover:text-foreground"
                     }`}>
                       <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
@@ -95,7 +95,7 @@ export default function FAQPage() {
                     }`}
                   >
                     <div className="overflow-hidden">
-                      <div className="p-4 sm:p-5 pt-0 sm:pt-0 text-sm sm:text-base text-gray-300 leading-relaxed border-t border-surface-hover/30 border-dashed">
+                      <div className="p-4 sm:p-5 pt-0 sm:pt-0 text-sm sm:text-base text-gray-500 leading-relaxed border-t border-surface-hover/30 border-dashed">
                         {faq.answer}
                       </div>
                     </div>

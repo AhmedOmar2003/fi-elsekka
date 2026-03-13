@@ -11,16 +11,16 @@ import { HomeCategoriesList } from "@/components/ui/home-categories"
 import { PromoBanner } from "@/components/ui/promo-banner"
 
 const MOCK_FEATURED_PRODUCTS = [
-  { id: "1", title: "مكرونة الملكة 400 جم حجم عائلي", price: 15, oldPrice: 20, discountBadge: "25% خصم", rating: 4.8, reviewsCount: 124, imageUrl: "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn" },
-  { id: "2", title: "شامبو بانتين 400 مل", price: 95, oldPrice: 120, discountBadge: "توفير", rating: 4.5, reviewsCount: 89, imageUrl: "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn" },
-  { id: "3", title: "تيشيرت قطن 100% رجالي أسود", price: 250, rating: 4.2, reviewsCount: 45, imageUrl: "https://th.bing.com/th/id/OIG2.M_o_l_L_v_R_J_p_f_M_?pid=ImgGn" },
-  { id: "4", title: "سماعة بلوتوث لاسلكية", price: 450, oldPrice: 600, discountBadge: "عروض جامدة", rating: 4.9, reviewsCount: 312, imageUrl: "https://th.bing.com/th/id/OIG3.C_W_T_P_j_B_k_O_d_J_?pid=ImgGn" },
+  { id: "1", title: "مكرونة الملكة 400 جم حجم عائلي", price: 15, oldPrice: 20, discountBadge: "25% خصم", imageUrl: "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn" },
+  { id: "2", title: "شامبو بانتين 400 مل", price: 95, oldPrice: 120, discountBadge: "توفير", imageUrl: "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn" },
+  { id: "3", title: "تيشيرت قطن 100% رجالي أسود", price: 250, imageUrl: "https://th.bing.com/th/id/OIG2.M_o_l_L_v_R_J_p_f_M_?pid=ImgGn" },
+  { id: "4", title: "سماعة بلوتوث لاسلكية", price: 450, oldPrice: 600, discountBadge: "عروض جامدة", imageUrl: "https://th.bing.com/th/id/OIG3.C_W_T_P_j_B_k_O_d_J_?pid=ImgGn" },
 ];
 
 const MOCK_BEST_SELLERS = [
   { id: "5", title: "زيت عباد الشمس 1 لتر", price: 65, rating: 4.7, reviewsCount: 520, imageUrl: "https://th.bing.com/th/id/OIG4.X_Y_Z_A_B_C_D_E_F_G?pid=ImgGn" },
   { id: "6", title: "بنطلون جينز أزرق سليم فيت", price: 350, rating: 4.6, reviewsCount: 150, imageUrl: "https://th.bing.com/th/id/OIG1.A_B_C_D_E_F_G_H_I_J?pid=ImgGn" },
-  { id: "7", title: "شاشة 32 بوصة سمارت", price: 4200, oldPrice: 4800, discountBadge: "تصفية", rating: 4.8, reviewsCount: 89, imageUrl: "https://th.bing.com/th/id/OIG2.K_L_M_N_O_P_Q_R_S_T?pid=ImgGn" },
+  { id: "7", title: "شاشة 32 بوصة سمارت", price: 4200, oldPrice: 4800, discountBadge: "تصفية", imageUrl: "https://th.bing.com/th/id/OIG2.K_L_M_N_O_P_Q_R_S_T?pid=ImgGn" },
   { id: "8", title: "حفاضات أطفال مقاس 4", price: 210, rating: 4.9, reviewsCount: 412, imageUrl: "https://th.bing.com/th/id/OIG3.U_V_W_X_Y_Z_1_2_3_4?pid=ImgGn" },
 ];
 
@@ -47,8 +47,8 @@ export default async function Home() {
       price,
       oldPrice,
       discountBadge,
-      rating: p.specifications?.rating || 4.5,
-      reviewsCount: p.specifications?.reviews_count || 50,
+      rating: p.specifications?.rating,
+      reviewsCount: p.specifications?.reviews_count,
       imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn"
     };
   }) : MOCK_FEATURED_PRODUCTS;
@@ -71,8 +71,8 @@ export default async function Home() {
       price,
       oldPrice,
       discountBadge,
-      rating: p.specifications?.rating || 4.5,
-      reviewsCount: p.specifications?.reviews_count || 50,
+      rating: p.specifications?.rating,
+      reviewsCount: p.specifications?.reviews_count,
       imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn"
     };
   });
@@ -96,8 +96,8 @@ export default async function Home() {
       price,
       oldPrice,
       discountBadge,
-      rating: p.specifications?.rating || 4.8,
-      reviewsCount: p.specifications?.reviews_count || 120,
+      rating: p.specifications?.rating,
+      reviewsCount: p.specifications?.reviews_count,
       imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
     };
   }).slice(0, 4) : (dbProducts.length > 4 ? dbProducts.slice(4, 8).map(p => ({
@@ -106,8 +106,8 @@ export default async function Home() {
     price: p.price,
     oldPrice: p.specifications?.old_price,
     discountBadge: p.specifications?.discount_badge,
-    rating: p.specifications?.rating || 4.8,
-    reviewsCount: p.specifications?.reviews_count || 120,
+    rating: p.specifications?.rating,
+    reviewsCount: p.specifications?.reviews_count,
     imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
   })) : MOCK_BEST_SELLERS);
 
@@ -126,11 +126,11 @@ export default async function Home() {
                 <Badge variant="success" className="mb-4 inline-flex">
                   🔥 عروض الدخول للمدارس رجعت!
                 </Badge>
-                <h1 className="mb-4 text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight">
+                <h1 className="mb-4 text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-foreground leading-tight">
                   طلباتك كلها، <br className="hidden sm:block" />
                   <span className="text-primary">في السكة</span> لحد عندك.
                 </h1>
-                <p className="mb-8 text-lg text-gray-400 max-w-xl mx-auto sm:mx-0">
+                <p className="mb-8 text-lg text-gray-500 max-w-xl mx-auto sm:mx-0">
                   من السوبر ماركت للصيدلية، ومن اللبس للإلكترونيات. اختار اللي يعجبك وادفع كاش وانت بتستلم. أسهل، أسرع، وأوفر!
                 </p>
                 <div className="flex flex-col sm:flex-row items-center gap-4 justify-center sm:justify-start">

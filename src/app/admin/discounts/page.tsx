@@ -114,8 +114,8 @@ export default function AdminDiscountsPage() {
             {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h1 className="text-2xl font-heading font-black text-white">أكواد الخصم</h1>
-                    <p className="text-sm text-gray-400 mt-0.5">تحكم في الكوبونات ونسب الخصم للعملاء</p>
+                    <h1 className="text-2xl font-heading font-black text-foreground">أكواد الخصم</h1>
+                    <p className="text-sm text-gray-500 mt-0.5">تحكم في الكوبونات ونسب الخصم للعملاء</p>
                 </div>
                 <button onClick={openNew}
                     className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
@@ -124,11 +124,11 @@ export default function AdminDiscountsPage() {
             </div>
 
             {/* List */}
-            <div className="bg-[#0a0e14] border border-white/5 rounded-2xl overflow-hidden">
+            <div className="bg-surface border border-surface-hover rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-right">
                         <thead>
-                            <tr className="border-b border-white/5">
+                            <tr className="border-b border-surface-hover">
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500">الكود</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500">قيمة الخصم</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 hidden md:table-cell">الاستخدام</th>
@@ -136,10 +136,10 @@ export default function AdminDiscountsPage() {
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 text-center">إجراءات</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-surface-hover">
                             {isLoading ? (
                                 [...Array(3)].map((_, i) => (
-                                    <tr key={i}><td colSpan={5} className="px-4 py-4"><div className="h-10 bg-white/5 rounded-lg animate-pulse" /></td></tr>
+                                    <tr key={i}><td colSpan={5} className="px-4 py-4"><div className="h-10 bg-surface-hover rounded-lg animate-pulse" /></td></tr>
                                 ))
                             ) : codes.length === 0 ? (
                                 <tr>
@@ -149,9 +149,9 @@ export default function AdminDiscountsPage() {
                                     </td>
                                 </tr>
                             ) : codes.map(c => (
-                                <tr key={c.id} className="hover:bg-white/3 transition-colors">
+                                <tr key={c.id} className="hover:bg-surface-hover transition-colors">
                                     <td className="px-4 py-3">
-                                        <span className="font-mono bg-white/5 px-2.5 py-1 rounded-lg text-white font-bold tracking-widest border border-white/10 uppercase">
+                                        <span className="font-mono bg-surface-hover px-2.5 py-1 rounded-lg text-foreground font-bold tracking-widest border border-surface-hover uppercase">
                                             {c.code}
                                         </span>
                                     </td>
@@ -159,28 +159,28 @@ export default function AdminDiscountsPage() {
                                         {c.discount_percentage ? `${c.discount_percentage}%` : `${c.discount_amount} ج.م`}
                                     </td>
                                     <td className="px-4 py-3 hidden md:table-cell">
-                                        <span className="flex items-center gap-1.5 text-xs text-gray-400">
-                                            <Users className="w-3.5 h-3.5 text-gray-600" />
-                                            <span className="font-mono font-bold text-white">{c.used_count}</span>
+                                        <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                                            <Users className="w-3.5 h-3.5 text-gray-400" />
+                                            <span className="font-mono font-bold text-foreground">{c.used_count}</span>
                                             {c.max_uses !== null
-                                                ? <span className="text-gray-600">/ {c.max_uses} استخدام</span>
-                                                : <span className="text-gray-600">/ ∞ بلا حد</span>
+                                                ? <span className="text-gray-500">/ {c.max_uses} استخدام</span>
+                                                : <span className="text-gray-500">/ ∞ بلا حد</span>
                                             }
                                         </span>
                                     </td>
                                     <td className="px-4 py-3">
                                         <button onClick={() => handleToggleActive(c)}
-                                            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${c.is_active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' : 'bg-white/5 text-gray-500 border-white/10 hover:bg-white/10'}`}>
+                                            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${c.is_active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20' : 'bg-surface-hover text-gray-500 border-surface-hover hover:bg-gray-500/10'}`}>
                                             {c.is_active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
                                             {c.is_active ? 'مفعّل' : 'موقوف'}
                                         </button>
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center justify-center gap-2">
-                                            <button onClick={() => openEdit(c)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
+                                            <button onClick={() => openEdit(c)} className="p-1.5 rounded-lg text-gray-400 hover:text-foreground hover:bg-surface-hover transition-colors">
                                                 <Pencil className="w-3.5 h-3.5" />
                                             </button>
-                                            <button onClick={() => handleDelete(c.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-400/10 transition-colors">
+                                            <button onClick={() => handleDelete(c.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors">
                                                 <Trash2 className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
@@ -194,39 +194,39 @@ export default function AdminDiscountsPage() {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="bg-[#0a0e14] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl">
-                        <div className="flex items-center justify-between p-5 border-b border-white/5 bg-[#0a0e14]">
-                            <h2 className="font-heading font-black text-white flex items-center gap-2">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                    <div className="bg-surface border border-surface-hover rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl">
+                        <div className="flex items-center justify-between p-5 border-b border-surface-hover bg-surface">
+                            <h2 className="font-heading font-black text-foreground flex items-center gap-2">
                                 <Ticket className="w-5 h-5 text-primary" />
                                 {editingId ? 'تعديل كود الخصم' : 'إضافة كود جديد'}
                             </h2>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5">
+                            <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
                         <div className="p-5 space-y-5">
                             {/* Code */}
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-1.5">الكود (إنجليزي فقط)</label>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">الكود (إنجليزي فقط)</label>
                                 <input type="text" value={form.code}
                                     onChange={e => setForm({ ...form, code: e.target.value.toUpperCase() })}
                                     placeholder="مثال: WEEKEND20"
-                                    className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-sm font-mono tracking-widest text-white placeholder-gray-600 focus:outline-none focus:border-primary/50 uppercase" />
+                                    className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm font-mono tracking-widest text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50 uppercase" />
                             </div>
 
                             {/* Type */}
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-1.5">نوع الخصم</label>
-                                <div className="grid grid-cols-2 gap-2 bg-white/5 p-1 rounded-xl">
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">نوع الخصم</label>
+                                <div className="grid grid-cols-2 gap-2 bg-surface-hover p-1 rounded-xl">
                                     <button
                                         onClick={() => setForm({ ...form, discount_type: 'percentage' })}
-                                        className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all ${form.discount_type === 'percentage' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+                                        className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all ${form.discount_type === 'percentage' ? 'bg-surface border border-surface-hover text-foreground shadow-sm' : 'text-gray-500 hover:text-foreground'}`}>
                                         <Percent className="w-3.5 h-3.5" /> نسبة مئوية
                                     </button>
                                     <button
                                         onClick={() => setForm({ ...form, discount_type: 'amount' })}
-                                        className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all ${form.discount_type === 'amount' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+                                        className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all ${form.discount_type === 'amount' ? 'bg-surface border border-surface-hover text-foreground shadow-sm' : 'text-gray-500 hover:text-foreground'}`}>
                                         <CircleDollarSign className="w-3.5 h-3.5" /> مبلغ ثابت
                                     </button>
                                 </div>
@@ -234,12 +234,12 @@ export default function AdminDiscountsPage() {
 
                             {/* Value */}
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-1.5">قيمة الخصم</label>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">قيمة الخصم</label>
                                 <div className="relative">
                                     <input type="number" value={form.discount_value}
                                         onChange={e => setForm({ ...form, discount_value: e.target.value })}
                                         placeholder="مثال: 20"
-                                        className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50 text-left ltr" dir="ltr" />
+                                        className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50 text-left ltr" dir="ltr" />
                                     <span className="absolute left-3 top-2.5 text-gray-500 font-bold select-none text-sm pointer-events-none">
                                         {form.discount_type === 'percentage' ? '%' : 'EGP'}
                                     </span>
@@ -248,22 +248,22 @@ export default function AdminDiscountsPage() {
 
                             {/* Max Uses */}
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-1.5">
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
                                     <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-primary" /> الحد الأقصى للاستخدام (اتركه فارغاً = بلا حد)</span>
                                 </label>
                                 <input type="number" min="1" value={form.max_uses}
                                     onChange={e => setForm({ ...form, max_uses: e.target.value })}
                                     placeholder="مثال: 100"
-                                    className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50" dir="ltr" />
+                                    className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50" dir="ltr" />
                             </div>
 
                             {/* Active Toggle */}
-                            <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-colors ${form.is_active ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-white/3 border-white/10'}`}>
+                            <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-colors ${form.is_active ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-surface-hover border-surface-hover'}`}>
                                 <input type="checkbox" checked={form.is_active}
                                     onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))}
                                     className="w-4 h-4 accent-emerald-500" />
                                 <div>
-                                    <span className="text-sm font-bold text-white block">تفعيل الكود</span>
+                                    <span className="text-sm font-bold text-foreground block">تفعيل الكود</span>
                                 </div>
                             </label>
 
