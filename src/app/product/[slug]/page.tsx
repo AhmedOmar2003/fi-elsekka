@@ -83,29 +83,40 @@ export default function ProductPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [isUploading, setIsUploading] = React.useState(false)
 
+  // Load reviews function
+  const loadReviews = React.useCallback(async () => {
+    if (!slugOrId) return
+    
+    setReviewsLoading(true)
+    const data = await fetchProductReviews(slugOrId)
+    setReviews(data)
+    setReviewStats(calcReviewStats(data))
+    setReviewsLoading(false)
+
+    if (user) {
+      const [purchased, reviewed] = await Promise.all([
+        checkUserPurchased(user.id, slugOrId),
+        checkUserReviewed(user.id, slugOrId),
+      ])
+      setCanReview(purchased && !reviewed)
+      setAlreadyReviewed(reviewed)
+    }
+  }, [slugOrId, user])
+
   // Load reviews when product is available
   React.useEffect(() => {
-    if (!slugOrId) return
+    loadReviews()
+  }, [loadReviews])
 
-    const load = async () => {
-      setReviewsLoading(true)
-      const data = await fetchProductReviews(slugOrId)
-      setReviews(data)
-      setReviewStats(calcReviewStats(data))
-      setReviewsLoading(false)
-
-      if (user) {
-        const [purchased, reviewed] = await Promise.all([
-          checkUserPurchased(user.id, slugOrId),
-          checkUserReviewed(user.id, slugOrId),
-        ])
-        setCanReview(purchased && !reviewed)
-        setAlreadyReviewed(reviewed)
-      }
+  // Refetch reviews when window gains focus (e.g. after admin deletes in another tab)
+  React.useEffect(() => {
+    const handleFocus = () => {
+      loadReviews()
     }
-
-    load()
-  }, [slugOrId, user])
+    
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [loadReviews])
 
   const handleSubmitReview = async () => {
     if (!user || !dbProduct) return
