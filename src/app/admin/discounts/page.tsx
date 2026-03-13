@@ -3,7 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { Ticket, Plus, Pencil, Trash2, X, ToggleLeft, ToggleRight, Percent, CircleDollarSign, Users } from 'lucide-react';
 import { toast } from 'sonner';
-import { fetchAllDiscountCodes, createDiscountCode, updateDiscountCode, deleteDiscountCode, DiscountCode } from '@/services/discountCodesService';
+import { 
+    DiscountCode, fetchAllDiscountCodes, createDiscountCode, 
+    updateDiscountCode, deleteDiscountCode, CreateDiscountCodeInput
+} from '@/services/discountCodesService';
 
 const EMPTY_FORM = {
     code: '',
@@ -61,7 +64,7 @@ export default function AdminDiscountsPage() {
 
         setIsSaving(true);
 
-        const payload = {
+        const payload: CreateDiscountCodeInput = {
             code: form.code.trim().toUpperCase(),
             discount_percentage: form.discount_type === 'percentage' ? val : null,
             discount_amount: form.discount_type === 'amount' ? val : null,

@@ -83,11 +83,14 @@ export const fetchAllDiscountCodes = async (): Promise<DiscountCode[]> => {
     return data || [];
 };
 
-export const createDiscountCode = async (payload: Omit<DiscountCode, 'id' | 'created_at' | 'used_count'>) => {
-    return supabase.from('discount_codes').insert([{ ...payload, code: payload.code.toUpperCase(), used_count: 0 }]).select().single();
+export type CreateDiscountCodeInput = Omit<DiscountCode, 'id' | 'created_at' | 'used_count' | 'used_by'>;
+export type UpdateDiscountCodeInput = Partial<CreateDiscountCodeInput>;
+
+export const createDiscountCode = async (payload: CreateDiscountCodeInput) => {
+    return supabase.from('discount_codes').insert([{ ...payload, code: payload.code.toUpperCase(), used_count: 0, used_by: [] }]).select().single();
 };
 
-export const updateDiscountCode = async (id: number, payload: Partial<Omit<DiscountCode, 'id' | 'created_at'>>) => {
+export const updateDiscountCode = async (id: number, payload: UpdateDiscountCodeInput) => {
     if (payload.code) payload.code = payload.code.toUpperCase();
     return supabase.from('discount_codes').update(payload).eq('id', id).select().single();
 };
