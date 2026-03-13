@@ -9,6 +9,7 @@ export interface DiscountCode {
     max_uses: number | null;       // null = unlimited
     used_count: number;
     expires_at: string | null;     // ISO datetime string, null = no expiry
+    used_by: string[] | null;      // Array of user IDs who have used this code
     created_at: string;
 }
 
@@ -16,7 +17,7 @@ export interface DiscountCode {
  * Validates a discount code and returns the discount record if valid,
  * also checking expiry and usage limits.
  */
-export const validateDiscountCode = async (code: string): Promise<{ discount: DiscountCode | null; error?: string }> => {
+export const validateDiscountCode = async (code: string, userId?: string): Promise<{ discount: DiscountCode | null; error?: string }> => {
     const { data, error } = await supabase
         .from('discount_codes')
         .select('*')
@@ -36,6 +37,11 @@ export const validateDiscountCode = async (code: string): Promise<{ discount: Di
     // Check usage limit
     if (discount.max_uses !== null && discount.used_count >= discount.max_uses) {
         return { discount: null, error: 'تم استنفاد استخدامات هذا الكود.' };
+    }
+
+    // Check one-time per user limit
+    if (userId && discount.used_by && discount.used_by.includes(userId)) {
+        return { discount: null, error: 'لقد قمت باستخدام هذا الكود مسبقاً.' };
     }
 
     return { discount };
@@ -92,19 +98,28 @@ export const deleteDiscountCode = async (id: number) => {
 
 /**
  * Increments the used_count for a discount code after a successful order.
+ * Also appends the user ID to the used_by array.
  */
-export const incrementDiscountCodeUsage = async (code: string): Promise<void> => {
+export const incrementDiscountCodeUsage = async (code: string, userId: string): Promise<void> => {
     const { data } = await supabase
         .from('discount_codes')
-        .select('id, used_count')
+        .select('id, used_count, used_by')
         .eq('code', code.trim().toUpperCase())
         .maybeSingle();
 
     if (!data) return;
 
+    const currentUsedBy = data.used_by || [];
+    if (!currentUsedBy.includes(userId)) {
+        currentUsedBy.push(userId);
+    }
+
     await supabase
         .from('discount_codes')
-        .update({ used_count: (data.used_count || 0) + 1 })
+        .update({ 
+            used_count: (data.used_count || 0) + 1,
+            used_by: currentUsedBy
+        })
         .eq('id', data.id);
 };
 

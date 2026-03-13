@@ -6,11 +6,12 @@ import { validateDiscountCode, applyDiscount } from '@/services/discountCodesSer
 
 interface DiscountCodeInputProps {
     originalPrice: number;
+    userId?: string;
     onDiscountApplied: (finalPrice: number, savedAmount: number, label: string) => void;
     onDiscountRemoved: () => void;
 }
 
-export function DiscountCodeInput({ originalPrice, onDiscountApplied, onDiscountRemoved }: DiscountCodeInputProps) {
+export function DiscountCodeInput({ originalPrice, userId, onDiscountApplied, onDiscountRemoved }: DiscountCodeInputProps) {
     const [code, setCode] = useState('');
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [appliedCode, setAppliedCode] = useState('');
@@ -23,7 +24,7 @@ export function DiscountCodeInput({ originalPrice, onDiscountApplied, onDiscount
             if (savedCode && originalPrice > 0) {
                 setCode(savedCode);
                 setStatus('loading');
-                const { discount, error } = await validateDiscountCode(savedCode);
+                const { discount, error } = await validateDiscountCode(savedCode, userId);
                 
                 if (discount) {
                     const result = applyDiscount(originalPrice, discount);
@@ -48,7 +49,7 @@ export function DiscountCodeInput({ originalPrice, onDiscountApplied, onDiscount
         if (!code.trim()) return;
         setStatus('loading');
 
-        const { discount, error } = await validateDiscountCode(code);
+        const { discount, error } = await validateDiscountCode(code, userId);
 
         if (!discount) {
             setStatus('error');

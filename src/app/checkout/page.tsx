@@ -89,8 +89,8 @@ export default function CheckoutPage() {
 
       // Increment usage count for the applied discount code, if any
       const appliedCode = localStorage.getItem('applied_discount_code');
-      if (appliedCode) {
-         await incrementDiscountCodeUsage(appliedCode);
+      if (appliedCode && user) {
+         await incrementDiscountCodeUsage(appliedCode, user.id);
          localStorage.removeItem('applied_discount_code');
       }
 

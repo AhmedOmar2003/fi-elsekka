@@ -10,12 +10,14 @@ import { useParams, useRouter } from "next/navigation"
 import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Tag } from "lucide-react"
 import { fetchProductDetails, Product } from "@/services/productsService"
 import { useCart } from "@/contexts/CartContext"
+import { useAuth } from "@/contexts/AuthContext"
 import { DiscountCodeInput } from "@/components/ui/discount-code-input"
 
 export default function ProductPage() {
   const params = useParams()
   const router = useRouter()
   const { addItem } = useCart()
+  const { user } = useAuth()
 
   const [quantity, setQuantity] = React.useState(1)
   const [isAdded, setIsAdded] = React.useState(false)
@@ -244,6 +246,7 @@ export default function ProductPage() {
               {product.price > 0 && (
                 <DiscountCodeInput
                   originalPrice={product.price}
+                  userId={user?.id}
                   onDiscountApplied={(finalPrice, savedAmount, label) => {
                     setAppliedDiscountPrice(finalPrice);
                     setAppliedDiscountLabel(label);
