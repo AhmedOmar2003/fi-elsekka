@@ -201,6 +201,10 @@ function NotificationBell() {
             Notification.requestPermission();
         }
 
+        // Local set to prevent duplicate notifications in the same session,
+        // since payload.old doesn't contain the full record by default in Supabase.
+        const notifiedOrderIds = new Set<string>();
+
         // Subscribe to new orders (Handling the 5-minute grace period)
         const ordersChannel = supabase
             .channel('admin-orders-listener')
@@ -212,6 +216,7 @@ function NotificationBell() {
                     return;
                 }
 
+                notifiedOrderIds.add(payload.new.id);
                 // Otherwise, normal immediate notification
                 addNotification({
                     type: 'new_order',
@@ -221,16 +226,16 @@ function NotificationBell() {
                 });
             })
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload) => {
-                const oldShipping = payload.old.shipping_address || {};
                 const newShipping = payload.new.shipping_address || {};
 
                 // Notification should trigger when the grace period ends (user confirmed or 5 mins passed)
-                // This means old had is_grace_period: true, but new has it false or missing.
-                // Also ensure the order wasn't just cancelled.
-                const wasInGracePeriod = oldShipping.is_grace_period === true;
+                // Since payload.old doesn't contain the full JSON by default, we check if it's currently confirmed,
+                // and if we haven't notified about it yet in this session.
                 const isNowConfirmed = newShipping.is_grace_period !== true;
+                const isPending = payload.new.status === 'pending';
                 
-                if (wasInGracePeriod && isNowConfirmed && payload.new.status !== 'cancelled') {
+                if (isNowConfirmed && isPending && !notifiedOrderIds.has(payload.new.id)) {
+                    notifiedOrderIds.add(payload.new.id);
                     addNotification({
                         type: 'new_order',
                         title: '🛒 طلب جديد تم تأكيده!',
