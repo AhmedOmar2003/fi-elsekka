@@ -117,7 +117,8 @@ function CheckoutContent() {
 
       const shippingDetails = {
          recipient: `${firstName} ${lastName}`,
-         phone, city, area, street: address, notes
+         phone, city, area, street: address, notes,
+         is_grace_period: true
       }
 
       const { data: newOrder, error } = await createOrder(user.id, displayItems, shippingDetails, displayCartTotal + 35)

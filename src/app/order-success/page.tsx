@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { ShoppingBag, Phone, Timer, XCircle, CheckCircle2 } from "lucide-react"
-import { updateOrderStatus } from "@/services/ordersService"
+import { updateOrderStatus, confirmOrderGracePeriod } from "@/services/ordersService"
 import { toast } from "sonner"
 
 function MotorcycleIcon({ className }: { className?: string }) {
@@ -81,9 +81,10 @@ function OrderSuccessContent() {
     if (!showOverlay || isCancelled) return
 
     if (timeLeft <= 0) {
-      // Time's up -> hide overlay, show bike
+      // Time's up -> hide overlay, show bike, and confirm grace period is over
       setShowOverlay(false)
       setTimeout(() => setShowBike(true), 100)
+      if (orderId) confirmOrderGracePeriod(orderId)
       return
     }
 
@@ -108,9 +109,12 @@ function OrderSuccessContent() {
     return `${m}:${s.toString().padStart(2, '0')}`
   }
 
-  const handleKeepOrder = () => {
+  const handleKeepOrder = async () => {
     setShowOverlay(false)
     setTimeout(() => setShowBike(true), 200)
+    if (orderId) {
+      await confirmOrderGracePeriod(orderId)
+    }
   }
 
   const handleCancelOrder = async () => {
