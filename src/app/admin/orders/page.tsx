@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from 'react';
-import { fetchAdminOrders, fetchOrderDetails, updateOrderStatus } from '@/services/adminService';
+import { fetchAdminOrders, fetchOrderDetails, updateOrderStatus, updateOrderEstimation } from '@/services/adminService';
 import { ShoppingCart, ChevronDown, X, Package, Download, Filter } from 'lucide-react';
 import Image from 'next/image';
 
@@ -59,6 +59,10 @@ export default function AdminOrdersPage() {
     const [loadingDetail, setLoadingDetail] = useState(false);
     const [filterStatus, setFilterStatus] = useState('all');
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    
+    // Delivery estimation UI state
+    const [estimatedTime, setEstimatedTime] = useState('');
+    const [isSavingTime, setIsSavingTime] = useState(false);
 
     const load = async () => {
         setIsLoading(true);
@@ -71,6 +75,7 @@ export default function AdminOrdersPage() {
 
     const handleViewOrder = async (order: any) => {
         setSelectedOrder(order);
+        setEstimatedTime(order.shipping_address?.estimated_delivery || '');
         setLoadingDetail(true);
         const items = await fetchOrderDetails(order.id);
         setOrderItems(items);
@@ -85,6 +90,33 @@ export default function AdminOrdersPage() {
         }
         // Reset filter to 'all' so the updated order doesn't disappear from view
         setFilterStatus('all');
+    };
+
+    const handleSaveEstimation = async () => {
+        if (!selectedOrder) return;
+        setIsSavingTime(true);
+        
+        const { error } = await updateOrderEstimation(selectedOrder.id, estimatedTime);
+        setIsSavingTime(false);
+
+        if (!error) {
+            // Update local state without full reload
+            setOrders(prev => prev.map(o => o.id === selectedOrder.id ? { 
+                ...o, 
+                shipping_address: { ...o.shipping_address, estimated_delivery: estimatedTime } 
+            } : o));
+            setSelectedOrder((prev: any) => ({
+                ...prev,
+                shipping_address: { ...prev.shipping_address, estimated_delivery: estimatedTime }
+            }));
+            // Show brief visual feedback (could use sonner toast if available)
+            const btn = document.getElementById('save-est-btn');
+            if (btn) {
+                const originalText = btn.innerText;
+                btn.innerText = 'تم الحفظ ✔️';
+                setTimeout(() => btn.innerText = originalText, 2000);
+            }
+        }
     };
 
     const displayedOrders = filterStatus === 'all' ? orders : orders.filter(o => o.status === filterStatus);
@@ -255,6 +287,29 @@ export default function AdminOrdersPage() {
                                 >
                                     {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                                 </select>
+                            </div>
+
+                            {/* Estimated Delivery Input */}
+                            <div>
+                                <p className="text-xs font-bold text-gray-500 mb-2">مدة التوصيل المتوقعة</p>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="مثال: ساعتين، يوم واحد، الخ..."
+                                        value={estimatedTime}
+                                        onChange={e => setEstimatedTime(e.target.value)}
+                                        className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                    />
+                                    <button
+                                        id="save-est-btn"
+                                        onClick={handleSaveEstimation}
+                                        disabled={isSavingTime}
+                                        className="shrink-0 bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50"
+                                    >
+                                        {isSavingTime ? 'جاري...' : 'حفظ'}
+                                    </button>
+                                </div>
+                                <p className="text-[10px] text-gray-500 mt-1.5 leading-relaxed">تظهر هذه المدة للعميل في صفحة تتبع الطلبات لتطمئنه.</p>
                             </div>
 
                             {/* Products */}

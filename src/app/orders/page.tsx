@@ -129,6 +129,21 @@ function OrderCard({ order }: { order: Order }) {
       {expanded && (
         <div className="border-t border-surface-hover p-4 sm:p-5 space-y-5 animate-in slide-in-from-top-2 duration-300">
           
+          {/* Estimated Delivery Box */}
+          <div className={`p-4 rounded-xl flex items-center gap-3 ${
+            order.shipping_address?.estimated_delivery 
+              ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-500' 
+              : 'bg-primary/10 border border-primary/20 text-primary'
+          }`}>
+            <Clock className="w-5 h-5 shrink-0" />
+            <div>
+              <p className="text-xs font-bold uppercase mb-0.5 opacity-80">موعد التوصيل المتوقع</p>
+              <p className="font-black text-sm sm:text-base">
+                {order.shipping_address?.estimated_delivery || "جاري حساب وقت التوصيل..."}
+              </p>
+            </div>
+          </div>
+
           {/* Visual Order Timeline */}
           <OrderTimeline currentStatus={order.status} />
 

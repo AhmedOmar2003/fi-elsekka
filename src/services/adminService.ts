@@ -176,6 +176,20 @@ export async function updateOrderStatus(orderId: string, status: string) {
     return res;
 }
 
+export async function updateOrderEstimation(orderId: string, estimatedTime: string) {
+    // 1. Fetch current shipping_address JSON
+    const { data: order } = await supabase.from('orders').select('shipping_address').eq('id', orderId).single();
+    if (!order || !order.shipping_address) return { error: { message: "Order not found" } };
+
+    // 2. Attach estimated_delivery
+    const newShipping = { ...order.shipping_address, estimated_delivery: estimatedTime };
+    
+    // 3. Update the order
+    const res = await supabase.from('orders').update({ shipping_address: newShipping }).eq('id', orderId);
+    if (res.error) logError('updateOrderEstimation', res.error);
+    return res;
+}
+
 // ─── Users ────────────────────────────────────────────────────────────────────
 export async function fetchAdminUsers() {
     const { data, error } = await supabase
