@@ -166,6 +166,7 @@ export default function DriverDashboard() {
     const [actionLoadingOrder, setActionLoadingOrder] = useState<string | null>(null) // ID of order currently accepting/rejecting
     const [showAvailabilityPrompt, setShowAvailabilityPrompt] = useState(false)
     const [isSettingAvailability, setIsSettingAvailability] = useState(false)
+    const [isAvailable, setIsAvailable] = useState<boolean | null>(null) // null = not loaded yet
     const knownOrderIds = useRef<Set<string>>(new Set())
     const isFirstLoad = useRef(true)
 
@@ -180,6 +181,26 @@ export default function DriverDashboard() {
         } catch (err) {
             console.error('Driver fetch error:', err)
             return []
+        }
+    }, [])
+
+    const initializeDriver = useCallback(async () => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session) return
+            
+            // Fetch driver profile to get is_available
+            const { data: profile } = await supabase
+                .from('users')
+                .select('is_available')
+                .eq('id', session.user.id)
+                .single()
+            
+            if (profile) {
+                setIsAvailable(profile.is_available !== false) // default to true if null
+            }
+        } catch (err) {
+            console.error('Driver profile fetch error:', err)
         }
     }, [])
 
@@ -225,6 +246,9 @@ export default function DriverDashboard() {
                 fetchOrders(session, user.id),
                 fetchDeliveredOrders(user.id)
             ])
+
+            // Also fetch driver availability status
+            initializeDriver()
 
             // Seed known IDs on first load to avoid fake notifications
             active.forEach(o => knownOrderIds.current.add(o.id))
@@ -460,7 +484,10 @@ export default function DriverDashboard() {
 
             if (!res.ok) throw new Error('Failed to set availability')
             
+            // Update local state immediately
+            setIsAvailable(isAvailable)
             setShowAvailabilityPrompt(false)
+            
             if (isAvailable) {
                 toast.success('بطل! منتظرين الأوردرات الجديدة ليك 🚀')
             } else {
@@ -553,6 +580,45 @@ export default function DriverDashboard() {
                             </button>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Persistent Availability Status Banner */}
+            {isAvailable !== null && (
+                <div className={`rounded-2xl p-4 flex items-center justify-between gap-4 border ${
+                    isAvailable 
+                        ? 'bg-emerald-500/10 border-emerald-500/20' 
+                        : 'bg-amber-400/10 border-amber-400/20'
+                }`}>
+                    <div className="flex items-center gap-3">
+                        <div className={`w-2.5 h-2.5 rounded-full animate-pulse ${
+                            isAvailable ? 'bg-emerald-500' : 'bg-amber-400'
+                        }`} />
+                        <div>
+                            <p className={`font-bold text-sm ${
+                                isAvailable ? 'text-emerald-500' : 'text-amber-400'
+                            }`}>
+                                {isAvailable ? 'جاهز لاستقبال الطلبات 🛵' : 'مريح حالياً — الإدارة لا تقدر تعينك دلوقتي'}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                                {isAvailable ? 'طلباتك هتوصلك فور تعيينك من الإدارة.' : 'طق كدة وجاهز تاني لما تكون جاهز للطلبات.'}
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => handleSetAvailability(!isAvailable)}
+                        disabled={isSettingAvailability}
+                        className={`shrink-0 text-xs font-bold px-4 py-2 rounded-xl transition-all disabled:opacity-50 ${
+                            isAvailable 
+                                ? 'bg-surface-hover text-gray-400 hover:text-rose-400 hover:bg-rose-500/10'
+                                : 'bg-emerald-500 text-white hover:bg-emerald-600'
+                        }`}
+                    >
+                        {isSettingAvailability 
+                            ? '...' 
+                            : isAvailable ? 'مُريح شوية 😴' : 'جاهز دلوقتي! 🚀'
+                        }
+                    </button>
                 </div>
             )}
 
