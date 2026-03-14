@@ -11,6 +11,7 @@ import { updateAuthPassword } from "@/services/authService"
 import { KeyRound, ShieldCheck, AlertCircle, ArrowRight } from "lucide-react"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase"
+import { PasswordInput } from "@/components/ui/password-input"
 
 export default function UpdatePasswordPage() {
   return (
@@ -170,8 +171,7 @@ function UpdatePasswordContent() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
           <label className="text-sm font-bold text-foreground px-1">كلمة المرور الجديدة</label>
-          <Input
-            type="password"
+          <PasswordInput
             value={password}
             onChange={e => setPassword(e.target.value)}
             placeholder="••••••••"
@@ -184,8 +184,7 @@ function UpdatePasswordContent() {
 
         <div className="space-y-2">
           <label className="text-sm font-bold text-foreground px-1">تأكيد كلمة المرور الجديدة</label>
-          <Input
-            type="password"
+          <PasswordInput
             value={confirmPassword}
             onChange={e => setConfirmPassword(e.target.value)}
             placeholder="••••••••"

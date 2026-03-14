@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
 import { signUp, signIn } from "@/services/authService"
 import { UserPlus, AlertCircle, CheckCircle } from "lucide-react"
 
@@ -123,8 +124,7 @@ function RegisterContent() {
 
           <div className="space-y-2">
             <label className="text-sm font-bold text-foreground px-1">كلمة المرور</label>
-            <Input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { signIn } from "@/services/authService"
 import { supabase } from "@/lib/supabase"
 import { LogIn, AlertCircle, Mail } from "lucide-react"
+import { PasswordInput } from "@/components/ui/password-input"
 
 export default function LoginPage() {
   return (
@@ -121,8 +122,7 @@ function LoginContent() {
             <label className="text-sm font-bold text-foreground">كلمة المرور</label>
             <Link href="/forgot-password" className="text-sm font-bold text-primary hover:underline">نسيت كلمة المرور؟</Link>
           </div>
-          <Input
-            type="password"
+          <PasswordInput
             value={password}
             onChange={e => setPassword(e.target.value)}
             placeholder="••••••••"
