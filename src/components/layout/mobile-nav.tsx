@@ -19,7 +19,8 @@ export function MobileNav() {
     pathname.startsWith('/product/') ||
     pathname.startsWith('/checkout') ||
     pathname.startsWith('/login') ||
-    pathname.startsWith('/register');
+    pathname.startsWith('/register') ||
+    pathname.startsWith('/driver');
 
   if (isHidden) return null;
 
