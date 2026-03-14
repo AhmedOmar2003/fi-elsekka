@@ -7,7 +7,99 @@ import { Footer } from "@/components/layout/footer"
 import { useAuth } from "@/contexts/AuthContext"
 import { fetchUserOrders, Order } from "@/services/ordersService"
 import { supabase } from "@/lib/supabase"
-import { Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, ChevronDown, ChevronUp, Wifi, Phone } from "lucide-react"
+import { Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, ChevronDown, ChevronUp, Wifi, Phone, Star } from "lucide-react"
+
+// ─── Driver Rating Widget ──────────────────────────────────────────────────
+function DriverRating({ orderId, driverId, userId }: { orderId: string; driverId: string; userId: string }) {
+  const [existingRating, setExistingRating] = React.useState<number | null>(null)
+  const [existingComment, setExistingComment] = React.useState('')
+  const [hovered, setHovered] = React.useState(0)
+  const [selected, setSelected] = React.useState(0)
+  const [comment, setComment] = React.useState('')
+  const [submitting, setSubmitting] = React.useState(false)
+  const [submitted, setSubmitted] = React.useState(false)
+  const [loaded, setLoaded] = React.useState(false)
+
+  React.useEffect(() => {
+    supabase
+      .from('driver_reviews')
+      .select('rating, comment')
+      .eq('order_id', orderId)
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setExistingRating(data.rating)
+          setExistingComment(data.comment || '')
+          setSelected(data.rating)
+        }
+        setLoaded(true)
+      })
+  }, [orderId, userId])
+
+  if (!loaded) return null
+
+  const handleSubmit = async () => {
+    if (!selected) return
+    setSubmitting(true)
+    const { error } = await supabase.from('driver_reviews').upsert({
+      order_id: orderId,
+      driver_id: driverId,
+      user_id: userId,
+      rating: selected,
+      comment: comment.trim() || null
+    }, { onConflict: 'order_id' })
+    setSubmitting(false)
+    if (!error) {
+      setExistingRating(selected)
+      setExistingComment(comment)
+      setSubmitted(true)
+    }
+  }
+
+  return (
+    <div className="p-4 rounded-xl bg-amber-400/5 border border-amber-400/20 space-y-3">
+      <p className="text-xs font-black uppercase text-amber-500/80">⭐ قيّم تجربة التوصيل</p>
+      <div className="flex items-center gap-1">
+        {[1,2,3,4,5].map(star => (
+          <button
+            key={star}
+            disabled={!!existingRating}
+            onClick={() => !existingRating && setSelected(star)}
+            onMouseEnter={() => !existingRating && setHovered(star)}
+            onMouseLeave={() => setHovered(0)}
+            className="transition-transform active:scale-90 disabled:cursor-default"
+          >
+            <Star className={`w-8 h-8 transition-colors ${star <= (hovered || existingRating || selected) ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} />
+          </button>
+        ))}
+        {existingRating && <span className="mr-2 text-sm font-black text-amber-500">{existingRating}/5</span>}
+      </div>
+      {!existingRating && (
+        <>
+          <textarea
+            value={comment}
+            onChange={e => setComment(e.target.value)}
+            placeholder="تعليق اختياري على المندوب..."
+            rows={2}
+            className="w-full bg-background border border-surface-hover rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary resize-none"
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={!selected || submitting}
+            className="w-full bg-amber-400 text-black font-black py-2.5 rounded-xl text-sm hover:bg-amber-500 transition-colors disabled:opacity-50"
+          >
+            {submitting ? 'جاري الإرسال...' : 'إرسال التقييم ⭐'}
+          </button>
+        </>
+      )}
+      {existingRating && existingComment && (
+        <p className="text-xs text-gray-500 italic">"{existingComment}"</p>
+      )}
+      {submitted && <p className="text-xs text-emerald-500 font-bold">✅ شكراً! تم إرسال تقييمك للمندوب.</p>}
+    </div>
+  )
+}
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   pending: {
@@ -96,7 +188,7 @@ function OrderTimeline({ currentStatus }: { currentStatus: string }) {
   )
 }
 
-function OrderCard({ order }: { order: Order }) {
+function OrderCard({ order, userId }: { order: Order; userId: string }) {
   const [expanded, setExpanded] = useState(false)
   const status = STATUS_MAP[order.status] || { label: order.status, color: "text-gray-500 bg-surface-hover border-surface-border", icon: <Package className="w-4 h-4" /> }
   const date = new Date(order.created_at).toLocaleDateString("ar-EG", {
@@ -196,6 +288,15 @@ function OrderCard({ order }: { order: Order }) {
                 <p className="text-sm text-primary font-bold">📞 {order.shipping_address.phone}</p>
               )}
             </div>
+          )}
+
+          {/* Driver Rating Widget — only for delivered orders with an assigned driver */}
+          {order.status === 'delivered' && order.shipping_address?.driver?.id && userId && (
+            <DriverRating
+              orderId={order.id}
+              driverId={order.shipping_address.driver.id}
+              userId={userId}
+            />
           )}
 
           {/* Total */}
@@ -333,7 +434,7 @@ export default function OrdersPage() {
           ) : (
             <div className="space-y-4">
               {orders.map(order => (
-                <OrderCard key={order.id} order={order} />
+                <OrderCard key={order.id} order={order} userId={user?.id || ''} />
               ))}
             </div>
           )}

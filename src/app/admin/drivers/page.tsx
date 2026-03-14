@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Users, UserPlus, Phone, CreditCard, Mail, Trash2, ShieldCheck, Pencil, Loader2, X, AlertTriangle } from "lucide-react"
+import { Users, UserPlus, Phone, CreditCard, Mail, Trash2, ShieldCheck, Pencil, Loader2, X, AlertTriangle, Star } from "lucide-react"
 import { supabase } from '@/lib/supabase'
 import { logError } from '@/services/adminService'
 import { toast } from 'sonner'
@@ -21,6 +21,7 @@ export default function AdminDriversPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [driverRatings, setDriverRatings] = useState<Record<string, number>>({})
 
     // Edit modal state
     const [editingDriver, setEditingDriver] = useState<Driver | null>(null)
@@ -54,7 +55,30 @@ export default function AdminDriversPage() {
             .order('created_at', { ascending: false })
         
         if (error) logError('fetchDrivers', error)
-        if (data) setDrivers(data)
+        if (data) {
+            setDrivers(data)
+            // Fetch average ratings for each driver
+            if (data.length > 0) {
+                const driverIds = data.map((d: any) => d.id)
+                const { data: reviews } = await supabase
+                    .from('driver_reviews')
+                    .select('driver_id, rating')
+                    .in('driver_id', driverIds)
+                if (reviews) {
+                    const ratingMap: Record<string, number> = {}
+                    const countMap: Record<string, number> = {}
+                    for (const r of reviews) {
+                        ratingMap[r.driver_id] = (ratingMap[r.driver_id] || 0) + r.rating
+                        countMap[r.driver_id] = (countMap[r.driver_id] || 0) + 1
+                    }
+                    const avgMap: Record<string, number> = {}
+                    for (const id of driverIds) {
+                        if (countMap[id]) avgMap[id] = parseFloat((ratingMap[id] / countMap[id]).toFixed(1))
+                    }
+                    setDriverRatings(avgMap)
+                }
+            }
+        }
         setIsLoading(false)
     }
 
@@ -190,6 +214,7 @@ export default function AdminDriversPage() {
                             <tr className="border-b border-surface-hover text-xs uppercase text-gray-500 bg-surface-hover/30">
                                 <th className="px-5 py-4 font-bold">معلومات المندوب</th>
                                 <th className="px-5 py-4 font-bold">رقم الهاتف</th>
+                                <th className="px-5 py-4 font-bold">التقييم</th>
                                 <th className="px-5 py-4 font-bold">تاريخ الانضمام</th>
                                 <th className="px-5 py-4 font-bold text-left">إجراءات</th>
                             </tr>
@@ -232,6 +257,16 @@ export default function AdminDriversPage() {
                                         </td>
                                         <td className="px-5 py-4 text-gray-500 font-mono text-xs" dir="ltr">
                                             {driver.phone || <span className="text-gray-400 italic">غير محدد</span>}
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            {driverRatings[driver.id] ? (
+                                                <div className="flex items-center gap-1">
+                                                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                                                    <span className="font-black text-sm text-amber-500">{driverRatings[driver.id]}</span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-gray-400">—</span>
+                                            )}
                                         </td>
                                         <td className="px-5 py-4 text-gray-500 font-mono text-xs">
                                             {new Date(driver.created_at).toLocaleDateString('ar-EG')}
