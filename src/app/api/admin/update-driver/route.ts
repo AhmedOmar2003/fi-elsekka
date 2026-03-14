@@ -1,0 +1,56 @@
+import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
+
+export async function POST(request: Request) {
+    try {
+        if (!serviceRoleKey || !supabaseUrl) {
+            return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+        }
+
+        const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+            auth: { autoRefreshToken: false, persistSession: false }
+        });
+
+        const { driverId, full_name, phone, email, password } = await request.json();
+
+        if (!driverId) {
+            return NextResponse.json({ error: 'Missing driverId' }, { status: 400 });
+        }
+
+        // Build auth update payload
+        const authUpdatePayload: any = {
+            user_metadata: { role: 'driver', full_name, phone }
+        };
+        if (email) authUpdatePayload.email = email;
+        if (password) authUpdatePayload.password = password;
+
+        // 1. Update auth user (metadata + optional email/password)
+        const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(driverId, authUpdatePayload);
+        if (authError) {
+            return NextResponse.json({ error: authError.message }, { status: 500 });
+        }
+
+        // 2. Sync public.users table
+        const publicUpdate: any = { full_name, phone };
+        if (email) publicUpdate.email = email;
+
+        const { error: dbError } = await supabaseAdmin
+            .from('users')
+            .update(publicUpdate)
+            .eq('id', driverId);
+
+        if (dbError) {
+            console.error('Failed to sync public.users:', dbError);
+            // Don't fail — auth was updated which is the source of truth
+        }
+
+        return NextResponse.json({ success: true });
+
+    } catch (err: any) {
+        console.error('API Error /update-driver:', err);
+        return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
+    }
+}

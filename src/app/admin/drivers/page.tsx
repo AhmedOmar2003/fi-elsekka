@@ -26,6 +26,8 @@ export default function AdminDriversPage() {
     const [editingDriver, setEditingDriver] = useState<Driver | null>(null)
     const [editFullName, setEditFullName] = useState('')
     const [editPhone, setEditPhone] = useState('')
+    const [editEmail, setEditEmail] = useState('')
+    const [editPassword, setEditPassword] = useState('')
     const [isSavingEdit, setIsSavingEdit] = useState(false)
 
     // Delete confirmation modal state
@@ -99,24 +101,42 @@ export default function AdminDriversPage() {
         setEditingDriver(driver)
         setEditFullName(driver.full_name)
         setEditPhone(driver.phone || '')
+        setEditEmail(driver.email || '')
+        setEditPassword('')
     }
 
     const handleSaveEdit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!editingDriver) return
         setIsSavingEdit(true)
-        const { error } = await supabase
-            .from('users')
-            .update({ full_name: editFullName, phone: editPhone })
-            .eq('id', editingDriver.id)
-        
-        setIsSavingEdit(false)
-        if (error) {
-            toast.error("حدث خطأ أثناء حفظ التعديلات")
-        } else {
-            toast.success("تم تحديث بيانات المندوب ✅")
-            setDrivers(prev => prev.map(d => d.id === editingDriver.id ? { ...d, full_name: editFullName, phone: editPhone } : d))
-            setEditingDriver(null)
+
+        try {
+            const res = await fetch('/api/admin/update-driver', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    driverId: editingDriver.id,
+                    full_name: editFullName,
+                    phone: editPhone,
+                    email: editEmail !== editingDriver.email ? editEmail : undefined,
+                    password: editPassword || undefined
+                })
+            })
+            const data = await res.json()
+            if (!res.ok) {
+                toast.error(data.error || 'حدث خطأ أثناء حفظ التعديلات')
+            } else {
+                toast.success('تم تحديث بيانات المندوب ✅')
+                setDrivers(prev => prev.map(d => d.id === editingDriver.id
+                    ? { ...d, full_name: editFullName, phone: editPhone, email: editEmail }
+                    : d
+                ))
+                setEditingDriver(null)
+            }
+        } catch (err) {
+            toast.error('حدث خطأ في الاتصال بالخادم')
+        } finally {
+            setIsSavingEdit(false)
         }
     }
 
@@ -336,6 +356,17 @@ export default function AdminDriversPage() {
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-gray-500">رقم الهاتف</label>
                                 <input value={editPhone} onChange={e => setEditPhone(e.target.value)} type="tel" className="w-full bg-background border border-surface-hover rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary" dir="ltr" />
+                            </div>
+                            <div className="pt-2 border-t border-surface-hover space-y-4">
+                                <p className="text-xs text-primary font-bold">تعديل بيانات الدخول (اختياري)</p>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-gray-500">البريد الإلكتروني</label>
+                                    <input value={editEmail} onChange={e => setEditEmail(e.target.value)} type="email" className="w-full bg-background border border-surface-hover rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary" dir="ltr" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-gray-500">كلمة المرور الجديدة <span className="text-gray-400">(اتركها فارغة إن لم تريد تغييرها)</span></label>
+                                    <input value={editPassword} onChange={e => setEditPassword(e.target.value)} type="text" className="w-full bg-background border border-surface-hover rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-primary" placeholder="كلمة مرور جديدة..." />
+                                </div>
                             </div>
                             <div className="pt-4 flex gap-3">
                                 <button type="button" onClick={() => setEditingDriver(null)} className="flex-1 bg-surface-hover text-foreground font-bold py-3 rounded-xl">
