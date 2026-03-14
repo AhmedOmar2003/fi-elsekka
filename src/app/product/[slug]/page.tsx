@@ -42,10 +42,14 @@ export default function ProductPage() {
   }
 
   const handleBuyNow = async () => {
-    if (dbProduct) {
-      await addItem(dbProduct.id, quantity, appliedDiscountPrice)
+    if (!dbProduct) return;
+    const searchParams = new URLSearchParams();
+    searchParams.set("buyNow", dbProduct.id);
+    searchParams.set("qty", quantity.toString());
+    if (appliedDiscountPrice !== null) {
+      searchParams.set("price", appliedDiscountPrice.toString());
     }
-    router.push("/checkout")
+    router.push(`/checkout?${searchParams.toString()}`);
   }
 
   const slugOrId = typeof params.slug === 'string' ? params.slug : ''
