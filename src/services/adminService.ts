@@ -15,7 +15,7 @@ export async function fetchAdminStats() {
     const [usersRes, productsRes, ordersRes, revenueRes] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }),
         supabase.from('products').select('id', { count: 'exact', head: true }),
-        supabase.from('orders').select('id', { count: 'exact', head: true }).not('shipping_address', 'cs', '{"is_grace_period": true}'),
+        supabase.from('orders').select('id', { count: 'exact', head: true }),
         supabase.from('orders').select('total_amount').eq('status', 'delivered'),
     ]);
 
@@ -33,7 +33,6 @@ export async function fetchRecentOrders(limit = 5) {
     const { data, error } = await supabase
         .from('orders')
         .select('id, total_amount, status, created_at, user_id, users(full_name, email)')
-        .not('shipping_address', 'cs', '{"is_grace_period": true}')
         .order('created_at', { ascending: false })
         .limit(limit);
     if (error) logError('fetchRecentOrders', error);
@@ -155,7 +154,6 @@ export async function fetchAdminOrders() {
     const { data, error } = await supabase
         .from('orders')
         .select('*, users(full_name, email)')
-        .not('shipping_address', 'cs', '{"is_grace_period": true}')
         .order('created_at', { ascending: false });
     if (error) logError('fetchAdminOrders', error);
     return data || [];

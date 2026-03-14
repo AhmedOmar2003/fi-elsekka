@@ -203,6 +203,9 @@ export default function AdminOrdersPage() {
                                         <tr key={order.id} className="hover:bg-surface-hover transition-colors">
                                             <td className="px-4 py-3">
                                                 <span className="font-mono text-xs text-gray-500">#{order.id.slice(0, 8)}</span>
+                                                {order.shipping_address?.is_grace_period === true && (
+                                                    <span className="block mt-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20 w-fit">⏳ يُمكن إلغاؤه</span>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3">
                                                 <p className="font-bold text-foreground text-xs">{order.users?.full_name || order.users?.email || '—'}</p>
