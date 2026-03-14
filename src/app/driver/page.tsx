@@ -583,6 +583,26 @@ export default function DriverDashboard() {
                 </div>
             )}
 
+            {/* Resting Banner — only shows when driver chose to rest */}
+            {isAvailable === false && (
+                <div className="bg-amber-400/10 border border-amber-400/20 rounded-2xl p-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-2.5 h-2.5 rounded-full animate-pulse bg-amber-400" />
+                        <div>
+                            <p className="font-bold text-sm text-amber-400">مريح حالياً — الإدارة مش قادرة تعينك دلوقتي</p>
+                            <p className="text-xs text-gray-500 mt-0.5">خد راحتك وروق، ولما تكون جاهز اضغط على الزر.</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => handleSetAvailability(true)}
+                        disabled={isSettingAvailability}
+                        className="shrink-0 text-xs font-bold px-4 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 transition-all disabled:opacity-50"
+                    >
+                        {isSettingAvailability ? '...' : 'جاهز دلوقتي 🚀'}
+                    </button>
+                </div>
+            )}
+
             {/* Push Notification Promo Banner */}
             {pushStatus === 'default' || pushStatus === 'prompt' ? (
                 <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4">
