@@ -205,7 +205,17 @@ export default function OrdersPage() {
         { event: 'UPDATE', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` },
         (payload) => {
           setOrders(prev =>
-            prev.map(o => o.id === payload.new.id ? { ...o, ...payload.new } as Order : o)
+            prev.map(o => o.id === payload.new.id 
+              ? { 
+                  ...o, 
+                  status: payload.new.status, 
+                  total_amount: payload.new.total_amount,
+                  // Keep the existing joined order_items and full shipping_address from our initial load
+                  // Real-time payloads don't include joined relations, so we merge carefully
+                  shipping_address: payload.new.shipping_address ?? o.shipping_address,
+                } as Order 
+              : o
+            )
           )
         }
       )

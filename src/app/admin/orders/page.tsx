@@ -76,10 +76,15 @@ export default function AdminOrdersPage() {
     const handleViewOrder = async (order: any) => {
         setSelectedOrder(order);
         setEstimatedTime(order.shipping_address?.estimated_delivery || '');
-        setLoadingDetail(true);
-        const items = await fetchOrderDetails(order.id);
-        setOrderItems(items);
-        setLoadingDetail(false);
+        // Use already-fetched items embedded in the order object (from the enriched query)
+        setOrderItems(order.order_items || []);
+        // If for some reason items are empty (fallback), try loading from separate call
+        if (!order.order_items?.length) {
+            setLoadingDetail(true);
+            const items = await fetchOrderDetails(order.id);
+            setOrderItems(items);
+            setLoadingDetail(false);
+        }
     };
 
     const handleStatusChange = async (orderId: string, newStatus: string) => {

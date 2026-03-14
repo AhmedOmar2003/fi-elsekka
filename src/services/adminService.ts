@@ -153,7 +153,14 @@ export async function deleteCategory(id: string) {
 export async function fetchAdminOrders() {
     const { data, error } = await supabase
         .from('orders')
-        .select('*, users(full_name, email)')
+        .select(`
+            *,
+            users(full_name, email),
+            order_items(
+                id, product_id, quantity, price_at_purchase,
+                products(name, price, image_url)
+            )
+        `)
         .order('created_at', { ascending: false });
     if (error) logError('fetchAdminOrders', error);
     return data || [];
