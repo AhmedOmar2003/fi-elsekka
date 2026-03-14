@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Users, UserPlus, Phone, CreditCard, Mail, Trash2, ShieldCheck } from "lucide-react"
+import { Users, UserPlus, Phone, CreditCard, Mail, Trash2, ShieldCheck, Pencil, Loader2, X, AlertTriangle } from "lucide-react"
 import { supabase } from '@/lib/supabase'
 import { logError } from '@/services/adminService'
 import { toast } from 'sonner'
@@ -10,9 +10,10 @@ interface Driver {
     id: string;
     full_name: string;
     email: string;
+    phone?: string;
+    national_id?: string;
     created_at: string;
     role: string;
-    // We store extra fields in metadata realistically, but join them here
 }
 
 export default function AdminDriversPage() {
@@ -21,7 +22,17 @@ export default function AdminDriversPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    // Form Stats
+    // Edit modal state
+    const [editingDriver, setEditingDriver] = useState<Driver | null>(null)
+    const [editFullName, setEditFullName] = useState('')
+    const [editPhone, setEditPhone] = useState('')
+    const [isSavingEdit, setIsSavingEdit] = useState(false)
+
+    // Delete confirmation modal state
+    const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
+
+    // Add form state
     const [fullName, setFullName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -73,7 +84,6 @@ export default function AdminDriversPage() {
             } else {
                 toast.success("تم إنشاء حساب المندوب بنجاح! 🎉")
                 setIsAddModalOpen(false)
-                // Clear form
                 setFullName(''); setEmail(''); setPassword(''); setPhone(''); setNationalId('')
                 fetchDrivers()
             }
@@ -85,24 +95,52 @@ export default function AdminDriversPage() {
         }
     }
 
-    const handleDeleteDriver = async (driverId: string) => {
-        if (!confirm("هل أنت متأكد من حذف هذا المندوب؟ لا يمكن التراجع عن هذا الإجراء.")) return;
+    const openEditModal = (driver: Driver) => {
+        setEditingDriver(driver)
+        setEditFullName(driver.full_name)
+        setEditPhone(driver.phone || '')
+    }
+
+    const handleSaveEdit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!editingDriver) return
+        setIsSavingEdit(true)
+        const { error } = await supabase
+            .from('users')
+            .update({ full_name: editFullName, phone: editPhone })
+            .eq('id', editingDriver.id)
         
+        setIsSavingEdit(false)
+        if (error) {
+            toast.error("حدث خطأ أثناء حفظ التعديلات")
+        } else {
+            toast.success("تم تحديث بيانات المندوب ✅")
+            setDrivers(prev => prev.map(d => d.id === editingDriver.id ? { ...d, full_name: editFullName, phone: editPhone } : d))
+            setEditingDriver(null)
+        }
+    }
+
+    const confirmDeleteDriver = async () => {
+        if (!driverToDelete) return
+        setIsDeleting(true)
         try {
-            const res = await fetch(`/api/admin/delete-driver?id=${driverId}`, {
+            const res = await fetch(`/api/admin/delete-driver?id=${driverToDelete.id}`, {
                 method: 'DELETE'
-            });
-            const data = await res.json();
+            })
+            const data = await res.json()
             
             if (!res.ok) {
-                toast.error(data.error || "حدث خطأ أثناء الحذف");
+                toast.error(data.error || "حدث خطأ أثناء الحذف")
             } else {
-                toast.success("تم حذف المندوب نهائياً بنجاح");
-                setDrivers(prev => prev.filter(d => d.id !== driverId));
+                toast.success("تم حذف المندوب نهائياً ✅")
+                setDrivers(prev => prev.filter(d => d.id !== driverToDelete.id))
+                setDriverToDelete(null)
             }
         } catch(err) {
-             console.error(err);
-             toast.error("حدث خطأ في الاتصال بالخادم");
+             console.error(err)
+             toast.error("حدث خطأ في الاتصال بالخادم")
+        } finally {
+            setIsDeleting(false)
         }
     }
 
@@ -131,6 +169,7 @@ export default function AdminDriversPage() {
                         <thead>
                             <tr className="border-b border-surface-hover text-xs uppercase text-gray-500 bg-surface-hover/30">
                                 <th className="px-5 py-4 font-bold">معلومات المندوب</th>
+                                <th className="px-5 py-4 font-bold">رقم الهاتف</th>
                                 <th className="px-5 py-4 font-bold">تاريخ الانضمام</th>
                                 <th className="px-5 py-4 font-bold text-left">إجراءات</th>
                             </tr>
@@ -140,13 +179,14 @@ export default function AdminDriversPage() {
                                 [...Array(3)].map((_, i) => (
                                     <tr key={i} className="animate-pulse">
                                         <td className="px-5 py-4"><div className="h-10 w-48 bg-surface-hover rounded-lg"></div></td>
+                                        <td className="px-5 py-4"><div className="h-4 w-28 bg-surface-hover rounded"></div></td>
                                         <td className="px-5 py-4"><div className="h-4 w-24 bg-surface-hover rounded"></div></td>
-                                        <td className="px-5 py-4"><div className="h-8 w-8 bg-surface-hover rounded-lg mr-auto"></div></td>
+                                        <td className="px-5 py-4"><div className="h-8 w-16 bg-surface-hover rounded-lg ml-auto"></div></td>
                                     </tr>
                                 ))
                             ) : drivers.length === 0 ? (
                                 <tr>
-                                    <td colSpan={3} className="px-5 py-12 text-center text-gray-500">
+                                    <td colSpan={4} className="px-5 py-12 text-center text-gray-500">
                                         <div className="flex flex-col items-center justify-center space-y-3">
                                             <div className="w-16 h-16 rounded-full bg-surface-hover flex items-center justify-center">
                                                 <ShieldCheck className="w-8 h-8 text-gray-400" />
@@ -170,17 +210,29 @@ export default function AdminDriversPage() {
                                                 </div>
                                             </div>
                                         </td>
+                                        <td className="px-5 py-4 text-gray-500 font-mono text-xs" dir="ltr">
+                                            {driver.phone || <span className="text-gray-400 italic">غير محدد</span>}
+                                        </td>
                                         <td className="px-5 py-4 text-gray-500 font-mono text-xs">
                                             {new Date(driver.created_at).toLocaleDateString('ar-EG')}
                                         </td>
                                         <td className="px-5 py-4 text-left">
-                                            <button
-                                                onClick={() => handleDeleteDriver(driver.id)}
-                                                className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                                                title="حذف المندوب"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            <div className="flex items-center gap-1 justify-end">
+                                                <button
+                                                    onClick={() => openEditModal(driver)}
+                                                    className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                                    title="تعديل بيانات المندوب"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setDriverToDelete(driver)}
+                                                    className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                    title="حذف المندوب"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -200,7 +252,7 @@ export default function AdminDriversPage() {
                                 تسجيل مندوب جديد
                             </h2>
                             <button onClick={() => setIsAddModalOpen(false)} className="text-gray-500 hover:text-foreground">
-                                ✕
+                                <X className="w-5 h-5" />
                             </button>
                         </div>
                         
@@ -230,7 +282,7 @@ export default function AdminDriversPage() {
                             </div>
 
                             <div className="pt-2 border-t border-surface-hover">
-                                <p className="text-xs text-primary font-bold mb-3">بيانات تسجيل الدخول למندوب</p>
+                                <p className="text-xs text-primary font-bold mb-3">بيانات تسجيل الدخول للمندوب</p>
                                 <div className="space-y-4">
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold text-gray-500">البريد الإلكتروني *</label>
@@ -254,11 +306,82 @@ export default function AdminDriversPage() {
                                 <button type="button" onClick={() => setIsAddModalOpen(false)} className="flex-1 bg-surface-hover text-foreground font-bold py-3 rounded-xl hover:bg-surface-hover/80 transition-colors">
                                     إلغاء
                                 </button>
-                                <button disabled={isSubmitting} type="submit" className="flex-1 bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50">
-                                    {isSubmitting ? 'جاري الإنشاء...' : 'إنشاء المندوب'}
+                                <button disabled={isSubmitting} type="submit" className="flex-1 bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                                    {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" />جاري الإنشاء...</> : 'إنشاء المندوب'}
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Driver Modal */}
+            {editingDriver && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-surface border border-surface-hover w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-5 border-b border-surface-hover flex items-center justify-between bg-surface-hover/30">
+                            <h2 className="font-black text-lg text-foreground flex items-center gap-2">
+                                <Pencil className="w-5 h-5 text-blue-500" />
+                                تعديل بيانات المندوب
+                            </h2>
+                            <button onClick={() => setEditingDriver(null)} className="text-gray-500 hover:text-foreground">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleSaveEdit} className="p-5 space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-gray-500">الاسم الكامل</label>
+                                <input value={editFullName} onChange={e => setEditFullName(e.target.value)} type="text" className="w-full bg-background border border-surface-hover rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-gray-500">رقم الهاتف</label>
+                                <input value={editPhone} onChange={e => setEditPhone(e.target.value)} type="tel" className="w-full bg-background border border-surface-hover rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary" dir="ltr" />
+                            </div>
+                            <div className="pt-4 flex gap-3">
+                                <button type="button" onClick={() => setEditingDriver(null)} className="flex-1 bg-surface-hover text-foreground font-bold py-3 rounded-xl">
+                                    إلغاء
+                                </button>
+                                <button disabled={isSavingEdit} type="submit" className="flex-1 bg-blue-500 text-white font-bold py-3 rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                                    {isSavingEdit ? <><Loader2 className="w-4 h-4 animate-spin" />حفظ...</> : 'حفظ التعديلات'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {driverToDelete && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-surface border border-surface-hover w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 text-center space-y-4">
+                            <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto">
+                                <AlertTriangle className="w-7 h-7 text-red-500" />
+                            </div>
+                            <div>
+                                <h2 className="font-black text-lg text-foreground">تأكيد الحذف</h2>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    هل أنت متأكد من حذف المندوب <span className="font-bold text-foreground">"{driverToDelete.full_name}"</span>؟<br/>
+                                    <span className="text-red-500 font-bold">لا يمكن التراجع عن هذا الإجراء.</span>
+                                </p>
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setDriverToDelete(null)}
+                                    disabled={isDeleting}
+                                    className="flex-1 bg-surface-hover text-foreground font-bold py-3 rounded-xl hover:bg-surface-hover/80 transition-colors"
+                                >
+                                    إلغاء
+                                </button>
+                                <button
+                                    onClick={confirmDeleteDriver}
+                                    disabled={isDeleting}
+                                    className="flex-1 bg-red-500 text-white font-bold py-3 rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isDeleting ? <><Loader2 className="w-4 h-4 animate-spin" />جاري الحذف...</> : <><Trash2 className="w-4 h-4" />احذف نهائياً</>}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
