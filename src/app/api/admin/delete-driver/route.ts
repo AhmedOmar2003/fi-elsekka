@@ -24,26 +24,26 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ error: 'Missing driver ID' }, { status: 400 });
         }
 
-        // Before deleting, ensure this user is actually a driver to prevent deleting admins/customers by mistake
-        const { data: userRecord, error: fetchError } = await supabaseAdmin
-            .from('users')
-            .select('role')
-            .eq('id', driverId)
-            .single();
+        // Safety check: confirm the user is a driver via auth metadata (more reliable than public.users)
+        const { data: { user: userToDelete }, error: fetchError } = await supabaseAdmin.auth.admin.getUserById(driverId);
 
-        if (fetchError || !userRecord || userRecord.role !== 'driver') {
+        if (fetchError || !userToDelete) {
+            return NextResponse.json({ error: 'Driver not found in auth' }, { status: 404 });
+        }
+
+        if (userToDelete.user_metadata?.role !== 'driver') {
             return NextResponse.json({ error: 'Can only delete drivers' }, { status: 403 });
         }
 
-        // 1. Delete from public.users manually just in case cascade is not set up
+        // 1. Delete from public.users (cascade may handle this, but explicit is safer)
         await supabaseAdmin.from('users').delete().eq('id', driverId);
         
-        // 2. Delete user from auth (this fully removes their login access)
+        // 2. Delete from auth.users (removes login access entirely)
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(driverId);
 
         if (authError) {
              console.error('Failed to delete auth user:', authError);
-             return NextResponse.json({ error: 'Failed to completely delete driver auth.' }, { status: 500 });
+             return NextResponse.json({ error: 'Failed to delete driver authentication: ' + authError.message }, { status: 500 });
         }
 
         return NextResponse.json({ success: true });
