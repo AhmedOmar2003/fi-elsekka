@@ -37,6 +37,65 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: React.Rea
   },
 }
 
+function OrderTimeline({ currentStatus }: { currentStatus: string }) {
+  const steps = ['pending', 'processing', 'shipped', 'delivered']
+  const currentIndex = steps.indexOf(currentStatus) >= 0 ? steps.indexOf(currentStatus) : 0
+
+  if (currentStatus === 'cancelled') {
+    return (
+      <div className="flex items-center gap-3 p-4 bg-rose-500/10 rounded-xl border border-rose-500/20 text-rose-500">
+        <XCircle className="w-6 h-6 shrink-0" />
+        <div>
+          <p className="font-bold text-sm">تم إلغاء الطلب</p>
+          <p className="text-xs opacity-80 mt-0.5">يرجى التواصل مع الدعم الفني لو محتاج مساعدة.</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center justify-between w-full relative pt-2 pb-8 px-2 sm:px-4">
+      {steps.map((step, idx) => {
+        const isActive = idx <= currentIndex
+        const isLast = idx === steps.length - 1
+        const meta = STATUS_MAP[step]
+
+        return (
+          <React.Fragment key={step}>
+            <div className="relative flex flex-col items-center z-10 shrink-0">
+              <div
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
+                  isActive
+                    ? 'bg-primary border-primary text-white shadow-lg shadow-primary/30'
+                    : 'bg-surface border-surface-hover text-gray-400'
+                }`}
+              >
+                {meta.icon}
+              </div>
+              <p
+                className={`text-[10px] sm:text-xs font-bold absolute top-12 w-20 text-center transition-colors duration-500 ${
+                  isActive ? 'text-foreground' : 'text-gray-400'
+                }`}
+              >
+                {meta.label.replace('🏍️ ', '')}
+              </p>
+            </div>
+            
+            {!isLast && (
+              <div className="flex-1 h-1.5 mx-1 sm:mx-2 rounded-full bg-surface-hover overflow-hidden relative z-0">
+                <div 
+                  className="absolute inset-y-0 right-0 bg-primary rounded-full transition-all duration-700 ease-out"
+                  style={{ width: idx < currentIndex ? '100%' : '0%' }}
+                />
+              </div>
+            )}
+          </React.Fragment>
+        )
+      })}
+    </div>
+  )
+}
+
 function OrderCard({ order }: { order: Order }) {
   const [expanded, setExpanded] = useState(false)
   const status = STATUS_MAP[order.status] || { label: order.status, color: "text-gray-500 bg-surface-hover border-surface-border", icon: <Package className="w-4 h-4" /> }
@@ -45,9 +104,9 @@ function OrderCard({ order }: { order: Order }) {
   })
 
   return (
-    <div className="bg-surface border border-surface-hover rounded-2xl overflow-hidden hover:border-surface-border transition-all">
+    <div className="bg-surface border border-surface-hover rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-premium transition-all">
       {/* Header row */}
-      <div className="flex items-center gap-4 p-4 sm:p-5">
+      <div className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
           <Package className="w-5 h-5 text-primary" />
         </div>
@@ -55,21 +114,24 @@ function OrderCard({ order }: { order: Order }) {
           <p className="font-bold text-foreground text-sm">طلب #{order.id.slice(-8).toUpperCase()}</p>
           <p className="text-xs text-gray-500 mt-0.5">{date}</p>
         </div>
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${status.color} shrink-0`}>
+        <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${status.color} shrink-0`}>
           {status.icon}
           {status.label}
         </div>
         <button
-          onClick={() => setExpanded(!expanded)}
-          className="p-1.5 rounded-lg text-gray-500 hover:text-foreground hover:bg-surface-hover transition-all shrink-0"
+          className={`p-1.5 rounded-lg text-gray-500 hover:text-foreground hover:bg-surface-hover transition-all shrink-0 ${expanded ? 'bg-surface-hover' : ''}`}
         >
-          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
         </button>
       </div>
 
       {/* Expanded details */}
       {expanded && (
-        <div className="border-t border-surface-hover p-4 sm:p-5 space-y-3">
+        <div className="border-t border-surface-hover p-4 sm:p-5 space-y-5 animate-in slide-in-from-top-2 duration-300">
+          
+          {/* Visual Order Timeline */}
+          <OrderTimeline currentStatus={order.status} />
+
           {/* Items */}
           {order.order_items && order.order_items.length > 0 && (
             <div className="space-y-2">
