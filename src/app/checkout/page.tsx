@@ -2,7 +2,9 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense } from "react"
+import { fetchProductDetails, Product } from "@/services/productsService"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
@@ -16,10 +18,52 @@ import { createOrder } from "@/services/ordersService"
 import { getDefaultDeliveryAddress, saveDeliveryAddress } from "@/services/deliveryService"
 import { incrementDiscountCodeUsage } from "@/services/discountCodesService"
 
-export default function CheckoutPage() {
+function CheckoutContent() {
    const router = useRouter()
+   const searchParams = useSearchParams()
+   
+   const buyNowId = searchParams.get("buyNow")
+   const buyNowQtyRaw = searchParams.get("qty")
+   const buyNowPriceRaw = searchParams.get("price")
+
+   const [overrideProduct, setOverrideProduct] = React.useState<Product | null>(null)
+   const [isOverrideLoading, setIsOverrideLoading] = React.useState(!!buyNowId)
+
+   React.useEffect(() => {
+      if (buyNowId) {
+         fetchProductDetails(buyNowId).then(p => {
+            setOverrideProduct(p)
+            setIsOverrideLoading(false)
+         })
+      }
+   }, [buyNowId])
+
    const { user, profile, isLoading: isAuthLoading } = useAuth()
-   const { items, cartTotal, cartOriginalTotal, cartDiscountTotal, isLoading: isCartLoading } = useCart()
+   const cart = useCart()
+   
+   const isUsingOverride = !!(buyNowId && overrideProduct)
+   
+   const displayItems = isUsingOverride ? [{
+      id: "override-item",
+      product_id: overrideProduct.id,
+      quantity: parseInt(buyNowQtyRaw || "1", 10),
+      product: overrideProduct
+   }] : cart.items;
+
+   let displayCartTotal = cart.cartTotal;
+   let displayCartOriginal = cart.cartOriginalTotal;
+   let displayDiscount = cart.cartDiscountTotal;
+
+   if (isUsingOverride && overrideProduct) {
+      const qty = parseInt(buyNowQtyRaw || "1", 10)
+      displayCartOriginal = overrideProduct.price * qty;
+      const finalPrice = buyNowPriceRaw ? parseFloat(buyNowPriceRaw) : overrideProduct.price;
+      displayCartTotal = finalPrice * qty;
+      displayDiscount = displayCartOriginal - displayCartTotal;
+   }
+
+   const isCartLoading = cart.isLoading || isOverrideLoading
+
    const [isSubmitting, setIsSubmitting] = React.useState(false)
    const [errorMsg, setErrorMsg] = React.useState("")
 
@@ -61,7 +105,7 @@ export default function CheckoutPage() {
 
    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault()
-      if (!user || items.length === 0) return
+      if (!user || displayItems.length === 0) return
       setIsSubmitting(true)
       setErrorMsg("")
 
@@ -70,7 +114,7 @@ export default function CheckoutPage() {
          phone, city, area, street: address, notes
       }
 
-      const { error } = await createOrder(user.id, items, shippingDetails, cartTotal + 35)
+      const { error } = await createOrder(user.id, displayItems, shippingDetails, displayCartTotal + 35)
       setIsSubmitting(false)
 
       if (error) {
@@ -250,9 +294,9 @@ export default function CheckoutPage() {
                         <h3 className="text-xl font-heading font-bold mb-6 text-foreground border-b border-surface-hover pb-4">ملخص طلبك</h3>
 
                         <div className="divide-y divide-surface-hover border-b border-surface-hover mb-6 pb-6 max-h-48 overflow-y-auto custom-scrollbar">
-                           {items.length === 0 ? (
+                           {displayItems.length === 0 ? (
                               <p className="text-sm text-gray-500 text-center py-4">السلة فارغة</p>
-                           ) : items.map(item => (
+                           ) : displayItems.map(item => (
                               <div key={item.id} className="flex justify-between py-3 text-sm">
                                  <div className="flex gap-3 items-center">
                                     <span className="font-heading font-black text-gray-500 w-5">{item.quantity}x</span>
@@ -282,17 +326,17 @@ export default function CheckoutPage() {
                         <div className="space-y-4 mb-8 text-base font-medium">
                            <div className="flex justify-between items-center text-gray-500">
                               <span>المجموع الأصلي</span>
-                              <span className="font-heading font-semibold text-foreground">{cartOriginalTotal.toLocaleString()} ج.م</span>
+                              <span className="font-heading font-semibold text-foreground">{displayCartOriginal.toLocaleString()} ج.م</span>
                            </div>
-                           {cartDiscountTotal > 0 && (
+                           {displayDiscount > 0 && (
                               <div className="flex justify-between items-center text-rose-400">
                                  <span>إجمالي الخصم</span>
-                                 <span className="font-heading font-semibold text-rose-400">- {cartDiscountTotal.toLocaleString()} ج.م</span>
+                                 <span className="font-heading font-semibold text-rose-400">- {displayDiscount.toLocaleString()} ج.م</span>
                               </div>
                            )}
                            <div className="flex justify-between items-center text-gray-400 pt-2 border-t border-surface-hover/50">
                               <span>المجموع بعد الخصم</span>
-                              <span className="font-heading font-semibold text-foreground">{cartTotal.toLocaleString()} ج.م</span>
+                              <span className="font-heading font-semibold text-foreground">{displayCartTotal.toLocaleString()} ج.م</span>
                            </div>
                            <div className="flex justify-between items-center text-gray-400">
                               <span>مصاريف التوصيل</span>
@@ -302,7 +346,7 @@ export default function CheckoutPage() {
 
                         <div className="flex justify-between items-center border-t border-surface-hover pt-6 mb-8 bg-surface-lighter/50 rounded-xl p-4 mt-2">
                            <span className="text-lg font-bold text-foreground">الإجمالي للدفع</span>
-                           <span className="font-heading text-3xl font-black text-primary drop-shadow-sm">{(cartTotal + 35).toFixed(0)} <span className="text-sm">ج.م</span></span>
+                           <span className="font-heading text-3xl font-black text-primary drop-shadow-sm">{(displayCartTotal + 35).toFixed(0)} <span className="text-sm">ج.م</span></span>
                         </div>
 
                         {errorMsg && (
@@ -313,7 +357,7 @@ export default function CheckoutPage() {
                            type="submit"
                            size="lg"
                            className="w-full text-lg font-bold rounded-xl h-14"
-                           disabled={isSubmitting || items.length === 0}
+                           disabled={isSubmitting || displayItems.length === 0}
                         >
                            {isSubmitting ? (
                               <div className="flex items-center gap-2">
@@ -334,5 +378,17 @@ export default function CheckoutPage() {
          </main>
          <Footer />
       </>
+   )
+}
+
+export default function CheckoutPage() {
+   return (
+      <Suspense fallback={
+         <div className="min-h-screen flex items-center justify-center bg-background">
+            <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+         </div>
+      }>
+         <CheckoutContent />
+      </Suspense>
    )
 }
