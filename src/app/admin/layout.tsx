@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -140,6 +140,7 @@ function saveNotifications(notifications: Notification[]) {
 function NotificationBell() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isOpen, setIsOpen] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -150,28 +151,12 @@ function NotificationBell() {
 
     const playNotificationSound = () => {
         try {
-            const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-            if (!AudioContext) return;
-            const ctx = new AudioContext();
-            const osc = ctx.createOscillator();
-            const gainNode = ctx.createGain();
-            
-            osc.connect(gainNode);
-            gainNode.connect(ctx.destination);
-            
-            // Soft pleasant 'ding' sound
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, ctx.currentTime); // A5 note
-            osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
-            
-            gainNode.gain.setValueAtTime(0, ctx.currentTime);
-            gainNode.gain.linearRampToValueAtTime(1.0, ctx.currentTime + 0.05); // Increased volume from 0.3 to 1.0
-            gainNode.gain.exponentialRampToValueAtTime(0.05, ctx.currentTime + 0.5); // Slower decay
-            
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.6);
-        } catch (e) {
-            // Ignore: might fail if user hasn't interacted with page yet (browser policy)
+            if (audioRef.current) {
+                audioRef.current.currentTime = 0;
+                audioRef.current.play().catch((e: any) => console.log('Audio play blocked:', e));
+            }
+        } catch (e: any) {
+            console.error('Audio playback failed', e);
         }
     };
 
@@ -315,6 +300,13 @@ function NotificationBell() {
 
     return (
         <div className="relative">
+            {/* Embedded Notification Sound */}
+            <audio 
+                ref={audioRef} 
+                src="data:audio/mp3;base64,//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExEAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExIAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExMAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq" 
+                preload="auto" 
+            />
+            
             <button
                 onClick={() => { setIsOpen(v => !v); if (!isOpen) markAllRead(); }}
                 className="relative p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover transition-colors"
