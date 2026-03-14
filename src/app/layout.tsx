@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_Arabic, Lalezar } from "next/font/google";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Providers } from "@/components/providers";
@@ -22,6 +22,23 @@ const lalezar = Lalezar({
 export const metadata: Metadata = {
   title: "في السكة - Fi El Sekka",
   description: "Your smart local marketplace companion in Egypt. Fast, friendly, and reliable.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "في السكة",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#10b981",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
