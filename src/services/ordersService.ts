@@ -113,6 +113,24 @@ export const updateOrderStatus = async (orderId: string, status: string) => {
     return { data, error };
 };
 
+export const confirmOrderGracePeriod = async (orderId: string) => {
+    // We update the shipping_address JSON to set is_grace_period: false
+    // Since we don't know the exact JSON shape without fetching, we fetch first.
+    const { data: order } = await supabase.from('orders').select('shipping_address').eq('id', orderId).single();
+    if (!order || !order.shipping_address) return { error: new Error("Order not found") };
+
+    const newShipping = { ...order.shipping_address, is_grace_period: false };
+    
+    const { data, error } = await supabase
+        .from('orders')
+        .update({ shipping_address: newShipping })
+        .eq('id', orderId)
+        .select()
+        .single();
+
+    return { data, error };
+};
+
 export const updateUserProfile = async (userId: string, updates: any) => {
     const { data, error } = await supabase
         .from('users')

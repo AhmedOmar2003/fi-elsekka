@@ -201,16 +201,43 @@ function NotificationBell() {
             Notification.requestPermission();
         }
 
-        // Subscribe to new orders
+        // Subscribe to new orders (Handling the 5-minute grace period)
         const ordersChannel = supabase
             .channel('admin-orders-listener')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
+                const shipping = payload.new.shipping_address || {};
+                
+                // If it's in grace period, DO NOT notify now. We will notify on UPDATE.
+                if (shipping.is_grace_period) {
+                    return;
+                }
+
+                // Otherwise, normal immediate notification
                 addNotification({
                     type: 'new_order',
                     title: '🛒 طلب جديد!',
                     body: `طلب جديد بقيمة ${payload.new.total_amount?.toLocaleString()} ج.م`,
                     link: '/admin/orders',
                 });
+            })
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload) => {
+                const oldShipping = payload.old.shipping_address || {};
+                const newShipping = payload.new.shipping_address || {};
+
+                // Notification should trigger when the grace period ends (user confirmed or 5 mins passed)
+                // This means old had is_grace_period: true, but new has it false or missing.
+                // Also ensure the order wasn't just cancelled.
+                const wasInGracePeriod = oldShipping.is_grace_period === true;
+                const isNowConfirmed = newShipping.is_grace_period !== true;
+                
+                if (wasInGracePeriod && isNowConfirmed && payload.new.status !== 'cancelled') {
+                    addNotification({
+                        type: 'new_order',
+                        title: '🛒 طلب جديد تم تأكيده!',
+                        body: `طلب بقيمة ${payload.new.total_amount?.toLocaleString()} ج.م تخطى فترة السماح`,
+                        link: '/admin/orders',
+                    });
+                }
             })
             .subscribe();
 
