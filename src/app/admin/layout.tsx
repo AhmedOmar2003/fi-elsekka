@@ -54,9 +54,11 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
             {/* Logo */}
             <div className="flex items-center justify-between p-5 border-b border-surface-hover">
                 <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
-                        <Bike className="w-5 h-5 text-foreground" />
-                    </div>
+                    <img 
+                      src="/icon-192x192.svg" 
+                      alt="في السكة Admin" 
+                      className="w-9 h-9 rounded-xl shadow-lg shadow-primary/30" 
+                    />
                     <div>
                         <p className="font-heading font-black text-foreground text-sm">في السكة</p>
                         <p className="text-[10px] text-primary font-medium">لوحة الإدارة</p>

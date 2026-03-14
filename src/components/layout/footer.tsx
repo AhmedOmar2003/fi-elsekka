@@ -26,9 +26,11 @@ export function Footer() {
           
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="mb-4 flex items-center gap-2 group">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20 group-hover:shadow-primary/40 transition-shadow">
-                <MotorcycleIcon className="w-6 h-6" />
-              </div>
+              <img 
+                src="/icon-192x192.svg" 
+                alt="في السكة Logo" 
+                className="w-9 h-9 rounded-xl shadow-md shadow-primary/20 group-hover:shadow-primary/40 transition-shadow" 
+              />
               <div className="flex items-baseline gap-0 leading-none" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
                 <span className="font-black text-2xl text-foreground drop-shadow-sm">فِي&nbsp;</span>
                 <span className="font-black text-2xl text-primary drop-shadow-sm">السِّكَّةِ</span>

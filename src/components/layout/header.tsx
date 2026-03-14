@@ -259,9 +259,11 @@ export function Header() {
 
         {/* ── Logo ──────────────────────────────────────────────────────────── */}
         <Link href="/" className="flex items-center gap-2 shrink-0 group">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-white shadow-lg shadow-primary/30 group-hover:shadow-primary/50 transition-shadow">
-            <MotorcycleIcon className="w-7 h-7" />
-          </div>
+          <img 
+            src="/icon-192x192.svg" 
+            alt="في السكة Logo" 
+            className="w-10 h-10 rounded-xl shadow-lg shadow-primary/30 group-hover:shadow-primary/50 transition-shadow" 
+          />
           <div className="hidden sm:flex items-baseline gap-0 leading-none" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
             <span className="font-black text-2xl text-foreground drop-shadow-sm">فِي&nbsp;</span>
             <span className="font-black text-2xl text-primary drop-shadow-sm">السِّكَّةِ</span>
