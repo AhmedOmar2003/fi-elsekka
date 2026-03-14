@@ -3,11 +3,20 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import {
-    CheckCircle2, MapPin, Phone, User as UserIcon, Loader2,
-    ChevronDown, ChevronUp, Bell, BellOff, LogOut, Bike
-} from 'lucide-react'
+import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown, ChevronUp, Bell, BellOff, X, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
+
+// Helper for VAPID key conversion
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 interface DriverOrder {
     id: string;
@@ -152,6 +161,8 @@ export default function DriverDashboard() {
     const [updatingId, setUpdatingId] = useState<string | null>(null)
     const [driverUser, setDriverUser] = useState<any>(null)
     const [notificationsAllowed, setNotificationsAllowed] = useState(true)
+    const [pushStatus, setPushStatus] = useState<NotificationPermission | 'prompt' | 'unsupported'>('prompt')
+    const [isSubscribing, setIsSubscribing] = useState(false)
     const knownOrderIds = useRef<Set<string>>(new Set())
     const isFirstLoad = useRef(true)
 
@@ -265,7 +276,53 @@ export default function DriverDashboard() {
             return () => { supabase.removeChannel(channel) }
         }
         init()
+
+        // Check Push Notification status
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            setPushStatus(Notification.permission)
+        } else {
+            setPushStatus('unsupported')
+        }
     }, [fetchOrders, fetchDeliveredOrders, notificationsAllowed, router])
+
+    const subscribeToPush = async () => {
+        setIsSubscribing(true)
+        try {
+            const permission = await Notification.requestPermission()
+            setPushStatus(permission)
+            
+            if (permission !== 'granted') throw new Error('تم رفض تصريح الإشعارات')
+
+            const registration = await navigator.serviceWorker.ready
+            const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_KEY
+            if (!publicVapidKey) throw new Error('VAPID key مفقود')
+
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+            })
+
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session) throw new Error('جلسة منتهية')
+
+            const res = await fetch('/api/driver/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                body: JSON.stringify({ subscription })
+            })
+
+            if (!res.ok) throw new Error('فشل حفظ الاشتراك في الخادم')
+            
+            toast.success('تم تفعيل إشعارات الموبايل بنجاح! 🔔')
+        } catch (err: any) {
+            console.error('Push error:', err)
+            if (err.message !== 'تم رفض تصريح الإشعارات') {
+                toast.error(err.message || 'حدث خطأ أثناء تفعيل الإشعارات')
+            }
+        } finally {
+            setIsSubscribing(false)
+        }
+    }
 
     const markAsDelivered = async (orderId: string) => {
         setUpdatingId(orderId)
@@ -310,6 +367,36 @@ export default function DriverDashboard() {
 
     return (
         <div className="space-y-6 pb-8">
+            {/* Push Notification Promo Banner */}
+            {pushStatus === 'default' || pushStatus === 'prompt' ? (
+                <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4">
+                    <div className="flex items-start gap-3 w-full sm:w-auto">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex flex-shrink-0 items-center justify-center text-primary mt-0.5">
+                            <AlertCircle className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <p className="font-bold text-sm text-foreground">فعّل إشعارات الموبايل 🔔</p>
+                            <p className="text-xs text-gray-500 mt-1">عشان الموبايل يرن فور تعيين طلب جديد لك، حتى لو التطبيق مقفول.</p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={subscribeToPush}
+                        disabled={isSubscribing}
+                        className="w-full sm:w-auto shrink-0 bg-primary hover:bg-primary/90 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                        {isSubscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'تفعيل الآن'}
+                    </button>
+                </div>
+            ) : pushStatus === 'denied' ? (
+                <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                    <div>
+                        <p className="font-bold text-sm text-rose-500">تم حظر الإشعارات</p>
+                        <p className="text-xs text-gray-500 mt-1">عشان تستقبل تنبيهات الطلبات الجديدة، يرجى تفعيل الإشعارات من إعدادات المتصفح أو جهازك.</p>
+                    </div>
+                </div>
+            ) : null}
+
             {/* Active Orders Section */}
             <div className="space-y-3">
                 <div className="flex items-center justify-between">

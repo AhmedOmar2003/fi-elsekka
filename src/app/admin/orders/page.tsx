@@ -156,6 +156,22 @@ export default function AdminOrdersPage() {
                 ...prev,
                 shipping_address: { ...prev.shipping_address, driver: driverData }
             }));
+
+            // Notify the driver via Web Push
+            if (driverId) {
+                try {
+                    fetch('/api/admin/notify-driver', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            driverId,
+                            title: '🛵 طلب جديد بانتظارك!',
+                            body: `رقم الطلب: #${selectedOrder.id.slice(0,6)}`,
+                            orderId: selectedOrder.id
+                        })
+                    }).catch(err => console.error('Failed to notify driver:', err));
+                } catch (err) {}
+            }
         }
     };
 
