@@ -88,14 +88,21 @@ export default function AdminDriversPage() {
     const handleDeleteDriver = async (driverId: string) => {
         if (!confirm("هل أنت متأكد من حذف هذا المندوب؟ لا يمكن التراجع عن هذا الإجراء.")) return;
         
-        // This only deletes from public.users. Deleting from auth.users requires service key.
-        // For a full app, we would make an API route to delete from auth as well.
-        const { error } = await supabase.from('users').delete().eq('id', driverId);
-        if (error) {
-            toast.error("حدث خطأ أثناء الحذف");
-        } else {
-            toast.success("تم حذف المندوب");
-            setDrivers(prev => prev.filter(d => d.id !== driverId));
+        try {
+            const res = await fetch(`/api/admin/delete-driver?id=${driverId}`, {
+                method: 'DELETE'
+            });
+            const data = await res.json();
+            
+            if (!res.ok) {
+                toast.error(data.error || "حدث خطأ أثناء الحذف");
+            } else {
+                toast.success("تم حذف المندوب نهائياً بنجاح");
+                setDrivers(prev => prev.filter(d => d.id !== driverId));
+            }
+        } catch(err) {
+             console.error(err);
+             toast.error("حدث خطأ في الاتصال بالخادم");
         }
     }
 
