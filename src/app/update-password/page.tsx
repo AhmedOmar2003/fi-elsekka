@@ -97,10 +97,10 @@ function UpdatePasswordContent() {
     }
 
     setStatus('success')
-    toast.success("تم تحديث كلمة المرور!", { description: "دلوقتي تقدر تستخدم حسابك بأمان." })
+    toast.success("تم تحديث كلمة المرور!", { description: "سجل دخولك بكلمة المرور الجديدة." })
     
     setTimeout(() => {
-      router.push("/account")
+      router.push("/login")
     }, 2000)
   }
 
