@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown, ChevronUp, Bell, BellOff, X, AlertCircle } from 'lucide-react'
+import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown, ChevronUp, Bell, BellOff, X, AlertCircle, Coffee } from 'lucide-react'
 import { toast } from 'sonner'
 
 // Helper for VAPID key conversion
@@ -164,6 +164,8 @@ export default function DriverDashboard() {
     const [pushStatus, setPushStatus] = useState<NotificationPermission | 'prompt' | 'unsupported'>('prompt')
     const [isSubscribing, setIsSubscribing] = useState(false)
     const [actionLoadingOrder, setActionLoadingOrder] = useState<string | null>(null) // ID of order currently accepting/rejecting
+    const [showAvailabilityPrompt, setShowAvailabilityPrompt] = useState(false)
+    const [isSettingAvailability, setIsSettingAvailability] = useState(false)
     const knownOrderIds = useRef<Set<string>>(new Set())
     const isFirstLoad = useRef(true)
 
@@ -413,6 +415,11 @@ export default function DriverDashboard() {
             if (order) {
                 setActiveOrders(prev => prev.filter(o => o.id !== orderId))
                 setDeliveredOrders(prev => [{ ...order, status: 'delivered' }, ...prev])
+                
+                // Show the availability post-delivery prompt if there are no other active orders
+                if (activeOrders.length <= 1) {
+                    setShowAvailabilityPrompt(true)
+                }
             }
         } catch (err: any) {
             toast.error(err.message || "حدث خطأ أثناء التحديث")
@@ -435,11 +442,71 @@ export default function DriverDashboard() {
         )
     }
 
+    const handleSetAvailability = async (isAvailable: boolean) => {
+        setIsSettingAvailability(true)
+        try {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session) return
+
+            const res = await fetch('/api/driver/set-availability', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                body: JSON.stringify({ isAvailable })
+            })
+
+            if (!res.ok) throw new Error('Failed to set availability')
+            
+            setShowAvailabilityPrompt(false)
+            if (isAvailable) {
+                toast.success('بطل! منتظرين الأوردرات الجديدة ليك 🚀')
+            } else {
+                toast('ارتاح شوية يا وحش، متنساش ترجع تاني 😴', { icon: '☕' })
+            }
+        } catch (err) {
+            toast.error('حدث خطأ أثناء تحديث حالتك')
+        } finally {
+            setIsSettingAvailability(false)
+        }
+    }
+
     const pendingOrders = activeOrders.filter(o => o.shipping_address?.driver?.acceptance_status === 'pending')
     const acceptedActiveOrders = activeOrders.filter(o => o.shipping_address?.driver?.acceptance_status !== 'pending')
 
     return (
         <div className="space-y-6 pb-8 relative">
+            {/* Full Screen Availability Prompt Modal (After Delivery) */}
+            {showAvailabilityPrompt && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
+                    <div className="bg-surface border border-surface-hover rounded-3xl shadow-2xl p-6 w-full max-w-md animate-in zoom-in-95 fade-in duration-300">
+                        <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                            <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                        </div>
+                        <h2 className="text-xl font-black text-center text-foreground mb-2">عاش يا بطل! التوصيلة خلصت 🦸‍♂️</h2>
+                        <p className="text-center text-gray-400 mb-8 text-sm leading-relaxed">
+                            فاضي وجاهز تقبض وتوصل طلبات تانية، ولا ناوي تخنسر وتعمل نفسك تعبان؟ <br/>
+                            <span className="text-xs text-rose-400 mt-2 inline-block">(أنت الخسران لو ريحت 🤣)</span>
+                        </p>
+                        
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => handleSetAvailability(true)}
+                                disabled={isSettingAvailability}
+                                className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary/20 transition-all flex justify-center items-center gap-2"
+                            >
+                                {isSettingAvailability ? <Loader2 className="w-5 h-5 animate-spin" /> : 'جاهز للطلبات ورزقي على الله 🛵'}
+                            </button>
+                            <button
+                                onClick={() => handleSetAvailability(false)}
+                                disabled={isSettingAvailability}
+                                className="w-full bg-surface-hover border border-surface-hover hover:bg-rose-500/10 hover:border-rose-500/20 hover:text-rose-400 text-gray-400 font-bold py-3.5 rounded-xl transition-all flex justify-center items-center gap-2"
+                            >
+                                {isSettingAvailability ? <Loader2 className="w-5 h-5 animate-spin" /> : 'هريح شوية / تعبان 😴'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Full Screen Pending Order Notification Modal */}
             {pendingOrders.length > 0 && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">

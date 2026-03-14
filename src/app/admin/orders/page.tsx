@@ -101,6 +101,18 @@ export default function AdminOrdersPage() {
                 import('sonner').then(({ toast }) => toast.success(`تم توصيل الطلب #${orderId.slice(-6).toUpperCase()} بنجاح بواسطة ${driverName} 📦✅`));
                 load(); // Reload orders to show 'delivered' status dynamically
             })
+            .on('broadcast', { event: 'driver-availability-changed' }, (payload: any) => {
+                const { driverName, isAvailable } = payload.payload;
+                if (isAvailable) {
+                    import('sonner').then(({ toast }) => toast.success(`المندوب ${driverName} جاهز للطلبات دلوقتي 🛵`));
+                } else {
+                    import('sonner').then(({ toast }) => toast.info(`المندوب ${driverName} بيريّح شوية 😴`, { icon: '☕' }));
+                }
+                // Reload drivers list to fetch the updated is_available flag
+                supabase.from('users').select('*').eq('role', 'driver').then(({ data }) => {
+                    if (data) setDrivers(data);
+                });
+            })
             .subscribe();
 
         return () => { supabase.removeChannel(channel); };
@@ -387,9 +399,23 @@ export default function AdminOrdersPage() {
                                             <option value="">بدون مندوب</option>
                                             {drivers.map(d => {
                                                 const hasRejected = selectedOrder.shipping_address?.rejected_by?.includes(d.id);
+                                                const isDelivering = orders.some(o => 
+                                                    ['pending', 'processing', 'shipped'].includes(o.status) && 
+                                                    o.shipping_address?.driver?.id === d.id && 
+                                                    o.id !== selectedOrder.id // Don't block if they are assigned to THIS order
+                                                );
+                                                const isResting = d.is_available === false;
+                                                const isBusy = isDelivering || isResting;
+                                                const isDisabled = hasRejected || isBusy;
+                                                
+                                                let label = d.full_name || 'بدون اسم';
+                                                if (hasRejected) label += ' — ❌ (رفض الطلب)';
+                                                else if (isDelivering) label += ' — 🚚 (بيوصل طلب)';
+                                                else if (isResting) label += ' — 😴 (مُريح)';
+
                                                 return (
-                                                    <option key={d.id} value={d.id} disabled={hasRejected}>
-                                                        {d.full_name || 'بدون اسم'} {hasRejected ? '— ❌ (رفض الطلب)' : ''}
+                                                    <option key={d.id} value={d.id} disabled={isDisabled}>
+                                                        {label}
                                                     </option>
                                                 )
                                             })}
