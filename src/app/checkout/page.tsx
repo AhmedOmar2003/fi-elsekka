@@ -120,7 +120,7 @@ function CheckoutContent() {
          phone, city, area, street: address, notes
       }
 
-      const { error } = await createOrder(user.id, displayItems, shippingDetails, displayCartTotal + 35)
+      const { data: newOrder, error } = await createOrder(user.id, displayItems, shippingDetails, displayCartTotal + 35)
       setIsSubmitting(false)
 
       if (error) {
@@ -144,7 +144,8 @@ function CheckoutContent() {
          localStorage.removeItem('applied_discount_code');
       }
 
-      router.push('/order-success')
+      // Pass orderId so the success page can offer a 5-minute cancellation window
+      router.push(`/order-success?orderId=${newOrder?.id || ''}`)
    }
 
    const isLoading = isAuthLoading || isCartLoading
