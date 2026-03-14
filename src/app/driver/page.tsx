@@ -163,6 +163,7 @@ export default function DriverDashboard() {
     const [notificationsAllowed, setNotificationsAllowed] = useState(true)
     const [pushStatus, setPushStatus] = useState<NotificationPermission | 'prompt' | 'unsupported'>('prompt')
     const [isSubscribing, setIsSubscribing] = useState(false)
+    const [actionLoadingOrder, setActionLoadingOrder] = useState<string | null>(null) // ID of order currently accepting/rejecting
     const knownOrderIds = useRef<Set<string>>(new Set())
     const isFirstLoad = useRef(true)
 
@@ -324,6 +325,53 @@ export default function DriverDashboard() {
         }
     }
 
+    const acceptOrder = async (orderId: string) => {
+        setActionLoadingOrder(orderId)
+        try {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session) return
+            const res = await fetch('/api/driver/accept-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                body: JSON.stringify({ orderId })
+            })
+            if (!res.ok) throw new Error('Failed to accept order')
+            
+            // Update local state to accepted immediately
+            setActiveOrders(prev => prev.map(o => o.id === orderId 
+                ? { ...o, shipping_address: { ...o.shipping_address, driver: { ...o.shipping_address.driver, acceptance_status: 'accepted' } } } 
+                : o
+            ))
+            toast.success('تم استلام الطلب! 🛵')
+        } catch (err: any) {
+            toast.error('حدث خطأ أثناء قبول الطلب')
+        } finally {
+            setActionLoadingOrder(null)
+        }
+    }
+
+    const rejectOrder = async (orderId: string) => {
+        setActionLoadingOrder(orderId)
+        try {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session) return
+            const res = await fetch('/api/driver/reject-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                body: JSON.stringify({ orderId })
+            })
+            if (!res.ok) throw new Error('Failed to reject order')
+            
+            // Remove from local state
+            setActiveOrders(prev => prev.filter(o => o.id !== orderId))
+            toast.success('تم رفض الطلب بنجاح.')
+        } catch (err: any) {
+            toast.error('حدث خطأ أثناء رفض الطلب')
+        } finally {
+            setActionLoadingOrder(null)
+        }
+    }
+
     const markAsDelivered = async (orderId: string) => {
         setUpdatingId(orderId)
         try {
@@ -365,8 +413,56 @@ export default function DriverDashboard() {
         )
     }
 
+    const pendingOrders = activeOrders.filter(o => o.shipping_address?.driver?.acceptance_status === 'pending')
+    const acceptedActiveOrders = activeOrders.filter(o => o.shipping_address?.driver?.acceptance_status !== 'pending')
+
     return (
-        <div className="space-y-6 pb-8">
+        <div className="space-y-6 pb-8 relative">
+            {/* Full Screen Pending Order Notification Modal */}
+            {pendingOrders.length > 0 && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
+                    <div className="bg-surface border border-surface-hover rounded-3xl shadow-2xl p-6 w-full max-w-md animate-in zoom-in-95 fade-in duration-300">
+                        <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                            <Bell className="w-8 h-8 text-primary" />
+                        </div>
+                        <h2 className="text-xl font-black text-center text-foreground mb-2">طلب جديد بانتظارك!</h2>
+                        <p className="text-center text-gray-400 mb-6 text-sm">الإدارة أرسلت لك طلباً لتوصيله، هل أنت متاح الآن؟</p>
+                        
+                        <div className="space-y-3 mb-6 bg-background rounded-2xl p-4 border border-surface-hover">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-gray-500">رقم الطلب</span>
+                                <span className="font-mono font-bold text-foreground">#{pendingOrders[0].id.slice(0, 6)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-gray-500">إجمالي المبلغ</span>
+                                <span className="font-black text-primary">{pendingOrders[0].total_amount?.toLocaleString() || 0} ج.م</span>
+                            </div>
+                            <div className="pt-2 mt-2 border-t border-surface-hover text-sm">
+                                <p className="text-gray-500 mb-1 line-clamp-1">العنوان:</p>
+                                <p className="font-bold text-foreground line-clamp-2">{pendingOrders[0].shipping_address?.street || 'عنوان غير معروف'}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => acceptOrder(pendingOrders[0].id)}
+                                disabled={actionLoadingOrder === pendingOrders[0].id}
+                                className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary/20 transition-all flex justify-center items-center gap-2"
+                            >
+                                {actionLoadingOrder === pendingOrders[0].id ? <Loader2 className="w-5 h-5 animate-spin" /> : 'نعم، جاهز للتسليم ✔️'}
+                            </button>
+                            <button
+                                onClick={() => rejectOrder(pendingOrders[0].id)}
+                                disabled={actionLoadingOrder === pendingOrders[0].id}
+                                className="w-full bg-surface-hover hover:bg-rose-500/10 hover:text-rose-500 text-gray-500 font-bold py-3.5 rounded-xl transition-all flex justify-center items-center gap-2"
+                            >
+                                {actionLoadingOrder === pendingOrders[0].id ? <Loader2 className="w-5 h-5 animate-spin" /> : 'لا، لدي مشكلة / طلب آخر ❌'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Push Notification Promo Banner */}
             {pushStatus === 'default' || pushStatus === 'prompt' ? (
                 <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4">
@@ -403,8 +499,8 @@ export default function DriverDashboard() {
                     <h2 className="font-black text-base text-foreground flex items-center gap-2">
                         <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse inline-block"></span>
                         طلبات نشطة
-                        {activeOrders.length > 0 && (
-                            <span className="text-xs font-bold bg-amber-400/15 text-amber-500 px-2 py-0.5 rounded-full">{activeOrders.length}</span>
+                        {acceptedActiveOrders.length > 0 && (
+                            <span className="text-xs font-bold bg-amber-400/15 text-amber-500 px-2 py-0.5 rounded-full">{acceptedActiveOrders.length}</span>
                         )}
                     </h2>
                     <button
@@ -417,14 +513,14 @@ export default function DriverDashboard() {
                     </button>
                 </div>
 
-                {activeOrders.length === 0 ? (
+                {acceptedActiveOrders.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-surface border border-surface-hover rounded-2xl">
                         <CheckCircle2 className="w-10 h-10 text-emerald-500 mb-3" />
                         <p className="font-black text-foreground">لا توجد طلبات نشطة حالياً</p>
-                        <p className="text-xs text-gray-500 mt-1">ستظهر طلباتك هنا فور تعيينها لك من الإدارة</p>
+                        <p className="text-xs text-gray-500 mt-1">ستظهر طلباتك هنا فور الموافقة عليها</p>
                     </div>
                 ) : (
-                    activeOrders.map(order => (
+                    acceptedActiveOrders.map(order => (
                         <OrderCard
                             key={order.id}
                             order={order}

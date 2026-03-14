@@ -236,8 +236,8 @@ function OrderCard({ order, userId }: { order: Order; userId: string }) {
             </div>
           </div>
 
-          {/* Driver Info Box (if assigned) */}
-          {order.shipping_address?.driver && (
+          {/* Driver Info Box (if assigned & accepted) */}
+          {order.shipping_address?.driver && order.shipping_address.driver.acceptance_status === 'accepted' ? (
             <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-wrap gap-4 items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-500 shrink-0">
@@ -252,13 +252,25 @@ function OrderCard({ order, userId }: { order: Order; userId: string }) {
                 </div>
               </div>
               {order.shipping_address.driver.phone && (
-                <a href={`tel:${order.shipping_address.driver.phone}`} className="flex items-center shrink-0 w-fit gap-2 bg-blue-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-colors">
-                  <Phone className="w-4 h-4" />
-                  اتصال
+                <a 
+                  href={`tel:${order.shipping_address.driver.phone}`}
+                  className="bg-blue-500 hover:bg-blue-600 text-white p-2.5 rounded-xl transition-colors shadow-lg shadow-blue-500/20"
+                >
+                  <Phone className="w-5 h-5" />
                 </a>
               )}
             </div>
-          )}
+          ) : order.shipping_address?.driver && order.shipping_address.driver.acceptance_status === 'pending' ? (
+             <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center text-amber-500 shrink-0 animate-pulse">
+                  <Truck className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase mb-0.5 text-amber-500/80">مندوب التوصيل</p>
+                  <p className="font-black text-sm text-amber-600 sm:text-base">جارٍ تعيين مندوب وتأكيد الاستلام...</p>
+                </div>
+             </div>
+          ) : null}
 
           {/* Visual Order Timeline */}
           <OrderTimeline currentStatus={order.status} />
@@ -291,12 +303,14 @@ function OrderCard({ order, userId }: { order: Order; userId: string }) {
           )}
 
           {/* Driver Rating Widget — only for delivered orders with an assigned driver */}
-          {order.status === 'delivered' && order.shipping_address?.driver?.id && userId && (
-            <DriverRating
-              orderId={order.id}
-              driverId={order.shipping_address.driver.id}
+          {order.status === 'delivered' && order.shipping_address?.driver && order.shipping_address.driver.acceptance_status === 'accepted' && (
+            <div className="mt-6 pt-6 border-t border-surface-hover">
+              <DriverRating 
+                orderId={order.id}
+                driverId={order.shipping_address.driver.id}
               userId={userId}
             />
+            </div>
           )}
 
           {/* Total */}

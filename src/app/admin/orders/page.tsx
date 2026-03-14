@@ -142,7 +142,12 @@ export default function AdminOrdersPage() {
         setSelectedDriverId(driverId);
         
         const driverObj = driverId ? drivers.find(d => d.id === driverId) : null;
-        const driverData = driverObj ? { id: driverObj.id, name: driverObj.full_name, phone: driverObj.phone || '' } : null;
+        const driverData = driverObj ? { 
+            id: driverObj.id, 
+            name: driverObj.full_name, 
+            phone: driverObj.phone || '',
+            acceptance_status: 'pending'
+        } : null;
 
         const { error } = await updateOrderDriver(selectedOrder.id, driverData);
         setIsAssigningDriver(false);
