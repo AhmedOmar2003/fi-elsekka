@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
         const newUser = authData.user;
 
-        // 2. Ensure they exist in our public.users table with the correct role
+        // 2. Ensure they exist in our public.users table with the correct role and phone
         // Supabase triggers handle the initial insert, but we want to ensure custom fields
         // are explicitly set for the driver.
         const { error: dbError } = await supabaseAdmin
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
             .update({
                 role: 'driver',
                 full_name,
-                // store phone in profile picture field temporarily or if schema allows it later
+                phone: phone
             })
             .eq('id', newUser.id);
 
