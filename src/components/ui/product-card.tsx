@@ -73,7 +73,7 @@ export function ProductCard({
             "absolute top-3 left-3 p-2 rounded-full backdrop-blur-md shadow-md ring-1 ring-black/5 z-10 transition-all duration-200 active:scale-90",
             fav
               ? "bg-secondary/10 text-secondary opacity-100"
-              : "bg-background/80 text-gray-400 hover:text-secondary opacity-0 group-hover:opacity-100 sm:opacity-100"
+              : "bg-background/80 text-gray-400 hover:text-secondary opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
           )}
         >
           <Heart className={cn("w-5 h-5 transition-transform", fav && "fill-current")} />
