@@ -91,6 +91,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             async (event, newSession) => {
                 if (!mounted) return;
 
+                // When user clicks the password reset link in their email,
+                // Supabase fires PASSWORD_RECOVERY. We must redirect them to
+                // the update-password page before any other logic runs.
+                if (event === 'PASSWORD_RECOVERY') {
+                    setSession(newSession);
+                    setUser(newSession?.user ?? null);
+                    setIsLoading(false);
+                    // Only redirect if we're not already on the update-password page
+                    if (typeof window !== 'undefined' && !window.location.pathname.includes('/update-password')) {
+                        window.location.href = '/update-password';
+                    }
+                    return;
+                }
+
                 // Explicitly handle SIGNED_OUT to guarantee state wipes
                 if (event === 'SIGNED_OUT') {
                     setSession(null);

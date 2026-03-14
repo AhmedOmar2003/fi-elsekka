@@ -32,22 +32,39 @@ function UpdatePasswordContent() {
   const [errorMsg, setErrorMsg] = React.useState("")
 
   React.useEffect(() => {
-    // Check if the user has an active session (Supabase automatically logs them in when they click the reset link)
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      // Also check the URL hash for recovery tokens just in case it takes a moment
-      const hash = window.location.hash
-      const hasRecoveryToken = hash && hash.includes("type=recovery")
+    let resolved = false
 
-      if (!session && !hasRecoveryToken) {
-        setStatus('invalid')
-      } else {
+    // Listen for Supabase PASSWORD_RECOVERY event — this fires when the user
+    // clicks the link in their email. It's the most reliable way to detect that
+    // it's safe to show the "set new password" form.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY' && session) {
+        resolved = true
         setStatus('idle')
+        return
       }
-    }
 
-    checkSession()
+      // If user already has a session (e.g., they refreshed after recovery), allow them in
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !resolved) {
+        resolved = true
+        setStatus('idle')
+        return
+      }
+    })
+
+    // Fallback: if no event fires within 3 seconds, check for existing session
+    const timeout = setTimeout(async () => {
+      if (!resolved) {
+        const { data: { session } } = await supabase.auth.getSession()
+        resolved = true
+        setStatus(session ? 'idle' : 'invalid')
+      }
+    }, 2500)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
