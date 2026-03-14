@@ -49,6 +49,8 @@ export async function POST(request: Request) {
             title,
             body,
             icon: '/icon512_maskable.png', // Optional: standard PWA icon
+            silent: false,
+            requireInteraction: true,
             data: {
                 url: `/driver${orderId ? `?order=${orderId}` : ''}`
             }

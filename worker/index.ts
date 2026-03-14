@@ -11,7 +11,9 @@ self.addEventListener('push', (event: any) => {
       body: data.body || "لديك إشعار جديد",
       icon: data.icon || '/icon512_maskable.png',
       badge: '/icon512_maskable.png',
-      vibrate: [200, 100, 200, 100, 200, 100, 200],
+      vibrate: [500, 250, 500, 250, 500, 250, 500, 250, 500],
+      requireInteraction: true,
+      silent: false,
       data: data.data || {}
     })
   );
