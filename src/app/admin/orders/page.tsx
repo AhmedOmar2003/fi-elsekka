@@ -380,9 +380,14 @@ export default function AdminOrdersPage() {
                                             className={`w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary/50 ${selectedDriverId ? 'text-primary font-bold' : 'text-foreground'}`}
                                         >
                                             <option value="">بدون مندوب</option>
-                                            {drivers.map(d => (
-                                                <option key={d.id} value={d.id}>{d.full_name || 'بدون اسم'}</option>
-                                            ))}
+                                            {drivers.map(d => {
+                                                const hasRejected = selectedOrder.shipping_address?.rejected_by?.includes(d.id);
+                                                return (
+                                                    <option key={d.id} value={d.id} disabled={hasRejected}>
+                                                        {d.full_name || 'بدون اسم'} {hasRejected ? '— ❌ (رفض الطلب)' : ''}
+                                                    </option>
+                                                )
+                                            })}
                                         </select>
                                         {isAssigningDriver && (
                                             <div className="absolute left-3 top-1/2 -translate-y-1/2">

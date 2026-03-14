@@ -43,8 +43,20 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        // 2. Clear the driver assignment payload completely
+        // 2. Track the driver who rejected this, then clear the assignment
         const updatedShipping = { ...shipping };
+        
+        // Initialize rejected_by array if it doesn't exist
+        if (!Array.isArray(updatedShipping.rejected_by)) {
+            updatedShipping.rejected_by = [];
+        }
+        
+        // Add driver ID to the array if not already there
+        if (!updatedShipping.rejected_by.includes(user.id)) {
+            updatedShipping.rejected_by.push(user.id);
+        }
+
+        // Clear the driver assignment payload completely
         delete updatedShipping.driver;
 
         const { error: updateErr } = await supabaseAdmin
