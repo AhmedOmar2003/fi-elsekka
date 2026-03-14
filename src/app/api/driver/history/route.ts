@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { jwtDecode } from 'jwt-decode';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
@@ -17,12 +16,14 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
         const token = authHeader.split(' ')[1];
-        let decoded: any;
-        try { decoded = jwtDecode(token); } catch { 
-            return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+        
+        // Use Supabase to safely validate the token and get the user
+        const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+        if (authError || !user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
-        const driverId = decoded.sub as string;
-        if (!driverId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        
+        const driverId = user.id;
 
         // 2. Fetch ALL orders (bypass RLS with service role), filter by driver in shipping_address
         const { data: allOrders, error: ordersError } = await supabaseAdmin
