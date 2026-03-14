@@ -413,13 +413,17 @@ export default function DriverDashboard() {
             toast.success("تم تأكيد التوصيل بنجاح! 📦✨")
             const order = activeOrders.find(o => o.id === orderId)
             if (order) {
-                setActiveOrders(prev => prev.filter(o => o.id !== orderId))
+                setActiveOrders(prev => {
+                    const remainingOrders = prev.filter(o => o.id !== orderId)
+                    
+                    // Show the availability post-delivery prompt if there are no other active orders left
+                    if (remainingOrders.length === 0) {
+                        setShowAvailabilityPrompt(true)
+                    }
+                    
+                    return remainingOrders
+                })
                 setDeliveredOrders(prev => [{ ...order, status: 'delivered' }, ...prev])
-                
-                // Show the availability post-delivery prompt if there are no other active orders
-                if (activeOrders.length <= 1) {
-                    setShowAvailabilityPrompt(true)
-                }
             }
         } catch (err: any) {
             toast.error(err.message || "حدث خطأ أثناء التحديث")
