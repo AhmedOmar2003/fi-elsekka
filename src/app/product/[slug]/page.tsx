@@ -45,7 +45,7 @@ export default function ProductPage() {
     if (dbProduct) {
       await addItem(dbProduct.id, quantity, appliedDiscountPrice)
     }
-    router.push("/cart")
+    router.push("/checkout")
   }
 
   const slugOrId = typeof params.slug === 'string' ? params.slug : ''
