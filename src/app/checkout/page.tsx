@@ -57,7 +57,13 @@ function CheckoutContent() {
    if (isUsingOverride && overrideProduct) {
       const qty = parseInt(buyNowQtyRaw || "1", 10)
       displayCartOriginal = overrideProduct.price * qty;
-      const finalPrice = buyNowPriceRaw ? parseFloat(buyNowPriceRaw) : overrideProduct.price;
+      
+      let naturalPrice = overrideProduct.price;
+      if (overrideProduct.discount_percentage && overrideProduct.discount_percentage > 0) {
+         naturalPrice = Math.round(overrideProduct.price * (1 - overrideProduct.discount_percentage / 100));
+      }
+      
+      const finalPrice = buyNowPriceRaw ? parseFloat(buyNowPriceRaw) : naturalPrice;
       displayCartTotal = finalPrice * qty;
       displayDiscount = displayCartOriginal - displayCartTotal;
    }
