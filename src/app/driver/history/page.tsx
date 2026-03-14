@@ -10,7 +10,7 @@ interface DeliveredOrder {
     total_amount: number;
     created_at: string;
     shipping_address: any;
-    review?: { rating: number; comment: string | null };
+    review?: { rating: number; comment: string | null } | null;
 }
 
 function StarDisplay({ rating }: { rating: number }) {
@@ -26,57 +26,32 @@ function StarDisplay({ rating }: { rating: number }) {
 export default function DriverHistoryPage() {
     const router = useRouter()
     const [orders, setOrders] = useState<DeliveredOrder[]>([])
-    const [isLoading, setIsLoading] = useState(true)
     const [avgRating, setAvgRating] = useState<number | null>(null)
+    const [totalCount, setTotalCount] = useState(0)
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState('')
 
     useEffect(() => {
         const load = async () => {
             setIsLoading(true)
             const { data: { session } } = await supabase.auth.getSession()
             if (!session) { router.push('/login'); return; }
-            const user = session.user
 
-            // Fetch all delivered orders assigned to this driver
-            const { data: ordersData } = await supabase
-                .from('orders')
-                .select('id, total_amount, created_at, shipping_address')
-                .eq('status', 'delivered')
-                .order('created_at', { ascending: false })
+            const res = await fetch('/api/driver/history', {
+                headers: { 'Authorization': `Bearer ${session.access_token}` }
+            })
 
-            const myOrders = (ordersData || []).filter(
-                (o: any) => o.shipping_address?.driver?.id === user.id
-            )
-
-            if (myOrders.length === 0) {
-                setOrders([])
+            if (!res.ok) {
+                const e = await res.json()
+                setError(e.error || 'فشل تحميل السجل')
                 setIsLoading(false)
                 return
             }
 
-            // Fetch reviews for these orders
-            const orderIds = myOrders.map((o: any) => o.id)
-            const { data: reviews } = await supabase
-                .from('driver_reviews')
-                .select('order_id, rating, comment')
-                .in('order_id', orderIds)
-
-            const reviewMap: Record<string, { rating: number; comment: string | null }> = {}
-            for (const rev of (reviews || [])) {
-                reviewMap[rev.order_id] = { rating: rev.rating, comment: rev.comment }
-            }
-
-            const enriched = myOrders.map((o: any) => ({
-                ...o,
-                review: reviewMap[o.id] || null
-            }))
-
-            const ratedOrders = enriched.filter(o => o.review)
-            if (ratedOrders.length > 0) {
-                const avg = ratedOrders.reduce((sum, o) => sum + o.review!.rating, 0) / ratedOrders.length
-                setAvgRating(parseFloat(avg.toFixed(1)))
-            }
-
-            setOrders(enriched)
+            const data = await res.json()
+            setOrders(data.orders || [])
+            setTotalCount(data.totalCount || 0)
+            setAvgRating(data.avgRating)
             setIsLoading(false)
         }
         load()
@@ -84,9 +59,17 @@ export default function DriverHistoryPage() {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center p-12 space-y-4 min-h-[60vh]">
+            <div className="flex flex-col items-center justify-center p-12 space-y-4 min-h-[50vh]">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 <p className="text-gray-500 font-bold">جاري تحميل سجلك...</p>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 text-center">
+                <p className="text-red-500 font-bold">{error}</p>
             </div>
         )
     }
@@ -96,7 +79,7 @@ export default function DriverHistoryPage() {
             {/* Stats Header */}
             <div className="grid grid-cols-2 gap-3">
                 <div className="bg-surface border border-surface-hover rounded-2xl p-4 text-center">
-                    <p className="text-3xl font-black text-primary">{orders.length}</p>
+                    <p className="text-3xl font-black text-primary">{totalCount}</p>
                     <p className="text-xs text-gray-500 mt-1 font-bold">طلب تم توصيله</p>
                 </div>
                 <div className="bg-surface border border-surface-hover rounded-2xl p-4 text-center">
@@ -106,6 +89,7 @@ export default function DriverHistoryPage() {
                             <div className="flex justify-center mt-1">
                                 <StarDisplay rating={Math.round(avgRating)} />
                             </div>
+                            <p className="text-xs text-gray-500 mt-0.5 font-bold">متوسط التقييم</p>
                         </>
                     ) : (
                         <>
@@ -113,7 +97,6 @@ export default function DriverHistoryPage() {
                             <p className="text-xs text-gray-500 mt-1 font-bold">لا توجد تقييمات بعد</p>
                         </>
                     )}
-                    {avgRating !== null && <p className="text-xs text-gray-500 mt-0.5 font-bold">متوسط التقييم</p>}
                 </div>
             </div>
 
@@ -121,17 +104,19 @@ export default function DriverHistoryPage() {
             {orders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-surface border border-surface-hover rounded-2xl">
                     <Package className="w-10 h-10 text-gray-400 mb-3" />
-                    <p className="font-black text-foreground">لا توجد طلبات سابقة بعد</p>
+                    <p className="font-black text-foreground">لا توجد طلبات موصّلة بعد</p>
                     <p className="text-xs text-gray-500 mt-1">بعد توصيل طلباتك ستظهر هنا مع تقييمات العملاء</p>
                 </div>
             ) : (
                 <div className="space-y-3">
-                    <h2 className="font-black text-base text-foreground">الطلبات السابقة</h2>
+                    <h2 className="font-black text-base text-foreground">الطلبات السابقة ({totalCount})</h2>
                     {orders.map(order => {
                         const address = [
                             order.shipping_address?.city,
                             order.shipping_address?.area,
                         ].filter(Boolean).join('، ')
+
+                        const customerName = order.shipping_address?.recipient || order.shipping_address?.recipientName || 'عميل'
 
                         const date = new Date(order.created_at).toLocaleDateString('ar-EG', {
                             year: 'numeric', month: 'short', day: 'numeric'
@@ -146,7 +131,8 @@ export default function DriverHistoryPage() {
                                         </div>
                                         <div className="min-w-0">
                                             <p className="text-xs text-gray-500 font-mono">طلب #{order.id.slice(0,6)}</p>
-                                            <p className="font-bold text-sm text-foreground truncate">{address || 'عنوان غير محدد'}</p>
+                                            <p className="font-bold text-sm text-foreground truncate">{customerName}</p>
+                                            {address && <p className="text-xs text-gray-400 truncate">{address}</p>}
                                             <p className="text-xs text-gray-400">{date}</p>
                                         </div>
                                     </div>
