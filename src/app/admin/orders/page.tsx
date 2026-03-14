@@ -1,9 +1,10 @@
 "use client"
 
 import React, { useEffect, useState } from 'react';
-import { fetchAdminOrders, fetchOrderDetails, updateOrderStatus, updateOrderEstimation } from '@/services/adminService';
-import { ShoppingCart, ChevronDown, X, Package, Download, Filter } from 'lucide-react';
+import { fetchAdminOrders, fetchOrderDetails, updateOrderStatus, updateOrderEstimation, updateOrderDriver } from '@/services/adminService';
+import { ShoppingCart, ChevronDown, X, Package, Download, Filter, Bike } from 'lucide-react';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
 
 const STATUSES = [
     { value: 'pending', label: 'في الانتظار', color: 'text-amber-400  bg-amber-400/10  border-amber-400/20' },
@@ -64,10 +65,20 @@ export default function AdminOrdersPage() {
     const [estimatedTime, setEstimatedTime] = useState('');
     const [isSavingTime, setIsSavingTime] = useState(false);
 
+    // Driver Assignment UI state
+    const [drivers, setDrivers] = useState<any[]>([]);
+    const [selectedDriverId, setSelectedDriverId] = useState<string>('');
+    const [isAssigningDriver, setIsAssigningDriver] = useState(false);
+
     const load = async () => {
         setIsLoading(true);
         const data = await fetchAdminOrders();
         setOrders(data);
+        
+        // Fetch drivers
+        const { data: driversData } = await supabase.from('users').select('*').eq('role', 'driver');
+        if (driversData) setDrivers(driversData);
+        
         setIsLoading(false);
     };
 
@@ -76,6 +87,7 @@ export default function AdminOrdersPage() {
     const handleViewOrder = async (order: any) => {
         setSelectedOrder(order);
         setEstimatedTime(order.shipping_address?.estimated_delivery || '');
+        setSelectedDriverId(order.shipping_address?.driver?.id || '');
         // Use already-fetched items embedded in the order object (from the enriched query)
         setOrderItems(order.order_items || []);
         // If for some reason items are empty (fallback), try loading from separate call
@@ -121,6 +133,29 @@ export default function AdminOrdersPage() {
                 btn.innerText = 'تم الحفظ ✔️';
                 setTimeout(() => btn.innerText = originalText, 2000);
             }
+        }
+    };
+
+    const handleAssignDriver = async (driverId: string) => {
+        if (!selectedOrder) return;
+        setIsAssigningDriver(true);
+        setSelectedDriverId(driverId);
+        
+        const driverObj = driverId ? drivers.find(d => d.id === driverId) : null;
+        const driverData = driverObj ? { id: driverObj.id, name: driverObj.full_name, phone: driverObj.phone || '' } : null;
+
+        const { error } = await updateOrderDriver(selectedOrder.id, driverData);
+        setIsAssigningDriver(false);
+        
+        if (!error) {
+            setOrders(prev => prev.map(o => o.id === selectedOrder.id ? { 
+                ...o, 
+                shipping_address: { ...o.shipping_address, driver: driverData } 
+            } : o));
+            setSelectedOrder((prev: any) => ({
+                ...prev,
+                shipping_address: { ...prev.shipping_address, driver: driverData }
+            }));
         }
     };
 
@@ -286,15 +321,38 @@ export default function AdminOrdersPage() {
                             </div>
 
                             {/* Status */}
-                            <div>
-                                <p className="text-xs font-bold text-gray-500 mb-2">الحالة الحالية</p>
-                                <select
-                                    value={selectedOrder.status}
-                                    onChange={e => handleStatusChange(selectedOrder.id, e.target.value)}
-                                    className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
-                                >
-                                    {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                                </select>
+                            <div className="flex gap-3">
+                                <div className="flex-1">
+                                    <p className="text-xs font-bold text-gray-500 mb-2">الحالة الحالية</p>
+                                    <select
+                                        value={selectedOrder.status}
+                                        onChange={e => handleStatusChange(selectedOrder.id, e.target.value)}
+                                        className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                    >
+                                        {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-xs font-bold text-gray-500 mb-2 whitespace-nowrap overflow-hidden">مندوب التوصيل</p>
+                                    <div className="relative">
+                                        <select
+                                            value={selectedDriverId}
+                                            onChange={e => handleAssignDriver(e.target.value)}
+                                            disabled={isAssigningDriver}
+                                            className={`w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary/50 ${selectedDriverId ? 'text-primary font-bold' : 'text-foreground'}`}
+                                        >
+                                            <option value="">بدون مندوب</option>
+                                            {drivers.map(d => (
+                                                <option key={d.id} value={d.id}>{d.full_name || 'بدون اسم'}</option>
+                                            ))}
+                                        </select>
+                                        {isAssigningDriver && (
+                                            <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                                                <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Estimated Delivery Input */}

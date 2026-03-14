@@ -61,7 +61,7 @@ function LoginContent() {
     setIsLoading(true)
     setErrorMsg("")
 
-    const { error } = await signIn(email, password)
+    const { data, error } = await signIn(email, password)
 
     if (error) {
       setIsLoading(false)
@@ -69,6 +69,13 @@ function LoginContent() {
       setIsEmailUnconfirmed(isUnconfirmed)
       setErrorMsg(translateError(error.message))
       return
+    }
+
+    // Redirect drivers directly to their dashboard
+    const userRole = data?.user?.user_metadata?.role;
+    if (userRole === 'driver') {
+      router.push('/driver');
+      return;
     }
 
     router.push(redirectParams || "/account")

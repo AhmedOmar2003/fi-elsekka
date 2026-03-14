@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 // ─── Helper: log Supabase errors properly (they are objects, not strings) ──────
-function logError(ctx: string, error: unknown) {
+export function logError(ctx: string, error: unknown) {
     if (!error) return;
     const e = error as Record<string, unknown>;
     // Ignore AbortErrors — transient lock conflicts handled at client level
@@ -192,6 +192,25 @@ export async function updateOrderEstimation(orderId: string, estimatedTime: stri
     // 3. Update the order
     const res = await supabase.from('orders').update({ shipping_address: newShipping }).eq('id', orderId);
     if (res.error) logError('updateOrderEstimation', res.error);
+    return res;
+}
+
+export async function updateOrderDriver(orderId: string, driver: { id: string, name: string, phone: string } | null) {
+    // 1. Fetch current shipping_address JSON
+    const { data: order } = await supabase.from('orders').select('shipping_address').eq('id', orderId).single();
+    if (!order || !order.shipping_address) return { error: { message: "Order not found" } };
+
+    // 2. Attach or remove driver
+    const newShipping = { ...order.shipping_address };
+    if (driver) {
+        newShipping.driver = driver;
+    } else {
+        delete newShipping.driver;
+    }
+    
+    // 3. Update the order
+    const res = await supabase.from('orders').update({ shipping_address: newShipping }).eq('id', orderId);
+    if (res.error) logError('updateOrderDriver', res.error);
     return res;
 }
 

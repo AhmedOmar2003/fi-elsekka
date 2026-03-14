@@ -29,9 +29,10 @@ interface Notification {
 // ── Nav Items ────────────────────────────────────────────────
 const NAV_ITEMS = [
     { label: 'لوحة التحكم', href: '/admin', icon: LayoutDashboard },
+    { label: 'الطلبات', href: '/admin/orders', icon: ShoppingCart },
+    { label: 'المندوبين', href: '/admin/drivers', icon: Bike },
     { label: 'المنتجات', href: '/admin/products', icon: Package },
     { label: 'الأقسام', href: '/admin/categories', icon: Tag },
-    { label: 'الطلبات', href: '/admin/orders', icon: ShoppingCart },
     { label: 'المستخدمون', href: '/admin/users', icon: Users },
     { label: 'التقييمات', href: '/admin/reviews', icon: MessageSquare },
     { label: 'العروض الترويجية', href: '/admin/promotions', icon: Megaphone },
