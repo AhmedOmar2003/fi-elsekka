@@ -583,45 +583,6 @@ export default function DriverDashboard() {
                 </div>
             )}
 
-            {/* Persistent Availability Status Banner */}
-            {isAvailable !== null && (
-                <div className={`rounded-2xl p-4 flex items-center justify-between gap-4 border ${
-                    isAvailable 
-                        ? 'bg-emerald-500/10 border-emerald-500/20' 
-                        : 'bg-amber-400/10 border-amber-400/20'
-                }`}>
-                    <div className="flex items-center gap-3">
-                        <div className={`w-2.5 h-2.5 rounded-full animate-pulse ${
-                            isAvailable ? 'bg-emerald-500' : 'bg-amber-400'
-                        }`} />
-                        <div>
-                            <p className={`font-bold text-sm ${
-                                isAvailable ? 'text-emerald-500' : 'text-amber-400'
-                            }`}>
-                                {isAvailable ? 'جاهز لاستقبال الطلبات 🛵' : 'مريح حالياً — الإدارة لا تقدر تعينك دلوقتي'}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-0.5">
-                                {isAvailable ? 'طلباتك هتوصلك فور تعيينك من الإدارة.' : 'خد راحتك وروق، ولما تكون جاهز اضغط على الزر.'}
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => handleSetAvailability(!isAvailable)}
-                        disabled={isSettingAvailability}
-                        className={`shrink-0 text-xs font-bold px-4 py-2 rounded-xl transition-all disabled:opacity-50 ${
-                            isAvailable 
-                                ? 'bg-surface-hover text-gray-400 hover:text-rose-400 hover:bg-rose-500/10'
-                                : 'bg-emerald-500 text-white hover:bg-emerald-600'
-                        }`}
-                    >
-                        {isSettingAvailability 
-                            ? '...' 
-                            : isAvailable ? 'مُريح شوية 😴' : 'جاهز دلوقتي! 🚀'
-                        }
-                    </button>
-                </div>
-            )}
-
             {/* Push Notification Promo Banner */}
             {pushStatus === 'default' || pushStatus === 'prompt' ? (
                 <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4">
