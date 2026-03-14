@@ -154,6 +154,9 @@ function OrderCard({ order }: { order: Order }) {
                 <div>
                   <p className="text-xs font-bold uppercase mb-0.5 text-blue-500/80">مندوب التوصيل</p>
                   <p className="font-black text-sm text-blue-600 sm:text-base">{order.shipping_address.driver.name}</p>
+                  {order.shipping_address.driver.phone && (
+                    <p className="text-xs text-blue-500/90 font-mono mt-0.5" dir="ltr">{order.shipping_address.driver.phone}</p>
+                  )}
                 </div>
               </div>
               {order.shipping_address.driver.phone && (
