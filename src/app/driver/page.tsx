@@ -191,7 +191,20 @@ export default function DriverDashboard() {
             const { data: { session } } = await supabase.auth.getSession()
             if (!session) { router.push('/login'); return; }
             const user = session.user
-            if (user.user_metadata?.role !== 'driver') { router.push('/account'); return; }
+
+            // Check role from auth metadata first, then fall back to public.users table
+            // (for backward compatibility with accounts created before metadata fix)
+            let isDriver = user.user_metadata?.role === 'driver'
+            if (!isDriver) {
+                const { data: publicUser } = await supabase
+                    .from('users')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single()
+                isDriver = publicUser?.role === 'driver'
+            }
+
+            if (!isDriver) { router.push('/account'); return; }
             setDriverUser(user)
 
             const [active, delivered] = await Promise.all([
