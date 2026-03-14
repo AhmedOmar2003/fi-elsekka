@@ -185,6 +185,7 @@ export default function ProductPage() {
       rating: dbProduct.specifications?.rating || 4.9,
       reviewsCount: dbProduct.specifications?.reviews_count || 120,
       stock: dbProduct.stock_quantity ? `متوفر ${dbProduct.stock_quantity} قطعة` : (dbProduct.specifications?.stock || "متوفر"),
+      stockQty: dbProduct.stock_quantity ?? null,
       description: dbProduct.description || "لا يوجد وصف متاح لهذا المنتج حالياً.",
       specs: dbProduct.product_specifications && dbProduct.product_specifications.length > 0
         ? dbProduct.product_specifications.map(s => ({ label: s.label, value: s.description }))
@@ -211,6 +212,7 @@ export default function ProductPage() {
     rating: 4.9,
     reviewsCount: 312,
     stock: "متوفر 15 قطعة فقط",
+    stockQty: null,
     description: "استمتع بتجربة صوتية لا مثيل لها مع سماعة البلوتوث اللاسلكية الجديدة. تصميم مريح للأذن، بطارية تدوم حتى 24 ساعة، وعزل تام للضوضاء الخارجية عشان تفصل براحتك.",
     specs: [
       { label: "الماركة", value: "SoundMax" },
@@ -404,13 +406,41 @@ export default function ProductPage() {
               )}
 
               {/* Stock indicator */}
-              <div className="mb-6 flex items-center gap-2 text-sm font-medium">
-                <div className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-                </div>
-                <span className="text-emerald-500">{product.stock}</span>
-              </div>
+              {(() => {
+                const qty = product.stockQty
+                const isOutOfStock = qty !== null && qty <= 0
+                const isLowStock = qty !== null && qty > 0 && qty <= 5
+                const isInStock = qty === null || qty > 5
+
+                if (isOutOfStock) {
+                  return (
+                    <div className="mb-6 flex items-center gap-2 text-sm font-medium">
+                      <span className="relative inline-flex h-3 w-3 rounded-full bg-rose-500" />
+                      <span className="text-rose-500 font-bold">غير متوفر حالياً — نفذت الكمية</span>
+                    </div>
+                  )
+                }
+                if (isLowStock) {
+                  return (
+                    <div className="mb-6 flex items-center gap-2 text-sm font-medium">
+                      <div className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500" />
+                      </div>
+                      <span className="text-amber-500 font-bold">باقي {qty} قطع فقط — اطلب قبل ما تنتهي!</span>
+                    </div>
+                  )
+                }
+                return (
+                  <div className="mb-6 flex items-center gap-2 text-sm font-medium">
+                    <div className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                    </div>
+                    <span className="text-emerald-500">{product.stock}</span>
+                  </div>
+                )
+              })()}
 
               {/* ══ DESKTOP CTA CONTAINER ══════════════════════════════════
                    Soft green border wraps the purchase area for visibility.
