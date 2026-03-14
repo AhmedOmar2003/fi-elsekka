@@ -82,7 +82,24 @@ export default function AdminOrdersPage() {
         setIsLoading(false);
     };
 
-    useEffect(() => { load(); }, []);
+    useEffect(() => { 
+        load(); 
+        
+        // Listen for real-time driver acceptance/rejection
+        const channel = supabase.channel('admin-notifications')
+            .on('broadcast', { event: 'driver-response' }, (payload: any) => {
+                const { orderId, status, driverName } = payload.payload;
+                if (status === 'accepted') {
+                   import('sonner').then(({ toast }) => toast.success(`المندوب ${driverName} استلم الطلب #${orderId.slice(-6).toUpperCase()} 🛵`));
+                } else {
+                   import('sonner').then(({ toast }) => toast.error(`المندوب ${driverName} اعتذر عن الطلب #${orderId.slice(-6).toUpperCase()} ❌`));
+                }
+                load(); // Reload orders to show updated status
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, []);
 
     const handleViewOrder = async (order: any) => {
         setSelectedOrder(order);

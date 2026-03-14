@@ -54,6 +54,17 @@ export async function POST(request: Request) {
 
         if (updateErr) throw updateErr;
 
+        // Notify Admin Dashboard
+        await supabaseAdmin.channel('admin-notifications').send({
+            type: 'broadcast',
+            event: 'driver-response',
+            payload: { 
+                orderId, 
+                status: 'rejected', 
+                driverName: user.user_metadata?.full_name || 'مندوب' 
+            }
+        });
+
         return NextResponse.json({ success: true });
 
     } catch (err: any) {

@@ -248,28 +248,41 @@ export default function DriverDashboard() {
                         // Move to delivered section
                         setActiveOrders(prev => prev.filter(o => o.id !== updated.id))
                         setDeliveredOrders(prev => {
-                            if (prev.find(o => o.id === updated.id)) return prev
-                            return [{ ...updated }, ...prev]
+                             if (prev.find(o => o.id === updated.id)) return prev
+                             return [{ ...updated }, ...prev]
                         })
                         return
                     }
 
                     if (!isForThisDriver) return
 
-                    // It's a new active order for this driver
+                    // It's a new active order for this driver via postgres changes 
+                    // (fallback in case broadcast misses)
                     if (!knownOrderIds.current.has(updated.id)) {
                         knownOrderIds.current.add(updated.id)
-                        // Play sound + show toast notification
                         if (notificationsAllowed) {
                             playNotificationSound()
-                            toast('🛵 طلب جديد وصلك!', {
-                                description: `طلب رقم #${updated.id.slice(0, 6)} - ${updated.total_amount?.toLocaleString()} ج.م`,
-                                duration: 6000,
-                            })
                         }
                         setActiveOrders(prev => [updated as DriverOrder, ...prev])
                     } else {
                         setActiveOrders(prev => prev.map(o => o.id === updated.id ? { ...o, ...updated } : o))
+                    }
+                })
+                .on('broadcast', { event: 'new-assignment' }, async () => {
+                    // Ping received directly from Admin notify backend
+                    if (notificationsAllowed) {
+                        playNotificationSound()
+                    }
+                    // Re-fetch orders for absolute data consistency
+                    const { data: { session } } = await supabase.auth.getSession()
+                    if (session) {
+                        const freshActive = await fetchOrders(session, user.id)
+                        setActiveOrders(freshActive)
+                        
+                        const newPendings = freshActive.filter(o => o.shipping_address?.driver?.acceptance_status === 'pending')
+                        if (newPendings.length > 0) {
+                             toast('🛵 طلب جديد بانتظارك من الإدارة!', { duration: 6000 })
+                        }
                     }
                 })
                 .subscribe()

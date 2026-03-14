@@ -30,6 +30,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
+        // ALWAYS send a realtime broadcast to the driver's active dashboard
+        // This makes the UI update instantly if the window is open.
+        await supabaseAdmin.channel(`driver-orders-${driverId}`).send({
+            type: 'broadcast',
+            event: 'new-assignment',
+            payload: { timestamp: Date.now() }
+        });
+
         // Fetch driver's push subscriptions
         const { data: subs, error: subsError } = await supabaseAdmin
             .from('driver_subscriptions')
@@ -42,7 +50,8 @@ export async function POST(request: Request) {
         }
 
         if (!subs || subs.length === 0) {
-            return NextResponse.json({ message: 'Driver has no active devices registered for notifications' });
+            // Even if no push subs, we return success because the broadcast was sent
+            return NextResponse.json({ message: 'Broadcast sent, but no push devices registered' });
         }
 
         const payload = JSON.stringify({
