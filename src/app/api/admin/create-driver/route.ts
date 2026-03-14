@@ -1,23 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
-// This route requires the service role key to bypass RLS and create users
-// without modifying the current user's session (so Admin stays logged in).
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || ''; // Must be added to .env.local
 
-const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-});
-
 export async function POST(request: Request) {
     try {
-        if (!serviceRoleKey) {
-            return NextResponse.json({ error: 'Server misconfiguration: missing service role key.' }, { status: 500 });
+        if (!serviceRoleKey || !supabaseUrl) {
+            return NextResponse.json({ error: 'Server misconfiguration: missing service role key or URL.' }, { status: 500 });
         }
+
+        const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        });
 
         const body = await request.json();
         const { email, password, full_name, phone, national_id } = body;

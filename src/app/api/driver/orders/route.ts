@@ -4,20 +4,20 @@ import { NextResponse } from 'next/server';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
 
-const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-});
-
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const driverId = searchParams.get('driverId');
 
-    if (!driverId || !serviceRoleKey) {
+    if (!driverId || !serviceRoleKey || !supabaseUrl) {
         return NextResponse.json({ error: 'Missing driverId or service configuration' }, { status: 400 });
     }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
 
     // Verify Authorization header to prevent abuse
     const authHeader = request.headers.get('Authorization');
