@@ -3,6 +3,7 @@ import { IBM_Plex_Sans_Arabic, Lalezar } from "next/font/google";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Providers } from "@/components/providers";
 import { Toaster } from "sonner";
+import { InstallPrompt } from "@/components/ui/install-prompt";
 import "./globals.css";
 
 const ibmPlex = IBM_Plex_Sans_Arabic({
@@ -54,6 +55,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <MobileNav />
+          <InstallPrompt />
           <Toaster className="font-sans" position="top-center" richColors />
         </Providers>
       </body>
