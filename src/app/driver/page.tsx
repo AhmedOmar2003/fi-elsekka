@@ -257,7 +257,12 @@ export default function DriverDashboard() {
                     if (!isForThisDriver) return
 
                     // It's a new active order for this driver via postgres changes 
-                    // (fallback in case broadcast misses)
+                    // To prevent double notifications, we ignore 'pending' assignments here.
+                    // The broadcast event handles 'pending' assignments perfectly.
+                    if (updated.shipping_address?.driver?.acceptance_status === 'pending') {
+                        return; // Let the broadcast handle the ping
+                    }
+
                     if (!knownOrderIds.current.has(updated.id)) {
                         knownOrderIds.current.add(updated.id)
                         if (notificationsAllowed) {
@@ -270,17 +275,21 @@ export default function DriverDashboard() {
                 })
                 .on('broadcast', { event: 'new-assignment' }, async () => {
                     // Ping received directly from Admin notify backend
-                    if (notificationsAllowed) {
-                        playNotificationSound()
-                    }
                     // Re-fetch orders for absolute data consistency
                     const { data: { session } } = await supabase.auth.getSession()
                     if (session) {
                         const freshActive = await fetchOrders(session, user.id)
+                        
+                        // Register all fetched IDs so the fallback doesn't trigger on them later
+                        freshActive.forEach(o => knownOrderIds.current.add(o.id))
+                        
                         setActiveOrders(freshActive)
                         
                         const newPendings = freshActive.filter(o => o.shipping_address?.driver?.acceptance_status === 'pending')
                         if (newPendings.length > 0) {
+                             if (notificationsAllowed) {
+                                 playNotificationSound()
+                             }
                              toast('🛵 طلب جديد بانتظارك من الإدارة!', { duration: 6000 })
                         }
                     }
