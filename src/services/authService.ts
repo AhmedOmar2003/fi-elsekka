@@ -87,6 +87,14 @@ export const updateAuthEmail = async (newEmail: string) => {
     return { data, error };
 };
 
+export const sendPasswordResetEmail = async (email: string) => {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        // In local development, it redirects to localhost:3000. In prod, Vercel sets NEXT_PUBLIC_SITE_URL.
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/update-password`,
+    });
+    return { data, error };
+};
+
 export const updateAuthPassword = async (newPassword: string) => {
     const { data, error } = await supabase.auth.updateUser({ password: newPassword });
     return { data, error };
