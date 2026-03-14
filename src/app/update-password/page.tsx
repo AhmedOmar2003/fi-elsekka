@@ -32,39 +32,43 @@ function UpdatePasswordContent() {
   const [errorMsg, setErrorMsg] = React.useState("")
 
   React.useEffect(() => {
-    let resolved = false
+    const initSession = async () => {
+      // The password reset link from Supabase looks like:
+      // /update-password#access_token=xxx&refresh_token=yyy&type=recovery
+      // We must manually parse this hash and call setSession() to establish
+      // a valid Supabase session. Without this, updateUser fails with "auth session missing".
+      const hash = typeof window !== 'undefined' ? window.location.hash : ''
+      const params = new URLSearchParams(hash.replace('#', ''))
+      const access_token = params.get('access_token')
+      const refresh_token = params.get('refresh_token')
+      const type = params.get('type')
 
-    // Listen for Supabase PASSWORD_RECOVERY event — this fires when the user
-    // clicks the link in their email. It's the most reliable way to detect that
-    // it's safe to show the "set new password" form.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'PASSWORD_RECOVERY' && session) {
-        resolved = true
-        setStatus('idle')
+      if (access_token && refresh_token && type === 'recovery') {
+        // Explicitly establish the session from the URL tokens
+        const { error } = await supabase.auth.setSession({
+          access_token,
+          refresh_token,
+        })
+
+        if (error) {
+          console.error('Failed to establish recovery session:', error.message)
+          setStatus('invalid')
+        } else {
+          // Clean the tokens from the URL bar for security
+          if (typeof window !== 'undefined') {
+            window.history.replaceState({}, document.title, window.location.pathname)
+          }
+          setStatus('idle')
+        }
         return
       }
 
-      // If user already has a session (e.g., they refreshed after recovery), allow them in
-      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !resolved) {
-        resolved = true
-        setStatus('idle')
-        return
-      }
-    })
-
-    // Fallback: if no event fires within 3 seconds, check for existing session
-    const timeout = setTimeout(async () => {
-      if (!resolved) {
-        const { data: { session } } = await supabase.auth.getSession()
-        resolved = true
-        setStatus(session ? 'idle' : 'invalid')
-      }
-    }, 2500)
-
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(timeout)
+      // Fallback: maybe they refreshed the page after recovery was already established
+      const { data: { session } } = await supabase.auth.getSession()
+      setStatus(session ? 'idle' : 'invalid')
     }
+
+    initSession()
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
