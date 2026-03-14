@@ -85,7 +85,7 @@ export default function AdminOrdersPage() {
     useEffect(() => { 
         load(); 
         
-        // Listen for real-time driver acceptance/rejection
+        // Listen for real-time driver acceptance/rejection and delivery updates
         const channel = supabase.channel('admin-notifications')
             .on('broadcast', { event: 'driver-response' }, (payload: any) => {
                 const { orderId, status, driverName } = payload.payload;
@@ -95,6 +95,11 @@ export default function AdminOrdersPage() {
                    import('sonner').then(({ toast }) => toast.error(`المندوب ${driverName} اعتذر عن الطلب #${orderId.slice(-6).toUpperCase()} ❌`));
                 }
                 load(); // Reload orders to show updated status
+            })
+            .on('broadcast', { event: 'order-delivered' }, (payload: any) => {
+                const { orderId, driverName } = payload.payload;
+                import('sonner').then(({ toast }) => toast.success(`تم توصيل الطلب #${orderId.slice(-6).toUpperCase()} بنجاح بواسطة ${driverName} 📦✅`));
+                load(); // Reload orders to show 'delivered' status dynamically
             })
             .subscribe();
 

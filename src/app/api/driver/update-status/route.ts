@@ -63,6 +63,18 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: updateError.message }, { status: 500 });
         }
 
+        // Notify Admin Dashboard immediately so they see the status change live
+        if (status === 'delivered') {
+            await supabaseAdmin.channel('admin-notifications').send({
+                type: 'broadcast',
+                event: 'order-delivered',
+                payload: { 
+                    orderId, 
+                    driverName: user.user_metadata?.full_name || 'مندوب' 
+                }
+            });
+        }
+
         return NextResponse.json({ success: true });
     } catch (err: any) {
         console.error('API Error /driver/update-status:', err);
