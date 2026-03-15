@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
 import { useParams } from "next/navigation"
-import { Product } from "@/services/productsService"
+import { Product, fetchProductsByCategory } from "@/services/productsService"
 import { useProducts } from "@/contexts/ProductsContext"
 import { X } from "lucide-react"
 
@@ -21,7 +21,40 @@ export default function CategoryPage() {
   const slug = typeof params.slug === 'string' ? params.slug : 'all'
   
   const [isFilterOpen, setIsFilterOpen] = React.useState(false)
-  const { products: allProducts, categories, isLoadingProducts: isLoading } = useProducts()
+  
+  // For "all" category: use the context (which has all products in memory)
+  // For specific categories: fetch only that category's products from DB
+  const { products: allContextProducts, categories, isLoadingProducts: isContextLoading } = useProducts()
+
+  // DB-fetched products for specific category pages
+  const [categoryProducts, setCategoryProducts] = React.useState<Product[]>([])
+  const [isCategoryLoading, setIsCategoryLoading] = React.useState(false)
+  const categoryFetchedSlug = React.useRef<string | null>(null)
+
+  // When on a specific category (not "all"), fetch only that category from DB
+  React.useEffect(() => {
+    if (slug === 'all') return
+    
+    // Validate: must be a UUID (real DB category)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
+    if (!isUUID) return
+
+    // Avoid re-fetching the same category
+    if (categoryFetchedSlug.current === slug) return
+    categoryFetchedSlug.current = slug
+
+    setIsCategoryLoading(true)
+    fetchProductsByCategory(slug).then(data => {
+      setCategoryProducts(data)
+      setIsCategoryLoading(false)
+    })
+  }, [slug])
+
+  // Choose which products to use:
+  // - "all" page → use context (all products, full filtering support)
+  // - specific category → use DB-fetched (only that category's products)
+  const allProducts = slug === 'all' ? allContextProducts : categoryProducts
+  const isLoading = slug === 'all' ? isContextLoading : isCategoryLoading
 
   // Get search query from URL (from smart search)
   const searchQuery = searchParams.get('q') || ''
@@ -72,8 +105,9 @@ export default function CategoryPage() {
   const displayProducts = React.useMemo(() => {
     let filtered = [...allProducts]
 
-    // 1. Filter by category slug (if not "all")
-    if (slug !== 'all') {
+    // 1. Filter by category slug (only applies on "all" page; specific pages use DB-filtered data)
+    if (slug !== 'all' && categoryProducts.length === 0) {
+      // Still loading or filtering from context as fallback
       filtered = filtered.filter(p => p.category_id === slug)
     }
 
@@ -131,10 +165,10 @@ export default function CategoryPage() {
     }
 
     return filtered
-  }, [allProducts, slug, searchQuery, categoryFilters, priceFilters, sortBy])
+  }, [allProducts, slug, categoryProducts, searchQuery, categoryFilters, priceFilters, sortBy])
 
   // Convert Product to ProductCard props
-  const productCards = displayProducts.map((p, i) => {
+  const productCards = displayProducts.map((p) => {
     let price = p.price
     let oldPrice: number | undefined = p.specifications?.old_price
     let discountBadge = p.specifications?.discount_badge
@@ -247,7 +281,7 @@ export default function CategoryPage() {
                 </div>
               </div>
 
-              {/* Category Type Filter (replaces "الماركة") */}
+              {/* Category Type Filter (only on "all" page) */}
               {slug === 'all' && categories.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">النوع</h3>

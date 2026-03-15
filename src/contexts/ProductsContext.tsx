@@ -1,9 +1,15 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
 import { fetchProducts, fetchOffers, Product } from '@/services/productsService';
 import { fetchCategories, Category } from '@/services/categoriesService';
+
+// NOTE: Realtime subscriptions for `products` and `categories` tables have been
+// intentionally removed for end users. These tables change only via admin actions.
+// Instead, we now rely on:
+//   - Next.js ISR revalidation (5 min) for Server Component pages (home, offers)
+//   - Stale-While-Revalidate: products load once per session on client pages
+// Admin panel manages its own direct Supabase queries and does not use this context.
 
 interface ProductsContextType {
     products: Product[];
@@ -52,65 +58,18 @@ export const ProductsProvider = ({ children }: { children: React.ReactNode }) =>
         setIsLoadingCategories(false);
     }, []);
 
-    // ── Initial load ──────────────────────────────────────────────────────
+    // ── Initial load (one-time per session) ──────────────────────────────
     useEffect(() => {
         loadProducts();
         loadOffers();
         loadCategories();
     }, [loadProducts, loadOffers, loadCategories]);
 
-    // ── Supabase realtime: products table ─────────────────────────────────
-    useEffect(() => {
-        const channel = supabase
-            .channel('public:products:context')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'products' },
-                (payload) => {
-                    if (payload.eventType === 'INSERT') {
-                        const newProduct = payload.new as Product;
-                        setProducts(prev => [newProduct, ...prev]);
-                        if (newProduct.show_in_offers) {
-                            setOfferProducts(prev => [newProduct, ...prev]);
-                        }
-                    } else if (payload.eventType === 'UPDATE') {
-                        const updated = payload.new as Product;
-                        setProducts(prev => prev.map(p => p.id === updated.id ? { ...p, ...updated } : p));
-                        // Re-sync offer products on any product update
-                        loadOffers();
-                    } else if (payload.eventType === 'DELETE') {
-                        const deletedId = payload.old.id;
-                        setProducts(prev => prev.filter(p => p.id !== deletedId));
-                        setOfferProducts(prev => prev.filter(p => p.id !== deletedId));
-                    }
-                }
-            )
-            .subscribe();
-
-        return () => { supabase.removeChannel(channel); };
-    }, [loadOffers]);
-
-    // ── Supabase realtime: categories table ───────────────────────────────
-    useEffect(() => {
-        const channel = supabase
-            .channel('public:categories:context')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'categories' },
-                (payload) => {
-                    if (payload.eventType === 'INSERT') {
-                        setCategories(prev => [...prev, payload.new as Category].sort((a, b) => a.name.localeCompare(b.name)));
-                    } else if (payload.eventType === 'UPDATE') {
-                        setCategories(prev => prev.map(c => c.id === payload.new.id ? payload.new as Category : c));
-                    } else if (payload.eventType === 'DELETE') {
-                        setCategories(prev => prev.filter(c => c.id !== payload.old.id));
-                    }
-                }
-            )
-            .subscribe();
-
-        return () => { supabase.removeChannel(channel); };
-    }, []);
+    // ── Realtime subscriptions REMOVED for end users ──────────────────────
+    // Products and categories update infrequently (admin-only).
+    // Keeping open websocket connections per user is too expensive on the Free plan.
+    // The admin dashboard manages its own state directly via Supabase (not this context).
+    // If a product changes, the user will see it on next page load or manual refresh.
 
     return (
         <ProductsContext.Provider value={{

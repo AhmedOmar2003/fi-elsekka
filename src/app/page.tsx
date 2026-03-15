@@ -6,9 +6,14 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import Link from "next/link"
 import { ShoppingBasket, Pill, Shirt, Smartphone, Baby, HomeIcon, Sparkles, ShieldCheck, Zap, Banknote, Clock } from "lucide-react"
-import { fetchProducts, fetchOffers } from "@/services/productsService"
+import { fetchHomeProducts, fetchOffers } from "@/services/productsService"
 import { HomeCategoriesList } from "@/components/ui/home-categories"
 import { PromoBanner } from "@/components/ui/promo-banner"
+
+// Cache the home page for 5 minutes using Next.js ISR
+// This means the first request builds a cached page; subsequent requests serve from cache
+// and the cache is regenerated every 5 minutes by a background request.
+export const revalidate = 300;
 
 const MOCK_FEATURED_PRODUCTS = [
   { id: "1", title: "مكرونة الملكة 400 جم حجم عائلي", price: 15, oldPrice: 20, discountBadge: "25% خصم", imageUrl: "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn" },
@@ -25,8 +30,9 @@ const MOCK_BEST_SELLERS = [
 ];
 
 export default async function Home() {
+  // Use the lightweight fetchHomeProducts (8 items) instead of loading all 500
   const [dbProducts, offerProducts] = await Promise.all([
-    fetchProducts(),
+    fetchHomeProducts(),
     fetchOffers(),
   ]);
 

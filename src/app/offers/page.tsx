@@ -4,8 +4,9 @@ import { Footer } from "@/components/layout/footer"
 import { ProductCard } from "@/components/ui/product-card"
 import { fetchOffers } from "@/services/productsService"
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Cache the offers page for 5 minutes using ISR.
+// Admin changes will be visible within 5 minutes max.
+export const revalidate = 300;
 
 export default async function OffersPage() {
   const dbProducts = await fetchOffers();

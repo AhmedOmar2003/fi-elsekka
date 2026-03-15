@@ -14,6 +14,10 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   images: {
+    // Auto-serve WebP/AVIF — typically 50-80% smaller than JPEG/PNG
+    formats: ['image/avif', 'image/webp'],
+    // Cache optimized images on CDN for 24 hours
+    minimumCacheTTL: 86400,
     remotePatterns: [
       {
         protocol: 'https',
