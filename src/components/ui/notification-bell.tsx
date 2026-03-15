@@ -42,17 +42,19 @@ export function NotificationBell() {
     React.useEffect(() => {
         if (!user) return
 
+        console.log("Setting up Supabase Realtime for user:", user.id)
+
         const channel = supabase
-            .channel(`public:user-notifications-${user.id}`)
+            .channel(`notifications-${user.id}`)
             .on(
                 'postgres_changes',
                 {
                     event: 'INSERT',
                     schema: 'public',
                     table: 'notifications',
-                    filter: `user_id=eq.${user.id}`,
                 },
                 (payload) => {
+                    console.log("Realtime notification received!", payload)
                     const newNotification = payload.new as AppNotification
                     
                     // Add to state
@@ -79,9 +81,15 @@ export function NotificationBell() {
                     })
                 }
             )
-            .subscribe()
+            .subscribe((status, err) => {
+                console.log("Supabase Realtime Status:", status, err)
+                if (status === 'SUBSCRIBED') {
+                    console.log("Successfully subscribed to notifications!")
+                }
+            })
 
         return () => {
+            console.log("Removing Realtime channel")
             supabase.removeChannel(channel)
         }
     }, [user, router])
