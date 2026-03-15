@@ -66,24 +66,75 @@ export const fetchProducts = async (categoryId?: string): Promise<Product[]> => 
 };
 
 /**
- * Fetches best-seller products from the DB using a dedicated filter.
- * IMPORTANT: This is separate from fetchHomeProducts() — it queries
- * ALL products where is_best_seller = true, not just the newest 8.
+ * Fetches best-seller products using actual sales data.
+ * Logic:
+ * 1. Calculate actual sales from `order_items` (total quantity per product).
+ * 2. Fallback to manually tagged `is_best_seller` = true.
+ * 3. Final fallback: newest 3 products.
  */
 export const fetchBestSellers = async (): Promise<Product[]> => {
-    const { data, error } = await supabase
-        .from('products')
-        .select(PRODUCT_CARD_FIELDS)
-        .eq('is_best_seller', true)
-        .order('created_at', { ascending: false })
-        .limit(8);
+    try {
+        // 1. Try to fetch sales data from order_items
+        const { data: orderItems, error: itemsError } = await supabase
+            .from('order_items')
+            .select('product_id, quantity');
 
-    if (error) {
-        console.error('Error fetching best sellers:', error?.message || error);
+        let salesRank: string[] = [];
+        if (!itemsError && orderItems && orderItems.length > 0) {
+            const sales: Record<string, number> = {};
+            for (const item of orderItems) {
+                if (item.product_id) {
+                    sales[item.product_id] = (sales[item.product_id] || 0) + (item.quantity || 1);
+                }
+            }
+            // Sort by total quantity descending
+            salesRank = Object.entries(sales)
+                .sort((a, b) => b[1] - a[1])
+                .map(e => e[0]);
+        }
+
+        // If we have top selling products by actual sales
+        if (salesRank.length > 0) {
+            const topIds = salesRank.slice(0, 3);
+            const { data: topProducts } = await supabase
+                .from('products')
+                .select(PRODUCT_CARD_FIELDS)
+                .in('id', topIds);
+
+            if (topProducts && topProducts.length > 0) {
+                // Sort to match the exact sales rank order
+                const ordered = topIds
+                    .map(id => topProducts.find(p => p.id === id))
+                    .filter(Boolean) as Product[];
+
+                if (ordered.length > 0) return ordered.slice(0, 3);
+            }
+        }
+
+        // 2. Fallback to manually tagged is_best_seller
+        const { data: manualBest } = await supabase
+            .from('products')
+            .select(PRODUCT_CARD_FIELDS)
+            .eq('is_best_seller', true)
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+        if (manualBest && manualBest.length > 0) {
+            return manualBest as Product[];
+        }
+
+        // 3. Last fallback: Newest products
+        const { data: newest } = await supabase
+            .from('products')
+            .select(PRODUCT_CARD_FIELDS)
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+        return (newest || []) as Product[];
+    } catch (err) {
+        console.error('Error in fetchBestSellers:', err);
         return [];
     }
-
-    return data as Product[];
 };
 
 /**

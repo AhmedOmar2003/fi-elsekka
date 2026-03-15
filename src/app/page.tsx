@@ -11,8 +11,9 @@ import { HomeCategoriesList } from "@/components/ui/home-categories"
 import { PromoBanner } from "@/components/ui/promo-banner"
 
 // Cache the home page for 5 minutes using Next.js ISR
-// Best sellers and offers each have their own DB queries — no regression risk.
-export const revalidate = 300;
+// Cache the home page for 1 minute using Next.js ISR.
+// This prevents the issue where admin changes don't show up for 5 minutes.
+export const revalidate = 60;
 
 const MOCK_FEATURED_PRODUCTS = [
   { id: "1", title: "مكرونة الملكة 400 جم حجم عائلي", price: 15, oldPrice: 20, discountBadge: "25% خصم", imageUrl: "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn" },
