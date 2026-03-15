@@ -229,3 +229,40 @@ export async function deleteUser(userId: string) {
     if (res.error) logError('deleteUser', res.error);
     return res;
 }
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export async function broadcastOfferNotification(title: string, message: string, link: string) {
+    // 1. Fetch all standard users
+    const { data: users, error: fetchError } = await supabase
+        .from('users')
+        .select('id')
+        .neq('role', 'admin'); // Don't really need to spam admins
+
+    if (fetchError || !users) {
+        logError('broadcastOfferNotification - fetchUsers', fetchError);
+        return { error: fetchError || new Error("Failed to fetch users") };
+    }
+
+    // 2. Prepare payload
+    const notifications = users.map(user => ({
+        user_id: user.id,
+        title,
+        message,
+        link,
+        is_read: false
+    }));
+
+    if (notifications.length === 0) return { success: true, count: 0 };
+
+    // 3. Insert in batches if necessary, but Supabase handles reasonably large bulk inserts (limit 1000 at a time)
+    // For ~100-200 users, a single insert is perfectly fine and performant.
+    const res = await supabase.from('notifications').insert(notifications);
+    
+    if (res.error) {
+        logError('broadcastOfferNotification - insert', res.error);
+        return { error: res.error };
+    }
+    
+    return { success: true, count: notifications.length };
+}

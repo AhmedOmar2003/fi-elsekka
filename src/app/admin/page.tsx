@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchAdminStats, fetchRecentOrders } from '@/services/adminService';
-import { Users, Package, ShoppingCart, TrendingUp, ArrowLeft, Clock, ChevronRight } from 'lucide-react';
+import { fetchAdminStats, fetchRecentOrders, broadcastOfferNotification } from '@/services/adminService';
+import { Users, Package, ShoppingCart, TrendingUp, ArrowLeft, Clock, ChevronRight, BellRing, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
     pending: { label: 'في الانتظار', color: 'text-amber-400  bg-amber-400/10' },
@@ -18,6 +19,7 @@ export default function AdminPage() {
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
     const { user, isLoading: isAuthLoading } = useAuth();
     const [isLoading, setIsLoading] = useState(true);
+    const [isBroadcasting, setIsBroadcasting] = useState(false);
 
     useEffect(() => {
         if (isAuthLoading) return;
@@ -40,6 +42,26 @@ export default function AdminPage() {
         { label: 'الطلبات', value: stats.totalOrders, icon: ShoppingCart, color: 'text-amber-400', bg: 'bg-amber-400/10', href: '/admin/orders' },
         { label: 'الإيرادات', value: `${stats.totalRevenue.toLocaleString()} ج.م`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', href: '#' },
     ];
+
+    const handleBroadcastOffers = async () => {
+        if (!confirm('هل أنت متأكد من إرسال إشعار بوجود عروض جديدة لجميع المستخدمين؟')) return;
+        
+        setIsBroadcasting(true);
+        try {
+            const res = await broadcastOfferNotification(
+                'عروض مَتتفوّتش! 🚀🔥',
+                'خصومات حصرية بدأت دلوقتي على منتجات مختارة، الحقها قبل ما تخلص!',
+                '/offers'
+            );
+            
+            if (res.error) throw new Error(res.error.message);
+            toast.success(`تم إرسال الإشعار بنجاح لـ ${res.count} مستخدم! 🔔`);
+        } catch (error: any) {
+            toast.error('حدث خطأ أثناء إرسال الإشعارات: ' + error.message);
+        } finally {
+            setIsBroadcasting(false);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -132,6 +154,16 @@ export default function AdminPage() {
                         {link.label}
                     </Link>
                 ))}
+                
+                {/* Broadcast Action Button */}
+                <button
+                    onClick={handleBroadcastOffers}
+                    disabled={isBroadcasting}
+                    className="flex items-center justify-center gap-2 bg-gradient-to-br from-rose-500/10 to-transparent border border-rose-500/20 rounded-2xl p-4 text-sm font-bold text-rose-500 hover:scale-[1.02] hover:bg-rose-500/20 active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-sm"
+                >
+                    {isBroadcasting ? <Loader2 className="w-4 h-4 animate-spin" /> : <BellRing className="w-4 h-4" />}
+                    إرسال إشعار العروض
+                </button>
             </div>
         </div>
     );

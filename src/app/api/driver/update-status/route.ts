@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         // Verify the order actually belongs to this driver
         const { data: order, error: orderError } = await supabaseAdmin
             .from('orders')
-            .select('shipping_address')
+            .select('user_id, shipping_address')
             .eq('id', orderId)
             .single();
 
@@ -73,6 +73,17 @@ export async function POST(request: Request) {
                     driverName: user.user_metadata?.full_name || 'مندوب' 
                 }
             });
+
+            // CREATE IN-APP NOTIFICATION FOR THE CUSTOMER
+            if (order.user_id) {
+                await supabaseAdmin.from('notifications').insert([{
+                    user_id: order.user_id,
+                    title: 'تم توصيل طلبك! 📦',
+                    message: `تم تسليم طلبك رقم #${orderId.substring(0,6)} بنجاح. نتمنى لك تجربة سعيدة!`,
+                    link: '/account', // Link to order history
+                    is_read: false
+                }]);
+            }
         }
 
         return NextResponse.json({ success: true });

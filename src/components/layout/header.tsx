@@ -17,6 +17,7 @@ import { useProducts } from "@/contexts/ProductsContext"
 import { signOut } from "@/services/authService"
 import { LogoutModal } from "@/components/ui/logout-modal"
 import { ThemeToggle } from "../ui/theme-toggle"
+import { NotificationBell } from "../ui/notification-bell"
 import { toast } from "sonner"
 
 // ── Motorcycle SVG Logo Icon ──────────────────────────────────────────────────
@@ -311,6 +312,7 @@ export function Header() {
           {user ? (
             <div className="flex items-center gap-2 px-3">
               <span className="text-sm font-bold text-foreground">{profile?.full_name || user.email?.split('@')[0]}</span>
+              <NotificationBell />
               <Button variant="ghost" size="icon" onClick={handleLogoutClick} className="text-gray-500 hover:text-rose-500 hover:bg-rose-500/10" title="تسجيل الخروج">
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -345,6 +347,8 @@ export function Header() {
               </span>
             </button>
           </Link>
+
+          {user && <NotificationBell />}
 
           <Link
             href="/cart"
