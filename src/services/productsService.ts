@@ -96,7 +96,7 @@ export const fetchBestSellers = async (): Promise<Product[]> => {
 
         // If we have top selling products by actual sales
         if (salesRank.length > 0) {
-            const topIds = salesRank.slice(0, 3);
+            const topIds = salesRank.slice(0, 4);
             const { data: topProducts } = await supabase
                 .from('products')
                 .select(PRODUCT_CARD_FIELDS)
@@ -108,7 +108,7 @@ export const fetchBestSellers = async (): Promise<Product[]> => {
                     .map(id => topProducts.find(p => p.id === id))
                     .filter(Boolean) as Product[];
 
-                if (ordered.length > 0) return ordered.slice(0, 3);
+                if (ordered.length > 0) return ordered.slice(0, 4);
             }
         }
 
@@ -118,7 +118,7 @@ export const fetchBestSellers = async (): Promise<Product[]> => {
             .select(PRODUCT_CARD_FIELDS)
             .eq('is_best_seller', true)
             .order('created_at', { ascending: false })
-            .limit(3);
+            .limit(4);
 
         if (manualBest && manualBest.length > 0) {
             return manualBest as Product[];
@@ -129,7 +129,7 @@ export const fetchBestSellers = async (): Promise<Product[]> => {
             .from('products')
             .select(PRODUCT_CARD_FIELDS)
             .order('created_at', { ascending: false })
-            .limit(3);
+            .limit(4);
 
         return (newest || []) as Product[];
     } catch (err) {

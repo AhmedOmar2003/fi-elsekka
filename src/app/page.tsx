@@ -120,8 +120,8 @@ export default async function Home() {
           imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
         };
       })
-    // Fallback: show products 5-8 from the featured list if no best sellers are marked
-    : dbProducts.slice(4, 8).map(p => ({
+    // Fallback: show products 4-7 from the featured list if no best sellers are marked
+    : dbProducts.slice(4, 9).map(p => ({
         id: p.id,
         title: p.name,
         price: p.price,
