@@ -4,9 +4,10 @@ import { Footer } from "@/components/layout/footer"
 import { ProductCard } from "@/components/ui/product-card"
 import { fetchOffers } from "@/services/productsService"
 
-// Cache the offers page for 1 minute using ISR.
-// Admin changes will be visible within 1 minute max.
-export const revalidate = 60;
+// The offers page must be fully dynamic to guarantee admin updates 
+// appear instantly and bypass stubborn Next.js router cache.
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function OffersPage() {
   const dbProducts = await fetchOffers();

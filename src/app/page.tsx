@@ -11,9 +11,10 @@ import { HomeCategoriesList } from "@/components/ui/home-categories"
 import { PromoBanner } from "@/components/ui/promo-banner"
 
 // Cache the home page for 5 minutes using Next.js ISR
-// Cache the home page for 1 minute using Next.js ISR.
-// This prevents the issue where admin changes don't show up for 5 minutes.
-export const revalidate = 60;
+// The home page must be fully dynamic to guarantee admin updates 
+// appear instantly and bypass stubborn Next.js router cache.
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const MOCK_FEATURED_PRODUCTS = [
   { id: "1", title: "مكرونة الملكة 400 جم حجم عائلي", price: 15, oldPrice: 20, discountBadge: "25% خصم", imageUrl: "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn" },
@@ -39,6 +40,12 @@ export default async function Home() {
     fetchBestSellers(),
     fetchOffers(),
   ]);
+
+  console.log('--- NEXT.JS SERVER COMPONENT DEBUG ---');
+  console.log('Home Products count:', dbProducts.length);
+  console.log('Best Sellers count:', bestSellerProducts.length);
+  console.log('Offers count:', offerProducts.length);
+  console.log('--------------------------------------');
 
   const displayProducts = dbProducts.length > 0 ? dbProducts.slice(0, 4).map(p => {
     let price = p.price;

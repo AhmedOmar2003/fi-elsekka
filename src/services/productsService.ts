@@ -4,8 +4,9 @@ import { Category } from './categoriesService';
 const isUUID = (uuid: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid);
 
 // Minimal fields for product cards (list views, home page)
+// Removed 'slug' as it does not exist in the database table.
 const PRODUCT_CARD_FIELDS = `
-  id, name, price, image_url, slug,
+  id, name, price, image_url,
   discount_percentage, is_best_seller, show_in_offers,
   category_id, specifications, created_at, stock_quantity
 `;
