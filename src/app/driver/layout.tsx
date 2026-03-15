@@ -5,10 +5,12 @@ import { usePathname } from 'next/navigation';
 import { Bike, History, Package, LogOut } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function DriverLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
+    const { user, profile } = useAuth();
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -25,7 +27,11 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
                             <Bike className="w-6 h-6" />
                         </div>
                         <div>
-                            <h1 className="font-heading font-black text-lg">لوحة المندوب</h1>
+                            <h1 className="font-heading font-black text-lg">
+                                {profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name 
+                                    ? `أهلاً بمندوبنا الجميل ${(profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name).split(' ')[0]} ✨` 
+                                    : 'لوحة المندوب'}
+                            </h1>
                             <p className="text-[10px] text-gray-500 font-bold">في السكة</p>
                         </div>
                     </div>
