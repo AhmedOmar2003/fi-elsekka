@@ -6,13 +6,12 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import Link from "next/link"
 import { ShoppingBasket, Pill, Shirt, Smartphone, Baby, HomeIcon, Sparkles, ShieldCheck, Zap, Banknote, Clock } from "lucide-react"
-import { fetchHomeProducts, fetchOffers } from "@/services/productsService"
+import { fetchHomeProducts, fetchOffers, fetchBestSellers } from "@/services/productsService"
 import { HomeCategoriesList } from "@/components/ui/home-categories"
 import { PromoBanner } from "@/components/ui/promo-banner"
 
 // Cache the home page for 5 minutes using Next.js ISR
-// This means the first request builds a cached page; subsequent requests serve from cache
-// and the cache is regenerated every 5 minutes by a background request.
+// Best sellers and offers each have their own DB queries — no regression risk.
 export const revalidate = 300;
 
 const MOCK_FEATURED_PRODUCTS = [
@@ -30,9 +29,13 @@ const MOCK_BEST_SELLERS = [
 ];
 
 export default async function Home() {
-  // Use the lightweight fetchHomeProducts (8 items) instead of loading all 500
-  const [dbProducts, offerProducts] = await Promise.all([
+  // 3 separate lightweight queries — each fetches only relevant items:
+  // - fetchHomeProducts: 8 newest products for the featured section
+  // - fetchBestSellers: DB-filtered is_best_seller=true (fixes regression)
+  // - fetchOffers: DB-filtered show_in_offers=true
+  const [dbProducts, bestSellerProducts, offerProducts] = await Promise.all([
     fetchHomeProducts(),
+    fetchBestSellers(),
     fetchOffers(),
   ]);
 
@@ -83,39 +86,43 @@ export default async function Home() {
     };
   });
 
-  const actualBestSellers = dbProducts.filter(p => p.is_best_seller);
+  // ── Best Sellers ────────────────────────────────────────────────────────
+  // FIX: use the dedicated DB query result — NOT dbProducts.filter()
+  // The old approach filtered from 8 items; best sellers added earlier were invisible.
+  const displayBestSellers = bestSellerProducts.length > 0
+    ? bestSellerProducts.slice(0, 4).map(p => {
+        let price = p.price;
+        let oldPrice: number | undefined = p.specifications?.old_price;
+        let discountBadge = p.specifications?.discount_badge;
 
-  const displayBestSellers = actualBestSellers.length > 0 ? actualBestSellers.map(p => {
-    let price = p.price;
-    let oldPrice: number | undefined = p.specifications?.old_price;
-    let discountBadge = p.specifications?.discount_badge;
+        if (p.discount_percentage && p.discount_percentage > 0) {
+          price = Math.round(p.price * (1 - p.discount_percentage / 100));
+          oldPrice = p.price;
+          discountBadge = `خصم ${p.discount_percentage}%`;
+        }
 
-    if (p.discount_percentage && p.discount_percentage > 0) {
-      price = Math.round(p.price * (1 - p.discount_percentage / 100));
-      oldPrice = p.price;
-      discountBadge = `خصم ${p.discount_percentage}%`;
-    }
-
-    return {
-      id: p.id,
-      title: p.name,
-      price,
-      oldPrice,
-      discountBadge,
-      rating: p.specifications?.rating,
-      reviewsCount: p.specifications?.reviews_count,
-      imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
-    };
-  }).slice(0, 4) : (dbProducts.length > 4 ? dbProducts.slice(4, 8).map(p => ({
-    id: p.id,
-    title: p.name,
-    price: p.price,
-    oldPrice: p.specifications?.old_price,
-    discountBadge: p.specifications?.discount_badge,
-    rating: p.specifications?.rating,
-    reviewsCount: p.specifications?.reviews_count,
-    imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
-  })) : MOCK_BEST_SELLERS);
+        return {
+          id: p.id,
+          title: p.name,
+          price,
+          oldPrice,
+          discountBadge,
+          rating: p.specifications?.rating,
+          reviewsCount: p.specifications?.reviews_count,
+          imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
+        };
+      })
+    // Fallback: show products 5-8 from the featured list if no best sellers are marked
+    : dbProducts.slice(4, 8).map(p => ({
+        id: p.id,
+        title: p.name,
+        price: p.price,
+        oldPrice: p.specifications?.old_price,
+        discountBadge: p.specifications?.discount_badge,
+        rating: p.specifications?.rating,
+        reviewsCount: p.specifications?.reviews_count,
+        imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
+      }));
 
   return (
     <>

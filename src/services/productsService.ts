@@ -66,9 +66,65 @@ export const fetchProducts = async (categoryId?: string): Promise<Product[]> => 
 };
 
 /**
- * Lightweight query used ONLY on home page — fetches just the first 8 products.
- * Much faster than loading all 500 products.
+ * Fetches best-seller products from the DB using a dedicated filter.
+ * IMPORTANT: This is separate from fetchHomeProducts() — it queries
+ * ALL products where is_best_seller = true, not just the newest 8.
  */
+export const fetchBestSellers = async (): Promise<Product[]> => {
+    const { data, error } = await supabase
+        .from('products')
+        .select(PRODUCT_CARD_FIELDS)
+        .eq('is_best_seller', true)
+        .order('created_at', { ascending: false })
+        .limit(8);
+
+    if (error) {
+        console.error('Error fetching best sellers:', error?.message || error);
+        return [];
+    }
+
+    return data as Product[];
+};
+
+/**
+ * Paginated product fetch for the /category/all page.
+ * Returns a page of products with total count for infinite scroll.
+ * @param page - 0-indexed page number
+ * @param pageSize - number of items per page (default: 20)
+ * @param categoryId - optional category filter
+ */
+export const fetchPaginatedProducts = async (
+    page: number = 0,
+    pageSize: number = 20,
+    categoryId?: string
+): Promise<{ products: Product[]; hasMore: boolean }> => {
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+
+    let query = supabase
+        .from('products')
+        .select(PRODUCT_CARD_FIELDS)
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+    if (categoryId && isUUID(categoryId)) {
+        query = query.eq('category_id', categoryId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+        console.error('Error fetching paginated products:', error?.message || error);
+        return { products: [], hasMore: false };
+    }
+
+    return {
+        products: data as Product[],
+        // If we got a full page, there might be more
+        hasMore: (data?.length ?? 0) === pageSize,
+    };
+};
+
 export const fetchHomeProducts = async (): Promise<Product[]> => {
     const { data, error } = await supabase
         .from('products')
