@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/AuthContext"
 import { AppNotification, fetchUserNotifications, markNotificationAsRead, markAllNotificationsAsRead } from "@/services/notificationsService"
 import { useRouter } from "next/navigation"
 import { cn } from "./button"
+import { supabase } from "@/lib/supabase"
+import { toast } from "sonner"
 
 export function NotificationBell() {
     const { user } = useAuth()
@@ -35,6 +37,54 @@ export function NotificationBell() {
     React.useEffect(() => {
         loadNotifications()
     }, [loadNotifications])
+
+    // Real-time subscription for new notifications
+    React.useEffect(() => {
+        if (!user) return
+
+        const channel = supabase
+            .channel(`public:user-notifications-${user.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notifications',
+                    filter: `user_id=eq.${user.id}`,
+                },
+                (payload) => {
+                    const newNotification = payload.new as AppNotification
+                    
+                    // Add to state
+                    setNotifications(prev => [newNotification, ...prev])
+                    
+                    // Play a quick un-intrusive notification sound
+                    try {
+                        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3') // Short pop sound
+                        audio.volume = 0.5;
+                        audio.play().catch(e => console.log('Audio autoplay blocked by browser until user interacts'));
+                    } catch (e) {
+                         // Ignore audio errors
+                    }
+                    
+                    // Show a toast
+                    toast(newNotification.title, {
+                        description: newNotification.message,
+                        icon: '🔔',
+                        duration: 6000,
+                        action: newNotification.link ? {
+                            label: 'عرض التفاصيل',
+                            onClick: () => router.push(newNotification.link!)
+                        } : undefined
+                    })
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [user, router])
 
     const handleToggle = () => {
         const newIsOpen = !isOpen
