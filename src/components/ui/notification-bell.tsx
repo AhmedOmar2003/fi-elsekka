@@ -42,10 +42,11 @@ export function NotificationBell() {
     React.useEffect(() => {
         if (!user) return
 
-        console.log("Setting up Supabase Realtime for user:", user.id)
+        const channelId = `notifications-${user.id}-${Math.random().toString(36).substring(7)}`
+        console.log("Setting up Supabase Realtime:", channelId)
 
         const channel = supabase
-            .channel(`notifications-${user.id}`)
+            .channel(channelId)
             .on(
                 'postgres_changes',
                 {
