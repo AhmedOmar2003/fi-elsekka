@@ -14,10 +14,12 @@ export type Permission =
   | 'manage_settings'
   | 'view_reports';
 
-export function hasPermission(profile: Pick<AdminProfile, 'role' | 'permissions'> | null | undefined, perm: Permission) {
+type RolePermShape = { role?: string | null; permissions?: string[] | null };
+
+export function hasPermission(profile: RolePermShape | null | undefined, perm: Permission) {
   if (!profile) return false;
   if (profile.role === 'super_admin' || profile.role === 'admin') return true;
-  return Array.isArray(profile.permissions) && profile.permissions.includes(perm);
+  return Array.isArray(profile.permissions ?? []) && (profile.permissions as string[]).includes(perm);
 }
 
 export function requiredPermissionForPath(pathname: string): Permission | null {
