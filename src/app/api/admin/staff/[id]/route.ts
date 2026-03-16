@@ -44,16 +44,20 @@ export async function PATCH(request: NextRequest, context: any) {
     const body = await request.json();
     const { full_name, username, role, permissions, disabled } = body;
 
+    // Validate body
+    if (disabled === undefined && full_name === undefined && username === undefined && role === undefined && permissions === undefined) {
+      return NextResponse.json({ error: 'Nothing to update', stage: 'validate.body' }, { status: 400 });
+    }
+    if (disabled !== undefined && typeof disabled !== 'boolean') {
+      return NextResponse.json({ error: 'disabled must be boolean', stage: 'validate.body' }, { status: 400 });
+    }
+
     const updates: Record<string, any> = {};
     if (full_name !== undefined) updates.full_name = full_name;
     if (username !== undefined) updates.username = username;
     if (role !== undefined) updates.role = role;
     if (permissions !== undefined) updates.permissions = permissions;
     if (disabled !== undefined) updates.disabled = disabled;
-
-    if (Object.keys(updates).length === 0) {
-      return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
-    }
 
     const { error } = await supabaseAdmin.from('users').update(updates).eq('id', id);
     if (error) {
@@ -67,9 +71,9 @@ export async function PATCH(request: NextRequest, context: any) {
       return NextResponse.json({ error: msg, stage: 'db.update' }, { status: 500 });
     }
 
-    // Sync auth metadata if role/permissions changed
+    // Sync auth metadata if role/permissions/full_name/username changed
     if (role !== undefined || permissions !== undefined || full_name !== undefined || username !== undefined) {
-      const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(params.id, {
+      const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(id, {
         user_metadata: {
           ...(role !== undefined ? { role } : {}),
           ...(permissions !== undefined ? { permissions } : {}),
@@ -84,6 +88,9 @@ export async function PATCH(request: NextRequest, context: any) {
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('staff PATCH error', { id, url: request.url, message: e?.message, stack: e?.stack });
+    }
     return NextResponse.json({ error: e?.message || 'Internal error', stage: 'catch' }, { status: 500 });
   }
 }
