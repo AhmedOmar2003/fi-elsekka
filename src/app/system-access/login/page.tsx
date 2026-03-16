@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn, signOut } from '@/services/authService';
+import { supabase } from '@/lib/supabase';
 import { ShieldCheck, Mail, Lock, Loader2, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -41,6 +42,13 @@ function LoginClient() {
       setIsLoading(false);
       toast.error('بيانات الدخول غير صحيحة أو الحساب مقيد.');
       return;
+    }
+
+    // Force-load session to ensure cookies/localStorage are set before redirect
+    await supabase.auth.getSession();
+    if (process.env.NODE_ENV === 'development') {
+      const { data } = await supabase.auth.getSession();
+      console.debug('[auth] post-login session', data?.session ? 'present' : 'missing');
     }
 
     setIsLoading(false);
