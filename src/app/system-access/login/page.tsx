@@ -1,25 +1,15 @@
-"use client"
+"use client";
 
-// Force dynamic render to avoid static prerender errors during build
-export const dynamic = "force-dynamic";
-
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn, signOut } from '@/services/authService';
 import { ShieldCheck, Mail, Lock, Loader2, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 
-async function rateLimit() {
-  try {
-    const res = await fetch('/api/system-access/rate-limit', { method: 'POST' });
-    if (!res.ok) return { ok: false };
-    return res.json();
-  } catch {
-    return { ok: true }; // fail-open to avoid blocking legitimate logins
-  }
-}
+// Force dynamic render to avoid static prerender errors during build
+export const dynamic = "force-dynamic";
 
-export default function SecureAdminLogin() {
+function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/admin';
@@ -42,12 +32,15 @@ export default function SecureAdminLogin() {
 
     setIsLoading(true);
 
-    const limiter = await rateLimit();
-    if (!limiter.ok) {
-      setIsLoading(false);
-      toast.error('محاولات كثيرة، حاول بعد دقائق.');
-      return;
-    }
+    try {
+      const limiterRes = await fetch('/api/system-access/rate-limit', { method: 'POST' });
+      if (!limiterRes.ok) {
+        setIsLoading(false);
+        toast.error('محاولات كثيرة، حاول بعد دقائق.');
+        return;
+      }
+    } catch {
+      /* fail open */ }
 
     const { error } = await signIn(email.trim().toLowerCase(), password);
 
@@ -144,5 +137,13 @@ export default function SecureAdminLogin() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SecureAdminLogin() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white">جار التحميل...</div>}>
+      <LoginClient />
+    </Suspense>
   );
 }
