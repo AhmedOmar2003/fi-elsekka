@@ -56,6 +56,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    const allowedRoles = ['super_admin', 'admin', 'operations_manager', 'catalog_manager', 'support_agent'];
+    if (!allowedRoles.includes(role)) {
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    }
+
     const perms: string[] =
       permissions && Array.isArray(permissions) && permissions.length > 0
         ? permissions
@@ -78,7 +83,9 @@ export async function POST(request: Request) {
     });
 
     if (authError || !userCreated?.user) {
-      return NextResponse.json({ error: authError?.message || 'Auth create failed' }, { status: 400 });
+      const msg = authError?.message || 'Auth create failed';
+      const code = msg.includes('User already registered') ? 409 : 400;
+      return NextResponse.json({ error: msg }, { status: code });
     }
 
     const supaUser = userCreated.user;
