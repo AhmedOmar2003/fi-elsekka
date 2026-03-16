@@ -15,13 +15,25 @@ const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}
 
 export async function PATCH(request: NextRequest, context: any) {
   const params = context?.params || {};
-  const id = typeof params.id === 'string' ? params.id : undefined;
+  const routeId = typeof params.id === 'string' ? params.id : undefined;
+
+  // Fallback: derive from URL if Next.js didn't populate params
+  const urlPath = request.url || '';
+  const derivedId = urlPath.includes('/api/admin/staff/')
+    ? urlPath.split('/api/admin/staff/')[1]?.split(/[?#]/)[0]
+    : undefined;
+
+  const rawId = routeId || derivedId;
+  const id = rawId ? decodeURIComponent(rawId) : undefined;
 
   if (!supabaseAdmin) {
     return NextResponse.json({ error: 'Server misconfigured: missing service role key', stage: 'config' }, { status: 500 });
   }
 
   if (!id || !UUID_REGEX.test(id)) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('staff PATCH missing/invalid id', { routeId, derivedId, url: request.url });
+    }
     return NextResponse.json({ error: 'Invalid or missing staff id', stage: 'validate.id' }, { status: 400 });
   }
 

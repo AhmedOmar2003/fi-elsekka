@@ -165,7 +165,11 @@ export default function StaffPage() {
       return;
     }
     try {
-      const res = await fetch(`/api/admin/staff/${id}`, {
+      const url = `/api/admin/staff/${encodeURIComponent(id)}`;
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("Disabling staff", { id, url, disable });
+      }
+      const res = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ disabled: disable }),
