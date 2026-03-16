@@ -28,16 +28,16 @@ interface Notification {
 
 // ── Nav Items ────────────────────────────────────────────────
 const NAV_ITEMS = [
-    { label: 'لوحة التحكم', href: '/admin', icon: LayoutDashboard, perm: null },
-    { label: 'الطلبات', href: '/admin/orders', icon: ShoppingCart, perm: 'view_orders' },
-    { label: 'المندوبين', href: '/admin/drivers', icon: Bike, perm: 'view_drivers' },
-    { label: 'المنتجات', href: '/admin/products', icon: Package, perm: 'manage_products' },
-    { label: 'الأقسام', href: '/admin/categories', icon: Tag, perm: 'manage_categories' },
-    { label: 'المستخدمون', href: '/admin/users', icon: Users, perm: 'manage_users' },
-    { label: 'إدارة الطاقم', href: '/admin/staff', icon: ShieldAlert, perm: 'manage_admins', superOnly: true },
-    { label: 'التقييمات', href: '/admin/reviews', icon: MessageSquare, perm: 'view_reports' },
-    { label: 'العروض الترويجية', href: '/admin/promotions', icon: Megaphone, perm: 'manage_offers' },
-    { label: 'أكواد الخصم', href: '/admin/discounts', icon: Ticket, perm: 'manage_discounts' },
+    { label: 'لوحة التحكم', href: '/admin', icon: LayoutDashboard },
+    { label: 'الطلبات', href: '/admin/orders', icon: ShoppingCart },
+    { label: 'المندوبين', href: '/admin/drivers', icon: Bike },
+    { label: 'المنتجات', href: '/admin/products', icon: Package },
+    { label: 'الأقسام', href: '/admin/categories', icon: Tag },
+    { label: 'المستخدمون', href: '/admin/users', icon: Users },
+    { label: 'إدارة الطاقم', href: '/admin/staff', icon: ShieldAlert },
+    { label: 'التقييمات', href: '/admin/reviews', icon: MessageSquare },
+    { label: 'العروض الترويجية', href: '/admin/promotions', icon: Megaphone },
+    { label: 'أكواد الخصم', href: '/admin/discounts', icon: Ticket },
 ];
 
 // ── Sidebar ──────────────────────────────────────────────────
@@ -75,13 +75,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
 
             {/* Nav */}
             <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-                {NAV_ITEMS.filter(item => {
-                    const userRole = profile?.role || user?.user_metadata?.role;
-
-                    if (userRole === 'super_admin') return true;
-                    if (item.superOnly) return false;
-                    return true; // عرض كل العناصر للباقين، الحماية تتم بالـmiddleware
-                }).map((item) => {
+                {NAV_ITEMS.map((item) => {
                     const isActive = pathname === item.href;
                     const Icon = item.icon;
                     return (
