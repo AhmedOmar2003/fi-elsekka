@@ -5,9 +5,11 @@ import { requireAdminApi } from '@/lib/admin-guard';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
 
-const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
+const supabaseAdmin = supabaseUrl && serviceRoleKey
+  ? createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+  : null;
 
 const DEFAULT_PERMS_FOR_OPS = ['view_orders', 'update_order_status', 'assign_driver', 'view_drivers'];
 
@@ -16,6 +18,7 @@ function randomPassword() {
 }
 
 export async function GET(request: Request) {
+  if (!supabaseAdmin) return NextResponse.json({ error: 'Server misconfigured: missing service role key' }, { status: 500 });
   const auth = await requireAdminApi(request, 'manage_admins');
   if (!auth.ok) return auth.response;
 
@@ -33,6 +36,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (!supabaseAdmin) return NextResponse.json({ error: 'Server misconfigured: missing service role key' }, { status: 500 });
   const auth = await requireAdminApi(request, 'manage_admins');
   if (!auth.ok) return auth.response;
 
@@ -78,7 +82,7 @@ export async function POST(request: Request) {
     }
 
     const supaUser = userCreated.user;
-    await supabaseAdmin.from('users').upsert({
+    const { error: upsertError } = await supabaseAdmin.from('users').upsert({
       id: supaUser.id,
       full_name,
       email,
@@ -88,6 +92,16 @@ export async function POST(request: Request) {
       disabled,
       must_change_password: true,
     });
+
+    if (upsertError) {
+      const msg = upsertError.message || '';
+      if (msg.includes('permissions') || msg.includes('disabled')) {
+        return NextResponse.json({
+          error: 'Database missing required columns (permissions/disabled). Run supabase-admin-rls.sql migration.',
+        }, { status: 500 });
+      }
+      return NextResponse.json({ error: msg }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true, tempPassword: password });
   } catch (e: any) {
