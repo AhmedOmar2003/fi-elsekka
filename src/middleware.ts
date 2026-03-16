@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(loginUrl);
     }
 
-    const { isAdmin, role, disabled } = await verifyAdminToken(token);
+    const { isAdmin, role, disabled, permissions } = await verifyAdminToken(token);
 
     if (!isAdmin || disabled) {
         if (isAdminApi) {
@@ -50,7 +50,8 @@ export async function middleware(request: NextRequest) {
     }
 
     // Route-level role gate: staff management only for super_admin
-    if (pathname.startsWith('/admin/staff') && role !== 'super_admin') {
+    const hasManageAdmins = permissions?.includes?.('manage_admins');
+    if (pathname.startsWith('/admin/staff') && !(role === 'super_admin' || role === 'admin' || hasManageAdmins)) {
         if (isAdminApi) {
             return NextResponse.json({ error: 'Forbidden: super admin only' }, { status: 403 });
         }
