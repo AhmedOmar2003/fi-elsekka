@@ -14,7 +14,7 @@ export type Permission =
   | 'manage_settings'
   | 'view_reports';
 
-export function hasPermission(profile: Pick<AdminProfile, 'role' | 'permissions'> | undefined, perm: Permission) {
+export function hasPermission(profile: Pick<AdminProfile, 'role' | 'permissions'> | null | undefined, perm: Permission) {
   if (!profile) return false;
   if (profile.role === 'super_admin' || profile.role === 'admin') return true;
   return Array.isArray(profile.permissions) && profile.permissions.includes(perm);
