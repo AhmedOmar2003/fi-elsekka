@@ -166,8 +166,8 @@ export default function StaffPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ disabled: disable }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "فشل التحديث");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || data?.message || "فشل التحديث");
       toast.success(disable ? "تم تعطيل الحساب" : "تم تفعيل الحساب");
       await loadStaff();
     } catch (e: any) {
@@ -182,9 +182,9 @@ export default function StaffPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "فشل إعادة التهيئة");
-      toast.success(`كلمة مرور مؤقتة: ${data.tempPassword}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || data?.message || "فشل إعادة التهيئة");
+      toast.success(`كلمة مرور مؤقتة: ${data.tempPassword || ''}`);
     } catch (e: any) {
       toast.error(e.message || "خطأ أثناء إعادة التهيئة");
     }
