@@ -85,7 +85,7 @@ export async function POST(request: Request) {
     if (authError || !userCreated?.user) {
       const msg = authError?.message || 'Auth create failed';
       const code = msg.includes('User already registered') ? 409 : 400;
-      return NextResponse.json({ error: msg }, { status: code });
+      return NextResponse.json({ error: msg, stage: 'auth.createUser' }, { status: code });
     }
 
     const supaUser = userCreated.user;
@@ -105,13 +105,14 @@ export async function POST(request: Request) {
       if (msg.includes('permissions') || msg.includes('disabled')) {
         return NextResponse.json({
           error: 'Database missing required columns (permissions/disabled). Run supabase-admin-rls.sql migration.',
+          stage: 'db.upsert',
         }, { status: 500 });
       }
-      return NextResponse.json({ error: msg }, { status: 500 });
+      return NextResponse.json({ error: msg, stage: 'db.upsert' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, tempPassword: password });
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || 'Internal error' }, { status: 500 });
+    return NextResponse.json({ error: e?.message || 'Internal error', stage: 'catch' }, { status: 500 });
   }
 }
