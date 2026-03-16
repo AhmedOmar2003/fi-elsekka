@@ -139,13 +139,18 @@ export default function StaffPage() {
       tempPassword: form.tempPassword || undefined,
     };
     try {
-      const res = await fetch(editing ? `/api/admin/staff/${editing.id}` : "/api/admin/staff", {
-        method: editing ? "PATCH" : "POST",
+      const url = editing ? `/api/admin/staff/${editing.id}` : "/api/admin/staff";
+      const method = editing ? "PATCH" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "فشل الحفظ");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data?.error || data?.message || "فشل الحفظ";
+        throw new Error(msg);
+      }
       toast.success(editing ? "تم تحديث بيانات الموظف" : "تم إضافة موظف جديد");
       setModalOpen(false);
       await loadStaff();
