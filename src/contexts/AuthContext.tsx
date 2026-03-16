@@ -8,7 +8,7 @@ import { getUserProfile, UserProfile } from '@/services/authService';
 interface AuthContextType {
     session: Session | null;
     user: User | null;
-    profile: UserProfile | null;
+    profile: (UserProfile & { permissions?: string[]; disabled?: boolean }) | null;
     isLoading: boolean;
     refreshProfile: () => Promise<void>;
 }
@@ -36,16 +36,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         fetchingProfile.current = true;
         try {
             // Fast path: if auth metadata already contains admin role, avoid hitting RLS
-            if (user?.user_metadata?.role === 'admin') {
+            if (user?.user_metadata?.role) {
                 setProfile({
                     id: user.id,
                     email: user.email || '',
                     full_name: user.user_metadata?.username || user.email || 'Admin',
-                    role: 'admin',
+                    role: user.user_metadata?.role,
+                    permissions: user.user_metadata?.permissions || [],
+                    disabled: user.user_metadata?.disabled || false,
                 });
-            } else {
-                const userProfile = await getUserProfile(userId);
-                setProfile(userProfile);
+            }
+            const userProfile = await getUserProfile(userId);
+            if (userProfile) {
+                setProfile({
+                    ...userProfile,
+                    permissions: userProfile.permissions || user?.user_metadata?.permissions || [],
+                    disabled: userProfile.disabled,
+                });
             }
         } catch (err: unknown) {
             // Silently swallow AbortError — it's a transient lock conflict

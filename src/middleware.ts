@@ -38,14 +38,24 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(loginUrl);
     }
 
-    const { isAdmin } = await verifyAdminToken(token);
+    const { isAdmin, role, disabled } = await verifyAdminToken(token);
 
-    if (!isAdmin) {
+    if (!isAdmin || disabled) {
         if (isAdminApi) {
             return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
         }
         const loginUrl = new URL('/system-access/login', request.url);
         loginUrl.searchParams.set('error', 'unauthorized');
+        return NextResponse.redirect(loginUrl);
+    }
+
+    // Route-level role gate: staff management only for super_admin
+    if (pathname.startsWith('/admin/staff') && role !== 'super_admin') {
+        if (isAdminApi) {
+            return NextResponse.json({ error: 'Forbidden: super admin only' }, { status: 403 });
+        }
+        const loginUrl = new URL('/admin', request.url);
+        loginUrl.searchParams.set('error', 'forbidden');
         return NextResponse.redirect(loginUrl);
     }
 

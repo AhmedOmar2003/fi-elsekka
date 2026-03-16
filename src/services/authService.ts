@@ -5,8 +5,11 @@ export interface UserProfile {
     full_name: string;
     email: string;
     profile_picture?: string;
-    role?: 'admin' | 'user';
+    role?: string;
+    permissions?: string[];
+    disabled?: boolean;
     created_at?: string;
+    last_login_at?: string | null;
 }
 
 export const signUp = async (email: string, password: string, fullName: string) => {

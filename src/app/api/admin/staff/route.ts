@@ -1,0 +1,96 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { requireAdminApi } from '@/lib/admin-guard';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
+
+const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
+
+const DEFAULT_PERMS_FOR_OPS = ['view_orders', 'update_order_status', 'assign_driver', 'view_drivers'];
+
+function randomPassword() {
+  return `Tmp!${Math.random().toString(36).slice(2, 8)}#${Math.floor(100 + Math.random() * 900)}`;
+}
+
+export async function GET(request: Request) {
+  const auth = await requireAdminApi(request, 'manage_admins');
+  if (!auth.ok) return auth.response;
+
+  const { data, error } = await supabaseAdmin
+    .from('users')
+    .select('id, full_name, email, role, permissions, disabled, created_at, last_login_at, username')
+    .in('role', ['super_admin', 'operations_manager', 'catalog_manager', 'support_agent', 'admin'])
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ staff: data });
+}
+
+export async function POST(request: Request) {
+  const auth = await requireAdminApi(request, 'manage_admins');
+  if (!auth.ok) return auth.response;
+
+  try {
+    const body = await request.json();
+    const {
+      full_name,
+      username,
+      email,
+      role,
+      permissions,
+      tempPassword,
+      disabled = false,
+    } = body;
+
+    if (!full_name || !username || !email || !role) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const perms: string[] =
+      permissions && Array.isArray(permissions) && permissions.length > 0
+        ? permissions
+        : role === 'operations_manager'
+          ? DEFAULT_PERMS_FOR_OPS
+          : [];
+
+    const password = tempPassword || randomPassword();
+
+    const { data: userCreated, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        full_name,
+        username,
+        role,
+        permissions: perms,
+      },
+    });
+
+    if (authError || !userCreated?.user) {
+      return NextResponse.json({ error: authError?.message || 'Auth create failed' }, { status: 400 });
+    }
+
+    const supaUser = userCreated.user;
+    await supabaseAdmin.from('users').upsert({
+      id: supaUser.id,
+      full_name,
+      email,
+      username,
+      role,
+      permissions: perms,
+      disabled,
+      must_change_password: true,
+    });
+
+    return NextResponse.json({ success: true, tempPassword: password });
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message || 'Internal error' }, { status: 500 });
+  }
+}

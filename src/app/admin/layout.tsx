@@ -28,22 +28,23 @@ interface Notification {
 
 // ── Nav Items ────────────────────────────────────────────────
 const NAV_ITEMS = [
-    { label: 'لوحة التحكم', href: '/admin', icon: LayoutDashboard },
-    { label: 'الطلبات', href: '/admin/orders', icon: ShoppingCart },
-    { label: 'المندوبين', href: '/admin/drivers', icon: Bike },
-    { label: 'المنتجات', href: '/admin/products', icon: Package },
-    { label: 'الأقسام', href: '/admin/categories', icon: Tag },
-    { label: 'المستخدمون', href: '/admin/users', icon: Users },
-    { label: 'التقييمات', href: '/admin/reviews', icon: MessageSquare },
-    { label: 'العروض الترويجية', href: '/admin/promotions', icon: Megaphone },
-    { label: 'أكواد الخصم', href: '/admin/discounts', icon: Ticket },
+    { label: 'لوحة التحكم', href: '/admin', icon: LayoutDashboard, perm: null },
+    { label: 'الطلبات', href: '/admin/orders', icon: ShoppingCart, perm: 'view_orders' },
+    { label: 'المندوبين', href: '/admin/drivers', icon: Bike, perm: 'view_drivers' },
+    { label: 'المنتجات', href: '/admin/products', icon: Package, perm: 'manage_products' },
+    { label: 'الأقسام', href: '/admin/categories', icon: Tag, perm: 'manage_categories' },
+    { label: 'المستخدمون', href: '/admin/users', icon: Users, perm: 'manage_users' },
+    { label: 'التقييمات', href: '/admin/reviews', icon: MessageSquare, perm: 'view_reports' },
+    { label: 'العروض الترويجية', href: '/admin/promotions', icon: Megaphone, perm: 'manage_offers' },
+    { label: 'أكواد الخصم', href: '/admin/discounts', icon: Ticket, perm: 'manage_discounts' },
+    { label: 'إدارة الطاقم', href: '/admin/staff', icon: ShieldAlert, perm: 'manage_admins', superOnly: true },
 ];
 
 // ── Sidebar ──────────────────────────────────────────────────
 function Sidebar({ onClose }: { onClose?: () => void }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
 
     const handleLogout = async () => {
         await signOut();
@@ -74,7 +75,11 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
 
             {/* Nav */}
             <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-                {NAV_ITEMS.map((item) => {
+                {NAV_ITEMS.filter(item => {
+                    if (item.superOnly && profile?.role !== 'super_admin') return false;
+                    if (item.perm && profile?.role !== 'super_admin' && !profile?.permissions?.includes(item.perm)) return false;
+                    return true;
+                }).map((item) => {
                     const isActive = pathname === item.href;
                     const Icon = item.icon;
                     return (
@@ -397,7 +402,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         );
     }
 
-    if (profile && profile.role !== 'admin') {
+    if (profile && profile.disabled) {
+        return (
+            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+                <div className="w-16 h-16 rounded-full bg-rose-500/20 flex items-center justify-center mb-4">
+                    <span className="text-rose-500 text-2xl">⛔</span>
+                </div>
+                <h1 className="text-2xl font-black text-foreground mb-2">تم تعطيل هذا الحساب</h1>
+                <p className="text-gray-500 text-sm mb-6 text-center max-w-sm">
+                    تواصل مع مشرف النظام لإعادة التفعيل أو الحصول على صلاحية جديدة.
+                </p>
+            </div>
+        );
+    }
+
+    const allowedRoles = ['super_admin', 'admin', 'operations_manager', 'catalog_manager', 'support_agent'];
+    if (profile && !allowedRoles.includes(profile.role || '')) {
         return (
             <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
                 <div className="w-16 h-16 rounded-full bg-rose-500/20 flex items-center justify-center mb-4">
@@ -410,7 +430,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className="bg-surface-hover p-4 rounded-xl border border-surface-hover text-xs text-left w-full max-w-md overflow-x-auto" dir="ltr">
                     <pre className="text-gray-400 font-mono">
 {`UPDATE public.users 
-SET role = 'admin' 
+SET role = 'super_admin' 
 WHERE email = '${user.email}';`}
                     </pre>
                 </div>

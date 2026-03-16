@@ -20,6 +20,14 @@ grant execute on function public.is_admin() to authenticated;
 -- Ensure flag exists for forced password reset.
 alter table public.users
 add column if not exists must_change_password boolean default false;
+alter table public.users
+add column if not exists disabled boolean default false;
+alter table public.users
+add column if not exists permissions jsonb default '[]';
+alter table public.users
+add column if not exists username text;
+alter table public.users
+add column if not exists last_login_at timestamptz;
 
 -- Products
 alter table public.products enable row level security;
@@ -81,8 +89,9 @@ drop policy if exists "users_admin_update_delete" on public.users;
 create policy "users_self_select" on public.users for select using (auth.uid() = id or is_admin());
 create policy "users_self_update" on public.users for update using (auth.uid() = id) with check (auth.uid() = id);
 create policy "users_admin_insert" on public.users for insert with check (is_admin());
-create policy "users_admin_update_delete" on public.users for update using (is_admin()) with check (is_admin());
+create policy "users_admin_update" on public.users for update using (is_admin()) with check (is_admin());
 create policy "users_admin_delete" on public.users for delete using (is_admin());
+create policy "users_admin_disable" on public.users for update using (is_admin()) with check (is_admin());
 
 -- Orders (owners can create/read; admin manages status/cleanup)
 alter table public.orders enable row level security;
