@@ -32,29 +32,8 @@ function LoginClient() {
 
     setIsLoading(true);
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-
-    try {
-      const limiterRes = await fetch('/api/system-access/rate-limit', {
-        method: 'POST',
-        cache: 'no-store',
-        signal: controller.signal,
-      });
-      if (!limiterRes.ok) {
-        setIsLoading(false);
-        toast.error('محاولات كثيرة، حاول بعد دقائق.');
-        return;
-      }
-    } catch (err) {
-      // fail-open but stop spinner so user can retry
-      setIsLoading(false);
-      toast.error('تعذر الاتصال بالخادم، حاول مرة أخرى.');
-      clearTimeout(timeout);
-      return;
-    } finally {
-      clearTimeout(timeout);
-    }
+    // Rate limit now fail-open (server returns ok); keep call for future
+    await fetch('/api/system-access/rate-limit', { method: 'POST', cache: 'no-store' }).catch(() => {});
 
     const { error } = await signIn(email.trim().toLowerCase(), password);
 
