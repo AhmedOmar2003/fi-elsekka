@@ -76,9 +76,15 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
             {/* Nav */}
             <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
                 {NAV_ITEMS.filter(item => {
-                    if (profile?.role === 'super_admin') return true;
+                    const userRole = profile?.role || user?.user_metadata?.role;
+                    const userPerms: string[] = profile?.permissions || user?.user_metadata?.permissions || [];
+
+                    // While profile is loading, keep menu visible
+                    if (!userRole) return true;
+
+                    if (userRole === 'super_admin') return true;
                     if (item.superOnly) return false;
-                    if (item.perm && !profile?.permissions?.includes(item.perm)) return false;
+                    if (item.perm && !userPerms.includes(item.perm)) return false;
                     return true;
                 }).map((item) => {
                     const isActive = pathname === item.href;
