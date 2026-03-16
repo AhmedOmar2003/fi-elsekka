@@ -94,7 +94,7 @@ export async function requireAdminApi(req: Request, requiredPermissions?: string
 
   if (requiredPermissions) {
     const needed = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
-    const hasAll = needed.every((p) => permissions.includes(p) || role === 'super_admin');
+    const hasAll = needed.every((p) => permissions.includes(p) || role === 'super_admin' || role === 'admin');
     if (!hasAll) {
       return {
         ok: false,
