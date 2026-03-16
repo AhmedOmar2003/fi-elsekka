@@ -159,7 +159,11 @@ export default function StaffPage() {
     }
   };
 
-  const handleDisable = async (id: string, disable: boolean) => {
+  const handleDisable = async (id: string | undefined, disable: boolean) => {
+    if (!id) {
+      toast.error("معرّف الموظف مفقود، حاول إعادة تحميل الصفحة");
+      return;
+    }
     try {
       const res = await fetch(`/api/admin/staff/${id}`, {
         method: "PATCH",

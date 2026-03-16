@@ -11,9 +11,20 @@ const supabaseAdmin = supabaseUrl && serviceRoleKey
     })
   : null;
 
+const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
 export async function PATCH(request: NextRequest, context: any) {
   const params = context?.params || {};
-  if (!supabaseAdmin) return NextResponse.json({ error: 'Server misconfigured: missing service role key', stage: 'config' }, { status: 500 });
+  const id = typeof params.id === 'string' ? params.id : undefined;
+
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: 'Server misconfigured: missing service role key', stage: 'config' }, { status: 500 });
+  }
+
+  if (!id || !UUID_REGEX.test(id)) {
+    return NextResponse.json({ error: 'Invalid or missing staff id', stage: 'validate.id' }, { status: 400 });
+  }
+
   const auth = await requireAdminApi(request, 'manage_admins');
   if (!auth.ok) return auth.response;
 
@@ -32,7 +43,7 @@ export async function PATCH(request: NextRequest, context: any) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin.from('users').update(updates).eq('id', params.id);
+    const { error } = await supabaseAdmin.from('users').update(updates).eq('id', id);
     if (error) {
       const msg = error.message || '';
       if (msg.includes('permissions') || msg.includes('disabled') || msg.includes('must_change_password') || msg.includes('username')) {
