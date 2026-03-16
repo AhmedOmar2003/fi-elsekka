@@ -35,8 +35,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (fetchingProfile.current) return;
         fetchingProfile.current = true;
         try {
-            const userProfile = await getUserProfile(userId);
-            setProfile(userProfile);
+            // Fast path: if auth metadata already contains admin role, avoid hitting RLS
+            if (user?.user_metadata?.role === 'admin') {
+                setProfile({
+                    id: user.id,
+                    email: user.email || '',
+                    full_name: user.user_metadata?.username || user.email || 'Admin',
+                    role: 'admin',
+                });
+            } else {
+                const userProfile = await getUserProfile(userId);
+                setProfile(userProfile);
+            }
         } catch (err: unknown) {
             // Silently swallow AbortError — it's a transient lock conflict
             const msg = err instanceof Error ? err.message : String(err);
