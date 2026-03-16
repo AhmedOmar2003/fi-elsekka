@@ -5,12 +5,15 @@ import { requireAdminApi } from '@/lib/admin-guard';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
 
-const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
+const supabaseAdmin = supabaseUrl && serviceRoleKey
+  ? createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+  : null;
 
 export async function PATCH(request: NextRequest, context: any) {
   const params = context?.params || {};
+  if (!supabaseAdmin) return NextResponse.json({ error: 'Server misconfigured: missing service role key', stage: 'config' }, { status: 500 });
   const auth = await requireAdminApi(request, 'manage_admins');
   if (!auth.ok) return auth.response;
 
@@ -31,12 +34,19 @@ export async function PATCH(request: NextRequest, context: any) {
 
     const { error } = await supabaseAdmin.from('users').update(updates).eq('id', params.id);
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      const msg = error.message || '';
+      if (msg.includes('permissions') || msg.includes('disabled') || msg.includes('must_change_password') || msg.includes('username')) {
+        return NextResponse.json({
+          error: 'Database missing required staff columns. Run supabase-admin-rls.sql migration.',
+          stage: 'db.update',
+        }, { status: 500 });
+      }
+      return NextResponse.json({ error: msg, stage: 'db.update' }, { status: 500 });
     }
 
     // Sync auth metadata if role/permissions changed
     if (role !== undefined || permissions !== undefined || full_name !== undefined || username !== undefined) {
-      await supabaseAdmin.auth.admin.updateUserById(params.id, {
+      const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(params.id, {
         user_metadata: {
           ...(role !== undefined ? { role } : {}),
           ...(permissions !== undefined ? { permissions } : {}),
@@ -44,10 +54,13 @@ export async function PATCH(request: NextRequest, context: any) {
           ...(username !== undefined ? { username } : {}),
         },
       });
+      if (authErr) {
+        return NextResponse.json({ error: authErr.message, stage: 'auth.updateUserById' }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || 'Internal error' }, { status: 500 });
+    return NextResponse.json({ error: e?.message || 'Internal error', stage: 'catch' }, { status: 500 });
   }
 }
