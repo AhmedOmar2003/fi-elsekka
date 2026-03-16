@@ -30,6 +30,9 @@ function extractToken(req: Request): string | null {
       return null;
     }
   }
+  // Fallback to explicit cookie we set for middleware
+  const alt = cookie.match(/sb-access-token=([^;]+)/);
+  if (alt) return alt[1];
   return null;
 }
 

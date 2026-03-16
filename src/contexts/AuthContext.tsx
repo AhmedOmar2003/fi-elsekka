@@ -52,6 +52,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (user?.id) await loadProfile(user.id);
     };
 
+    const setAuthCookie = (accessToken?: string | null) => {
+        if (typeof document === 'undefined') return;
+        if (accessToken) {
+            document.cookie = `sb-access-token=${accessToken}; path=/; max-age=3600; SameSite=Lax;${window.location.protocol === 'https:' ? ' Secure' : ''}`;
+        } else {
+            document.cookie = `sb-access-token=; path=/; max-age=0; SameSite=Lax;${window.location.protocol === 'https:' ? ' Secure' : ''}`;
+        }
+    };
+
     useEffect(() => {
         let mounted = true;
 
@@ -68,6 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
                 setSession(initialSession);
                 setUser(initialSession?.user ?? null);
+                setAuthCookie(initialSession?.access_token);
 
                 if (initialSession?.user) {
                     await loadProfile(initialSession.user.id);
@@ -110,6 +120,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     setSession(null);
                     setUser(null);
                     setProfile(null);
+                    setAuthCookie(null);
                     setIsLoading(false);
                     return;
                 }
@@ -117,6 +128,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 // For other events, update state
                 setSession(newSession);
                 setUser(newSession?.user ?? null);
+                setAuthCookie(newSession?.access_token);
 
                 if (newSession?.user) {
                      // Don't block UI for profile updates on subsequent events

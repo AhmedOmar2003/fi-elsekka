@@ -36,6 +36,9 @@ export const signOut = async () => {
     if (typeof window !== 'undefined') {
         localStorage.removeItem('guestCart');
     }
+    if (typeof document !== 'undefined') {
+        document.cookie = `sb-access-token=; path=/; max-age=0; SameSite=Lax;${window.location.protocol === 'https:' ? ' Secure' : ''}`;
+    }
     
     // Attempt to sign out on the server
     const { error } = await supabase.auth.signOut();

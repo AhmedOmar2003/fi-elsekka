@@ -45,9 +45,11 @@ function LoginClient() {
     }
 
     // Force-load session to ensure cookies/localStorage are set before redirect
-    await supabase.auth.getSession();
+    const { data } = await supabase.auth.getSession();
+    if (data?.session?.access_token) {
+      document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=3600; SameSite=Lax;${window.location.protocol === 'https:' ? ' Secure' : ''}`;
+    }
     if (process.env.NODE_ENV === 'development') {
-      const { data } = await supabase.auth.getSession();
       console.debug('[auth] post-login session', data?.session ? 'present' : 'missing');
     }
 
