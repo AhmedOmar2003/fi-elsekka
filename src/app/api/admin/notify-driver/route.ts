@@ -20,7 +20,8 @@ if (publicVapidKey && privateVapidKey) {
 }
 
 export async function POST(request: Request) {
-    const auth = await requireAdminApi(request);
+    // Assigning a driver or notifying them requires assign_driver permission
+    const auth = await requireAdminApi(request, 'assign_driver');
     if (!auth.ok) return auth.response;
 
     try {

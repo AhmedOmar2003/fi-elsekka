@@ -6,7 +6,8 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || ''; // Must be added to .env.local
 
 export async function POST(request: Request) {
-    const auth = await requireAdminApi(request);
+    // Only admins / staff with assign_driver permission can create drivers
+    const auth = await requireAdminApi(request, 'assign_driver');
     if (!auth.ok) return auth.response;
 
     try {

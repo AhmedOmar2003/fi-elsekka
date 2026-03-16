@@ -2,10 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchAdminStats, fetchRecentOrders, broadcastOfferNotification } from '@/services/adminService';
 import { Users, Package, ShoppingCart, TrendingUp, ArrowLeft, Clock, ChevronRight, BellRing, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { hasPermission } from '@/lib/permissions';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
     pending: { label: 'في الانتظار', color: 'text-amber-400  bg-amber-400/10' },
@@ -17,7 +19,8 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 export default function AdminPage() {
     const [stats, setStats] = useState({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalRevenue: 0 });
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
-    const { user, isLoading: isAuthLoading } = useAuth();
+    const { user, profile, isLoading: isAuthLoading } = useAuth();
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [isBroadcasting, setIsBroadcasting] = useState(false);
 
@@ -28,13 +31,28 @@ export default function AdminPage() {
             return;
         }
 
+        const hasFullAdmin =
+            hasPermission(profile, 'manage_admins') ||
+            hasPermission(profile, 'manage_users') ||
+            hasPermission(profile, 'manage_products') ||
+            hasPermission(profile, 'manage_categories') ||
+            hasPermission(profile, 'manage_offers') ||
+            hasPermission(profile, 'manage_discounts') ||
+            hasPermission(profile, 'manage_settings') ||
+            hasPermission(profile, 'view_reports');
+
+        if (!hasFullAdmin) {
+            router.replace('/admin/orders');
+            return;
+        }
+
         setIsLoading(true);
         Promise.all([fetchAdminStats(), fetchRecentOrders(6)]).then(([s, o]) => {
             setStats(s);
             setRecentOrders(o);
             setIsLoading(false);
         });
-    }, [user, isAuthLoading]);
+    }, [user, profile, isAuthLoading, router]);
 
     const METRIC_CARDS = [
         { label: 'المستخدمون', value: stats.totalUsers, icon: Users, color: 'text-violet-400', bg: 'bg-violet-400/10', href: '/admin/users' },

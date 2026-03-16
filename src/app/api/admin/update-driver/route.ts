@@ -6,7 +6,8 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
 
 export async function POST(request: Request) {
-    const auth = await requireAdminApi(request);
+    // Updating drivers should be limited to assign_driver-capable staff
+    const auth = await requireAdminApi(request, 'assign_driver');
     if (!auth.ok) return auth.response;
 
     try {

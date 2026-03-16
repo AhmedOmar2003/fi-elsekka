@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extractAccessToken, verifyAdminToken } from './lib/admin-guard';
+import { requiredPermissionForPath } from './lib/permissions';
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -49,8 +50,10 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(loginUrl);
     }
 
-    // Route-level role gate: staff management only for super_admin
+    const requiredPerm = requiredPermissionForPath(pathname);
     const hasManageAdmins = permissions?.includes?.('manage_admins');
+
+    // Staff page needs manage_admins (or admin/super_admin)
     if (pathname.startsWith('/admin/staff') && !(role === 'super_admin' || role === 'admin' || hasManageAdmins)) {
         if (isAdminApi) {
             return NextResponse.json({ error: 'Forbidden: super admin only' }, { status: 403 });
@@ -58,6 +61,24 @@ export async function middleware(request: NextRequest) {
         const loginUrl = new URL('/admin', request.url);
         loginUrl.searchParams.set('error', 'forbidden');
         return NextResponse.redirect(loginUrl);
+    }
+
+    // Per-route permission guard
+    if (requiredPerm && !(role === 'super_admin' || role === 'admin' || permissions?.includes(requiredPerm))) {
+        if (isAdminApi) {
+            return NextResponse.json({ error: 'Forbidden: insufficient permissions' }, { status: 403 });
+        }
+        const redirectUrl = pathname.startsWith('/admin') ? new URL('/admin/orders', request.url) : new URL('/system-access/login', request.url);
+        redirectUrl.searchParams.set('error', 'forbidden');
+        return NextResponse.redirect(redirectUrl);
+    }
+
+    // If a restricted operator hits /admin root, sendهم للطلبات
+    const hasFullAdmin = role === 'super_admin' || role === 'admin' || permissions?.some(p =>
+        ['manage_admins','manage_users','manage_products','manage_categories','manage_offers','manage_discounts','manage_settings','view_reports'].includes(p)
+    );
+    if (pathname === '/admin' && !hasFullAdmin) {
+        return NextResponse.redirect(new URL('/admin/orders', request.url));
     }
 
     // Admin verified — pass through

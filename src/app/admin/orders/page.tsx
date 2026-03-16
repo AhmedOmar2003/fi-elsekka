@@ -1,10 +1,13 @@
 "use client"
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { fetchAdminOrders, fetchOrderDetails, updateOrderStatus, updateOrderEstimation, updateOrderDriver } from '@/services/adminService';
 import { ShoppingCart, ChevronDown, X, Package, Download, Filter, Bike } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { hasPermission } from '@/lib/permissions';
 
 const STATUSES = [
     { value: 'pending', label: 'في الانتظار', color: 'text-amber-400  bg-amber-400/10  border-amber-400/20' },
@@ -53,6 +56,13 @@ function exportToCSV(orders: any[], statusFilter: string) {
 }
 
 export default function AdminOrdersPage() {
+    const router = useRouter();
+    const { profile, isLoading: authLoading } = useAuth();
+    const canViewOrders = hasPermission(profile, 'view_orders');
+    const canUpdateStatus = hasPermission(profile, 'update_order_status');
+    const canAssignDriver = hasPermission(profile, 'assign_driver');
+    const canViewDrivers = hasPermission(profile, 'view_drivers') || canAssignDriver;
+
     const [orders, setOrders] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -75,14 +85,21 @@ export default function AdminOrdersPage() {
         const data = await fetchAdminOrders();
         setOrders(data);
         
-        // Fetch drivers
-        const { data: driversData } = await supabase.from('users').select('*').eq('role', 'driver');
-        if (driversData) setDrivers(driversData);
+        // Fetch drivers only if the viewer has driver-related permissions
+        if (canViewDrivers) {
+            const { data: driversData } = await supabase.from('users').select('*').eq('role', 'driver');
+            if (driversData) setDrivers(driversData);
+        }
         
         setIsLoading(false);
     };
 
     useEffect(() => { 
+        if (authLoading) return;
+        if (!canViewOrders) {
+            router.replace('/admin?error=forbidden');
+            return;
+        }
         load(); 
         
         // Listen for real-time driver acceptance/rejection and delivery updates
@@ -116,7 +133,7 @@ export default function AdminOrdersPage() {
             .subscribe();
 
         return () => { supabase.removeChannel(channel); };
-    }, []);
+    }, [authLoading, canViewOrders, canViewDrivers, router]);
 
     const handleViewOrder = async (order: any) => {
         setSelectedOrder(order);
@@ -134,6 +151,7 @@ export default function AdminOrdersPage() {
     };
 
     const handleStatusChange = async (orderId: string, newStatus: string) => {
+        if (!canUpdateStatus) return;
         await updateOrderStatus(orderId, newStatus);
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
         if (selectedOrder?.id === orderId) {
@@ -171,6 +189,7 @@ export default function AdminOrdersPage() {
     };
 
     const handleAssignDriver = async (driverId: string) => {
+        if (!canAssignDriver) return;
         if (!selectedOrder) return;
         setIsAssigningDriver(true);
         setSelectedDriverId(driverId);
@@ -382,7 +401,8 @@ export default function AdminOrdersPage() {
                                     <select
                                         value={selectedOrder.status}
                                         onChange={e => handleStatusChange(selectedOrder.id, e.target.value)}
-                                        className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                        disabled={!canUpdateStatus}
+                                        className={`w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 ${!canUpdateStatus ? 'opacity-60 cursor-not-allowed' : ''}`}
                                     >
                                         {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                                     </select>
@@ -393,8 +413,8 @@ export default function AdminOrdersPage() {
                                         <select
                                             value={selectedDriverId}
                                             onChange={e => handleAssignDriver(e.target.value)}
-                                            disabled={isAssigningDriver}
-                                            className={`w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary/50 ${selectedDriverId ? 'text-primary font-bold' : 'text-foreground'}`}
+                                            disabled={isAssigningDriver || !canAssignDriver}
+                                            className={`w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary/50 ${selectedDriverId ? 'text-primary font-bold' : 'text-foreground'} ${(!canAssignDriver || isAssigningDriver) ? 'opacity-60 cursor-not-allowed' : ''}`}
                                         >
                                             <option value="">بدون مندوب</option>
                                             {drivers.map(d => {
