@@ -27,8 +27,8 @@ drop policy if exists "products_insert_admin_only" on public.products;
 drop policy if exists "products_update_admin_only" on public.products;
 drop policy if exists "products_delete_admin_only" on public.products;
 create policy "products_select_public" on public.products for select using (true);
-create policy "products_insert_admin_only" on public.products for insert using (is_admin());
-create policy "products_update_admin_only" on public.products for update using (is_admin());
+create policy "products_insert_admin_only" on public.products for insert with check (is_admin());
+create policy "products_update_admin_only" on public.products for update using (is_admin()) with check (is_admin());
 create policy "products_delete_admin_only" on public.products for delete using (is_admin());
 
 -- Categories
@@ -37,8 +37,8 @@ drop policy if exists "categories_admin_ins" on public.categories;
 drop policy if exists "categories_admin_upd" on public.categories;
 drop policy if exists "categories_admin_del" on public.categories;
 create policy "categories_select_public" on public.categories for select using (true);
-create policy "categories_admin_ins" on public.categories for insert using (is_admin());
-create policy "categories_admin_upd" on public.categories for update using (is_admin());
+create policy "categories_admin_ins" on public.categories for insert with check (is_admin());
+create policy "categories_admin_upd" on public.categories for update using (is_admin()) with check (is_admin());
 create policy "categories_admin_del" on public.categories for delete using (is_admin());
 
 -- Promotions
@@ -47,8 +47,8 @@ drop policy if exists "promotions_admin_ins" on public.promotions;
 drop policy if exists "promotions_admin_upd" on public.promotions;
 drop policy if exists "promotions_admin_del" on public.promotions;
 create policy "promotions_select_public" on public.promotions for select using (true);
-create policy "promotions_admin_ins" on public.promotions for insert using (is_admin());
-create policy "promotions_admin_upd" on public.promotions for update using (is_admin());
+create policy "promotions_admin_ins" on public.promotions for insert with check (is_admin());
+create policy "promotions_admin_upd" on public.promotions for update using (is_admin()) with check (is_admin());
 create policy "promotions_admin_del" on public.promotions for delete using (is_admin());
 
 -- Discount codes
@@ -57,8 +57,8 @@ drop policy if exists "discounts_admin_ins" on public.discount_codes;
 drop policy if exists "discounts_admin_upd" on public.discount_codes;
 drop policy if exists "discounts_admin_del" on public.discount_codes;
 create policy "discounts_select_public" on public.discount_codes for select using (true);
-create policy "discounts_admin_ins" on public.discount_codes for insert using (is_admin());
-create policy "discounts_admin_upd" on public.discount_codes for update using (is_admin());
+create policy "discounts_admin_ins" on public.discount_codes for insert with check (is_admin());
+create policy "discounts_admin_upd" on public.discount_codes for update using (is_admin()) with check (is_admin());
 create policy "discounts_admin_del" on public.discount_codes for delete using (is_admin());
 
 -- Product specifications
@@ -67,8 +67,8 @@ drop policy if exists "specs_admin_ins" on public.product_specifications;
 drop policy if exists "specs_admin_upd" on public.product_specifications;
 drop policy if exists "specs_admin_del" on public.product_specifications;
 create policy "specs_select_public" on public.product_specifications for select using (true);
-create policy "specs_admin_ins" on public.product_specifications for insert using (is_admin());
-create policy "specs_admin_upd" on public.product_specifications for update using (is_admin());
+create policy "specs_admin_ins" on public.product_specifications for insert with check (is_admin());
+create policy "specs_admin_upd" on public.product_specifications for update using (is_admin()) with check (is_admin());
 create policy "specs_admin_del" on public.product_specifications for delete using (is_admin());
 
 -- Users table (self-manage allowed, admin full control)
@@ -76,9 +76,13 @@ alter table public.users enable row level security;
 drop policy if exists "users_self_select" on public.users;
 drop policy if exists "users_self_update" on public.users;
 drop policy if exists "users_admin_all" on public.users;
+drop policy if exists "users_admin_insert" on public.users;
+drop policy if exists "users_admin_update_delete" on public.users;
 create policy "users_self_select" on public.users for select using (auth.uid() = id or is_admin());
-create policy "users_self_update" on public.users for update using (auth.uid() = id);
-create policy "users_admin_all" on public.users for all using (is_admin());
+create policy "users_self_update" on public.users for update using (auth.uid() = id) with check (auth.uid() = id);
+create policy "users_admin_insert" on public.users for insert with check (is_admin());
+create policy "users_admin_update_delete" on public.users for update using (is_admin()) with check (is_admin());
+create policy "users_admin_delete" on public.users for delete using (is_admin());
 
 -- Orders (owners can create/read; admin manages status/cleanup)
 alter table public.orders enable row level security;
@@ -95,4 +99,4 @@ alter table public.notifications enable row level security;
 drop policy if exists "notifications_select_owner" on public.notifications;
 drop policy if exists "notifications_admin_insert" on public.notifications;
 create policy "notifications_select_owner" on public.notifications for select using (auth.uid() = user_id);
-create policy "notifications_admin_insert" on public.notifications for insert using (is_admin());
+create policy "notifications_admin_insert" on public.notifications for insert with check (is_admin());
