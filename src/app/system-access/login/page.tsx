@@ -1,5 +1,8 @@
 "use client"
 
+// Force dynamic render to avoid static prerender errors during build
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn, signOut } from '@/services/authService';
