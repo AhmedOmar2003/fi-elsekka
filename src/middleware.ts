@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(loginUrl);
     }
 
-    const { isAdmin, mustChangePassword } = await verifyAdminToken(token);
+    const { isAdmin } = await verifyAdminToken(token);
 
     if (!isAdmin) {
         if (isAdminApi) {
@@ -47,12 +47,6 @@ export async function middleware(request: NextRequest) {
         const loginUrl = new URL('/system-access/login', request.url);
         loginUrl.searchParams.set('error', 'unauthorized');
         return NextResponse.redirect(loginUrl);
-    }
-
-    if (mustChangePassword && !pathname.startsWith('/update-password')) {
-        const resetUrl = new URL('/update-password', request.url);
-        resetUrl.searchParams.set('reason', 'force-reset');
-        return NextResponse.redirect(resetUrl);
     }
 
     // Admin verified — pass through

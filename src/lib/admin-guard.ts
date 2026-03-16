@@ -15,7 +15,7 @@ const supabaseAdmin = supabaseUrl && serviceRoleKey
   : null;
 
 export type AdminCheck =
-  | { ok: true; user: User; mustChangePassword: boolean }
+  | { ok: true; user: User }
   | { ok: false; response: NextResponse };
 
 function extractToken(req: Request): string | null {
@@ -50,17 +50,13 @@ async function fetchUser(token: string) {
   // Cross-check public.users.role for certainty
   const { data: profile } = await supabaseAdmin
     .from('users')
-    .select('role, must_change_password')
+    .select('role')
     .eq('id', user.id)
     .single();
 
   const profileRole = profile?.role;
-  const mustChangePassword =
-    user.user_metadata?.must_change_password === true ||
-    profile?.must_change_password === true;
-
   const isAdmin = metaRole === 'admin' || profileRole === 'admin';
-  return { user, isAdmin, mustChangePassword };
+  return { user, isAdmin };
 }
 
 export async function requireAdminApi(req: Request): Promise<AdminCheck> {
@@ -72,7 +68,7 @@ export async function requireAdminApi(req: Request): Promise<AdminCheck> {
     };
   }
 
-  const { user, isAdmin, mustChangePassword } = await fetchUser(token);
+  const { user, isAdmin } = await fetchUser(token);
   if (!user || !isAdmin) {
     return {
       ok: false,
@@ -83,17 +79,7 @@ export async function requireAdminApi(req: Request): Promise<AdminCheck> {
     };
   }
 
-  if (mustChangePassword) {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { error: 'Password change required' },
-        { status: 403, headers: { 'x-require-password-reset': 'true' } }
-      ),
-    };
-  }
-
-  return { ok: true, user, mustChangePassword };
+  return { ok: true, user };
 }
 
 export async function verifyAdminToken(token: string) {
