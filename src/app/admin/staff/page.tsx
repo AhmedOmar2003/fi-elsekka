@@ -43,7 +43,7 @@ const PERMISSION_OPTIONS = [
 ];
 
 export default function StaffPage() {
-  const { profile } = useAuth();
+  const { profile, isLoading } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -60,15 +60,18 @@ export default function StaffPage() {
   });
 
   useEffect(() => {
-    if (!profile) return;
-    if (profile.role !== "super_admin") {
+    if (isLoading) return;
+    const role = profile?.role;
+    const perms = profile?.permissions || [];
+    const allowed = role === "super_admin" || role === "admin" || perms.includes("manage_admins");
+    if (!allowed) {
       router.replace("/admin");
       return;
     }
     (async () => {
       await loadStaff();
     })();
-  }, [profile, router]);
+  }, [profile, isLoading, router]);
 
   const loadStaff = async () => {
     setLoading(true);
