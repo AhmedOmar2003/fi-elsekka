@@ -76,8 +76,9 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
             {/* Nav */}
             <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
                 {NAV_ITEMS.filter(item => {
-                    if (item.superOnly && profile?.role !== 'super_admin') return false;
-                    if (item.perm && profile?.role !== 'super_admin' && !profile?.permissions?.includes(item.perm)) return false;
+                    if (profile?.role === 'super_admin') return true;
+                    if (item.superOnly) return false;
+                    if (item.perm && !profile?.permissions?.includes(item.perm)) return false;
                     return true;
                 }).map((item) => {
                     const isActive = pathname === item.href;
