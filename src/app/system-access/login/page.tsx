@@ -32,15 +32,29 @@ function LoginClient() {
 
     setIsLoading(true);
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
     try {
-      const limiterRes = await fetch('/api/system-access/rate-limit', { method: 'POST' });
+      const limiterRes = await fetch('/api/system-access/rate-limit', {
+        method: 'POST',
+        cache: 'no-store',
+        signal: controller.signal,
+      });
       if (!limiterRes.ok) {
         setIsLoading(false);
         toast.error('محاولات كثيرة، حاول بعد دقائق.');
         return;
       }
-    } catch {
-      /* fail open */ }
+    } catch (err) {
+      // fail-open but stop spinner so user can retry
+      setIsLoading(false);
+      toast.error('تعذر الاتصال بالخادم، حاول مرة أخرى.');
+      clearTimeout(timeout);
+      return;
+    } finally {
+      clearTimeout(timeout);
+    }
 
     const { error } = await signIn(email.trim().toLowerCase(), password);
 
@@ -50,6 +64,7 @@ function LoginClient() {
       return;
     }
 
+    setIsLoading(false);
     router.replace(redirect);
   };
 
