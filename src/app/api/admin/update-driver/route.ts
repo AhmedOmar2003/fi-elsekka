@@ -1,10 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { requireAdminApi } from '@/lib/admin-guard';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
 
 export async function POST(request: Request) {
+    const auth = await requireAdminApi(request);
+    if (!auth.ok) return auth.response;
+
     try {
         if (!serviceRoleKey || !supabaseUrl) {
             return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });

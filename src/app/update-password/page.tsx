@@ -97,6 +97,14 @@ function UpdatePasswordContent() {
       return
     }
 
+    // Clear forced-reset flags for the current user
+    const { data: userData } = await supabase.auth.getUser()
+    const userId = userData.user?.id
+    if (userId) {
+      await supabase.auth.updateUser({ data: { must_change_password: false } })
+      await supabase.from('users').update({ must_change_password: false }).eq('id', userId)
+    }
+
     setStatus('success')
     toast.success("تم تحديث كلمة المرور!", { description: "سجل دخولك بكلمة المرور الجديدة." })
     

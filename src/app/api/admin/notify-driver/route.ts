@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { requireAdminApi } from '@/lib/admin-guard';
 import webpush from 'web-push';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -19,6 +20,9 @@ if (publicVapidKey && privateVapidKey) {
 }
 
 export async function POST(request: Request) {
+    const auth = await requireAdminApi(request);
+    if (!auth.ok) return auth.response;
+
     try {
         if (!publicVapidKey || !privateVapidKey) {
             return NextResponse.json({ error: 'Server missing VAPID keys for push notifications' }, { status: 500 });

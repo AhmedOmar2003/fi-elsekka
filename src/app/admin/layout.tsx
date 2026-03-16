@@ -379,32 +379,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    const isLoginPage = pathname === '/admin/login';
-
     useEffect(() => {
         if (!isLoading) {
-            if (!user && !isLoginPage) {
-                router.replace('/admin/login');
-            } else if (user && isLoginPage) {
-                router.replace('/admin');
+            if (!user) {
+                const dest = encodeURIComponent(pathname || '/admin');
+                router.replace(`/system-access/login?redirect=${dest}`);
             }
         }
-    }, [user, isLoading, router, isLoginPage]);
+    }, [user, isLoading, router, pathname]);
 
     // Don't render anything if we're not loaded or if a redirect is imminent
-    if (isLoading || (!user && !isLoginPage)) {
+    if (isLoading || !user) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
             </div>
         );
     }
-
-    if (isLoginPage) {
-        return <div className="min-h-screen bg-background">{children}</div>;
-    }
-
-    if (!user) return null;
 
     if (profile && profile.role !== 'admin') {
         return (
