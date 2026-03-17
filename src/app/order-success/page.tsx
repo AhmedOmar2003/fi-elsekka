@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { ShoppingBag, Phone, Timer, XCircle, CheckCircle2 } from "lucide-react"
-import { updateOrderStatus, confirmOrderGracePeriod } from "@/services/ordersService"
+import { cancelOrderByCustomer, confirmOrderGracePeriod } from "@/services/ordersService"
 import { toast } from "sonner"
 
 function MotorcycleIcon({ className }: { className?: string }) {
@@ -121,7 +121,7 @@ function OrderSuccessContent() {
     if (!orderId) return
     setIsCancelling(true)
     
-    const { error } = await updateOrderStatus(orderId, 'cancelled')
+    const { error } = await cancelOrderByCustomer(orderId, 'grace_period')
     
     setIsCancelling(false)
     

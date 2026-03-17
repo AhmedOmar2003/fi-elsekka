@@ -23,6 +23,7 @@ export interface OrderItem {
 }
 
 export type CancelledOrderDecision = 'insist' | 'confirm_cancel';
+type CustomerCancelOrigin = 'grace_period' | 'account';
 
 export const createOrder = async (
     userId: string,
@@ -115,6 +116,42 @@ export const updateOrderStatus = async (orderId: string, status: string) => {
     const { data, error } = await supabase
         .from('orders')
         .update({ status })
+        .eq('id', orderId)
+        .select()
+        .single();
+
+    return { data, error };
+};
+
+export const cancelOrderByCustomer = async (orderId: string, origin: CustomerCancelOrigin = 'grace_period') => {
+    const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('shipping_address')
+        .eq('id', orderId)
+        .single();
+
+    if (orderError || !order) {
+        return { data: null, error: orderError || new Error("Order not found") };
+    }
+
+    const currentShipping = order.shipping_address || {};
+    const now = new Date().toISOString();
+    const duringGracePeriod = currentShipping.is_grace_period === true;
+    const nextShipping = {
+        ...currentShipping,
+        customer_cancelled_order: true,
+        customer_cancelled_during_grace_period: duringGracePeriod,
+        customer_cancel_origin: origin,
+        customer_cancelled_at: now,
+        customer_cancelled_reason: duringGracePeriod ? 'cancelled_by_customer_within_grace_period' : 'cancelled_by_customer',
+    };
+
+    const { data, error } = await supabase
+        .from('orders')
+        .update({
+            status: 'cancelled',
+            shipping_address: nextShipping,
+        })
         .eq('id', orderId)
         .select()
         .single();

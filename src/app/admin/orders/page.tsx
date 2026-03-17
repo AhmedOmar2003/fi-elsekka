@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { cancelAdminOrder, fetchAdminOrders, fetchOrderDetails, reopenCancelledOrderAfterCustomerRequest, saveAdminOrderDeliveryPlan, saveAdminOrderEconomics, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
+import { cancelAdminOrder, fetchAdminOrders, fetchOrderDetails, isCustomerSelfCancelledGraceOrder, reopenCancelledOrderAfterCustomerRequest, saveAdminOrderDeliveryPlan, saveAdminOrderEconomics, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
 import { ShoppingCart, ChevronDown, X, Package, Download, Filter, Bike, Clock, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
@@ -152,28 +152,35 @@ export default function AdminOrdersPage() {
                 });
             })
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload: any) => {
-                setOrders(prev =>
-                    prev.map(order =>
-                        order.id === payload.new.id
+                const updatedOrder = payload.new;
+                const shouldHideFromAdmin = isCustomerSelfCancelledGraceOrder(updatedOrder);
+
+                setOrders(prev => {
+                    if (shouldHideFromAdmin) {
+                        return prev.filter(order => order.id !== updatedOrder.id);
+                    }
+
+                    return prev.map(order =>
+                        order.id === updatedOrder.id
                             ? {
                                 ...order,
-                                status: payload.new.status,
-                                total_amount: payload.new.total_amount,
-                                shipping_address: payload.new.shipping_address ?? order.shipping_address,
+                                status: updatedOrder.status,
+                                total_amount: updatedOrder.total_amount,
+                                shipping_address: updatedOrder.shipping_address ?? order.shipping_address,
                             }
                             : order
-                    )
-                );
-                setSelectedOrder((prev: any) =>
-                    prev?.id === payload.new.id
-                        ? {
-                            ...prev,
-                            status: payload.new.status,
-                            total_amount: payload.new.total_amount,
-                            shipping_address: payload.new.shipping_address ?? prev.shipping_address,
-                        }
-                        : prev
-                );
+                    );
+                });
+                setSelectedOrder((prev: any) => {
+                    if (prev?.id !== updatedOrder.id) return prev;
+                    if (shouldHideFromAdmin) return null;
+                    return {
+                        ...prev,
+                        status: updatedOrder.status,
+                        total_amount: updatedOrder.total_amount,
+                        shipping_address: updatedOrder.shipping_address ?? prev.shipping_address,
+                    };
+                });
             })
             .subscribe();
 

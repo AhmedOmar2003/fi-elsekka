@@ -58,16 +58,19 @@ export async function fetchAdminStats() {
     const [usersRes, productsRes, ordersRes, revenueRes] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }),
         supabase.from('products').select('id', { count: 'exact', head: true }),
-        supabase.from('orders').select('id', { count: 'exact', head: true }),
-        supabase.from('orders').select('total_amount, shipping_address').eq('status', 'delivered'),
+        supabase.from('orders').select('id, status, shipping_address'),
+        supabase.from('orders').select('total_amount, shipping_address, status').eq('status', 'delivered'),
     ]);
 
-    const totalRevenue = revenueRes.data?.reduce((sum, order) => sum + getOrderEconomics(order).platformRevenue, 0) || 0;
+    const visibleOrders = (ordersRes.data || []).filter((order) => !isCustomerSelfCancelledGraceOrder(order));
+    const totalRevenue = (revenueRes.data || [])
+        .filter((order) => !isCustomerSelfCancelledGraceOrder(order))
+        .reduce((sum, order) => sum + getOrderEconomics(order).platformRevenue, 0);
 
     return {
         totalUsers: usersRes.count || 0,
         totalProducts: productsRes.count || 0,
-        totalOrders: ordersRes.count || 0,
+        totalOrders: visibleOrders.length,
         totalRevenue,
     };
 }
@@ -75,11 +78,11 @@ export async function fetchAdminStats() {
 export async function fetchRecentOrders(limit = 5) {
     const { data, error } = await supabase
         .from('orders')
-        .select('id, total_amount, status, created_at, user_id, users(full_name, email)')
+        .select('id, total_amount, status, created_at, user_id, shipping_address, users(full_name, email)')
         .order('created_at', { ascending: false })
-        .limit(limit);
+        .limit(limit * 4);
     if (error) logError('fetchRecentOrders', error);
-    return data || [];
+    return (data || []).filter((order) => !isCustomerSelfCancelledGraceOrder(order)).slice(0, limit);
 }
 
 export type AdminOverview = {
@@ -243,6 +246,18 @@ function isOrderOverdue(order: any) {
     return Date.now() > deadline + ORDER_LATE_BUFFER_MS;
 }
 
+export function isCustomerSelfCancelledGraceOrder(order: any) {
+    if (order?.status !== 'cancelled') return false;
+    const shipping = order?.shipping_address || {};
+    return (
+        shipping.customer_cancelled_during_grace_period === true ||
+        (
+            shipping.customer_cancelled_order === true &&
+            (shipping.customer_cancel_origin === 'grace_period' || shipping.is_grace_period === true)
+        )
+    );
+}
+
 export async function fetchAdminOverview(): Promise<AdminOverview> {
     const [ordersRes, usersRes, productsRes] = await Promise.all([
         supabase.from('orders').select('id, status, created_at, total_amount, shipping_address'),
@@ -254,7 +269,7 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
     if (usersRes.error) logError('fetchAdminOverview.users', usersRes.error);
     if (productsRes.error) logError('fetchAdminOverview.products', productsRes.error);
 
-    const orders = ordersRes.data || [];
+    const orders = (ordersRes.data || []).filter(order => !isCustomerSelfCancelledGraceOrder(order));
     const users = usersRes.data || [];
     const products = productsRes.data || [];
 
@@ -446,6 +461,7 @@ export async function fetchAdminSearchResults(query: string): Promise<AdminSearc
         .slice(0, 8);
 
     const orders = (ordersRes.data || [])
+        .filter((order) => !isCustomerSelfCancelledGraceOrder(order))
         .filter((order) => {
             const user = relationUser(order);
             const haystacks = [
@@ -514,7 +530,7 @@ export async function fetchOperationsCenterData(): Promise<OperationsCenterData>
     }
 
     const now = Date.now();
-    const orders = data || [];
+    const orders = (data || []).filter((order) => !isCustomerSelfCancelledGraceOrder(order));
     const activeStatuses = ['pending', 'processing', 'shipped'];
 
     const pendingWithoutDriver = orders.filter((order) =>
@@ -751,7 +767,7 @@ export async function fetchAdminOrders() {
         `)
         .order('created_at', { ascending: false });
     if (error) logError('fetchAdminOrders', error);
-    return data || [];
+    return (data || []).filter((order) => !isCustomerSelfCancelledGraceOrder(order));
 }
 
 export async function fetchOrderDetails(orderId: string) {

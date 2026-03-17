@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { ProductCard } from "@/components/ui/product-card"
 import { useAuth } from "@/contexts/AuthContext"
 import { useFavorites } from "@/contexts/FavoritesContext"
-import { fetchUserOrders, updateOrderStatus, updateUserProfile, Order } from "@/services/ordersService"
+import { cancelOrderByCustomer, fetchUserOrders, updateUserProfile, Order } from "@/services/ordersService"
 import { fetchUserFavorites } from "@/services/favoritesService"
 import { fetchUserDeliveryAddresses, saveDeliveryAddress, updateDeliveryAddress, deleteDeliveryAddress, setDefaultDeliveryAddress, DeliveryInfo } from "@/services/deliveryService"
 import { Product } from "@/services/productsService"
@@ -165,9 +165,18 @@ export default function AccountPage() {
     }
 
     const handleCancelOrder = async (orderId: string) => {
-        const { error } = await updateOrderStatus(orderId, 'cancelled')
+        const { error } = await cancelOrderByCustomer(orderId, 'account')
         if (!error) {
-            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'cancelled' } : o))
+            setOrders(prev => prev.map(o => o.id === orderId ? {
+                ...o,
+                status: 'cancelled',
+                shipping_address: {
+                    ...(o.shipping_address || {}),
+                    customer_cancelled_order: true,
+                    customer_cancel_origin: 'account',
+                    customer_cancelled_at: new Date().toISOString(),
+                },
+            } : o))
         }
     }
 
