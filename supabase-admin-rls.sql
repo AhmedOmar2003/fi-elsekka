@@ -106,6 +106,10 @@ create policy "orders_admin_delete" on public.orders for delete using (is_admin(
 -- Notifications table: admin can insert (broadcasts), users can select their own
 alter table public.notifications enable row level security;
 drop policy if exists "notifications_select_owner" on public.notifications;
+drop policy if exists "notifications_owner_update" on public.notifications;
+drop policy if exists "notifications_owner_delete" on public.notifications;
 drop policy if exists "notifications_admin_insert" on public.notifications;
 create policy "notifications_select_owner" on public.notifications for select using (auth.uid() = user_id);
+create policy "notifications_owner_update" on public.notifications for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "notifications_owner_delete" on public.notifications for delete using (auth.uid() = user_id);
 create policy "notifications_admin_insert" on public.notifications for insert with check (is_admin());

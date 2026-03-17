@@ -10,6 +10,10 @@ export interface AppNotification {
     created_at: string;
 }
 
+const logNotificationMutationFailure = (action: string, details: Record<string, unknown>) => {
+    console.error(`[notifications] ${action} failed`, details);
+};
+
 /**
  * Fetches the most recent notifications for the logged-in user.
  */
@@ -35,14 +39,39 @@ export const fetchUserNotifications = async (userId: string, limit = 20): Promis
  * Marks a specific notification as read.
  */
 export const markNotificationAsRead = async (notificationId: string, userId: string): Promise<boolean> => {
-    const { error } = await supabase
+    if (!notificationId || !userId) return false;
+
+    const { data: existingRows, error: existingError } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('id', notificationId)
+        .eq('user_id', userId)
+        .limit(1);
+
+    if (existingError) {
+        logNotificationMutationFailure('mark-read.lookup', { notificationId, userId, error: existingError.message || existingError });
+        return false;
+    }
+
+    if (!existingRows || existingRows.length === 0) {
+        return true;
+    }
+
+    const { data, error } = await supabase
         .from('notifications')
         .update({ is_read: true })
         .eq('id', notificationId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select('id');
 
     if (error) {
-        console.error('Error marking notification as read:', error?.message || error);
+        logNotificationMutationFailure('mark-read.update', { notificationId, userId, error: error.message || error });
+        return false;
+    }
+
+    const updatedRows = data ?? [];
+    if (updatedRows.length === 0) {
+        logNotificationMutationFailure('mark-read.no-rows', { notificationId, userId });
         return false;
     }
 
@@ -53,14 +82,38 @@ export const markNotificationAsRead = async (notificationId: string, userId: str
  * Marks all unread notifications as read for a specific user.
  */
 export const markAllNotificationsAsRead = async (userId: string): Promise<boolean> => {
-    const { error } = await supabase
+    if (!userId) return false;
+
+    const { data: unreadRows, error: unreadError } = await supabase
         .from('notifications')
-        .update({ is_read: true })
+        .select('id')
         .eq('user_id', userId)
         .eq('is_read', false);
 
+    if (unreadError) {
+        logNotificationMutationFailure('mark-all.lookup', { userId, error: unreadError.message || unreadError });
+        return false;
+    }
+
+    if (!unreadRows || unreadRows.length === 0) {
+        return true;
+    }
+
+    const { data, error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', userId)
+        .eq('is_read', false)
+        .select('id');
+
     if (error) {
-        console.error('Error marking all notifications as read:', error?.message || error);
+        logNotificationMutationFailure('mark-all.update', { userId, error: error.message || error });
+        return false;
+    }
+
+    const updatedRows = data ?? [];
+    if (updatedRows.length !== unreadRows.length) {
+        logNotificationMutationFailure('mark-all.partial', { userId, expected: unreadRows.length, actual: updatedRows.length });
         return false;
     }
 
@@ -71,14 +124,39 @@ export const markAllNotificationsAsRead = async (userId: string): Promise<boolea
  * Deletes a specific notification owned by the user.
  */
 export const deleteNotification = async (notificationId: string, userId: string): Promise<boolean> => {
-    const { error } = await supabase
+    if (!notificationId || !userId) return false;
+
+    const { data: existingRows, error: existingError } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('id', notificationId)
+        .eq('user_id', userId)
+        .limit(1);
+
+    if (existingError) {
+        logNotificationMutationFailure('delete-one.lookup', { notificationId, userId, error: existingError.message || existingError });
+        return false;
+    }
+
+    if (!existingRows || existingRows.length === 0) {
+        return true;
+    }
+
+    const { data, error } = await supabase
         .from('notifications')
         .delete()
         .eq('id', notificationId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select('id');
 
     if (error) {
-        console.error('Error deleting notification:', error?.message || error);
+        logNotificationMutationFailure('delete-one.delete', { notificationId, userId, error: error.message || error });
+        return false;
+    }
+
+    const deletedRows = data ?? [];
+    if (deletedRows.length === 0) {
+        logNotificationMutationFailure('delete-one.no-rows', { notificationId, userId });
         return false;
     }
 
@@ -89,13 +167,36 @@ export const deleteNotification = async (notificationId: string, userId: string)
  * Deletes all notifications for a specific user.
  */
 export const deleteAllNotifications = async (userId: string): Promise<boolean> => {
-    const { error } = await supabase
+    if (!userId) return false;
+
+    const { data: existingRows, error: existingError } = await supabase
         .from('notifications')
-        .delete()
+        .select('id')
         .eq('user_id', userId);
 
+    if (existingError) {
+        logNotificationMutationFailure('delete-all.lookup', { userId, error: existingError.message || existingError });
+        return false;
+    }
+
+    if (!existingRows || existingRows.length === 0) {
+        return true;
+    }
+
+    const { data, error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', userId)
+        .select('id');
+
     if (error) {
-        console.error('Error deleting all notifications:', error?.message || error);
+        logNotificationMutationFailure('delete-all.delete', { userId, error: error.message || error });
+        return false;
+    }
+
+    const deletedRows = data ?? [];
+    if (deletedRows.length !== existingRows.length) {
+        logNotificationMutationFailure('delete-all.partial', { userId, expected: existingRows.length, actual: deletedRows.length });
         return false;
     }
 
