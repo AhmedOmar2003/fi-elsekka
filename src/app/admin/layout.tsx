@@ -19,7 +19,7 @@ import { hasFullAdminAccess, hasPermission } from '@/lib/permissions';
 // ── Types ────────────────────────────────────────────────────
 interface Notification {
     id: string;
-    type: 'new_order' | 'new_user' | 'new_driver' | 'new_staff' | 'order_delivered' | 'new_review';
+    type: 'new_order' | 'new_user' | 'new_driver' | 'new_staff' | 'order_delivered' | 'new_review' | 'customer_order_response';
     title: string;
     body: string;
     time: Date;
@@ -254,6 +254,7 @@ function NotificationBell() {
         // Local set to prevent duplicate notifications in the same session,
         // since payload.old doesn't contain the full record by default in Supabase.
         const notifiedOrderIds = new Set<string>();
+        const notifiedCancellationResponseKeys = new Set<string>();
 
         // Subscribe to new orders (Handling the 5-minute grace period)
         const ordersChannel = supabase
@@ -290,6 +291,34 @@ function NotificationBell() {
                         type: 'new_order',
                         title: '🛒 طلب جديد تم تأكيده!',
                         body: `طلب بقيمة ${payload.new.total_amount?.toLocaleString()} ج.م تخطى فترة السماح`,
+                        link: '/admin/orders',
+                    });
+                }
+
+                const responseAt = newShipping.customer_cancellation_response_at;
+                const responseType = newShipping.customer_cancellation_response;
+                const responseKey = responseAt ? `${payload.new.id}:${responseAt}:${responseType}` : null;
+                if (
+                    payload.new.status === 'cancelled' &&
+                    responseKey &&
+                    !notifiedCancellationResponseKeys.has(responseKey) &&
+                    (responseType === 'insist' || responseType === 'confirm_cancel')
+                ) {
+                    notifiedCancellationResponseKeys.add(responseKey);
+                    const customerName =
+                        newShipping.recipient ||
+                        newShipping.recipientName ||
+                        newShipping.full_name ||
+                        'العميل';
+
+                    addNotification({
+                        type: 'customer_order_response',
+                        title: responseType === 'insist'
+                            ? 'عميل مصر على الطلب بعد الإلغاء'
+                            : 'العميل أكد الإلغاء النهائي',
+                        body: responseType === 'insist'
+                            ? `${customerName} ما زال يريد الطلب #${payload.new.id.slice(-6).toUpperCase()} رغم الإلغاء`
+                            : `${customerName} أكد إلغاء الطلب #${payload.new.id.slice(-6).toUpperCase()} نهائيًا`,
                         link: '/admin/orders',
                     });
                 }
@@ -346,6 +375,7 @@ function NotificationBell() {
             case 'new_staff': return <ShieldAlert className="w-4 h-4 text-violet-400" />;
             case 'new_review': return <Star className="w-4 h-4 text-yellow-500" />;
             case 'order_delivered': return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
+            case 'customer_order_response': return <AlertTriangle className="w-4 h-4 text-amber-400" />;
         }
     };
 

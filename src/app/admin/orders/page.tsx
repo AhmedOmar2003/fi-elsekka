@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { cancelAdminOrder, fetchAdminOrders, fetchOrderDetails, saveAdminOrderDeliveryPlan, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
+import { cancelAdminOrder, fetchAdminOrders, fetchOrderDetails, reopenCancelledOrderAfterCustomerRequest, saveAdminOrderDeliveryPlan, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
 import { ShoppingCart, ChevronDown, X, Package, Download, Filter, Bike, Clock, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
@@ -91,6 +91,7 @@ export default function AdminOrdersPage() {
     const [cancellationReason, setCancellationReason] = useState('');
     const [cancellationMessage, setCancellationMessage] = useState('لو كنت ما زلت تريد هذا الطلب، ادينا فرصة نجهزه على أكمل وجه، ولو أصبح جاهزًا هنرسل لك إشعارًا جديدًا بموعد الوصول المتوقع.');
     const [isCancellingOrder, setIsCancellingOrder] = useState(false);
+    const [isReopeningOrder, setIsReopeningOrder] = useState(false);
 
     // Driver Assignment UI state
     const [drivers, setDrivers] = useState<any[]>([]);
@@ -146,6 +147,30 @@ export default function AdminOrdersPage() {
                 supabase.from('users').select('*').eq('role', 'driver').then(({ data }) => {
                     if (data) setDrivers(data);
                 });
+            })
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload: any) => {
+                setOrders(prev =>
+                    prev.map(order =>
+                        order.id === payload.new.id
+                            ? {
+                                ...order,
+                                status: payload.new.status,
+                                total_amount: payload.new.total_amount,
+                                shipping_address: payload.new.shipping_address ?? order.shipping_address,
+                            }
+                            : order
+                    )
+                );
+                setSelectedOrder((prev: any) =>
+                    prev?.id === payload.new.id
+                        ? {
+                            ...prev,
+                            status: payload.new.status,
+                            total_amount: payload.new.total_amount,
+                            shipping_address: payload.new.shipping_address ?? prev.shipping_address,
+                        }
+                        : prev
+                );
             })
             .subscribe();
 
@@ -247,6 +272,30 @@ export default function AdminOrdersPage() {
             toast.error(error.message || 'فشل إلغاء الطلب');
         } finally {
             setIsCancellingOrder(false);
+        }
+    };
+
+    const handleReopenOrder = async () => {
+        if (!selectedOrder) return;
+
+        setIsReopeningOrder(true);
+        try {
+            const data = await reopenCancelledOrderAfterCustomerRequest(selectedOrder.id);
+            setOrders(prev => prev.map(o => o.id === selectedOrder.id ? {
+                ...o,
+                status: 'processing',
+                shipping_address: data.shipping_address,
+            } : o));
+            setSelectedOrder((prev: any) => ({
+                ...prev,
+                status: 'processing',
+                shipping_address: data.shipping_address,
+            }));
+            toast.success('تمت إعادة فتح الطلب وإبلاغ العميل أن الطلب عاد لقيد التجهيز');
+        } catch (error: any) {
+            toast.error(error.message || 'فشل إعادة فتح الطلب');
+        } finally {
+            setIsReopeningOrder(false);
         }
     };
 
@@ -649,9 +698,38 @@ export default function AdminOrdersPage() {
                                     </div>
                                 )}
 
+                                {selectedOrder.shipping_address?.customer_cancellation_response && (
+                                    <div className={`rounded-xl px-3 py-3 text-xs ${
+                                        selectedOrder.shipping_address.customer_cancellation_response === 'insist'
+                                            ? 'border border-amber-400/20 bg-amber-400/10 text-amber-500'
+                                            : 'border border-surface-hover bg-surface-hover/60 text-gray-500'
+                                    }`}>
+                                        <p className="font-bold">
+                                            {selectedOrder.shipping_address.customer_cancellation_response === 'insist'
+                                                ? 'العميل ما زال مصرًا على هذا الطلب بعد الإلغاء'
+                                                : 'العميل أكد أن الطلب لا يريده نهائيًا'}
+                                        </p>
+                                        {selectedOrder.shipping_address?.customer_cancellation_response_at && (
+                                            <p className="mt-1 opacity-80">
+                                                {new Date(selectedOrder.shipping_address.customer_cancellation_response_at).toLocaleString('ar-EG')}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {selectedOrder.status === 'cancelled' && selectedOrder.shipping_address?.customer_cancellation_response === 'insist' && (
+                                    <button
+                                        onClick={handleReopenOrder}
+                                        disabled={isReopeningOrder || !canUpdateStatus}
+                                        className="w-full rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-bold text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
+                                    >
+                                        {isReopeningOrder ? 'جاري إعادة فتح الطلب...' : 'العميل مصر على الطلب — أعده إلى قيد التجهيز'}
+                                    </button>
+                                )}
+
                                 <button
                                     onClick={handleCancelOrder}
-                                    disabled={isCancellingOrder || selectedOrder.status === 'delivered'}
+                                    disabled={isCancellingOrder || selectedOrder.status === 'delivered' || isReopeningOrder}
                                     className="w-full rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-400 transition-colors hover:bg-rose-500 hover:text-white disabled:opacity-50"
                                 >
                                     {isCancellingOrder ? 'جاري الإلغاء...' : 'إلغاء الطلب وإرسال السبب للعميل'}

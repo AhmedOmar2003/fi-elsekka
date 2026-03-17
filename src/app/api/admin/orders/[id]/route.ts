@@ -16,6 +16,8 @@ const UUID_REGEX = /^[0-9a-fA-F-]{36}$/;
 const LATE_BUFFER_MINUTES = 5;
 const DEFAULT_CANCEL_MESSAGE =
   'لو كنت ما زلت تريد هذا الطلب، ادينا فرصة نجهزه على أكمل وجه، ولو أصبح جاهزًا هنرسل لك إشعارًا جديدًا بموعد الوصول المتوقع.';
+const REOPEN_CUSTOMER_MESSAGE =
+  'استلمنا رغبتك في استمرار الطلب، وبدأنا نجهزه من جديد. سنتابع معك بخطة التوصيل فور اكتمال التجهيز.';
 
 function resolveOrderId(request: NextRequest, context: any) {
   const params = context?.params || {};
@@ -64,6 +66,10 @@ export async function PATCH(request: NextRequest, context: any) {
       cancellation_reason: cancellationReason,
       cancellation_message: customerMessage,
       admin_cancelled_at: new Date().toISOString(),
+      customer_cancellation_response: null,
+      customer_cancellation_response_at: null,
+      customer_cancellation_response_handled_at: null,
+      reopened_after_customer_request_at: null,
     };
 
     const { error: updateError } = await supabaseAdmin
@@ -101,6 +107,78 @@ export async function PATCH(request: NextRequest, context: any) {
     });
 
     return NextResponse.json({ success: true, shipping_address: updatedShipping });
+  }
+
+  if (action === 'reopen_after_customer_request') {
+    const auth = await requireAdminApi(request, ['update_order_status']);
+    if (!auth.ok) return auth.response;
+
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .select('id, user_id, status, shipping_address')
+      .eq('id', id)
+      .single();
+
+    if (orderError || !order) {
+      return NextResponse.json({ error: 'Order not found', stage: 'db.order' }, { status: 404 });
+    }
+
+    if (order.status !== 'cancelled') {
+      return NextResponse.json({ error: 'لا يمكن إعادة فتح طلب غير ملغي', stage: 'validate.status' }, { status: 400 });
+    }
+
+    if (order.shipping_address?.customer_cancellation_response !== 'insist') {
+      return NextResponse.json(
+        { error: 'العميل لم يؤكد رغبته في استمرار الطلب بعد', stage: 'validate.customer_response' },
+        { status: 400 }
+      );
+    }
+
+    const nowIso = new Date().toISOString();
+    const updatedShipping = {
+      ...(order.shipping_address || {}),
+      last_customer_cancellation_response: order.shipping_address?.customer_cancellation_response || null,
+      last_customer_cancellation_response_at: order.shipping_address?.customer_cancellation_response_at || null,
+      customer_cancellation_response: null,
+      customer_cancellation_response_at: null,
+      customer_cancellation_response_handled_at: nowIso,
+      reopened_after_customer_request_at: nowIso,
+    };
+
+    const { error: updateError } = await supabaseAdmin
+      .from('orders')
+      .update({
+        status: 'processing',
+        shipping_address: updatedShipping,
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message, stage: 'db.update' }, { status: 500 });
+    }
+
+    if (order.user_id) {
+      await supabaseAdmin.from('notifications').insert([{
+        user_id: order.user_id,
+        title: 'طلبك عاد لقيد التجهيز',
+        message: REOPEN_CUSTOMER_MESSAGE,
+        link: '/orders',
+        is_read: false,
+      }]);
+    }
+
+    await recordServerAdminAudit(auth.profile, {
+      action: 'order.reopen_after_customer_request',
+      entityType: 'order',
+      entityId: id,
+      entityLabel: id.slice(0, 8),
+      details: {
+        previous_status: order.status,
+        customer_response: 'insist',
+      },
+    });
+
+    return NextResponse.json({ success: true, status: 'processing', shipping_address: updatedShipping });
   }
 
   if (action === 'delivery_plan') {

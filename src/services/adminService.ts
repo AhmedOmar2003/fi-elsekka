@@ -859,6 +859,22 @@ export async function saveAdminOrderDeliveryPlan(
     return data;
 }
 
+export async function reopenCancelledOrderAfterCustomerRequest(orderId: string) {
+    const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            action: 'reopen_after_customer_request',
+        }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data?.error || 'فشل إعادة فتح الطلب');
+    }
+    return data;
+}
+
 // ─── Users ────────────────────────────────────────────────────────────────────
 export async function fetchAdminUsers() {
     const { data, error } = await supabase

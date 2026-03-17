@@ -5,9 +5,10 @@ import Link from "next/link"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { useAuth } from "@/contexts/AuthContext"
-import { fetchUserOrders, Order } from "@/services/ordersService"
+import { fetchUserOrders, Order, respondToCancelledOrder } from "@/services/ordersService"
 import { supabase } from "@/lib/supabase"
-import { Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, ChevronDown, ChevronUp, Wifi, Phone, Star } from "lucide-react"
+import { Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, ChevronDown, ChevronUp, Wifi, Phone, Star, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 // ─── Driver Rating Widget ──────────────────────────────────────────────────
 function DriverRating({ orderId, driverId, userId }: { orderId: string; driverId: string; userId: string }) {
@@ -188,8 +189,17 @@ function OrderTimeline({ currentStatus }: { currentStatus: string }) {
   )
 }
 
-function OrderCard({ order, userId }: { order: Order; userId: string }) {
+function OrderCard({
+  order,
+  userId,
+  onOrderUpdated,
+}: {
+  order: Order;
+  userId: string;
+  onOrderUpdated: (order: Order) => void;
+}) {
   const [expanded, setExpanded] = useState(false)
+  const [isSubmittingCancelResponse, setIsSubmittingCancelResponse] = useState<null | 'insist' | 'confirm_cancel'>(null)
   const status = STATUS_MAP[order.status] || { label: order.status, color: "text-gray-500 bg-surface-hover border-surface-border", icon: <Package className="w-4 h-4" /> }
   const date = new Date(order.created_at).toLocaleDateString("ar-EG", {
     year: "numeric", month: "long", day: "numeric",
@@ -198,6 +208,8 @@ function OrderCard({ order, userId }: { order: Order; userId: string }) {
   const etaHours = Number(order.shipping_address?.estimated_delivery_hours || 0)
   const customerCancelReason = order.shipping_address?.cancellation_reason
   const customerCancelMessage = order.shipping_address?.cancellation_message
+  const cancellationDecision = order.shipping_address?.customer_cancellation_response as 'insist' | 'confirm_cancel' | undefined
+  const cancellationDecisionAt = order.shipping_address?.customer_cancellation_response_at
 
   const etaWindow = etaDays > 0 && etaHours > 0
     ? `${etaDays} يوم و${etaHours} ساعة`
@@ -206,6 +218,26 @@ function OrderCard({ order, userId }: { order: Order; userId: string }) {
       : etaHours > 0
         ? `${etaHours} ساعة`
         : null
+
+  const handleCancelledOrderDecision = async (decision: 'insist' | 'confirm_cancel') => {
+    setIsSubmittingCancelResponse(decision)
+    try {
+      const data = await respondToCancelledOrder(order.id, decision)
+      onOrderUpdated({
+        ...order,
+        shipping_address: data.shipping_address,
+      })
+      toast.success(
+        decision === 'insist'
+          ? 'تم إبلاغ الإدارة أنك ما زلت تريد هذا الطلب'
+          : 'تم تأكيد الإلغاء النهائي لهذا الطلب'
+      )
+    } catch (error: any) {
+      toast.error(error.message || 'تعذر إرسال ردك الآن')
+    } finally {
+      setIsSubmittingCancelResponse(null)
+    }
+  }
 
   return (
     <div className="bg-surface border border-surface-hover rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-premium transition-all">
@@ -266,6 +298,55 @@ function OrderCard({ order, userId }: { order: Order; userId: string }) {
               )}
               {customerCancelMessage && (
                 <p className="text-sm leading-7 text-gray-500">{customerCancelMessage}</p>
+              )}
+            </div>
+          )}
+
+          {order.status === 'cancelled' && customerCancelReason && (
+            <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-4 space-y-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-amber-500">هل ما زلت تريد هذا الطلب؟</p>
+                <p className="mt-1 text-sm leading-7 text-gray-500">
+                  لو كنت ما زلت تحتاج الطلب اضغط على التأكيد وسنبلغ الإدارة فورًا. ولو لم تعد تحتاجه سنثبت الإلغاء النهائي.
+                </p>
+              </div>
+
+              {!cancellationDecision ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button
+                    onClick={() => handleCancelledOrderDecision('insist')}
+                    disabled={!!isSubmittingCancelResponse}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-bold text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-60"
+                  >
+                    {isSubmittingCancelResponse === 'insist' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    أيوه، مصر على الطلب
+                  </button>
+                  <button
+                    onClick={() => handleCancelledOrderDecision('confirm_cancel')}
+                    disabled={!!isSubmittingCancelResponse}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-400 transition-colors hover:bg-rose-500 hover:text-white disabled:opacity-60"
+                  >
+                    {isSubmittingCancelResponse === 'confirm_cancel' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    لا خلاص، الغِ الطلب
+                  </button>
+                </div>
+              ) : (
+                <div className={`rounded-xl px-3 py-3 text-sm ${
+                  cancellationDecision === 'insist'
+                    ? 'border border-primary/20 bg-primary/10 text-primary'
+                    : 'border border-rose-500/20 bg-rose-500/10 text-rose-400'
+                }`}>
+                  <p className="font-bold">
+                    {cancellationDecision === 'insist'
+                      ? 'تم إرسال رغبتك للإدارة لإعادة تجهيز الطلب.'
+                      : 'تم تثبيت الإلغاء النهائي لهذا الطلب بناءً على اختيارك.'}
+                  </p>
+                  {cancellationDecisionAt && (
+                    <p className="mt-1 text-xs opacity-80">
+                      {new Date(cancellationDecisionAt).toLocaleString('ar-EG')}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -397,6 +478,16 @@ export default function OrdersPage() {
     return () => { supabase.removeChannel(channel) }
   }, [user])
 
+  const handleOrderUpdated = (updatedOrder: Order) => {
+    setOrders(prev =>
+      prev.map(order =>
+        order.id === updatedOrder.id
+          ? { ...order, ...updatedOrder }
+          : order
+      )
+    )
+  }
+
   if (isAuthLoading || (isLoading && user)) {
     return (
       <>
@@ -482,7 +573,12 @@ export default function OrdersPage() {
           ) : (
             <div className="space-y-4">
               {orders.map(order => (
-                <OrderCard key={order.id} order={order} userId={user?.id || ''} />
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  userId={user?.id || ''}
+                  onOrderUpdated={handleOrderUpdated}
+                />
               ))}
             </div>
           )}

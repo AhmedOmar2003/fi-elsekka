@@ -21,6 +21,8 @@ export interface OrderItem {
     product?: Product; // joined details
 }
 
+export type CancelledOrderDecision = 'insist' | 'confirm_cancel';
+
 export const createOrder = async (
     userId: string,
     cartItems: any[], // Allows CartItem or GuestCartItem union from CartContext
@@ -129,6 +131,20 @@ export const confirmOrderGracePeriod = async (orderId: string) => {
         .single();
 
     return { data, error };
+};
+
+export const respondToCancelledOrder = async (orderId: string, decision: CancelledOrderDecision) => {
+    const res = await fetch(`/api/orders/${orderId}/cancel-response`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data?.error || 'فشل إرسال ردك على الإلغاء');
+    }
+    return data as { success: true; decision: CancelledOrderDecision; shipping_address: any };
 };
 
 export const updateUserProfile = async (userId: string, updates: any) => {
