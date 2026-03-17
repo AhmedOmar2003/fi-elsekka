@@ -19,7 +19,7 @@ import { hasPermission } from '@/lib/permissions';
 // ── Types ────────────────────────────────────────────────────
 interface Notification {
     id: string;
-    type: 'new_order' | 'new_user' | 'order_delivered' | 'new_review';
+    type: 'new_order' | 'new_user' | 'new_driver' | 'new_staff' | 'order_delivered' | 'new_review';
     title: string;
     body: string;
     time: Date;
@@ -143,6 +143,60 @@ function saveNotifications(notifications: Notification[]) {
     } catch { }
 }
 
+const STAFF_ROLES = ['super_admin', 'admin', 'operations_manager', 'catalog_manager', 'support_agent'];
+
+function getRoleLabel(role?: string | null) {
+    switch (role) {
+        case 'super_admin':
+            return 'مشرف عام';
+        case 'admin':
+            return 'مدير نظام';
+        case 'operations_manager':
+            return 'مسؤول العمليات';
+        case 'catalog_manager':
+            return 'مسؤول الكتالوج';
+        case 'support_agent':
+            return 'موظف دعم';
+        case 'driver':
+            return 'مندوب';
+        default:
+            return 'مستخدم';
+    }
+}
+
+function buildUserNotification(userRow: any): Omit<Notification, 'id' | 'time' | 'read'> {
+    const displayName = userRow?.full_name || userRow?.email || 'عضو جديد';
+    const role = userRow?.role || null;
+
+    if (role === 'driver') {
+        return {
+            type: 'new_driver',
+            title: 'مندوب جديد انضم للفريق',
+            body: `تمت إضافة ${displayName} كمندوب جديد ويمكن تعيين الطلبات له الآن`,
+            link: '/admin/drivers',
+        };
+    }
+
+    if (STAFF_ROLES.includes(role)) {
+        const permissionsCount = Array.isArray(userRow?.permissions) ? userRow.permissions.length : 0;
+        return {
+            type: 'new_staff',
+            title: 'تمت إضافة موظف جديد',
+            body: permissionsCount > 0
+                ? `تمت إضافة ${displayName} بدور ${getRoleLabel(role)} مع ${permissionsCount} صلاحيات مخصصة`
+                : `تمت إضافة ${displayName} بدور ${getRoleLabel(role)} ليتولى المهام التي حددتها له`,
+            link: '/admin/staff',
+        };
+    }
+
+    return {
+        type: 'new_user',
+        title: 'مستخدم جديد!',
+        body: `انضم ${displayName} إلى المنصة كعميل جديد`,
+        link: '/admin/users',
+    };
+}
+
 function NotificationBell() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isOpen, setIsOpen] = useState(false);
@@ -241,12 +295,7 @@ function NotificationBell() {
         const usersChannel = supabase
             .channel('admin-users-listener')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, (payload) => {
-                addNotification({
-                    type: 'new_user',
-                    title: '👤 مستخدم جديد!',
-                    body: `انضم ${payload.new.full_name || payload.new.email || 'مستخدم جديد'} إلى المنصة`,
-                    link: '/admin/users',
-                });
+                addNotification(buildUserNotification(payload.new));
             })
             .subscribe();
 
@@ -288,6 +337,8 @@ function NotificationBell() {
         switch (type) {
             case 'new_order': return <ShoppingBag className="w-4 h-4 text-primary" />;
             case 'new_user': return <UserPlus className="w-4 h-4 text-emerald-400" />;
+            case 'new_driver': return <Bike className="w-4 h-4 text-sky-400" />;
+            case 'new_staff': return <ShieldAlert className="w-4 h-4 text-violet-400" />;
             case 'new_review': return <Star className="w-4 h-4 text-yellow-500" />;
             case 'order_delivered': return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
         }
@@ -345,7 +396,7 @@ function NotificationBell() {
                                 <div className="py-10 flex flex-col items-center gap-2 text-gray-600">
                                     <Bell className="w-8 h-8 opacity-30" />
                                     <p className="text-xs">لا توجد إشعارات بعد</p>
-                                    <p className="text-[10px] text-gray-700">ستظهر هنا عند وصول طلبات جديدة أو تسجيل مستخدمين</p>
+                                    <p className="text-[10px] text-gray-700">ستظهر هنا طلبات جديدة أو أعضاء جدد من العملاء والمندوبين والطاقم</p>
                                 </div>
                             ) : (
                                 notifications.map(n => (
