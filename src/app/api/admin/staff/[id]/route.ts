@@ -13,18 +13,21 @@ const supabaseAdmin = supabaseUrl && serviceRoleKey
 
 const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
-export async function PATCH(request: NextRequest, context: any) {
+function resolveStaffId(request: NextRequest, context: any) {
   const params = context?.params || {};
   const routeId = typeof params.id === 'string' ? params.id : undefined;
-
-  // Fallback: derive from URL if Next.js didn't populate params
   const urlPath = request.url || '';
   const derivedId = urlPath.includes('/api/admin/staff/')
     ? urlPath.split('/api/admin/staff/')[1]?.split(/[?#]/)[0]
     : undefined;
-
   const rawId = routeId || derivedId;
   const id = rawId ? decodeURIComponent(rawId) : undefined;
+
+  return { id, routeId, derivedId };
+}
+
+export async function PATCH(request: NextRequest, context: any) {
+  const { id, routeId, derivedId } = resolveStaffId(request, context);
 
   if (!supabaseAdmin) {
     return NextResponse.json({ error: 'Server misconfigured: missing service role key', stage: 'config' }, { status: 500 });
@@ -90,6 +93,76 @@ export async function PATCH(request: NextRequest, context: any) {
   } catch (e: any) {
     if (process.env.NODE_ENV !== 'production') {
       console.error('staff PATCH error', { id, url: request.url, message: e?.message, stack: e?.stack });
+    }
+    return NextResponse.json({ error: e?.message || 'Internal error', stage: 'catch' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest, context: any) {
+  const { id, routeId, derivedId } = resolveStaffId(request, context);
+
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: 'Server misconfigured: missing service role key', stage: 'config' }, { status: 500 });
+  }
+
+  if (!id || !UUID_REGEX.test(id)) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('staff DELETE missing/invalid id', { routeId, derivedId, url: request.url });
+    }
+    return NextResponse.json({ error: 'Invalid or missing staff id', stage: 'validate.id' }, { status: 400 });
+  }
+
+  const auth = await requireAdminApi(request, 'manage_admins');
+  if (!auth.ok) return auth.response;
+
+  if (auth.profile.user.id === id) {
+    return NextResponse.json({ error: 'لا يمكن حذف حسابك الحالي' }, { status: 400 });
+  }
+
+  try {
+    const { data: targetStaff, error: targetError } = await supabaseAdmin
+      .from('users')
+      .select('id, role, email, full_name')
+      .eq('id', id)
+      .single();
+
+    if (targetError || !targetStaff) {
+      return NextResponse.json({ error: 'الموظف غير موجود', stage: 'db.select' }, { status: 404 });
+    }
+
+    if (targetStaff.role === 'super_admin' && auth.profile.role !== 'super_admin') {
+      return NextResponse.json({ error: 'فقط المشرف العام يمكنه حذف مشرف عام آخر', stage: 'authorize.delete' }, { status: 403 });
+    }
+
+    const { error: dbDeleteError } = await supabaseAdmin
+      .from('users')
+      .delete()
+      .eq('id', id);
+
+    if (dbDeleteError) {
+      return NextResponse.json({ error: dbDeleteError.message, stage: 'db.delete' }, { status: 500 });
+    }
+
+    const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(id);
+
+    if (authDeleteError) {
+      return NextResponse.json({
+        error: authDeleteError.message,
+        stage: 'auth.deleteUser',
+      }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      deleted: {
+        id: targetStaff.id,
+        email: targetStaff.email,
+        full_name: targetStaff.full_name,
+      },
+    });
+  } catch (e: any) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('staff DELETE error', { id, url: request.url, message: e?.message, stack: e?.stack });
     }
     return NextResponse.json({ error: e?.message || 'Internal error', stage: 'catch' }, { status: 500 });
   }

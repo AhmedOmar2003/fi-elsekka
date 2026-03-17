@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2, Plus, Shield, Edit2, LockKeyhole, Slash, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, Shield, Edit2, LockKeyhole, Slash, CheckCircle2, Trash2 } from "lucide-react";
 
 type Staff = {
   id: string;
@@ -43,7 +43,7 @@ const PERMISSION_OPTIONS = [
 ];
 
 export default function StaffPage() {
-  const { profile, isLoading } = useAuth();
+  const { user, profile, isLoading } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -198,6 +198,28 @@ export default function StaffPage() {
     }
   };
 
+  const handleDeleteStaff = async (member: Staff) => {
+    if (!member?.id) {
+      toast.error("معرّف الموظف مفقود");
+      return;
+    }
+
+    const confirmed = window.confirm(`هل أنت متأكد من حذف الموظف "${member.full_name || member.email}" نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.`);
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/admin/staff/${encodeURIComponent(member.id)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || data?.message || "فشل حذف الموظف");
+      toast.success("تم حذف الموظف نهائيًا");
+      await loadStaff();
+    } catch (e: any) {
+      toast.error(e.message || "خطأ أثناء حذف الموظف");
+    }
+  };
+
   const roleLabel = useMemo(
     () => (value: string) => ROLE_OPTIONS.find((r) => r.value === value)?.label || value,
     []
@@ -273,6 +295,17 @@ export default function StaffPage() {
                 >
                   {s.disabled ? <CheckCircle2 className="w-3 h-3" /> : <Slash className="w-3 h-3" />}
                   {s.disabled ? "تفعيل" : "تعطيل"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1 border-rose-500/20 text-rose-500 hover:bg-rose-500/10 hover:text-rose-500"
+                  onClick={() => handleDeleteStaff(s)}
+                  disabled={user?.id === s.id}
+                  title={user?.id === s.id ? "لا يمكنك حذف حسابك الحالي" : "حذف الموظف نهائيًا"}
+                >
+                  <Trash2 className="w-3 h-3" />
+                  حذف
                 </Button>
               </div>
             </div>
