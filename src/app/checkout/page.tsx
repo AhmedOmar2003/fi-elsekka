@@ -248,7 +248,7 @@ function CheckoutContent() {
    return (
       <>
          <Header />
-         <main className="flex-1 pb-8 min-h-screen bg-background">
+         <main className="flex-1 pb-32 md:pb-8 min-h-screen bg-background">
 
             <div className="bg-surface border-b border-surface-hover py-4 md:py-6">
                <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
@@ -257,7 +257,7 @@ function CheckoutContent() {
             </div>
 
             <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
-               <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+               <form id="checkout-form" onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
                   {/* Checkout Form */}
                   <div className="lg:col-span-7 space-y-8">
@@ -486,6 +486,41 @@ function CheckoutContent() {
                </form>
             </div>
          </main>
+
+         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-surface-hover bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3 backdrop-blur md:hidden">
+            <div className="mx-auto max-w-4xl">
+               <div className="mb-3 flex items-center justify-between rounded-2xl border border-surface-hover bg-surface px-4 py-3">
+                  <div>
+                     <p className="text-[11px] font-bold text-gray-500">
+                        {isTextRequestCheckout ? 'السعر النهائي' : 'الإجمالي للدفع'}
+                     </p>
+                     <p className="mt-1 text-lg font-black text-primary">
+                        {isTextRequestCheckout ? 'يحدد لاحقًا' : `${(displayCartTotal + CURRENT_DELIVERY_FEE).toFixed(0)} ج.م`}
+                     </p>
+                  </div>
+                  <p className="text-[11px] leading-5 text-gray-500 text-right max-w-[11rem]">
+                     {isTextRequestCheckout
+                        ? 'سنراجع الطلب أولًا ثم نبلغك بالسعر النهائي.'
+                        : 'رسوم التوصيل مضافة بالفعل داخل الإجمالي.'}
+                  </p>
+               </div>
+
+               <Button
+                  form="checkout-form"
+                  type="submit"
+                  size="lg"
+                  className="h-14 w-full rounded-2xl text-base font-black shadow-primary/20 shadow-lg"
+                  disabled={isSubmitting || (!isTextRequestCheckout && displayItems.length === 0) || (isTextRequestCheckout && !canSubmitTextRequest)}
+               >
+                  {isSubmitting ? (
+                     <div className="flex items-center gap-2">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+                        جاري التأكيد...
+                     </div>
+                  ) : 'تأكيد الطلب'}
+               </Button>
+            </div>
+         </div>
          <Footer />
       </>
    )
