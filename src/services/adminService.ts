@@ -39,6 +39,217 @@ export async function fetchRecentOrders(limit = 5) {
     return data || [];
 }
 
+export type AdminOverview = {
+    orderHealth: {
+        pending: number;
+        processing: number;
+        shipped: number;
+        ordersToday: number;
+        deliveredToday: number;
+        needsAssignment: number;
+        overdueShipping: number;
+    };
+    financeHealth: {
+        deliveredRevenueToday: number;
+        averageDeliveredOrderValue: number;
+        openOrderValue: number;
+    };
+    teamHealth: {
+        totalStaff: number;
+        activeStaff: number;
+        disabledStaff: number;
+        mustChangePassword: number;
+        staleStaffCount: number;
+        neverLoggedInStaff: number;
+        totalDrivers: number;
+        availableDrivers: number;
+        restingDrivers: number;
+        newDriversThisWeek: number;
+        newStaffThisWeek: number;
+        newCustomersThisWeek: number;
+    };
+    inventoryHealth: {
+        lowStockCount: number;
+        outOfStockCount: number;
+        lowStockProducts: Array<{
+            id: string;
+            name: string;
+            stock_quantity: number;
+            price: number;
+        }>;
+        outOfStockProducts: Array<{
+            id: string;
+            name: string;
+            price: number;
+        }>;
+    };
+    staffActivity: Array<{
+        id: string;
+        full_name: string;
+        email: string;
+        role: string;
+        last_login_at: string | null;
+        status: 'recent' | 'stale' | 'never' | 'disabled';
+    }>;
+    latestJoins: Array<{
+        id: string;
+        full_name: string;
+        email: string;
+        role: string;
+        created_at: string;
+    }>;
+};
+
+function isStaffRole(role?: string | null) {
+    return ['super_admin', 'admin', 'operations_manager', 'catalog_manager', 'support_agent'].includes(role || '');
+}
+
+export async function fetchAdminOverview(): Promise<AdminOverview> {
+    const [ordersRes, usersRes, productsRes] = await Promise.all([
+        supabase.from('orders').select('id, status, created_at, total_amount, shipping_address'),
+        supabase.from('users').select('id, full_name, email, role, disabled, must_change_password, created_at, last_login_at, is_available'),
+        supabase.from('products').select('id, name, price, stock_quantity'),
+    ]);
+
+    if (ordersRes.error) logError('fetchAdminOverview.orders', ordersRes.error);
+    if (usersRes.error) logError('fetchAdminOverview.users', usersRes.error);
+    if (productsRes.error) logError('fetchAdminOverview.products', productsRes.error);
+
+    const orders = ordersRes.data || [];
+    const users = usersRes.data || [];
+    const products = productsRes.data || [];
+
+    const now = Date.now();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(weekStart.getDate() - 6);
+    const staleThreshold = new Date(now - (1000 * 60 * 60 * 24 * 7));
+
+    const pending = orders.filter(order => order.status === 'pending').length;
+    const processing = orders.filter(order => order.status === 'processing').length;
+    const shipped = orders.filter(order => order.status === 'shipped').length;
+    const ordersToday = orders.filter(order => new Date(order.created_at).getTime() >= todayStart.getTime()).length;
+    const deliveredTodayOrders = orders.filter(order => order.status === 'delivered' && new Date(order.created_at).getTime() >= todayStart.getTime());
+    const deliveredToday = deliveredTodayOrders.length;
+    const needsAssignment = orders.filter(order => {
+        const activeStatus = ['pending', 'processing', 'shipped'].includes(order.status);
+        return activeStatus && !order.shipping_address?.driver?.id;
+    }).length;
+    const overdueShipping = orders.filter(order => {
+        const ageHours = (now - new Date(order.created_at).getTime()) / (1000 * 60 * 60);
+        return order.status === 'shipped' && ageHours >= 24;
+    }).length;
+
+    const staff = users.filter(user => isStaffRole(user.role));
+    const drivers = users.filter(user => user.role === 'driver');
+    const customers = users.filter(user => !user.role || user.role === 'user');
+    const deliveredOrders = orders.filter(order => order.status === 'delivered');
+
+    const outOfStockProducts = products
+        .filter(product => typeof product.stock_quantity === 'number' && product.stock_quantity <= 0)
+        .slice(0, 4)
+        .map(product => ({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+        }));
+
+    const lowStockProducts = products
+        .filter(product => typeof product.stock_quantity === 'number' && product.stock_quantity > 0 && product.stock_quantity <= 5)
+        .sort((a, b) => (a.stock_quantity || 0) - (b.stock_quantity || 0))
+        .slice(0, 6)
+        .map(product => ({
+            id: product.id,
+            name: product.name,
+            stock_quantity: product.stock_quantity,
+            price: product.price,
+        }));
+
+    const latestJoins = [...users]
+        .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
+        .slice(0, 8)
+        .map(user => ({
+            id: user.id,
+            full_name: user.full_name || 'بدون اسم',
+            email: user.email || '',
+            role: user.role || 'user',
+            created_at: user.created_at,
+        }));
+
+    const staffActivity = [...staff]
+        .sort((a, b) => {
+            const aTime = new Date(a.last_login_at || a.created_at || '').getTime();
+            const bTime = new Date(b.last_login_at || b.created_at || '').getTime();
+            return bTime - aTime;
+        })
+        .slice(0, 5)
+        .map(user => {
+            const lastLoginAt = user.last_login_at || null;
+            let status: 'recent' | 'stale' | 'never' | 'disabled' = 'never';
+            if (user.disabled === true) status = 'disabled';
+            else if (!lastLoginAt) status = 'never';
+            else if (new Date(lastLoginAt).getTime() >= staleThreshold.getTime()) status = 'recent';
+            else status = 'stale';
+
+            return {
+                id: user.id,
+                full_name: user.full_name || 'بدون اسم',
+                email: user.email || '',
+                role: user.role || 'admin',
+                last_login_at: lastLoginAt,
+                status,
+            };
+        });
+
+    return {
+        orderHealth: {
+            pending,
+            processing,
+            shipped,
+            ordersToday,
+            deliveredToday,
+            needsAssignment,
+            overdueShipping,
+        },
+        financeHealth: {
+            deliveredRevenueToday: deliveredTodayOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0),
+            averageDeliveredOrderValue: deliveredOrders.length > 0
+                ? Math.round(deliveredOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) / deliveredOrders.length)
+                : 0,
+            openOrderValue: orders
+                .filter(order => ['pending', 'processing', 'shipped'].includes(order.status))
+                .reduce((sum, order) => sum + (order.total_amount || 0), 0),
+        },
+        teamHealth: {
+            totalStaff: staff.length,
+            activeStaff: staff.filter(user => user.disabled !== true).length,
+            disabledStaff: staff.filter(user => user.disabled === true).length,
+            mustChangePassword: staff.filter(user => user.must_change_password === true).length,
+            staleStaffCount: staff.filter(user =>
+                user.disabled !== true &&
+                !!user.last_login_at &&
+                new Date(user.last_login_at).getTime() < staleThreshold.getTime()
+            ).length,
+            neverLoggedInStaff: staff.filter(user => user.disabled !== true && !user.last_login_at).length,
+            totalDrivers: drivers.length,
+            availableDrivers: drivers.filter(user => user.is_available !== false).length,
+            restingDrivers: drivers.filter(user => user.is_available === false).length,
+            newDriversThisWeek: drivers.filter(user => new Date(user.created_at || '').getTime() >= weekStart.getTime()).length,
+            newStaffThisWeek: staff.filter(user => new Date(user.created_at || '').getTime() >= weekStart.getTime()).length,
+            newCustomersThisWeek: customers.filter(user => new Date(user.created_at || '').getTime() >= weekStart.getTime()).length,
+        },
+        inventoryHealth: {
+            lowStockCount: products.filter(product => typeof product.stock_quantity === 'number' && product.stock_quantity > 0 && product.stock_quantity <= 5).length,
+            outOfStockCount: products.filter(product => typeof product.stock_quantity === 'number' && product.stock_quantity <= 0).length,
+            lowStockProducts,
+            outOfStockProducts,
+        },
+        staffActivity,
+        latestJoins,
+    };
+}
+
 // ─── Products ─────────────────────────────────────────────────────────────────
 export async function fetchAdminProducts() {
     const { data, error } = await supabase
