@@ -31,6 +31,7 @@ add column if not exists last_login_at timestamptz;
 
 -- Products
 alter table public.products enable row level security;
+drop policy if exists "products_select_public" on public.products;
 drop policy if exists "products_insert_admin_only" on public.products;
 drop policy if exists "products_update_admin_only" on public.products;
 drop policy if exists "products_delete_admin_only" on public.products;
@@ -41,6 +42,7 @@ create policy "products_delete_admin_only" on public.products for delete using (
 
 -- Categories
 alter table public.categories enable row level security;
+drop policy if exists "categories_select_public" on public.categories;
 drop policy if exists "categories_admin_ins" on public.categories;
 drop policy if exists "categories_admin_upd" on public.categories;
 drop policy if exists "categories_admin_del" on public.categories;
@@ -51,6 +53,7 @@ create policy "categories_admin_del" on public.categories for delete using (is_a
 
 -- Promotions
 alter table public.promotions enable row level security;
+drop policy if exists "promotions_select_public" on public.promotions;
 drop policy if exists "promotions_admin_ins" on public.promotions;
 drop policy if exists "promotions_admin_upd" on public.promotions;
 drop policy if exists "promotions_admin_del" on public.promotions;
@@ -61,6 +64,7 @@ create policy "promotions_admin_del" on public.promotions for delete using (is_a
 
 -- Discount codes
 alter table public.discount_codes enable row level security;
+drop policy if exists "discounts_select_public" on public.discount_codes;
 drop policy if exists "discounts_admin_ins" on public.discount_codes;
 drop policy if exists "discounts_admin_upd" on public.discount_codes;
 drop policy if exists "discounts_admin_del" on public.discount_codes;
@@ -71,6 +75,7 @@ create policy "discounts_admin_del" on public.discount_codes for delete using (i
 
 -- Product specifications
 alter table public.product_specifications enable row level security;
+drop policy if exists "specs_select_public" on public.product_specifications;
 drop policy if exists "specs_admin_ins" on public.product_specifications;
 drop policy if exists "specs_admin_upd" on public.product_specifications;
 drop policy if exists "specs_admin_del" on public.product_specifications;
@@ -86,6 +91,9 @@ drop policy if exists "users_self_update" on public.users;
 drop policy if exists "users_admin_all" on public.users;
 drop policy if exists "users_admin_insert" on public.users;
 drop policy if exists "users_admin_update_delete" on public.users;
+drop policy if exists "users_admin_update" on public.users;
+drop policy if exists "users_admin_delete" on public.users;
+drop policy if exists "users_admin_disable" on public.users;
 create policy "users_self_select" on public.users for select using (auth.uid() = id or is_admin());
 create policy "users_self_update" on public.users for update using (auth.uid() = id) with check (auth.uid() = id);
 create policy "users_admin_insert" on public.users for insert with check (is_admin());
@@ -98,6 +106,7 @@ alter table public.orders enable row level security;
 drop policy if exists "orders_select_owner_or_admin" on public.orders;
 drop policy if exists "orders_insert_owner" on public.orders;
 drop policy if exists "orders_admin_update_delete" on public.orders;
+drop policy if exists "orders_admin_delete" on public.orders;
 create policy "orders_select_owner_or_admin" on public.orders for select using (auth.uid() = user_id or is_admin());
 create policy "orders_insert_owner" on public.orders for insert with check (auth.uid() = user_id or is_admin());
 create policy "orders_admin_update_delete" on public.orders for update using (is_admin()) with check (is_admin());

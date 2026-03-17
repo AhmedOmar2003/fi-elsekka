@@ -140,8 +140,10 @@ create policy "specs_admin_del" on public.product_specifications for delete usin
 -- Orders
 alter table public.orders enable row level security;
 drop policy if exists "orders_select_owner_or_admin" on public.orders;
+drop policy if exists "orders_select_owner_or_staff" on public.orders;
 drop policy if exists "orders_insert_owner" on public.orders;
 drop policy if exists "orders_admin_update_delete" on public.orders;
+drop policy if exists "orders_update_staff" on public.orders;
 drop policy if exists "orders_admin_delete" on public.orders;
 create policy "orders_select_owner_or_staff" on public.orders for select using (auth.uid() = user_id or has_permission('view_orders'));
 create policy "orders_insert_owner" on public.orders for insert with check (auth.uid() = user_id or has_permission('view_orders'));
