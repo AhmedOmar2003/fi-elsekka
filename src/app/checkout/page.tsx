@@ -17,6 +17,7 @@ import { useCart } from "@/contexts/CartContext"
 import { createOrder } from "@/services/ordersService"
 import { getDefaultDeliveryAddress, saveDeliveryAddress } from "@/services/deliveryService"
 import { incrementDiscountCodeUsage } from "@/services/discountCodesService"
+import { CURRENT_DELIVERY_FEE } from "@/lib/order-economics"
 
 function CheckoutContent() {
    const router = useRouter()
@@ -121,7 +122,7 @@ function CheckoutContent() {
          is_grace_period: true
       }
 
-      const { data: newOrder, error } = await createOrder(user.id, displayItems, shippingDetails, displayCartTotal + 35)
+      const { data: newOrder, error } = await createOrder(user.id, displayItems, shippingDetails, displayCartTotal)
       setIsSubmitting(false)
 
       if (error) {
@@ -348,13 +349,13 @@ function CheckoutContent() {
                            </div>
                            <div className="flex justify-between items-center text-gray-400">
                               <span>مصاريف التوصيل</span>
-                              <span className="font-heading font-semibold text-foreground">35 ج.م</span>
+                              <span className="font-heading font-semibold text-foreground">{CURRENT_DELIVERY_FEE} ج.م</span>
                            </div>
                         </div>
 
                         <div className="flex justify-between items-center border-t border-surface-hover pt-6 mb-8 bg-surface-lighter/50 rounded-xl p-4 mt-2">
                            <span className="text-lg font-bold text-foreground">الإجمالي للدفع</span>
-                           <span className="font-heading text-3xl font-black text-primary drop-shadow-sm">{(displayCartTotal + 35).toFixed(0)} <span className="text-sm">ج.م</span></span>
+                           <span className="font-heading text-3xl font-black text-primary drop-shadow-sm">{(displayCartTotal + CURRENT_DELIVERY_FEE).toFixed(0)} <span className="text-sm">ج.م</span></span>
                         </div>
 
                         {errorMsg && (

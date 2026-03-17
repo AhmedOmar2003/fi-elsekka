@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireAdminApi } from '@/lib/admin-guard';
 import { recordServerAdminAudit } from '@/lib/admin-audit-server';
+import { attachOrderEconomics, getOrderEconomics } from '@/lib/order-economics';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
@@ -269,6 +270,62 @@ export async function PATCH(request: NextRequest, context: any) {
         eta_hours: etaHours,
         eta_days: etaDays,
         delivery_deadline_at: deadlineAt.toISOString(),
+      },
+    });
+
+    return NextResponse.json({ success: true, shipping_address: updatedShipping });
+  }
+
+  if (action === 'pricing') {
+    const auth = await requireAdminApi(request, ['update_order_status']);
+    if (!auth.ok) return auth.response;
+
+    const merchantDiscountAmount = Math.max(0, Number(body?.merchantDiscountAmount || 0));
+    if (!Number.isFinite(merchantDiscountAmount)) {
+      return NextResponse.json({ error: 'قيمة خصم المحل غير صحيحة', stage: 'validate.merchant_discount' }, { status: 400 });
+    }
+
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .select('id, status, total_amount, shipping_address')
+      .eq('id', id)
+      .single();
+
+    if (orderError || !order) {
+      return NextResponse.json({ error: 'Order not found', stage: 'db.order' }, { status: 404 });
+    }
+
+    const currentEconomics = getOrderEconomics(order);
+    if (merchantDiscountAmount > currentEconomics.subtotalAmount) {
+      return NextResponse.json(
+        { error: 'خصم المحل لا يمكن أن يتجاوز قيمة المنتجات', stage: 'validate.merchant_discount' },
+        { status: 400 }
+      );
+    }
+
+    const updatedShipping = attachOrderEconomics(order.shipping_address || {}, order.total_amount || 0, merchantDiscountAmount);
+
+    const { error: updateError } = await supabaseAdmin
+      .from('orders')
+      .update({
+        shipping_address: updatedShipping,
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message, stage: 'db.update' }, { status: 500 });
+    }
+
+    await recordServerAdminAudit(auth.profile, {
+      action: 'order.update_pricing_breakdown',
+      entityType: 'order',
+      entityId: id,
+      entityLabel: id.slice(0, 8),
+      details: {
+        merchant_discount_amount: merchantDiscountAmount,
+        platform_revenue: updatedShipping.platform_revenue,
+        driver_revenue: updatedShipping.driver_revenue,
+        merchant_settlement: updatedShipping.merchant_settlement,
       },
     });
 

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { attachOrderEconomics, getOrderEconomics } from '@/lib/order-economics';
 
 // ─── Helper: log Supabase errors properly (they are objects, not strings) ──────
 export function logError(ctx: string, error: unknown) {
@@ -58,10 +59,10 @@ export async function fetchAdminStats() {
         supabase.from('users').select('id', { count: 'exact', head: true }),
         supabase.from('products').select('id', { count: 'exact', head: true }),
         supabase.from('orders').select('id', { count: 'exact', head: true }),
-        supabase.from('orders').select('total_amount').eq('status', 'delivered'),
+        supabase.from('orders').select('total_amount, shipping_address').eq('status', 'delivered'),
     ]);
 
-    const totalRevenue = revenueRes.data?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0;
+    const totalRevenue = revenueRes.data?.reduce((sum, order) => sum + getOrderEconomics(order).platformRevenue, 0) || 0;
 
     return {
         totalUsers: usersRes.count || 0,
@@ -93,8 +94,12 @@ export type AdminOverview = {
     };
     financeHealth: {
         deliveredRevenueToday: number;
+        deliveredDriverRevenueToday: number;
+        deliveredMerchantSettlementToday: number;
+        deliveredMerchantDiscountProfitToday: number;
         averageDeliveredOrderValue: number;
         openOrderValue: number;
+        openPlatformRevenue: number;
     };
     teamHealth: {
         totalStaff: number;
@@ -276,6 +281,9 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
     const drivers = users.filter(user => user.role === 'driver');
     const customers = users.filter(user => !user.role || user.role === 'user');
     const deliveredOrders = orders.filter(order => order.status === 'delivered');
+    const deliveredTodayEconomics = deliveredTodayOrders.map(order => getOrderEconomics(order));
+    const openOrders = orders.filter(order => ['pending', 'processing', 'shipped'].includes(order.status));
+    const openEconomics = openOrders.map(order => getOrderEconomics(order));
 
     const outOfStockProducts = products
         .filter(product => typeof product.stock_quantity === 'number' && product.stock_quantity <= 0)
@@ -344,13 +352,15 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
             overdueShipping,
         },
         financeHealth: {
-            deliveredRevenueToday: deliveredTodayOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0),
+            deliveredRevenueToday: deliveredTodayEconomics.reduce((sum, order) => sum + order.platformRevenue, 0),
+            deliveredDriverRevenueToday: deliveredTodayEconomics.reduce((sum, order) => sum + order.driverRevenue, 0),
+            deliveredMerchantSettlementToday: deliveredTodayEconomics.reduce((sum, order) => sum + order.merchantSettlement, 0),
+            deliveredMerchantDiscountProfitToday: deliveredTodayEconomics.reduce((sum, order) => sum + order.merchantDiscountAmount, 0),
             averageDeliveredOrderValue: deliveredOrders.length > 0
                 ? Math.round(deliveredOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) / deliveredOrders.length)
                 : 0,
-            openOrderValue: orders
-                .filter(order => ['pending', 'processing', 'shipped'].includes(order.status))
-                .reduce((sum, order) => sum + (order.total_amount || 0), 0),
+            openOrderValue: openEconomics.reduce((sum, order) => sum + order.grossCollected, 0),
+            openPlatformRevenue: openEconomics.reduce((sum, order) => sum + order.platformRevenue, 0),
         },
         teamHealth: {
             totalStaff: staff.length,
@@ -767,6 +777,23 @@ export async function updateOrderStatus(orderId: string, status: string) {
         });
     }
     return res;
+}
+
+export async function saveAdminOrderEconomics(orderId: string, merchantDiscountAmount: number) {
+    const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            action: 'pricing',
+            merchantDiscountAmount,
+        }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data?.error || 'فشل حفظ تفصيل الإيراد');
+    }
+    return data;
 }
 
 export async function updateOrderEstimation(orderId: string, estimatedTime: string) {

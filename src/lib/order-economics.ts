@@ -1,0 +1,123 @@
+export const CURRENT_DELIVERY_FEE = 20;
+export const LEGACY_DELIVERY_FEE = 35;
+export const PLATFORM_BASE_REVENUE = 10;
+export const DRIVER_REVENUE = 10;
+export const ORDER_ECONOMICS_VERSION = 2;
+
+type OrderLike = {
+  total_amount?: number | null;
+  shipping_address?: Record<string, any> | null;
+};
+
+function safeNumber(value: unknown, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+export type OrderEconomics = {
+  deliveryFee: number;
+  subtotalAmount: number;
+  grossCollected: number;
+  platformBaseRevenue: number;
+  driverRevenue: number;
+  merchantDiscountAmount: number;
+  platformRevenue: number;
+  merchantSettlement: number;
+};
+
+export function buildOrderEconomicsFromSubtotal(
+  subtotalAmount: number,
+  merchantDiscountAmount = 0,
+  deliveryFee = CURRENT_DELIVERY_FEE
+): OrderEconomics {
+  const normalizedSubtotal = Math.max(0, safeNumber(subtotalAmount));
+  const normalizedDeliveryFee = Math.max(0, safeNumber(deliveryFee, CURRENT_DELIVERY_FEE));
+  const normalizedMerchantDiscount = clamp(
+    Math.max(0, safeNumber(merchantDiscountAmount)),
+    0,
+    normalizedSubtotal
+  );
+
+  return {
+    deliveryFee: normalizedDeliveryFee,
+    subtotalAmount: normalizedSubtotal,
+    grossCollected: normalizedSubtotal + normalizedDeliveryFee,
+    platformBaseRevenue: PLATFORM_BASE_REVENUE,
+    driverRevenue: DRIVER_REVENUE,
+    merchantDiscountAmount: normalizedMerchantDiscount,
+    platformRevenue: PLATFORM_BASE_REVENUE + normalizedMerchantDiscount,
+    merchantSettlement: Math.max(0, normalizedSubtotal - normalizedMerchantDiscount),
+  };
+}
+
+export function getOrderEconomics(order: OrderLike): OrderEconomics {
+  const shipping = order?.shipping_address || {};
+  const deliveryFee = safeNumber(
+    shipping.delivery_fee,
+    shipping.economics_version === ORDER_ECONOMICS_VERSION ? CURRENT_DELIVERY_FEE : LEGACY_DELIVERY_FEE
+  );
+  const grossCollected = Math.max(0, safeNumber(order?.total_amount, 0));
+  const subtotalAmount = Math.max(
+    0,
+    safeNumber(shipping.subtotal_amount, grossCollected - deliveryFee)
+  );
+  const merchantDiscountAmount = clamp(
+    Math.max(0, safeNumber(shipping.merchant_discount_amount, 0)),
+    0,
+    subtotalAmount
+  );
+
+  return {
+    deliveryFee,
+    subtotalAmount,
+    grossCollected,
+    platformBaseRevenue: Math.max(0, safeNumber(shipping.platform_base_revenue, PLATFORM_BASE_REVENUE)),
+    driverRevenue: Math.max(0, safeNumber(shipping.driver_revenue, DRIVER_REVENUE)),
+    merchantDiscountAmount,
+    platformRevenue: Math.max(
+      0,
+      safeNumber(shipping.platform_revenue, PLATFORM_BASE_REVENUE + merchantDiscountAmount)
+    ),
+    merchantSettlement: Math.max(
+      0,
+      safeNumber(shipping.merchant_settlement, subtotalAmount - merchantDiscountAmount)
+    ),
+  };
+}
+
+export function attachOrderEconomics(
+  shippingAddress: Record<string, any> | null | undefined,
+  orderTotalAmount: number,
+  merchantDiscountAmount?: number
+) {
+  const base = {
+    ...(shippingAddress || {}),
+  };
+  const current = getOrderEconomics({
+    total_amount: orderTotalAmount,
+    shipping_address: base,
+  });
+
+  const next = buildOrderEconomicsFromSubtotal(
+    current.subtotalAmount,
+    merchantDiscountAmount ?? current.merchantDiscountAmount,
+    current.deliveryFee
+  );
+
+  return {
+    ...base,
+    delivery_fee: next.deliveryFee,
+    subtotal_amount: next.subtotalAmount,
+    gross_collected: next.grossCollected,
+    platform_base_revenue: next.platformBaseRevenue,
+    driver_revenue: next.driverRevenue,
+    merchant_discount_amount: next.merchantDiscountAmount,
+    platform_revenue: next.platformRevenue,
+    merchant_settlement: next.merchantSettlement,
+    economics_version: ORDER_ECONOMICS_VERSION,
+  };
+}

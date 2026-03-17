@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { CartItem } from './cartService';
 import { Product } from './productsService';
+import { attachOrderEconomics, CURRENT_DELIVERY_FEE } from '@/lib/order-economics';
 
 export interface Order {
     id: string;
@@ -27,16 +28,22 @@ export const createOrder = async (
     userId: string,
     cartItems: any[], // Allows CartItem or GuestCartItem union from CartContext
     shippingDetails: any,
-    totalAmount: number
+    subtotalAmount: number
 ) => {
+    const shippingWithEconomics = attachOrderEconomics(
+        shippingDetails,
+        subtotalAmount + CURRENT_DELIVERY_FEE,
+        0
+    );
+
     // 1. Create the Order
     const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
             user_id: userId,
             status: 'pending',
-            total_amount: totalAmount,
-            shipping_address: shippingDetails
+            total_amount: shippingWithEconomics.gross_collected,
+            shipping_address: shippingWithEconomics
         })
         .select()
         .single();

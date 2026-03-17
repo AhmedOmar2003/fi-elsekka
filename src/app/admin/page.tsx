@@ -50,8 +50,12 @@ const EMPTY_OVERVIEW: AdminOverview = {
     },
     financeHealth: {
         deliveredRevenueToday: 0,
+        deliveredDriverRevenueToday: 0,
+        deliveredMerchantSettlementToday: 0,
+        deliveredMerchantDiscountProfitToday: 0,
         averageDeliveredOrderValue: 0,
         openOrderValue: 0,
+        openPlatformRevenue: 0,
     },
     teamHealth: {
         totalStaff: 0,
@@ -176,7 +180,7 @@ export default function AdminPage() {
         { label: 'المستخدمون', value: stats.totalUsers, icon: Users, color: 'text-violet-400', bg: 'bg-violet-400/10', href: '/admin/users' },
         { label: 'المنتجات', value: stats.totalProducts, icon: Package, color: 'text-sky-400', bg: 'bg-sky-400/10', href: '/admin/products' },
         { label: 'الطلبات', value: stats.totalOrders, icon: ShoppingCart, color: 'text-amber-400', bg: 'bg-amber-400/10', href: '/admin/orders' },
-        { label: 'الإيرادات', value: `${stats.totalRevenue.toLocaleString()} ج.م`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', href: '/admin/orders' },
+        { label: 'إيراد المنصة', value: `${stats.totalRevenue.toLocaleString()} ج.م`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', href: '/admin/orders' },
     ];
 
     const operationAlerts = [
@@ -239,25 +243,32 @@ export default function AdminPage() {
             tone: 'text-amber-400 bg-amber-400/10',
         },
         {
-            label: 'إيراد اليوم',
+            label: 'نصيب المنصة اليوم',
             value: `${overview.financeHealth.deliveredRevenueToday.toLocaleString()} ج.م`,
-            helper: `متوسط الطلب ${overview.financeHealth.averageDeliveredOrderValue.toLocaleString()} ج.م`,
+            helper: `ربح إضافي من خصومات المحلات ${overview.financeHealth.deliveredMerchantDiscountProfitToday.toLocaleString()} ج.م`,
             icon: TrendingUp,
             tone: 'text-emerald-400 bg-emerald-400/10',
         },
         {
-            label: 'انضمامات هذا الأسبوع',
-            value: overview.teamHealth.newCustomersThisWeek + overview.teamHealth.newDriversThisWeek + overview.teamHealth.newStaffThisWeek,
-            helper: `${overview.teamHealth.newCustomersThisWeek} عملاء / ${overview.teamHealth.newDriversThisWeek} مندوبين / ${overview.teamHealth.newStaffThisWeek} طاقم`,
-            icon: Users,
+            label: 'نصيب المندوبين اليوم',
+            value: `${overview.financeHealth.deliveredDriverRevenueToday.toLocaleString()} ج.م`,
+            helper: `ثابت 10 ج.م لكل طلب تم توصيله`,
+            icon: Truck,
             tone: 'text-sky-400 bg-sky-400/10',
         },
         {
-            label: 'قيمة تشغيل مفتوحة',
-            value: `${overview.financeHealth.openOrderValue.toLocaleString()} ج.م`,
-            helper: 'إجمالي قيمة الطلبات غير المكتملة',
+            label: 'مستحقات المحلات اليوم',
+            value: `${overview.financeHealth.deliveredMerchantSettlementToday.toLocaleString()} ج.م`,
+            helper: `بعد خصومات المحلات المتفق عليها`,
             icon: Warehouse,
             tone: 'text-violet-400 bg-violet-400/10',
+        },
+        {
+            label: 'تحصيلات مفتوحة',
+            value: `${overview.financeHealth.openOrderValue.toLocaleString()} ج.م`,
+            helper: `منها نصيب منصة متوقع ${overview.financeHealth.openPlatformRevenue.toLocaleString()} ج.م`,
+            icon: Users,
+            tone: 'text-amber-400 bg-amber-400/10',
         },
     ];
 
