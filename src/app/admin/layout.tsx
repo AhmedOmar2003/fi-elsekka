@@ -477,6 +477,7 @@ WHERE email = '${user.email}';`}
                     <div className="flex items-center gap-2 mr-auto lg:mr-0">
                         {/* Realtime Notification Bell */}
                         <NotificationBell />
+                        <ThemeToggle />
                         {canManageSettings && (
                             <Link href="/admin/settings">
                                 <button className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">
