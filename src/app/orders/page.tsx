@@ -292,13 +292,6 @@ function OrderCard({
             </div>
           </div>
 
-          {order.shipping_address?.driver_delivery_note && (
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-              <p className="text-xs font-bold text-primary/80 mb-1">معلومة من الإدارة بخصوص التوصيل</p>
-              <p className="text-sm font-medium text-foreground">{order.shipping_address.driver_delivery_note}</p>
-            </div>
-          )}
-
           {order.status === 'cancelled' && (customerCancelReason || customerCancelMessage) && (
             <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 space-y-2">
               <p className="text-xs font-bold uppercase tracking-wide text-rose-400">سبب الإلغاء</p>
