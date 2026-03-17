@@ -26,6 +26,22 @@ function resolveStaffId(request: NextRequest, context: any) {
   return { id, routeId, derivedId };
 }
 
+async function safeDelete(builder: PromiseLike<{ error: { message?: string } | null }>, ignoreMissing = true) {
+  const { error } = await builder;
+  if (!error) return null;
+
+  const message = error.message || '';
+  if (ignoreMissing && (
+    message.includes('relation') ||
+    message.includes('does not exist') ||
+    message.includes('schema cache')
+  )) {
+    return null;
+  }
+
+  return message || 'Unknown delete error';
+}
+
 export async function PATCH(request: NextRequest, context: any) {
   const { id, routeId, derivedId } = resolveStaffId(request, context);
 
@@ -134,6 +150,77 @@ export async function DELETE(request: NextRequest, context: any) {
       return NextResponse.json({ error: 'فقط المشرف العام يمكنه حذف مشرف عام آخر', stage: 'authorize.delete' }, { status: 403 });
     }
 
+    // Remove any customer-side activity created by this staff member before deleting the account.
+    const { data: ownedOrders, error: ordersLookupError } = await supabaseAdmin
+      .from('orders')
+      .select('id')
+      .eq('user_id', id);
+
+    if (ordersLookupError) {
+      return NextResponse.json({ error: ordersLookupError.message, stage: 'orders.lookup' }, { status: 500 });
+    }
+
+    const ownedOrderIds = (ownedOrders || []).map((order) => order.id);
+
+    if (ownedOrderIds.length > 0) {
+      const orderItemsDeleteError = await safeDelete(
+        supabaseAdmin.from('order_items').delete().in('order_id', ownedOrderIds)
+      );
+      if (orderItemsDeleteError) {
+        return NextResponse.json({ error: orderItemsDeleteError, stage: 'order_items.delete' }, { status: 500 });
+      }
+
+      const orderReviewsDeleteError = await safeDelete(
+        supabaseAdmin.from('driver_reviews').delete().in('order_id', ownedOrderIds)
+      );
+      if (orderReviewsDeleteError) {
+        return NextResponse.json({ error: orderReviewsDeleteError, stage: 'driver_reviews.order_delete' }, { status: 500 });
+      }
+
+      const ordersDeleteError = await safeDelete(
+        supabaseAdmin.from('orders').delete().in('id', ownedOrderIds),
+        false
+      );
+      if (ordersDeleteError) {
+        return NextResponse.json({ error: ordersDeleteError, stage: 'orders.delete' }, { status: 500 });
+      }
+    }
+
+    const userNotificationsDeleteError = await safeDelete(
+      supabaseAdmin.from('notifications').delete().eq('user_id', id)
+    );
+    if (userNotificationsDeleteError) {
+      return NextResponse.json({ error: userNotificationsDeleteError, stage: 'notifications.delete' }, { status: 500 });
+    }
+
+    const cartItemsDeleteError = await safeDelete(
+      supabaseAdmin.from('cart_items').delete().eq('user_id', id)
+    );
+    if (cartItemsDeleteError) {
+      return NextResponse.json({ error: cartItemsDeleteError, stage: 'cart_items.delete' }, { status: 500 });
+    }
+
+    const directDriverReviewsDeleteError = await safeDelete(
+      supabaseAdmin.from('driver_reviews').delete().eq('user_id', id)
+    );
+    if (directDriverReviewsDeleteError) {
+      return NextResponse.json({ error: directDriverReviewsDeleteError, stage: 'driver_reviews.user_delete' }, { status: 500 });
+    }
+
+    const directDriverAssignmentsDeleteError = await safeDelete(
+      supabaseAdmin.from('driver_reviews').delete().eq('driver_id', id)
+    );
+    if (directDriverAssignmentsDeleteError) {
+      return NextResponse.json({ error: directDriverAssignmentsDeleteError, stage: 'driver_reviews.driver_delete' }, { status: 500 });
+    }
+
+    const subscriptionsDeleteError = await safeDelete(
+      supabaseAdmin.from('driver_subscriptions').delete().eq('driver_id', id)
+    );
+    if (subscriptionsDeleteError) {
+      return NextResponse.json({ error: subscriptionsDeleteError, stage: 'driver_subscriptions.delete' }, { status: 500 });
+    }
+
     const { data: authLookup, error: authLookupError } = await supabaseAdmin.auth.admin.getUserById(id);
     const authUserExists = !!authLookup?.user;
 
@@ -169,6 +256,7 @@ export async function DELETE(request: NextRequest, context: any) {
         full_name: targetStaff.full_name,
       },
       authUserDeleted: authUserExists,
+      deletedOrdersCount: ownedOrderIds.length,
     });
   } catch (e: any) {
     if (process.env.NODE_ENV !== 'production') {
