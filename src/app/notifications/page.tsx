@@ -125,20 +125,19 @@ export default function NotificationsPage() {
             key={notification.id}
             className={`rounded-3xl border p-4 transition-all ${notification.is_read ? "bg-surface border-surface-hover" : "bg-primary/5 border-primary/20"}`}
         >
-            <div className="flex items-start justify-between gap-3">
-                <button onClick={() => void openNotification(notification)} className="min-w-0 flex-1 text-start">
-                    <div className="flex items-center gap-2">
-                        {!notification.is_read && <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-primary" />}
-                        <p className="truncate text-sm font-black text-foreground">{notification.title}</p>
+                    <div className="flex items-start justify-between gap-3">
+                        <button onClick={() => void openNotification(notification)} className="min-w-0 flex-1 text-start">
+                            <div className="flex items-center gap-2">
+                                {!notification.is_read && <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-primary" />}
+                                <p className="truncate text-sm font-black text-foreground">{notification.title}</p>
                     </div>
                     <p className="mt-2 text-xs leading-6 text-gray-500">
                         {notification.message}
-                    </p>
-                    <div className="mt-3 flex items-center gap-3">
-                        <span className="text-[11px] text-gray-400">{formatNotifTime(notification.created_at)}</span>
-                        <span className="text-[11px] font-bold text-primary">افتح الإشعار</span>
-                    </div>
-                </button>
+                            </p>
+                            <div className="mt-3 flex items-center gap-3">
+                                <span className="text-[11px] text-gray-400">{formatNotifTime(notification.created_at)}</span>
+                            </div>
+                        </button>
 
                 <button
                     onClick={() => void handleDeleteOne(notification.id)}
