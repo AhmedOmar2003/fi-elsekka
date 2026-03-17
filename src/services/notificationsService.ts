@@ -68,6 +68,41 @@ export const markAllNotificationsAsRead = async (userId: string): Promise<boolea
 };
 
 /**
+ * Deletes a specific notification owned by the user.
+ */
+export const deleteNotification = async (notificationId: string, userId: string): Promise<boolean> => {
+    const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId)
+        .eq('user_id', userId);
+
+    if (error) {
+        console.error('Error deleting notification:', error?.message || error);
+        return false;
+    }
+
+    return true;
+};
+
+/**
+ * Deletes all notifications for a specific user.
+ */
+export const deleteAllNotifications = async (userId: string): Promise<boolean> => {
+    const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', userId);
+
+    if (error) {
+        console.error('Error deleting all notifications:', error?.message || error);
+        return false;
+    }
+
+    return true;
+};
+
+/**
  * Creates a notification for a specific user. (Usually called server-side or by an admin context)
  */
 export const createNotification = async (payload: Omit<AppNotification, 'id' | 'created_at' | 'is_read'>): Promise<boolean> => {
