@@ -866,22 +866,35 @@ export async function fetchAdminUsers() {
         .select('*')
         .order('created_at', { ascending: false });
     if (error) logError('fetchAdminUsers', error);
-    return data || [];
+    return (data || []).filter((user: any) => !['super_admin', 'admin', 'operations_manager', 'catalog_manager', 'support_agent', 'driver'].includes(user.role || ''));
 }
 
 export async function deleteUser(userId: string) {
-    const res = await supabase.from('users').delete().eq('id', userId);
-    if (res.error) logError('deleteUser', res.error);
-    if (!res.error) {
-        await logAdminAction({
-            action: 'user.delete',
-            entityType: 'user',
-            entityId: userId,
-            entityLabel: userId,
-            severity: 'warning',
-        });
+    const res = await fetch('/api/admin/users/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scope: 'single', userId }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data?.error || 'فشل حذف المستخدم');
     }
-    return res;
+    return data;
+}
+
+export async function deleteAllRegularUsers() {
+    const res = await fetch('/api/admin/users/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scope: 'all_regular_users' }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data?.error || 'فشل تنظيف المستخدمين');
+    }
+    return data;
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────────

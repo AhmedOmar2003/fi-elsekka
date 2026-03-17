@@ -78,12 +78,14 @@ export const fetchBestSellers = async (): Promise<Product[]> => {
         // 1. Try to fetch sales data from order_items
         const { data: orderItems, error: itemsError } = await supabase
             .from('order_items')
-            .select('product_id, quantity');
+            .select('product_id, quantity, orders(status)');
 
         let salesRank: string[] = [];
         if (!itemsError && orderItems && orderItems.length > 0) {
             const sales: Record<string, number> = {};
             for (const item of orderItems) {
+                const relatedOrder = Array.isArray((item as any).orders) ? (item as any).orders[0] : (item as any).orders;
+                if (relatedOrder?.status === 'cancelled') continue;
                 if (item.product_id) {
                     sales[item.product_id] = (sales[item.product_id] || 0) + (item.quantity || 1);
                 }

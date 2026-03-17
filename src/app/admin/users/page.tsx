@@ -1,8 +1,10 @@
 "use client"
 
 import React, { useEffect, useState } from 'react';
-import { fetchAdminUsers, deleteUser } from '@/services/adminService';
-import { Users, Search, Trash2, Mail, Calendar } from 'lucide-react';
+import { deleteAllRegularUsers, fetchAdminUsers, deleteUser } from '@/services/adminService';
+import { Users, Search, Trash2, Mail, Calendar, AlertTriangle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 type User = {
     id: string;
@@ -13,9 +15,11 @@ type User = {
 };
 
 export default function AdminUsersPage() {
+    const { profile } = useAuth();
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [isCleaning, setIsCleaning] = useState(false);
 
     const load = async () => {
         setIsLoading(true);
@@ -28,8 +32,29 @@ export default function AdminUsersPage() {
 
     const handleDelete = async (id: string) => {
         if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
-        await deleteUser(id);
-        setUsers(prev => prev.filter(u => u.id !== id));
+        try {
+            await deleteUser(id);
+            setUsers(prev => prev.filter(u => u.id !== id));
+            toast.success('تم حذف المستخدم وكل بياناته المرتبطة');
+        } catch (error: any) {
+            toast.error(error.message || 'فشل حذف المستخدم');
+        }
+    };
+
+    const handleDeleteAll = async () => {
+        const confirmed = confirm('سيتم حذف كل المستخدمين العاديين مع الطلبات والمفضلة والإشعارات والبيانات المرتبطة بهم، ثم إعادة مزامنة قسم الأكثر مبيعًا. هل أنت متأكد؟');
+        if (!confirmed) return;
+
+        setIsCleaning(true);
+        try {
+            const result = await deleteAllRegularUsers();
+            toast.success(`تم حذف ${result.deletedUsers} مستخدم و ${result.deletedOrders} طلب، وتمت مزامنة الأكثر مبيعًا`);
+            await load();
+        } catch (error: any) {
+            toast.error(error.message || 'فشل تنظيف قاعدة البيانات');
+        } finally {
+            setIsCleaning(false);
+        }
     };
 
     const filtered = users.filter(u =>
@@ -44,7 +69,23 @@ export default function AdminUsersPage() {
                     <h1 className="text-2xl font-heading font-black text-foreground">المستخدمون</h1>
                     <p className="text-sm text-gray-500 mt-0.5">{users.length} مستخدم مسجّل</p>
                 </div>
+                {['super_admin', 'admin'].includes(profile?.role || '') && (
+                    <button
+                        onClick={handleDeleteAll}
+                        disabled={isCleaning}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm font-bold text-rose-400 transition-colors hover:bg-rose-500/15 disabled:opacity-50"
+                    >
+                        {isCleaning ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertTriangle className="w-4 h-4" />}
+                        حذف كل مستخدمي التجربة
+                    </button>
+                )}
             </div>
+
+            {['super_admin', 'admin'].includes(profile?.role || '') && (
+                <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-500">
+                    هذا الزر مخصص لمرحلة التجربة فقط. سيحذف العملاء العاديين وكل الطلبات والبيانات المرتبطة بهم، ثم يعيد حساب `الأكثر مبيعًا` من الطلبات المتبقية.
+                </div>
+            )}
 
             {/* Search */}
             <div className="relative w-full max-w-sm">
