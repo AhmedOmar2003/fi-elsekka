@@ -48,8 +48,9 @@ export async function POST(request: Request) {
             ...shipping,
             driver: {
                 ...shipping.driver,
-                acceptance_status: 'accepted'
-            }
+                acceptance_status: 'accepted',
+                accepted_at: new Date().toISOString(),
+            },
         };
 
         const { error: updateErr } = await supabaseAdmin

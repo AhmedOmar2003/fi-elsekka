@@ -210,6 +210,8 @@ export type OperationsCenterData = {
     gracePeriodOrders: any[];
 };
 
+const ORDER_LATE_BUFFER_MS = 5 * 60 * 1000;
+
 function isStaffRole(role?: string | null) {
     return ['super_admin', 'admin', 'operations_manager', 'catalog_manager', 'support_agent'].includes(role || '');
 }
@@ -220,6 +222,20 @@ function sanitizeSearchTerm(query: string) {
 
 function relationUser(order: any) {
     return Array.isArray(order?.users) ? order.users[0] : order?.users;
+}
+
+function getOrderDeadline(order: any) {
+    const deadline = order?.shipping_address?.delivery_deadline_at;
+    if (!deadline) return null;
+    const parsed = new Date(deadline).getTime();
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isOrderOverdue(order: any) {
+    if (['delivered', 'cancelled'].includes(order?.status)) return false;
+    const deadline = getOrderDeadline(order);
+    if (!deadline) return false;
+    return Date.now() > deadline + ORDER_LATE_BUFFER_MS;
 }
 
 export async function fetchAdminOverview(): Promise<AdminOverview> {
@@ -254,10 +270,7 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
         const activeStatus = ['pending', 'processing', 'shipped'].includes(order.status);
         return activeStatus && !order.shipping_address?.driver?.id;
     }).length;
-    const overdueShipping = orders.filter(order => {
-        const ageHours = (now - new Date(order.created_at).getTime()) / (1000 * 60 * 60);
-        return order.status === 'shipped' && ageHours >= 24;
-    }).length;
+    const overdueShipping = orders.filter(order => isOrderOverdue(order)).length;
 
     const staff = users.filter(user => isStaffRole(user.role));
     const drivers = users.filter(user => user.role === 'driver');
@@ -498,10 +511,7 @@ export async function fetchOperationsCenterData(): Promise<OperationsCenterData>
         activeStatuses.includes(order.status) && !order.shipping_address?.driver?.id
     );
 
-    const overdueShipping = orders.filter((order) => {
-        const ageHours = (now - new Date(order.created_at).getTime()) / (1000 * 60 * 60);
-        return order.status === 'shipped' && ageHours >= 24;
-    });
+    const overdueShipping = orders.filter((order) => isOrderOverdue(order));
 
     const addressIssues = orders.filter((order) => {
         const shipping = order.shipping_address || {};
@@ -809,6 +819,44 @@ export async function updateOrderDriver(orderId: string, driver: { id: string, n
         });
     }
     return res;
+}
+
+export async function cancelAdminOrder(orderId: string, cancellationReason: string, customerMessage: string) {
+    const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            action: 'cancel',
+            cancellationReason,
+            customerMessage,
+        }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data?.error || 'فشل إلغاء الطلب');
+    }
+    return data;
+}
+
+export async function saveAdminOrderDeliveryPlan(
+    orderId: string,
+    payload: { estimatedText: string; etaHours: number; etaDays: number; driverNote: string }
+) {
+    const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            action: 'delivery_plan',
+            ...payload,
+        }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data?.error || 'فشل حفظ خطة التوصيل');
+    }
+    return data;
 }
 
 // ─── Users ────────────────────────────────────────────────────────────────────

@@ -63,6 +63,15 @@ function OrderCard({ order, onMarkDelivered, isUpdating }: {
         order.shipping_address?.area,
         order.shipping_address?.street || order.shipping_address?.address
     ].filter(Boolean).join('، ')
+    const etaDays = Number(order.shipping_address?.estimated_delivery_days || 0)
+    const etaHours = Number(order.shipping_address?.estimated_delivery_hours || 0)
+    const etaWindow = etaDays > 0 && etaHours > 0
+        ? `${etaDays} يوم و${etaHours} ساعة`
+        : etaDays > 0
+            ? `${etaDays} يوم`
+            : etaHours > 0
+                ? `${etaHours} ساعة`
+                : null
 
     return (
         <div className={`rounded-2xl border overflow-hidden transition-all ${isDelivered
@@ -133,6 +142,19 @@ function OrderCard({ order, onMarkDelivered, isUpdating }: {
                     <div className="flex items-center justify-between pt-1 border-t border-surface-hover">
                         <span className="text-xs text-gray-500">إجمالي الطلب</span>
                         <span className="font-black text-primary text-lg">{order.total_amount?.toLocaleString() || 0} ج.م</span>
+                    </div>
+
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-1">
+                        <p className="text-xs font-bold text-primary/80">مهلة التوصيل المطلوبة منك</p>
+                        <p className="text-sm font-black text-foreground">
+                            {order.shipping_address?.estimated_delivery || 'بانتظار الإدارة لتحديد خطة التوصيل'}
+                        </p>
+                        {etaWindow && (
+                            <p className="text-xs text-gray-500">المدة المحسوبة: {etaWindow}</p>
+                        )}
+                        {order.shipping_address?.driver_delivery_note && (
+                            <p className="text-xs leading-6 text-gray-500">تعليمات الإدارة: {order.shipping_address.driver_delivery_note}</p>
+                        )}
                     </div>
 
                     {!isDelivered && (

@@ -80,7 +80,7 @@ export async function POST(request: Request) {
                     user_id: order.user_id,
                     title: 'تم توصيل طلبك! 📦',
                     message: `تم تسليم طلبك رقم #${orderId.substring(0,6)} بنجاح. نتمنى لك تجربة سعيدة!`,
-                    link: '/account', // Link to order history
+                    link: '/orders',
                     is_read: false
                 }]);
             }

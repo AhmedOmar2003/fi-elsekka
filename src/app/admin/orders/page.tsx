@@ -2,27 +2,38 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchAdminOrders, fetchOrderDetails, updateOrderStatus, updateOrderEstimation, updateOrderDriver } from '@/services/adminService';
-import { ShoppingCart, ChevronDown, X, Package, Download, Filter, Bike } from 'lucide-react';
+import { cancelAdminOrder, fetchAdminOrders, fetchOrderDetails, saveAdminOrderDeliveryPlan, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
+import { ShoppingCart, ChevronDown, X, Package, Download, Filter, Bike, Clock, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { hasPermission } from '@/lib/permissions';
+import { toast } from 'sonner';
 
-const STATUSES = [
+const STATUS_FILTERS = [
     { value: 'pending', label: 'في الانتظار', color: 'text-amber-400  bg-amber-400/10  border-amber-400/20' },
+    { value: 'processing', label: 'قيد التجهيز', color: 'text-violet-400 bg-violet-400/10 border-violet-400/20' },
     { value: 'shipped', label: 'تم الشحن', color: 'text-blue-400   bg-blue-400/10   border-blue-400/20' },
     { value: 'delivered', label: 'تم التوصيل', color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' },
     { value: 'cancelled', label: 'ملغي', color: 'text-rose-400   bg-rose-400/10   border-rose-400/20' },
 ];
 
+const STATUS_UPDATE_OPTIONS = STATUS_FILTERS.filter((status) => status.value !== 'cancelled');
+
 function statusMeta(val: string) {
-    return STATUSES.find(s => s.value === val) || { label: val, color: 'text-gray-500 bg-surface-hover border-surface-hover' };
+    return STATUS_FILTERS.find(s => s.value === val) || { label: val, color: 'text-gray-500 bg-surface-hover border-surface-hover' };
+}
+
+function formatWindow(days: number, hours: number) {
+    if (days > 0 && hours > 0) return `${days} يوم و${hours} ساعة`;
+    if (days > 0) return `${days} يوم`;
+    if (hours > 0) return `${hours} ساعة`;
+    return 'غير محدد';
 }
 
 function exportToCSV(orders: any[], statusFilter: string) {
     const filtered = statusFilter === 'all' ? orders : orders.filter(o => o.status === statusFilter);
-    const statusLabel = statusFilter === 'all' ? 'الكل' : (STATUSES.find(s => s.value === statusFilter)?.label || statusFilter);
+    const statusLabel = statusFilter === 'all' ? 'الكل' : (STATUS_FILTERS.find(s => s.value === statusFilter)?.label || statusFilter);
 
     const headers = ['رقم الطلب', 'اسم العميل', 'البريد الإلكتروني', 'التليفون', 'المدينة', 'المنطقة', 'العنوان', 'الإجمالي (ج.م)', 'الحالة', 'تاريخ الطلب'];
 
@@ -74,6 +85,12 @@ export default function AdminOrdersPage() {
     // Delivery estimation UI state
     const [estimatedTime, setEstimatedTime] = useState('');
     const [isSavingTime, setIsSavingTime] = useState(false);
+    const [etaHours, setEtaHours] = useState(0);
+    const [etaDays, setEtaDays] = useState(0);
+    const [driverNote, setDriverNote] = useState('');
+    const [cancellationReason, setCancellationReason] = useState('');
+    const [cancellationMessage, setCancellationMessage] = useState('لو كنت ما زلت تريد هذا الطلب، ادينا فرصة نجهزه على أكمل وجه، ولو أصبح جاهزًا هنرسل لك إشعارًا جديدًا بموعد الوصول المتوقع.');
+    const [isCancellingOrder, setIsCancellingOrder] = useState(false);
 
     // Driver Assignment UI state
     const [drivers, setDrivers] = useState<any[]>([]);
@@ -138,6 +155,14 @@ export default function AdminOrdersPage() {
     const handleViewOrder = async (order: any) => {
         setSelectedOrder(order);
         setEstimatedTime(order.shipping_address?.estimated_delivery || '');
+        setEtaHours(Number(order.shipping_address?.estimated_delivery_hours || 0));
+        setEtaDays(Number(order.shipping_address?.estimated_delivery_days || 0));
+        setDriverNote(order.shipping_address?.driver_delivery_note || '');
+        setCancellationReason(order.shipping_address?.cancellation_reason || '');
+        setCancellationMessage(
+            order.shipping_address?.cancellation_message ||
+            'لو كنت ما زلت تريد هذا الطلب، ادينا فرصة نجهزه على أكمل وجه، ولو أصبح جاهزًا هنرسل لك إشعارًا جديدًا بموعد الوصول المتوقع.'
+        );
         setSelectedDriverId(order.shipping_address?.driver?.id || '');
         // Use already-fetched items embedded in the order object (from the enriched query)
         setOrderItems(order.order_items || []);
@@ -152,6 +177,10 @@ export default function AdminOrdersPage() {
 
     const handleStatusChange = async (orderId: string, newStatus: string) => {
         if (!canUpdateStatus) return;
+        if (newStatus === 'cancelled') {
+            toast.error('استخدم قسم الإلغاء داخل تفاصيل الطلب واكتب سبب الإلغاء أولاً');
+            return;
+        }
         await updateOrderStatus(orderId, newStatus);
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
         if (selectedOrder?.id === orderId) {
@@ -163,28 +192,61 @@ export default function AdminOrdersPage() {
 
     const handleSaveEstimation = async () => {
         if (!selectedOrder) return;
+        if (!estimatedTime.trim()) {
+            toast.error('اكتب نصًا واضحًا للعميل عن موعد التوصيل');
+            return;
+        }
         setIsSavingTime(true);
-        
-        const { error } = await updateOrderEstimation(selectedOrder.id, estimatedTime);
-        setIsSavingTime(false);
 
-        if (!error) {
-            // Update local state without full reload
-            setOrders(prev => prev.map(o => o.id === selectedOrder.id ? { 
-                ...o, 
-                shipping_address: { ...o.shipping_address, estimated_delivery: estimatedTime } 
+        try {
+            const data = await saveAdminOrderDeliveryPlan(selectedOrder.id, {
+                estimatedText: estimatedTime,
+                etaHours,
+                etaDays,
+                driverNote,
+            });
+
+            setOrders(prev => prev.map(o => o.id === selectedOrder.id ? {
+                ...o,
+                shipping_address: data.shipping_address,
             } : o));
             setSelectedOrder((prev: any) => ({
                 ...prev,
-                shipping_address: { ...prev.shipping_address, estimated_delivery: estimatedTime }
+                shipping_address: data.shipping_address,
             }));
-            // Show brief visual feedback (could use sonner toast if available)
-            const btn = document.getElementById('save-est-btn');
-            if (btn) {
-                const originalText = btn.innerText;
-                btn.innerText = 'تم الحفظ ✔️';
-                setTimeout(() => btn.innerText = originalText, 2000);
-            }
+            toast.success('تم حفظ موعد التوصيل وإشعار العميل به');
+        } catch (error: any) {
+            toast.error(error.message || 'فشل حفظ خطة التوصيل');
+        } finally {
+            setIsSavingTime(false);
+        }
+    };
+
+    const handleCancelOrder = async () => {
+        if (!selectedOrder) return;
+        if (!cancellationReason.trim()) {
+            toast.error('اكتب سبب الإلغاء أولًا');
+            return;
+        }
+
+        setIsCancellingOrder(true);
+        try {
+            const data = await cancelAdminOrder(selectedOrder.id, cancellationReason, cancellationMessage);
+            setOrders(prev => prev.map(o => o.id === selectedOrder.id ? {
+                ...o,
+                status: 'cancelled',
+                shipping_address: data.shipping_address,
+            } : o));
+            setSelectedOrder((prev: any) => ({
+                ...prev,
+                status: 'cancelled',
+                shipping_address: data.shipping_address,
+            }));
+            toast.success('تم إلغاء الطلب وإرسال السبب للعميل');
+        } catch (error: any) {
+            toast.error(error.message || 'فشل إلغاء الطلب');
+        } finally {
+            setIsCancellingOrder(false);
         }
     };
 
@@ -251,7 +313,7 @@ export default function AdminOrdersPage() {
                             onClick={() => setFilterStatus('all')}
                             className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${filterStatus === 'all' ? 'bg-surface border border-surface-hover text-foreground shadow-sm' : 'text-gray-500 hover:text-foreground'}`}
                         >الكل</button>
-                        {STATUSES.map(s => (
+                        {STATUS_FILTERS.map(s => (
                             <button
                                 key={s.value}
                                 onClick={() => setFilterStatus(s.value)}
@@ -276,7 +338,7 @@ export default function AdminOrdersPage() {
                                     onClick={() => { exportToCSV(orders, 'all'); setIsExportMenuOpen(false); }}
                                     className="w-full text-right px-4 py-2.5 text-sm text-foreground hover:bg-surface-hover transition-colors font-bold"
                                 >📦 كل الطلبات</button>
-                                {STATUSES.map(s => (
+                                {STATUS_FILTERS.map(s => (
                                     <button
                                         key={s.value}
                                         onClick={() => { exportToCSV(orders, s.value); setIsExportMenuOpen(false); }}
@@ -335,15 +397,21 @@ export default function AdminOrdersPage() {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="relative inline-block">
-                                                    <select
-                                                        value={order.status}
-                                                        onChange={e => handleStatusChange(order.id, e.target.value)}
-                                                        className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border appearance-none cursor-pointer ${sm.color} bg-transparent focus:outline-none`}
-                                                    >
-                                                        {STATUSES.map(s => (
-                                                            <option key={s.value} value={s.value} className="bg-surface text-foreground">{s.label}</option>
-                                                        ))}
-                                                    </select>
+                                                    {order.status === 'cancelled' ? (
+                                                        <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${sm.color}`}>
+                                                            {sm.label}
+                                                        </span>
+                                                    ) : (
+                                                        <select
+                                                            value={order.status}
+                                                            onChange={e => handleStatusChange(order.id, e.target.value)}
+                                                            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border appearance-none cursor-pointer ${sm.color} bg-transparent focus:outline-none`}
+                                                        >
+                                                            {STATUS_UPDATE_OPTIONS.map(s => (
+                                                                <option key={s.value} value={s.value} className="bg-surface text-foreground">{s.label}</option>
+                                                            ))}
+                                                        </select>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 text-center">
@@ -396,17 +464,23 @@ export default function AdminOrdersPage() {
 
                             {/* Status */}
                             <div className="flex gap-3">
-                                <div className="flex-1">
-                                    <p className="text-xs font-bold text-gray-500 mb-2">الحالة الحالية</p>
+                            <div className="flex-1">
+                                <p className="text-xs font-bold text-gray-500 mb-2">الحالة الحالية</p>
+                                {selectedOrder.status === 'cancelled' ? (
+                                    <div className="w-full rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-2.5 text-sm font-bold text-rose-400">
+                                        ملغي
+                                    </div>
+                                ) : (
                                     <select
                                         value={selectedOrder.status}
                                         onChange={e => handleStatusChange(selectedOrder.id, e.target.value)}
                                         disabled={!canUpdateStatus}
                                         className={`w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 ${!canUpdateStatus ? 'opacity-60 cursor-not-allowed' : ''}`}
                                     >
-                                        {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                                        {STATUS_UPDATE_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                                     </select>
-                                </div>
+                                )}
+                            </div>
                                 <div className="flex-1">
                                     <p className="text-xs font-bold text-gray-500 mb-2 whitespace-nowrap overflow-hidden">مندوب التوصيل</p>
                                     <div className="relative">
@@ -449,27 +523,139 @@ export default function AdminOrdersPage() {
                                 </div>
                             </div>
 
-                            {/* Estimated Delivery Input */}
-                            <div>
-                                <p className="text-xs font-bold text-gray-500 mb-2">مدة التوصيل المتوقعة</p>
+                            {/* Delivery planning */}
+                            <div className="rounded-2xl border border-surface-hover bg-background p-4 space-y-4">
                                 <div className="flex items-center gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="مثال: ساعتين، يوم واحد، الخ..."
-                                        value={estimatedTime}
-                                        onChange={e => setEstimatedTime(e.target.value)}
-                                        className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
-                                    />
-                                    <button
-                                        id="save-est-btn"
-                                        onClick={handleSaveEstimation}
-                                        disabled={isSavingTime}
-                                        className="shrink-0 bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50"
-                                    >
-                                        {isSavingTime ? 'جاري...' : 'حفظ'}
-                                    </button>
+                                    <Clock className="w-4 h-4 text-primary" />
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-500">خطة التوصيل</p>
+                                        <p className="text-[11px] text-gray-500">
+                                            لا تُحسب المهلة إلا بعد ما يؤكد المندوب استلام الطلب ويكون جاهزًا للتوصيل.
+                                        </p>
+                                    </div>
                                 </div>
-                                <p className="text-[10px] text-gray-500 mt-1.5 leading-relaxed">تظهر هذه المدة للعميل في صفحة تتبع الطلبات لتطمئنه.</p>
+
+                                {selectedOrder.shipping_address?.driver?.acceptance_status !== 'accepted' ? (
+                                    <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-3 text-xs text-amber-500">
+                                        انتظر حتى يؤكد المندوب استلام الطلب. بعدها سيتاح لك تحديد النص + عدد الساعات + عدد الأيام للمحاسبة على التأخير.
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-500 mb-2">النص الذي يراه العميل</p>
+                                            <input
+                                                type="text"
+                                                placeholder="مثال: طلبك بيتجهز وهيصلك اليوم مساءً"
+                                                value={estimatedTime}
+                                                onChange={e => setEstimatedTime(e.target.value)}
+                                                className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                            />
+                                            <p className="text-[10px] text-gray-500 mt-1.5">هذا النص يبقى ظاهرًا للعميل لأنه أوضح من مجرد الأرقام.</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <p className="text-xs font-bold text-gray-500 mb-2">عدد الأيام</p>
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    value={etaDays}
+                                                    onChange={e => setEtaDays(Number(e.target.value || 0))}
+                                                    className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                                />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-gray-500 mb-2">عدد الساعات</p>
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    value={etaHours}
+                                                    onChange={e => setEtaHours(Number(e.target.value || 0))}
+                                                    className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-500 mb-2">رسالة للمندوب</p>
+                                            <textarea
+                                                value={driverNote}
+                                                onChange={e => setDriverNote(e.target.value)}
+                                                rows={3}
+                                                placeholder="مثال: أمامك 4 ساعات للوصول، لو في تأخير بلغ الإدارة فورًا"
+                                                className="w-full resize-none bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                            />
+                                        </div>
+
+                                        <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-3 text-xs text-gray-500">
+                                            المهلة المحسوبة حاليًا: <span className="font-bold text-primary">{formatWindow(etaDays, etaHours)}</span>
+                                            {selectedOrder.shipping_address?.delivery_deadline_at && (
+                                                <span className="block mt-1">
+                                                    الموعد الحالي ينتهي في {new Date(selectedOrder.shipping_address.delivery_deadline_at).toLocaleString('ar-EG')}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <button
+                                            id="save-est-btn"
+                                            onClick={handleSaveEstimation}
+                                            disabled={isSavingTime}
+                                            className="w-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white px-4 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-50"
+                                        >
+                                            {isSavingTime ? 'جاري الحفظ...' : 'حفظ خطة التوصيل وإشعار العميل'}
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Cancellation */}
+                            <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 space-y-4">
+                                <div className="flex items-center gap-2">
+                                    <AlertTriangle className="w-4 h-4 text-rose-400" />
+                                    <div>
+                                        <p className="text-xs font-bold text-rose-400">إلغاء الطلب بسبب واضح</p>
+                                        <p className="text-[11px] text-gray-500">لن يتم الإلغاء من هنا إلا بعد كتابة السبب، وسيصل السبب للعميل فورًا.</p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p className="text-xs font-bold text-gray-500 mb-2">سبب الإلغاء</p>
+                                    <textarea
+                                        value={cancellationReason}
+                                        onChange={e => setCancellationReason(e.target.value)}
+                                        rows={3}
+                                        placeholder="مثال: المنتج غير متاح حاليًا أو نحتاج وقتًا أطول للتجهيز"
+                                        className="w-full resize-none bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-rose-400/50"
+                                    />
+                                </div>
+
+                                <div>
+                                    <p className="text-xs font-bold text-gray-500 mb-2">رسالة مطمئنة للعميل</p>
+                                    <textarea
+                                        value={cancellationMessage}
+                                        onChange={e => setCancellationMessage(e.target.value)}
+                                        rows={3}
+                                        className="w-full resize-none bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-rose-400/50"
+                                    />
+                                </div>
+
+                                {selectedOrder.shipping_address?.cancellation_reason && (
+                                    <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-3 text-xs text-rose-400">
+                                        <p className="font-bold">السبب الحالي:</p>
+                                        <p className="mt-1">{selectedOrder.shipping_address.cancellation_reason}</p>
+                                        {selectedOrder.shipping_address?.cancellation_message && (
+                                            <p className="mt-2 text-gray-500">{selectedOrder.shipping_address.cancellation_message}</p>
+                                        )}
+                                    </div>
+                                )}
+
+                                <button
+                                    onClick={handleCancelOrder}
+                                    disabled={isCancellingOrder || selectedOrder.status === 'delivered'}
+                                    className="w-full rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-400 transition-colors hover:bg-rose-500 hover:text-white disabled:opacity-50"
+                                >
+                                    {isCancellingOrder ? 'جاري الإلغاء...' : 'إلغاء الطلب وإرسال السبب للعميل'}
+                                </button>
                             </div>
 
                             {/* Products */}

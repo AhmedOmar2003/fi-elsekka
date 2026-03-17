@@ -1,0 +1,201 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { requireAdminApi } from '@/lib/admin-guard';
+import { recordServerAdminAudit } from '@/lib/admin-audit-server';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
+
+const supabaseAdmin = supabaseUrl && serviceRoleKey
+  ? createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+  : null;
+
+const UUID_REGEX = /^[0-9a-fA-F-]{36}$/;
+const LATE_BUFFER_MINUTES = 5;
+const DEFAULT_CANCEL_MESSAGE =
+  'لو كنت ما زلت تريد هذا الطلب، ادينا فرصة نجهزه على أكمل وجه، ولو أصبح جاهزًا هنرسل لك إشعارًا جديدًا بموعد الوصول المتوقع.';
+
+function resolveOrderId(request: NextRequest, context: any) {
+  const params = context?.params || {};
+  const routeId = typeof params.id === 'string' ? params.id : undefined;
+  const derivedId = request.url.includes('/api/admin/orders/')
+    ? request.url.split('/api/admin/orders/')[1]?.split(/[?#]/)[0]
+    : undefined;
+  const rawId = routeId || derivedId;
+  return rawId ? decodeURIComponent(rawId) : undefined;
+}
+
+export async function PATCH(request: NextRequest, context: any) {
+  const id = resolveOrderId(request, context);
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: 'Server misconfigured', stage: 'config' }, { status: 500 });
+  }
+  if (!id || !UUID_REGEX.test(id)) {
+    return NextResponse.json({ error: 'Invalid order id', stage: 'validate.id' }, { status: 400 });
+  }
+
+  const body = await request.json().catch(() => null);
+  const action = body?.action;
+
+  if (action === 'cancel') {
+    const auth = await requireAdminApi(request, 'update_order_status');
+    if (!auth.ok) return auth.response;
+
+    const cancellationReason = String(body?.cancellationReason || '').trim();
+    const customerMessage = String(body?.customerMessage || DEFAULT_CANCEL_MESSAGE).trim();
+    if (!cancellationReason) {
+      return NextResponse.json({ error: 'سبب الإلغاء مطلوب', stage: 'validate.reason' }, { status: 400 });
+    }
+
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .select('id, user_id, status, shipping_address')
+      .eq('id', id)
+      .single();
+
+    if (orderError || !order) {
+      return NextResponse.json({ error: 'Order not found', stage: 'db.order' }, { status: 404 });
+    }
+
+    const updatedShipping = {
+      ...(order.shipping_address || {}),
+      cancellation_reason: cancellationReason,
+      cancellation_message: customerMessage,
+      admin_cancelled_at: new Date().toISOString(),
+    };
+
+    const { error: updateError } = await supabaseAdmin
+      .from('orders')
+      .update({
+        status: 'cancelled',
+        shipping_address: updatedShipping,
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message, stage: 'db.update' }, { status: 500 });
+    }
+
+    if (order.user_id) {
+      await supabaseAdmin.from('notifications').insert([{
+        user_id: order.user_id,
+        title: 'تم إلغاء طلبك',
+        message: `تم إلغاء الطلب بسبب: ${cancellationReason}. ${customerMessage}`,
+        link: '/orders',
+        is_read: false,
+      }]);
+    }
+
+    await recordServerAdminAudit(auth.profile, {
+      action: 'order.cancel_with_reason',
+      entityType: 'order',
+      entityId: id,
+      entityLabel: id.slice(0, 8),
+      severity: 'warning',
+      details: {
+        previous_status: order.status,
+        cancellation_reason: cancellationReason,
+      },
+    });
+
+    return NextResponse.json({ success: true, shipping_address: updatedShipping });
+  }
+
+  if (action === 'delivery_plan') {
+    const auth = await requireAdminApi(request, ['update_order_status']);
+    if (!auth.ok) return auth.response;
+
+    const estimatedText = String(body?.estimatedText || '').trim();
+    const driverNote = String(body?.driverNote || '').trim();
+    const etaHours = Math.max(0, Number(body?.etaHours || 0));
+    const etaDays = Math.max(0, Number(body?.etaDays || 0));
+
+    if (!estimatedText) {
+      return NextResponse.json({ error: 'نص موعد التوصيل مطلوب', stage: 'validate.estimated_text' }, { status: 400 });
+    }
+    if (!Number.isFinite(etaHours) || !Number.isFinite(etaDays)) {
+      return NextResponse.json({ error: 'قيم الوقت غير صحيحة', stage: 'validate.timing' }, { status: 400 });
+    }
+    if (etaHours <= 0 && etaDays <= 0) {
+      return NextResponse.json({ error: 'حدد عدد ساعات أو أيام على الأقل', stage: 'validate.timing' }, { status: 400 });
+    }
+
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .select('id, user_id, status, shipping_address')
+      .eq('id', id)
+      .single();
+
+    if (orderError || !order) {
+      return NextResponse.json({ error: 'Order not found', stage: 'db.order' }, { status: 404 });
+    }
+
+    if (order.status === 'cancelled' || order.status === 'delivered') {
+      return NextResponse.json({ error: 'لا يمكن تعيين موعد توصيل لطلب غير نشط', stage: 'validate.status' }, { status: 400 });
+    }
+
+    if (order.shipping_address?.driver?.acceptance_status !== 'accepted') {
+      return NextResponse.json({ error: 'انتظر حتى يؤكد المندوب استلام الطلب أولاً', stage: 'validate.driver_acceptance' }, { status: 400 });
+    }
+
+    const startedAt = new Date();
+    const deadlineAt = new Date(startedAt.getTime() + (((etaDays * 24) + etaHours) * 60 * 60 * 1000));
+
+    const updatedShipping = {
+      ...(order.shipping_address || {}),
+      estimated_delivery: estimatedText,
+      estimated_delivery_hours: etaHours,
+      estimated_delivery_days: etaDays,
+      driver_delivery_note: driverNote,
+      delivery_eta_set_at: startedAt.toISOString(),
+      delivery_deadline_at: deadlineAt.toISOString(),
+      delivery_late_buffer_minutes: LATE_BUFFER_MINUTES,
+    };
+
+    const { error: updateError } = await supabaseAdmin
+      .from('orders')
+      .update({
+        shipping_address: updatedShipping,
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message, stage: 'db.update' }, { status: 500 });
+    }
+
+    if (order.user_id) {
+      const humanWindow = etaDays > 0 && etaHours > 0
+        ? `${etaDays} يوم و${etaHours} ساعة`
+        : etaDays > 0
+          ? `${etaDays} يوم`
+          : `${etaHours} ساعة`;
+
+      await supabaseAdmin.from('notifications').insert([{
+        user_id: order.user_id,
+        title: 'تم تجهيز طلبك للتوصيل',
+        message: `${estimatedText}. المدة المتوقعة: ${humanWindow}. سنبلغك فور أي تحديث جديد.`,
+        link: '/orders',
+        is_read: false,
+      }]);
+    }
+
+    await recordServerAdminAudit(auth.profile, {
+      action: 'order.set_delivery_plan',
+      entityType: 'order',
+      entityId: id,
+      entityLabel: id.slice(0, 8),
+      details: {
+        estimated_text: estimatedText,
+        eta_hours: etaHours,
+        eta_days: etaDays,
+        delivery_deadline_at: deadlineAt.toISOString(),
+      },
+    });
+
+    return NextResponse.json({ success: true, shipping_address: updatedShipping });
+  }
+
+  return NextResponse.json({ error: 'Unsupported action', stage: 'validate.action' }, { status: 400 });
+}

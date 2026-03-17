@@ -194,6 +194,18 @@ function OrderCard({ order, userId }: { order: Order; userId: string }) {
   const date = new Date(order.created_at).toLocaleDateString("ar-EG", {
     year: "numeric", month: "long", day: "numeric",
   })
+  const etaDays = Number(order.shipping_address?.estimated_delivery_days || 0)
+  const etaHours = Number(order.shipping_address?.estimated_delivery_hours || 0)
+  const customerCancelReason = order.shipping_address?.cancellation_reason
+  const customerCancelMessage = order.shipping_address?.cancellation_message
+
+  const etaWindow = etaDays > 0 && etaHours > 0
+    ? `${etaDays} يوم و${etaHours} ساعة`
+    : etaDays > 0
+      ? `${etaDays} يوم`
+      : etaHours > 0
+        ? `${etaHours} ساعة`
+        : null
 
   return (
     <div className="bg-surface border border-surface-hover rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-premium transition-all">
@@ -233,8 +245,30 @@ function OrderCard({ order, userId }: { order: Order; userId: string }) {
               <p className="font-black text-sm sm:text-base">
                 {order.shipping_address?.estimated_delivery || "جاري حساب وقت التوصيل..."}
               </p>
+              {etaWindow && (
+                <p className="mt-1 text-xs opacity-80">المدة المتوقعة: {etaWindow}</p>
+              )}
             </div>
           </div>
+
+          {order.shipping_address?.driver_delivery_note && (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <p className="text-xs font-bold text-primary/80 mb-1">معلومة من الإدارة بخصوص التوصيل</p>
+              <p className="text-sm font-medium text-foreground">{order.shipping_address.driver_delivery_note}</p>
+            </div>
+          )}
+
+          {order.status === 'cancelled' && (customerCancelReason || customerCancelMessage) && (
+            <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 space-y-2">
+              <p className="text-xs font-bold uppercase tracking-wide text-rose-400">سبب الإلغاء</p>
+              {customerCancelReason && (
+                <p className="text-sm font-bold text-rose-400">{customerCancelReason}</p>
+              )}
+              {customerCancelMessage && (
+                <p className="text-sm leading-7 text-gray-500">{customerCancelMessage}</p>
+              )}
+            </div>
+          )}
 
           {/* Driver Info Box (if assigned & accepted) */}
           {order.shipping_address?.driver && order.shipping_address.driver.acceptance_status === 'accepted' ? (
