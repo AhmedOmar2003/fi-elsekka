@@ -463,10 +463,10 @@ function CheckoutContent() {
                            <p className="text-rose-500 text-sm text-center mb-4 bg-rose-500/10 p-3 rounded-xl">{errorMsg}</p>
                         )}
 
-                           <Button
+                        <Button
                            type="submit"
                            size="lg"
-                           className="w-full text-lg font-bold rounded-xl h-14"
+                           className="hidden h-14 w-full rounded-xl text-lg font-bold md:flex"
                            disabled={isSubmitting || (!isTextRequestCheckout && displayItems.length === 0) || (isTextRequestCheckout && !canSubmitTextRequest)}
                         >
                            {isSubmitting ? (
