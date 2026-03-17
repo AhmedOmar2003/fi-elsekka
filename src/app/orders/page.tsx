@@ -222,6 +222,9 @@ function OrderCard({
   const textRequest = order.shipping_address?.custom_request_text
   const textRequestCategory = order.shipping_address?.custom_request_category_name
   const pricingPending = order.shipping_address?.pricing_pending === true
+  const quotedProductsTotal = Number(order.shipping_address?.quoted_products_total || 0)
+  const quotedFinalTotal = Number(order.shipping_address?.quoted_final_total || order.total_amount || 0)
+  const pricingUpdatedAt = order.shipping_address?.pricing_updated_at
 
   const handleCancelledOrderDecision = async (decision: 'insist' | 'confirm_cancel') => {
     setIsSubmittingCancelResponse(decision)
@@ -402,6 +405,17 @@ function OrderCard({
               </p>
               <p className="text-sm leading-7 text-foreground whitespace-pre-wrap">{textRequest}</p>
               <p className="text-xs text-gray-500">الإدارة والمندوب يستلمان هذا النص كما كتبته تمامًا.</p>
+            </div>
+          )}
+
+          {isTextRequestOrder && !pricingPending && quotedFinalTotal > 0 && (
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 space-y-2">
+              <p className="text-xs font-black uppercase tracking-wide text-emerald-600">تم تحديد السعر</p>
+              <p className="text-sm text-gray-500">قيمة المنتجات من المحل: <span className="font-black text-foreground">{quotedProductsTotal.toLocaleString()} ج.م</span></p>
+              <p className="text-base font-black text-emerald-600">السعر النهائي الحالي: {quotedFinalTotal.toLocaleString()} ج.م شامل التوصيل</p>
+              {pricingUpdatedAt && (
+                <p className="text-xs text-gray-500">آخر تحديث: {new Date(pricingUpdatedAt).toLocaleString('ar-EG')}</p>
+              )}
             </div>
           )}
 

@@ -383,6 +383,10 @@ export default function AdminOrdersPage() {
     const selectedOrderTextRequest = selectedOrder?.shipping_address?.custom_request_text;
     const selectedOrderTextCategory = selectedOrder?.shipping_address?.custom_request_category_name;
     const selectedOrderPricingPending = selectedOrder?.shipping_address?.pricing_pending === true;
+    const selectedOrderQuotedProductsTotal = Number(selectedOrder?.shipping_address?.quoted_products_total || 0);
+    const selectedOrderQuotedFinalTotal = Number(selectedOrder?.shipping_address?.quoted_final_total || selectedOrder?.total_amount || 0);
+    const selectedOrderPricingUpdatedAt = selectedOrder?.shipping_address?.pricing_updated_at;
+    const selectedOrderPricingDriverName = selectedOrder?.shipping_address?.pricing_updated_by_driver_name;
 
     return (
         <div className="space-y-5">
@@ -847,6 +851,27 @@ export default function AdminOrdersPage() {
                                         </p>
                                         <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-foreground">{selectedOrderTextRequest}</p>
                                         <p className="mt-2 text-[11px] text-gray-500">هذا النص هو ما سيصل للمندوب حرفيًا عند التعيين.</p>
+                                    </div>
+                                )}
+                                {selectedOrderIsTextRequest && !selectedOrderPricingPending && selectedOrderQuotedFinalTotal > 0 && (
+                                    <div className="mb-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+                                        <p className="text-xs font-black text-emerald-600">تم تسعير الطلب من المندوب</p>
+                                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                            <div className="rounded-xl bg-background px-3 py-3">
+                                                <p className="text-[11px] text-gray-500">قيمة المنتجات</p>
+                                                <p className="mt-1 text-lg font-black text-foreground">{selectedOrderQuotedProductsTotal.toLocaleString()} ج.م</p>
+                                            </div>
+                                            <div className="rounded-xl bg-background px-3 py-3">
+                                                <p className="text-[11px] text-gray-500">السعر النهائي للعميل</p>
+                                                <p className="mt-1 text-lg font-black text-emerald-600">{selectedOrderQuotedFinalTotal.toLocaleString()} ج.م</p>
+                                            </div>
+                                        </div>
+                                        {(selectedOrderPricingDriverName || selectedOrderPricingUpdatedAt) && (
+                                            <p className="mt-3 text-xs text-gray-500">
+                                                {selectedOrderPricingDriverName ? `آخر تحديث بواسطة ${selectedOrderPricingDriverName}` : 'تم تحديث السعر'}
+                                                {selectedOrderPricingUpdatedAt ? ` في ${new Date(selectedOrderPricingUpdatedAt).toLocaleString('ar-EG')}` : ''}
+                                            </p>
+                                        )}
                                     </div>
                                 )}
                                 {loadingDetail ? (
