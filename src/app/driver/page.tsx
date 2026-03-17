@@ -76,6 +76,10 @@ function OrderCard({ order, onMarkDelivered, onSubmitPricing, isUpdating, isPric
             : etaHours > 0
                 ? `${etaHours} ساعة`
                 : null
+    const driverInstruction = order.shipping_address?.driver_delivery_note?.trim()
+    const driverDeadlineText = etaWindow
+        ? `أمامك ${etaWindow} لتسليم الطلب`
+        : 'بانتظار الإدارة لتحديد مهلة التوصيل الخاصة بك'
     const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
     const textRequest = order.shipping_address?.custom_request_text
     const textRequestCategory = order.shipping_address?.custom_request_category_name
@@ -218,14 +222,16 @@ function OrderCard({ order, onMarkDelivered, onSubmitPricing, isUpdating, isPric
 
                     <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-1">
                         <p className="text-xs font-bold text-primary/80">مهلة التوصيل المطلوبة منك</p>
-                        <p className="text-sm font-black text-foreground">
-                            {order.shipping_address?.estimated_delivery || 'بانتظار الإدارة لتحديد خطة التوصيل'}
-                        </p>
-                        {etaWindow && (
-                            <p className="text-xs text-gray-500">المدة المحسوبة: {etaWindow}</p>
+                        <p className="text-sm font-black text-foreground">{driverDeadlineText}</p>
+                        {driverInstruction ? (
+                            <p className="text-xs leading-6 text-gray-500">تعليمات الإدارة لك: {driverInstruction}</p>
+                        ) : (
+                            <p className="text-xs leading-6 text-gray-500">لن يظهر هنا نص العميل المرسل له. هذه المساحة مخصصة لمهلة المندوب وتعليماته فقط.</p>
                         )}
-                        {order.shipping_address?.driver_delivery_note && (
-                            <p className="text-xs leading-6 text-gray-500">تعليمات الإدارة: {order.shipping_address.driver_delivery_note}</p>
+                        {order.shipping_address?.delivery_deadline_at && (
+                            <p className="text-[11px] text-gray-500">
+                                آخر موعد متوقع: {new Date(order.shipping_address.delivery_deadline_at).toLocaleString('ar-EG')}
+                            </p>
                         )}
                     </div>
 
