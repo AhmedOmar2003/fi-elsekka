@@ -463,23 +463,25 @@ function CheckoutContent() {
                            <p className="text-rose-500 text-sm text-center mb-4 bg-rose-500/10 p-3 rounded-xl">{errorMsg}</p>
                         )}
 
-                        <Button
-                           type="submit"
-                           size="lg"
-                           className="hidden h-14 w-full rounded-xl text-lg font-bold md:flex"
-                           disabled={isSubmitting || (!isTextRequestCheckout && displayItems.length === 0) || (isTextRequestCheckout && !canSubmitTextRequest)}
-                        >
-                           {isSubmitting ? (
-                              <div className="flex items-center gap-2">
-                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                 جاري التأكيد...
-                              </div>
-                           ) : 'تأكيد الطلب'}
-                        </Button>
+                        <div className="hidden md:block">
+                           <Button
+                              type="submit"
+                              size="lg"
+                              className="h-14 w-full rounded-xl text-lg font-bold"
+                              disabled={isSubmitting || (!isTextRequestCheckout && displayItems.length === 0) || (isTextRequestCheckout && !canSubmitTextRequest)}
+                           >
+                              {isSubmitting ? (
+                                 <div className="flex items-center gap-2">
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    جاري التأكيد...
+                                 </div>
+                              ) : 'تأكيد الطلب'}
+                           </Button>
 
-                        <p className="mt-4 text-xs text-center text-gray-500">
-                           بالضغط على تأكيد الطلب، أنت توافق على الشروط والأحكام وسياسة الخصوصية الخاصة بنا.
-                        </p>
+                           <p className="mt-4 text-xs text-center text-gray-500">
+                              بالضغط على تأكيد الطلب، أنت توافق على الشروط والأحكام وسياسة الخصوصية الخاصة بنا.
+                           </p>
+                        </div>
                      </div>
                   </div>
 
