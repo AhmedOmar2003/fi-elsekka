@@ -134,6 +134,24 @@ export async function DELETE(request: NextRequest, context: any) {
       return NextResponse.json({ error: 'فقط المشرف العام يمكنه حذف مشرف عام آخر', stage: 'authorize.delete' }, { status: 403 });
     }
 
+    const { data: authLookup, error: authLookupError } = await supabaseAdmin.auth.admin.getUserById(id);
+    const authUserExists = !!authLookup?.user;
+
+    if (authLookupError && !authLookupError.message?.toLowerCase().includes('not found')) {
+      return NextResponse.json({ error: authLookupError.message, stage: 'auth.getUserById' }, { status: 500 });
+    }
+
+    if (authUserExists) {
+      const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(id);
+
+      if (authDeleteError) {
+        return NextResponse.json({
+          error: authDeleteError.message,
+          stage: 'auth.deleteUser',
+        }, { status: 500 });
+      }
+    }
+
     const { error: dbDeleteError } = await supabaseAdmin
       .from('users')
       .delete()
@@ -143,15 +161,6 @@ export async function DELETE(request: NextRequest, context: any) {
       return NextResponse.json({ error: dbDeleteError.message, stage: 'db.delete' }, { status: 500 });
     }
 
-    const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(id);
-
-    if (authDeleteError) {
-      return NextResponse.json({
-        error: authDeleteError.message,
-        stage: 'auth.deleteUser',
-      }, { status: 500 });
-    }
-
     return NextResponse.json({
       success: true,
       deleted: {
@@ -159,6 +168,7 @@ export async function DELETE(request: NextRequest, context: any) {
         email: targetStaff.email,
         full_name: targetStaff.full_name,
       },
+      authUserDeleted: authUserExists,
     });
   } catch (e: any) {
     if (process.env.NODE_ENV !== 'production') {
