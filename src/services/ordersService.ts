@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { CartItem } from './cartService';
 import { Product } from './productsService';
-import { attachOrderEconomics, CURRENT_DELIVERY_FEE } from '@/lib/order-economics';
+import { attachOrderEconomics, CURRENT_DELIVERY_FEE, ORDER_ECONOMICS_VERSION } from '@/lib/order-economics';
 
 export interface Order {
     id: string;
@@ -31,11 +31,28 @@ export const createOrder = async (
     shippingDetails: any,
     subtotalAmount: number
 ) => {
-    const shippingWithEconomics = attachOrderEconomics(
-        shippingDetails,
-        subtotalAmount + CURRENT_DELIVERY_FEE,
-        0
-    );
+    const isTextRequestOrder = shippingDetails?.request_mode === 'custom_category_text' && !!shippingDetails?.custom_request_text;
+    const shippingWithEconomics = isTextRequestOrder
+        ? {
+            ...(shippingDetails || {}),
+            delivery_fee: CURRENT_DELIVERY_FEE,
+            subtotal_amount: 0,
+            gross_collected: 0,
+            platform_base_revenue: 0,
+            driver_revenue: 0,
+            merchant_discount_amount: 0,
+            platform_revenue: 0,
+            merchant_settlement: 0,
+            economics_version: ORDER_ECONOMICS_VERSION,
+            pricing_pending: true,
+        }
+        : attachOrderEconomics(
+            shippingDetails,
+            subtotalAmount + CURRENT_DELIVERY_FEE,
+            0
+        );
+
+    const orderTotalAmount = isTextRequestOrder ? 0 : shippingWithEconomics.gross_collected;
 
     // 1. Create the Order
     const { data: order, error: orderError } = await supabase
@@ -43,7 +60,7 @@ export const createOrder = async (
         .insert({
             user_id: userId,
             status: 'pending',
-            total_amount: shippingWithEconomics.gross_collected,
+            total_amount: orderTotalAmount,
             shipping_address: shippingWithEconomics
         })
         .select()
@@ -55,37 +72,39 @@ export const createOrder = async (
     }
 
     // 2. Prepare Order Items
-    const orderItems = cartItems.map(item => {
-        let finalPrice = item.product?.price || 0;
-        if (item.product?.discount_percentage && item.product.discount_percentage > 0) {
-            finalPrice = Math.round(finalPrice * (1 - item.product.discount_percentage / 100));
+    if (cartItems.length > 0) {
+        const orderItems = cartItems.map(item => {
+            let finalPrice = item.product?.price || 0;
+            if (item.product?.discount_percentage && item.product.discount_percentage > 0) {
+                finalPrice = Math.round(finalPrice * (1 - item.product.discount_percentage / 100));
+            }
+            return {
+                order_id: order.id,
+                product_id: item.product_id,
+                quantity: item.quantity,
+                price_at_purchase: finalPrice
+            };
+        });
+
+        // 3. Insert Order Items
+        const { error: itemsError } = await supabase
+            .from('order_items')
+            .insert(orderItems);
+
+        if (itemsError) {
+            console.error('Error creating order items:', itemsError?.message || itemsError);
+            return { error: itemsError };
         }
-        return {
-            order_id: order.id,
-            product_id: item.product_id,
-            quantity: item.quantity,
-            price_at_purchase: finalPrice
-        };
-    });
 
-    // 3. Insert Order Items
-    const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
+        // 4. Clear the cart
+        const { error: clearError } = await supabase
+            .from('cart_items')
+            .delete()
+            .eq('user_id', userId);
 
-    if (itemsError) {
-        console.error('Error creating order items:', itemsError?.message || itemsError);
-        return { error: itemsError };
-    }
-
-    // 4. Clear the cart
-    const { error: clearError } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('user_id', userId);
-
-    if (clearError) {
-        console.error('Failed to clear cart after order:', clearError?.message);
+        if (clearError) {
+            console.error('Failed to clear cart after order:', clearError?.message);
+        }
     }
 
     return { data: order };

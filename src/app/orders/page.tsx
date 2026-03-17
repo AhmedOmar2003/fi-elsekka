@@ -218,6 +218,10 @@ function OrderCard({
       : etaHours > 0
         ? `${etaHours} ساعة`
         : null
+  const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
+  const textRequest = order.shipping_address?.custom_request_text
+  const textRequestCategory = order.shipping_address?.custom_request_category_name
+  const pricingPending = order.shipping_address?.pricing_pending === true
 
   const handleCancelledOrderDecision = async (decision: 'insist' | 'confirm_cancel') => {
     setIsSubmittingCancelResponse(decision)
@@ -391,6 +395,16 @@ function OrderCard({
           <OrderTimeline currentStatus={order.status} />
 
           {/* Items */}
+          {isTextRequestOrder && textRequest && (
+            <div className="space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <p className="text-xs font-bold text-primary/80 uppercase tracking-wider">
+                {textRequestCategory ? `طلب ${textRequestCategory} النصي` : 'الطلب النصي'}
+              </p>
+              <p className="text-sm leading-7 text-foreground whitespace-pre-wrap">{textRequest}</p>
+              <p className="text-xs text-gray-500">الإدارة والمندوب يستلمان هذا النص كما كتبته تمامًا.</p>
+            </div>
+          )}
+
           {order.order_items && order.order_items.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">المنتجات</p>
@@ -430,8 +444,10 @@ function OrderCard({
 
           {/* Total */}
           <div className="flex items-center justify-between pt-2 border-t border-surface-hover">
-            <span className="text-sm text-gray-500 font-medium">المجموع الكلي (شاملاً التوصيل)</span>
-            <span className="text-lg font-black text-primary">{order.total_amount?.toLocaleString()} ج.م</span>
+            <span className="text-sm text-gray-500 font-medium">{pricingPending ? 'السعر النهائي' : 'المجموع الكلي (شاملاً التوصيل)'}</span>
+            <span className="text-lg font-black text-primary">
+              {pricingPending ? 'يحدد لاحقًا' : `${order.total_amount?.toLocaleString()} ج.م`}
+            </span>
           </div>
         </div>
       )}

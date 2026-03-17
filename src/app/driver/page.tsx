@@ -72,6 +72,10 @@ function OrderCard({ order, onMarkDelivered, isUpdating }: {
             : etaHours > 0
                 ? `${etaHours} ساعة`
                 : null
+    const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
+    const textRequest = order.shipping_address?.custom_request_text
+    const textRequestCategory = order.shipping_address?.custom_request_category_name
+    const pricingPending = order.shipping_address?.pricing_pending === true
 
     return (
         <div className={`rounded-2xl border overflow-hidden transition-all ${isDelivered
@@ -141,8 +145,18 @@ function OrderCard({ order, onMarkDelivered, isUpdating }: {
 
                     <div className="flex items-center justify-between pt-1 border-t border-surface-hover">
                         <span className="text-xs text-gray-500">إجمالي الطلب</span>
-                        <span className="font-black text-primary text-lg">{order.total_amount?.toLocaleString() || 0} ج.م</span>
+                        <span className="font-black text-primary text-lg">{pricingPending ? 'يحدد لاحقًا' : `${order.total_amount?.toLocaleString() || 0} ج.م`}</span>
                     </div>
+
+                    {isTextRequestOrder && textRequest && (
+                        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
+                            <p className="text-xs font-black text-primary/80">
+                                {textRequestCategory ? `طلب ${textRequestCategory} النصي` : 'طلب نصي'}
+                            </p>
+                            <p className="text-sm leading-7 text-foreground whitespace-pre-wrap">{textRequest}</p>
+                            <p className="text-xs text-gray-500">هذا هو النص الذي كتبه العميل، فنفّذه كما هو أو تواصل مع الإدارة لو احتجت توضيحًا.</p>
+                        </div>
+                    )}
 
                     <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-1">
                         <p className="text-xs font-bold text-primary/80">مهلة التوصيل المطلوبة منك</p>
@@ -577,12 +591,22 @@ export default function DriverDashboard() {
                             </div>
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-gray-500">إجمالي المبلغ</span>
-                                <span className="font-black text-primary">{pendingOrders[0].total_amount?.toLocaleString() || 0} ج.م</span>
+                                <span className="font-black text-primary">
+                                    {pendingOrders[0].shipping_address?.pricing_pending ? 'يحدد لاحقًا' : `${pendingOrders[0].total_amount?.toLocaleString() || 0} ج.م`}
+                                </span>
                             </div>
                             <div className="pt-2 mt-2 border-t border-surface-hover text-sm">
                                 <p className="text-gray-500 mb-1 line-clamp-1">العنوان:</p>
                                 <p className="font-bold text-foreground line-clamp-2">{pendingOrders[0].shipping_address?.street || 'عنوان غير معروف'}</p>
                             </div>
+                            {pendingOrders[0].shipping_address?.request_mode === 'custom_category_text' && pendingOrders[0].shipping_address?.custom_request_text && (
+                                <div className="pt-2 mt-2 border-t border-surface-hover text-sm">
+                                    <p className="text-gray-500 mb-1">الطلب النصي:</p>
+                                    <p className="font-bold text-foreground line-clamp-4 whitespace-pre-wrap">
+                                        {pendingOrders[0].shipping_address.custom_request_text}
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex flex-col gap-3">

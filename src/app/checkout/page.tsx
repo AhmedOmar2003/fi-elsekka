@@ -18,6 +18,12 @@ import { createOrder } from "@/services/ordersService"
 import { getDefaultDeliveryAddress, saveDeliveryAddress } from "@/services/deliveryService"
 import { incrementDiscountCodeUsage } from "@/services/discountCodesService"
 import { CURRENT_DELIVERY_FEE } from "@/lib/order-economics"
+import {
+   clearTextCategoryOrderDraft,
+   readTextCategoryOrderDraft,
+   TEXT_CATEGORY_ORDER_MODE,
+   type TextCategoryOrderDraft,
+} from "@/lib/text-category-orders"
 
 function CheckoutContent() {
    const router = useRouter()
@@ -26,9 +32,13 @@ function CheckoutContent() {
    const buyNowId = searchParams.get("buyNow")
    const buyNowQtyRaw = searchParams.get("qty")
    const buyNowPriceRaw = searchParams.get("price")
+   const requestMode = searchParams.get("requestMode")
+   const textCategoryId = searchParams.get("categoryId")
 
    const [overrideProduct, setOverrideProduct] = React.useState<Product | null>(null)
    const [isOverrideLoading, setIsOverrideLoading] = React.useState(!!buyNowId)
+   const [textRequestDraft, setTextRequestDraft] = React.useState<TextCategoryOrderDraft | null>(null)
+   const [isTextRequestLoading, setIsTextRequestLoading] = React.useState(requestMode === TEXT_CATEGORY_ORDER_MODE)
 
    React.useEffect(() => {
       if (buyNowId) {
@@ -39,17 +49,29 @@ function CheckoutContent() {
       }
    }, [buyNowId])
 
+   React.useEffect(() => {
+      if (requestMode !== TEXT_CATEGORY_ORDER_MODE || !textCategoryId) {
+         setIsTextRequestLoading(false)
+         return
+      }
+
+      const draft = readTextCategoryOrderDraft(textCategoryId)
+      setTextRequestDraft(draft)
+      setIsTextRequestLoading(false)
+   }, [requestMode, textCategoryId])
+
    const { user, profile, isLoading: isAuthLoading } = useAuth()
    const cart = useCart()
    
    const isUsingOverride = !!(buyNowId && overrideProduct)
-   
+   const isTextRequestCheckout = requestMode === TEXT_CATEGORY_ORDER_MODE
+
    const displayItems = isUsingOverride ? [{
       id: "override-item",
       product_id: overrideProduct.id,
       quantity: parseInt(buyNowQtyRaw || "1", 10),
       product: overrideProduct
-   }] : cart.items;
+   }] : isTextRequestCheckout ? [] : cart.items;
 
    let displayCartTotal = cart.cartTotal;
    let displayCartOriginal = cart.cartOriginalTotal;
@@ -69,7 +91,7 @@ function CheckoutContent() {
       displayDiscount = displayCartOriginal - displayCartTotal;
    }
 
-   const isCartLoading = cart.isLoading || isOverrideLoading
+   const isCartLoading = (isTextRequestCheckout ? false : cart.isLoading) || isOverrideLoading || isTextRequestLoading
 
    const [isSubmitting, setIsSubmitting] = React.useState(false)
    const [errorMsg, setErrorMsg] = React.useState("")
@@ -112,14 +134,27 @@ function CheckoutContent() {
 
    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault()
-      if (!user || displayItems.length === 0) return
+      if (!user) return
+      if (!isTextRequestCheckout && displayItems.length === 0) return
+      if (isTextRequestCheckout && !textRequestDraft?.requestText?.trim()) {
+         setErrorMsg("اكتب طلب السوبر ماركت أولًا من القسم ثم أكمل الطلب.")
+         return
+      }
       setIsSubmitting(true)
       setErrorMsg("")
 
       const shippingDetails = {
          recipient: `${firstName} ${lastName}`,
          phone, city, area, street: address, notes,
-         is_grace_period: true
+         is_grace_period: true,
+         ...(isTextRequestCheckout ? {
+            request_mode: 'custom_category_text',
+            custom_request_text: textRequestDraft?.requestText?.trim(),
+            custom_request_category_id: textRequestDraft?.categoryId,
+            custom_request_category_name: textRequestDraft?.categoryName,
+            pricing_pending: true,
+            quoted_delivery_fee: CURRENT_DELIVERY_FEE,
+         } : {}),
       }
 
       const { data: newOrder, error } = await createOrder(user.id, displayItems, shippingDetails, displayCartTotal)
@@ -128,6 +163,10 @@ function CheckoutContent() {
       if (error) {
          setErrorMsg((error as any).message || "حصل خطأ أثناء تأكيد الطلب، حاول مرة أخرى!")
          return
+      }
+
+      if (isTextRequestCheckout && textCategoryId) {
+         clearTextCategoryOrderDraft(textCategoryId)
       }
 
       // Save or update their delivery address for next time
@@ -303,7 +342,24 @@ function CheckoutContent() {
                         <h3 className="text-xl font-heading font-bold mb-6 text-foreground border-b border-surface-hover pb-4">ملخص طلبك</h3>
 
                         <div className="divide-y divide-surface-hover border-b border-surface-hover mb-6 pb-6 max-h-48 overflow-y-auto custom-scrollbar">
-                           {displayItems.length === 0 ? (
+                           {isTextRequestCheckout && textRequestDraft ? (
+                              <div className="space-y-4 py-1">
+                                 <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                                    <p className="text-xs font-black text-primary/80">نوع الطلب</p>
+                                    <p className="mt-1 text-base font-black text-foreground">{textRequestDraft.categoryName}</p>
+                                 </div>
+                                 <div className="rounded-2xl border border-surface-hover bg-background/60 p-4">
+                                    <p className="text-xs font-black text-gray-500">النص الذي سيراه الأدمن والمندوب</p>
+                                    <p className="mt-2 text-sm leading-7 text-foreground whitespace-pre-wrap">{textRequestDraft.requestText}</p>
+                                 </div>
+                                 <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
+                                    <p className="text-xs font-black text-amber-500">التسعير</p>
+                                    <p className="mt-2 text-sm leading-7 text-gray-500">
+                                       السعر النهائي للمنتجات سيتحدد بعد مراجعة الطلب من الإدارة أو المندوب، وسيتم تحصيله عند الاستلام بالإضافة إلى رسوم التوصيل.
+                                    </p>
+                                 </div>
+                              </div>
+                           ) : displayItems.length === 0 ? (
                               <p className="text-sm text-gray-500 text-center py-4">السلة فارغة</p>
                            ) : displayItems.map(item => (
                               <div key={item.id} className="flex justify-between py-3 text-sm">
@@ -333,20 +389,35 @@ function CheckoutContent() {
                         </div>
 
                         <div className="space-y-4 mb-8 text-base font-medium">
-                           <div className="flex justify-between items-center text-gray-500">
-                              <span>المجموع الأصلي</span>
-                              <span className="font-heading font-semibold text-foreground">{displayCartOriginal.toLocaleString()} ج.م</span>
-                           </div>
-                           {displayDiscount > 0 && (
-                              <div className="flex justify-between items-center text-rose-400">
-                                 <span>إجمالي الخصم</span>
-                                 <span className="font-heading font-semibold text-rose-400">- {displayDiscount.toLocaleString()} ج.م</span>
-                              </div>
+                           {isTextRequestCheckout ? (
+                              <>
+                                 <div className="flex justify-between items-center text-gray-500">
+                                    <span>قيمة المنتجات</span>
+                                    <span className="font-heading font-semibold text-foreground">تتحدد بعد المراجعة</span>
+                                 </div>
+                                 <div className="flex justify-between items-center text-gray-400 pt-2 border-t border-surface-hover/50">
+                                    <span>ملاحظات التسعير</span>
+                                    <span className="font-heading font-semibold text-foreground">سيتم إبلاغك بها لاحقًا</span>
+                                 </div>
+                              </>
+                           ) : (
+                              <>
+                                 <div className="flex justify-between items-center text-gray-500">
+                                    <span>المجموع الأصلي</span>
+                                    <span className="font-heading font-semibold text-foreground">{displayCartOriginal.toLocaleString()} ج.م</span>
+                                 </div>
+                                 {displayDiscount > 0 && (
+                                    <div className="flex justify-between items-center text-rose-400">
+                                       <span>إجمالي الخصم</span>
+                                       <span className="font-heading font-semibold text-rose-400">- {displayDiscount.toLocaleString()} ج.م</span>
+                                    </div>
+                                 )}
+                                 <div className="flex justify-between items-center text-gray-400 pt-2 border-t border-surface-hover/50">
+                                    <span>المجموع بعد الخصم</span>
+                                    <span className="font-heading font-semibold text-foreground">{displayCartTotal.toLocaleString()} ج.م</span>
+                                 </div>
+                              </>
                            )}
-                           <div className="flex justify-between items-center text-gray-400 pt-2 border-t border-surface-hover/50">
-                              <span>المجموع بعد الخصم</span>
-                              <span className="font-heading font-semibold text-foreground">{displayCartTotal.toLocaleString()} ج.م</span>
-                           </div>
                            <div className="flex justify-between items-center text-gray-400">
                               <span>مصاريف التوصيل</span>
                               <span className="font-heading font-semibold text-foreground">{CURRENT_DELIVERY_FEE} ج.م</span>
@@ -354,8 +425,11 @@ function CheckoutContent() {
                         </div>
 
                         <div className="flex justify-between items-center border-t border-surface-hover pt-6 mb-8 bg-surface-lighter/50 rounded-xl p-4 mt-2">
-                           <span className="text-lg font-bold text-foreground">الإجمالي للدفع</span>
-                           <span className="font-heading text-3xl font-black text-primary drop-shadow-sm">{(displayCartTotal + CURRENT_DELIVERY_FEE).toFixed(0)} <span className="text-sm">ج.م</span></span>
+                           <span className="text-lg font-bold text-foreground">{isTextRequestCheckout ? 'السعر النهائي' : 'الإجمالي للدفع'}</span>
+                           <span className="font-heading text-3xl font-black text-primary drop-shadow-sm">
+                              {isTextRequestCheckout ? 'يحدد لاحقًا' : `${(displayCartTotal + CURRENT_DELIVERY_FEE).toFixed(0)} `}
+                              {!isTextRequestCheckout && <span className="text-sm">ج.م</span>}
+                           </span>
                         </div>
 
                         {errorMsg && (
@@ -366,7 +440,7 @@ function CheckoutContent() {
                            type="submit"
                            size="lg"
                            className="w-full text-lg font-bold rounded-xl h-14"
-                           disabled={isSubmitting || displayItems.length === 0}
+                           disabled={isSubmitting || (!isTextRequestCheckout && displayItems.length === 0) || (isTextRequestCheckout && !textRequestDraft?.requestText?.trim())}
                         >
                            {isSubmitting ? (
                               <div className="flex items-center gap-2">

@@ -11,20 +11,24 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
 import { useParams } from "next/navigation"
-import { Loader2 } from "lucide-react"
+import { Loader2, NotebookPen, ShoppingBasket, Sparkles } from "lucide-react"
 import { Product, fetchProductsByCategory, fetchPaginatedProducts } from "@/services/productsService"
 import { useProducts } from "@/contexts/ProductsContext"
 import { X } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { isTextRequestCategory, TEXT_CATEGORY_ORDER_MODE, writeTextCategoryOrderDraft } from "@/lib/text-category-orders"
 
 const PAGE_SIZE = 20
 
 export default function CategoryPage() {
   const params = useParams()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const slug = typeof params.slug === 'string' ? params.slug : 'all'
   
   const [isFilterOpen, setIsFilterOpen] = React.useState(false)
   const { categories } = useProducts()
+  const [textRequest, setTextRequest] = React.useState("")
 
   // ── State for paginated "all" view ──────────────────────────────────────
   const [allPageProducts, setAllPageProducts] = React.useState<Product[]>([])
@@ -104,6 +108,21 @@ export default function CategoryPage() {
   }, [categories, slug, isAllPage])
 
   const categoryName = currentCategory?.name || (isAllPage ? 'كل المنتجات' : 'قسم المنتجات')
+  const isTextRequestCategoryPage = !!currentCategory && isTextRequestCategory(currentCategory.name)
+
+  React.useEffect(() => {
+    if (!isTextRequestCategoryPage || !currentCategory) return
+    try {
+      const raw = window.sessionStorage.getItem(`text-category-order-draft:${currentCategory.id}`)
+      if (!raw) return
+      const draft = JSON.parse(raw) as { requestText?: string }
+      if (draft?.requestText) {
+        setTextRequest(draft.requestText)
+      }
+    } catch {
+      // Ignore malformed draft state
+    }
+  }, [currentCategory, isTextRequestCategoryPage])
 
   const togglePriceFilter = (range: string) => {
     setPriceFilters(prev => { const next = new Set(prev); next.has(range) ? next.delete(range) : next.add(range); return next })
@@ -190,6 +209,19 @@ export default function CategoryPage() {
     return { id: p.id, title: p.name, price, oldPrice, discountBadge, rating: p.specifications?.rating, reviewsCount: p.specifications?.reviews_count, imageUrl: p.image_url || p.specifications?.image_url || '' }
   })
 
+  const handleContinueTextOrder = () => {
+    const normalizedText = textRequest.trim()
+    if (normalizedText.length < 12 || !currentCategory) return
+
+    writeTextCategoryOrderDraft({
+      categoryId: currentCategory.id,
+      categoryName: currentCategory.name,
+      requestText: normalizedText,
+    })
+
+    router.push(`/checkout?requestMode=${TEXT_CATEGORY_ORDER_MODE}&categoryId=${currentCategory.id}`)
+  }
+
   return (
     <>
       <Header />
@@ -200,12 +232,99 @@ export default function CategoryPage() {
               {searchQuery ? `نتايج البحث: "${searchQuery}"` : categoryName}
             </h1>
             <p className="mt-2 text-gray-500">
-              {searchQuery ? `تم العثور على ${productCards.length} منتج` : 'تصفح أفضل المنتجات المختارة لك خصيصاً في هذا القسم.'}
+              {searchQuery
+                ? `تم العثور على ${productCards.length} منتج`
+                : isTextRequestCategoryPage
+                  ? 'اكتب طلبك كنص واضح، وسيراه الأدمن والمندوب كما كتبته بالضبط.'
+                  : 'تصفح أفضل المنتجات المختارة لك خصيصاً في هذا القسم.'}
             </p>
           </div>
         </div>
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+          {isTextRequestCategoryPage ? (
+            <div className="mx-auto max-w-4xl">
+              <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+                <div className="rounded-[2rem] border border-surface-hover bg-surface p-6 shadow-premium sm:p-8">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary/10 text-primary">
+                      <ShoppingBasket className="h-7 w-7" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black text-foreground">اطلب من السوبر ماركت بالنص</h2>
+                      <p className="mt-2 text-sm leading-7 text-gray-500">
+                        اكتب احتياجاتك بالتفصيل بدل اختيار منتجات جاهزة. الإدارة ستراجع الطلب، ثم نرسله للمندوب كما كتبته تمامًا.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 rounded-3xl border border-primary/20 bg-primary/5 p-4">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Sparkles className="h-4 w-4" />
+                      <p className="text-xs font-black">كيف تكتب الطلب بشكل صحيح؟</p>
+                    </div>
+                    <ul className="mt-3 space-y-2 text-sm leading-7 text-gray-500">
+                      <li>اكتب اسم كل منتج والكمية المطلوبة.</li>
+                      <li>اذكر المقاسات أو الوزن أو النوع إن وجد.</li>
+                      <li>لو عندك بديل مقبول، اكتبه بوضوح.</li>
+                    </ul>
+                  </div>
+
+                  <div className="mt-6">
+                    <label className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
+                      <NotebookPen className="h-4 w-4 text-primary" />
+                      تفاصيل الطلب النصي
+                    </label>
+                    <textarea
+                      value={textRequest}
+                      onChange={(e) => setTextRequest(e.target.value)}
+                      rows={9}
+                      placeholder={`مثال:\n2 كيلو أرز الضحى\n1 زيت عباد الشمس 2 لتر\n4 علب تونة مفتاح سهل\nلو نوع الجبن غير موجود بدّله بأي نوع مشابه`}
+                      className="w-full resize-none rounded-[1.5rem] border border-surface-hover bg-background px-4 py-4 text-sm leading-7 text-foreground outline-none transition-colors focus:border-primary/40"
+                    />
+                    <p className="mt-2 text-xs text-gray-500">
+                      هذا النص سيصل إلى الأدمن والمندوب كما هو، فحاول يكون واضحًا ومباشرًا.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs text-gray-500">
+                      السعر النهائي للمنتجات يتحدد بعد مراجعة الطلب، ثم يتم التوصيل كالمعتاد.
+                    </p>
+                    <Button
+                      onClick={handleContinueTextOrder}
+                      disabled={textRequest.trim().length < 12}
+                      className="rounded-2xl px-6 py-6 text-sm font-black"
+                    >
+                      متابعة الطلب
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="rounded-[2rem] border border-surface-hover bg-surface p-6 shadow-premium sm:p-8">
+                  <h3 className="text-lg font-black text-foreground">نموذج كتابة مقترح</h3>
+                  <div className="mt-4 rounded-3xl border border-surface-hover bg-background/70 p-4 text-sm leading-7 text-gray-500">
+                    لبن 3 علب
+                    <br />
+                    جبنة فيتا نصف كيلو
+                    <br />
+                    مكرونة 2 كيس رقم 5
+                    <br />
+                    6 زبادي فراولة
+                    <br />
+                    لو نوع اللبن غير موجود خذ أي بديل كامل الدسم
+                  </div>
+
+                  <div className="mt-6 rounded-3xl border border-amber-400/20 bg-amber-400/10 p-4">
+                    <p className="text-xs font-black text-amber-500">مهم</p>
+                    <p className="mt-2 text-sm leading-7 text-gray-500">
+                      لا تكتب كلامًا عامًا مثل "هاتلي شوية طلبات". كلما كان الطلب أدق، كان التنفيذ أسرع وأصح.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
           <div className="flex flex-col md:flex-row gap-8">
 
             {/* Mobile Filter Toggle */}
@@ -308,6 +427,7 @@ export default function CategoryPage() {
               )}
             </div>
           </div>
+          )}
         </div>
       </main>
       <Footer />

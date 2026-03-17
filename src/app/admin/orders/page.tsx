@@ -379,6 +379,10 @@ export default function AdminOrdersPage() {
 
     const displayedOrders = filterStatus === 'all' ? orders : orders.filter(o => o.status === filterStatus);
     const selectedOrderEconomics = selectedOrder ? getOrderEconomics(selectedOrder) : null;
+    const selectedOrderIsTextRequest = selectedOrder?.shipping_address?.request_mode === 'custom_category_text';
+    const selectedOrderTextRequest = selectedOrder?.shipping_address?.custom_request_text;
+    const selectedOrderTextCategory = selectedOrder?.shipping_address?.custom_request_category_name;
+    const selectedOrderPricingPending = selectedOrder?.shipping_address?.pricing_pending === true;
 
     return (
         <div className="space-y-5">
@@ -833,13 +837,26 @@ export default function AdminOrdersPage() {
 
                             {/* Products */}
                             <div>
-                                <p className="text-xs font-bold text-gray-500 mb-3">المنتجات المطلوبة</p>
+                                <p className="text-xs font-bold text-gray-500 mb-3">
+                                    {selectedOrderIsTextRequest ? 'تفاصيل الطلب النصي' : 'المنتجات المطلوبة'}
+                                </p>
+                                {selectedOrderIsTextRequest && selectedOrderTextRequest && (
+                                    <div className="mb-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                                        <p className="text-xs font-black text-primary/80">
+                                            {selectedOrderTextCategory ? `قسم ${selectedOrderTextCategory}` : 'طلب نصي'}
+                                        </p>
+                                        <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-foreground">{selectedOrderTextRequest}</p>
+                                        <p className="mt-2 text-[11px] text-gray-500">هذا النص هو ما سيصل للمندوب حرفيًا عند التعيين.</p>
+                                    </div>
+                                )}
                                 {loadingDetail ? (
                                     <div className="space-y-2">
                                         {[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-surface-hover rounded-xl animate-pulse" />)}
                                     </div>
                                 ) : orderItems.length === 0 ? (
-                                    <p className="text-gray-500 text-sm text-center py-4">لا توجد منتجات</p>
+                                    <p className="text-gray-500 text-sm text-center py-4">
+                                        {selectedOrderIsTextRequest ? 'هذا الطلب لا يحتوي على منتجات مخزنة، بل طلب نصي فقط.' : 'لا توجد منتجات'}
+                                    </p>
                                 ) : (
                                     <div className="space-y-2">
                                         {orderItems.map((item, i) => (
@@ -868,8 +885,10 @@ export default function AdminOrdersPage() {
 
                             {/* Total */}
                             <div className="border-t border-surface-hover pt-4 flex items-center justify-between">
-                                <span className="text-sm text-gray-500">الإجمالي الكلي</span>
-                                <span className="text-xl font-black text-primary">{(selectedOrder.total_amount || 0).toLocaleString()} ج.م</span>
+                                <span className="text-sm text-gray-500">{selectedOrderPricingPending ? 'السعر النهائي' : 'الإجمالي الكلي'}</span>
+                                <span className="text-xl font-black text-primary">
+                                    {selectedOrderPricingPending ? 'يحدد لاحقًا' : `${(selectedOrder.total_amount || 0).toLocaleString()} ج.م`}
+                                </span>
                             </div>
                         </div>
                     </div>
