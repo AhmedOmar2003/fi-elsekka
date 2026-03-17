@@ -9,6 +9,7 @@ import { fetchUserOrders, Order, respondToCancelledOrder } from "@/services/orde
 import { supabase } from "@/lib/supabase"
 import { Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, ChevronDown, ChevronUp, Wifi, Phone, Star, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { RequestAttachmentsGallery } from "@/components/orders/request-attachments-gallery"
 
 // ─── Driver Rating Widget ──────────────────────────────────────────────────
 function DriverRating({ orderId, driverId, userId }: { orderId: string; driverId: string; userId: string }) {
@@ -221,6 +222,7 @@ function OrderCard({
   const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
   const textRequest = order.shipping_address?.custom_request_text
   const textRequestCategory = order.shipping_address?.custom_request_category_name
+  const textRequestImageUrls = Array.isArray(order.shipping_address?.custom_request_image_urls) ? order.shipping_address.custom_request_image_urls : []
   const pricingPending = order.shipping_address?.pricing_pending === true
   const quotedProductsTotal = Number(order.shipping_address?.quoted_products_total || 0)
   const quotedFinalTotal = Number(order.shipping_address?.quoted_final_total || order.total_amount || 0)
@@ -398,13 +400,20 @@ function OrderCard({
           <OrderTimeline currentStatus={order.status} />
 
           {/* Items */}
-          {isTextRequestOrder && textRequest && (
+          {isTextRequestOrder && (textRequest || textRequestImageUrls.length > 0) && (
             <div className="space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-4">
               <p className="text-xs font-bold text-primary/80 uppercase tracking-wider">
                 {textRequestCategory ? `طلب ${textRequestCategory} النصي` : 'الطلب النصي'}
               </p>
-              <p className="text-sm leading-7 text-foreground whitespace-pre-wrap">{textRequest}</p>
-              <p className="text-xs text-gray-500">الإدارة والمندوب يستلمان هذا النص كما كتبته تمامًا.</p>
+              <p className="text-sm leading-7 text-foreground whitespace-pre-wrap">
+                {textRequest?.trim() || 'اعتمدت هذا الطلب على الصور المرفقة فقط بدون نص إضافي.'}
+              </p>
+              <p className="text-xs text-gray-500">الإدارة والمندوب يستلمان هذا الطلب كما أرسلته أنت تمامًا.</p>
+              <RequestAttachmentsGallery
+                imageUrls={textRequestImageUrls}
+                title="المرفقات التي أرسلتها"
+                hint="لو رفعت روشتة أو صورة دواء فستظل مرتبطة بالطلب هنا."
+              />
             </div>
           )}
 

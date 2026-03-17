@@ -1,14 +1,37 @@
+import { supabase } from '@/lib/supabase';
+
 export const TEXT_CATEGORY_ORDER_MODE = 'text-category';
-export const TEXT_REQUEST_CATEGORY_NAMES = ['سوبر ماركت'];
+
+const TEXT_REQUEST_CATEGORY_CONFIG = {
+  'سوبر ماركت': {
+    allowText: true,
+    requireText: true,
+    allowImages: false,
+    maxImages: 0,
+  },
+  'صيدلية': {
+    allowText: true,
+    requireText: false,
+    allowImages: true,
+    maxImages: 3,
+  },
+} as const;
+
+export const TEXT_REQUEST_CATEGORY_NAMES = Object.keys(TEXT_REQUEST_CATEGORY_CONFIG);
 
 export type TextCategoryOrderDraft = {
   categoryId: string;
   categoryName: string;
   requestText: string;
+  imageUrls?: string[];
 };
 
 export function isTextRequestCategory(name?: string | null) {
   return TEXT_REQUEST_CATEGORY_NAMES.includes((name || '').trim());
+}
+
+export function getTextRequestCategoryConfig(name?: string | null) {
+  return TEXT_REQUEST_CATEGORY_CONFIG[(name || '').trim() as keyof typeof TEXT_REQUEST_CATEGORY_CONFIG] || null;
 }
 
 export function getTextCategoryOrderDraftKey(categoryId: string) {
@@ -33,4 +56,22 @@ export function writeTextCategoryOrderDraft(draft: TextCategoryOrderDraft) {
 export function clearTextCategoryOrderDraft(categoryId: string) {
   if (typeof window === 'undefined') return;
   window.sessionStorage.removeItem(getTextCategoryOrderDraftKey(categoryId));
+}
+
+export async function uploadTextCategoryRequestImage(categoryId: string, file: File) {
+  const ext = file.name.split('.').pop() || 'jpg';
+  const safeCategoryId = categoryId.replace(/[^a-zA-Z0-9_-]/g, '');
+  const fileName = `category-requests/${safeCategoryId}/${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from('review-images')
+    .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+  if (error) {
+    console.error('uploadTextCategoryRequestImage error:', error);
+    return null;
+  }
+
+  const { data } = supabase.storage.from('review-images').getPublicUrl(fileName);
+  return data.publicUrl;
 }

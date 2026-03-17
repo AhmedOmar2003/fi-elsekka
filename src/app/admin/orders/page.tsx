@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { hasPermission } from '@/lib/permissions';
 import { toast } from 'sonner';
 import { getOrderEconomics } from '@/lib/order-economics';
+import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery';
 
 const STATUS_FILTERS = [
     { value: 'pending', label: 'في الانتظار', color: 'text-amber-400  bg-amber-400/10  border-amber-400/20' },
@@ -382,6 +383,9 @@ export default function AdminOrdersPage() {
     const selectedOrderIsTextRequest = selectedOrder?.shipping_address?.request_mode === 'custom_category_text';
     const selectedOrderTextRequest = selectedOrder?.shipping_address?.custom_request_text;
     const selectedOrderTextCategory = selectedOrder?.shipping_address?.custom_request_category_name;
+    const selectedOrderTextRequestImages = Array.isArray(selectedOrder?.shipping_address?.custom_request_image_urls)
+        ? selectedOrder.shipping_address.custom_request_image_urls
+        : [];
     const selectedOrderPricingPending = selectedOrder?.shipping_address?.pricing_pending === true;
     const selectedOrderQuotedProductsTotal = Number(selectedOrder?.shipping_address?.quoted_products_total || 0);
     const selectedOrderQuotedFinalTotal = Number(selectedOrder?.shipping_address?.quoted_final_total || selectedOrder?.total_amount || 0);
@@ -844,13 +848,22 @@ export default function AdminOrdersPage() {
                                 <p className="text-xs font-bold text-gray-500 mb-3">
                                     {selectedOrderIsTextRequest ? 'تفاصيل الطلب النصي' : 'المنتجات المطلوبة'}
                                 </p>
-                                {selectedOrderIsTextRequest && selectedOrderTextRequest && (
+                                {selectedOrderIsTextRequest && (selectedOrderTextRequest || selectedOrderTextRequestImages.length > 0) && (
                                     <div className="mb-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
                                         <p className="text-xs font-black text-primary/80">
                                             {selectedOrderTextCategory ? `قسم ${selectedOrderTextCategory}` : 'طلب نصي'}
                                         </p>
-                                        <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-foreground">{selectedOrderTextRequest}</p>
+                                        <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-foreground">
+                                            {selectedOrderTextRequest?.trim() || 'هذا الطلب يعتمد على الصور المرفقة فقط دون نص إضافي من العميل.'}
+                                        </p>
                                         <p className="mt-2 text-[11px] text-gray-500">هذا النص هو ما سيصل للمندوب حرفيًا عند التعيين.</p>
+                                        <div className="mt-3">
+                                            <RequestAttachmentsGallery
+                                                imageUrls={selectedOrderTextRequestImages}
+                                                title="صور العميل المرفقة"
+                                                hint="ستصل هذه الصور للمندوب كما هي، فراجع وضوحها قبل المتابعة."
+                                            />
+                                        </div>
                                     </div>
                                 )}
                                 {selectedOrderIsTextRequest && !selectedOrderPricingPending && selectedOrderQuotedFinalTotal > 0 && (

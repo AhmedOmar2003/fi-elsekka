@@ -11,12 +11,18 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
 import { useParams } from "next/navigation"
-import { Loader2, NotebookPen, ShoppingBasket, Sparkles } from "lucide-react"
+import { ImagePlus, Loader2, NotebookPen, ShoppingBasket, Sparkles, Trash2, Pill } from "lucide-react"
 import { Product, fetchProductsByCategory, fetchPaginatedProducts } from "@/services/productsService"
 import { useProducts } from "@/contexts/ProductsContext"
 import { X } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { isTextRequestCategory, TEXT_CATEGORY_ORDER_MODE, writeTextCategoryOrderDraft } from "@/lib/text-category-orders"
+import {
+  getTextRequestCategoryConfig,
+  isTextRequestCategory,
+  TEXT_CATEGORY_ORDER_MODE,
+  uploadTextCategoryRequestImage,
+  writeTextCategoryOrderDraft,
+} from "@/lib/text-category-orders"
 
 const PAGE_SIZE = 20
 
@@ -29,6 +35,9 @@ export default function CategoryPage() {
   const [isFilterOpen, setIsFilterOpen] = React.useState(false)
   const { categories } = useProducts()
   const [textRequest, setTextRequest] = React.useState("")
+  const [requestImageUrls, setRequestImageUrls] = React.useState<string[]>([])
+  const [isUploadingImages, setIsUploadingImages] = React.useState(false)
+  const [requestError, setRequestError] = React.useState("")
 
   // ── State for paginated "all" view ──────────────────────────────────────
   const [allPageProducts, setAllPageProducts] = React.useState<Product[]>([])
@@ -109,16 +118,30 @@ export default function CategoryPage() {
 
   const categoryName = currentCategory?.name || (isAllPage ? 'كل المنتجات' : 'قسم المنتجات')
   const isTextRequestCategoryPage = !!currentCategory && isTextRequestCategory(currentCategory.name)
+  const textRequestCategoryConfig = React.useMemo(
+    () => getTextRequestCategoryConfig(currentCategory?.name),
+    [currentCategory?.name]
+  )
+  const canContinueTextRequest = React.useMemo(() => {
+    if (!textRequestCategoryConfig) return false
+    const hasText = textRequest.trim().length >= (textRequestCategoryConfig.requireText ? 12 : 1)
+    const hasImages = requestImageUrls.length > 0
+    return textRequestCategoryConfig.requireText ? hasText : hasText || hasImages
+  }, [requestImageUrls.length, textRequest, textRequestCategoryConfig])
 
   React.useEffect(() => {
     if (!isTextRequestCategoryPage || !currentCategory) return
+    setTextRequest("")
+    setRequestImageUrls([])
+    setRequestError("")
     try {
       const raw = window.sessionStorage.getItem(`text-category-order-draft:${currentCategory.id}`)
       if (!raw) return
-      const draft = JSON.parse(raw) as { requestText?: string }
+      const draft = JSON.parse(raw) as { requestText?: string; imageUrls?: string[] }
       if (draft?.requestText) {
         setTextRequest(draft.requestText)
       }
+      setRequestImageUrls(Array.isArray(draft?.imageUrls) ? draft.imageUrls.filter(Boolean) : [])
     } catch {
       // Ignore malformed draft state
     }
@@ -209,14 +232,71 @@ export default function CategoryPage() {
     return { id: p.id, title: p.name, price, oldPrice, discountBadge, rating: p.specifications?.rating, reviewsCount: p.specifications?.reviews_count, imageUrl: p.image_url || p.specifications?.image_url || '' }
   })
 
+  const handleUploadRequestImages = async (files: FileList | null) => {
+    if (!files || !currentCategory || !textRequestCategoryConfig?.allowImages) return
+
+    const selectedFiles = Array.from(files)
+    const availableSlots = Math.max((textRequestCategoryConfig.maxImages || 0) - requestImageUrls.length, 0)
+
+    if (availableSlots <= 0) {
+      setRequestError(`يمكنك رفع ${textRequestCategoryConfig.maxImages} صور فقط لهذا الطلب.`)
+      return
+    }
+
+    const validFiles = selectedFiles.slice(0, availableSlots)
+    const invalidType = validFiles.find(file => !file.type.startsWith('image/'))
+
+    if (invalidType) {
+      setRequestError('ارفع صورًا واضحة فقط بصيغة صور فعلية مثل JPG أو PNG.')
+      return
+    }
+
+    setRequestError('')
+    setIsUploadingImages(true)
+
+    try {
+      const uploadedUrls: string[] = []
+
+      for (const file of validFiles) {
+        const uploadedUrl = await uploadTextCategoryRequestImage(currentCategory.id, file)
+        if (!uploadedUrl) {
+          throw new Error('تعذر رفع إحدى الصور. حاول مرة أخرى بصورة أوضح أو بعد تسجيل الدخول.')
+        }
+        uploadedUrls.push(uploadedUrl)
+      }
+
+      setRequestImageUrls(prev => [...prev, ...uploadedUrls].slice(0, textRequestCategoryConfig.maxImages))
+    } catch (error: any) {
+      setRequestError(error.message || 'تعذر رفع الصور الآن.')
+    } finally {
+      setIsUploadingImages(false)
+    }
+  }
+
+  const handleRemoveRequestImage = (imageUrl: string) => {
+    setRequestImageUrls(prev => prev.filter(url => url !== imageUrl))
+  }
+
   const handleContinueTextOrder = () => {
     const normalizedText = textRequest.trim()
-    if (normalizedText.length < 12 || !currentCategory) return
+    const hasImages = requestImageUrls.length > 0
+    const requiresText = textRequestCategoryConfig?.requireText === true
+
+    if (!currentCategory || !textRequestCategoryConfig) return
+    if (requiresText && normalizedText.length < 12) {
+      setRequestError('اكتب الطلب بشكل واضح قبل المتابعة.')
+      return
+    }
+    if (!requiresText && normalizedText.length === 0 && !hasImages) {
+      setRequestError('اكتب طلبك أو ارفع صورة واحدة واضحة على الأقل قبل المتابعة.')
+      return
+    }
 
     writeTextCategoryOrderDraft({
       categoryId: currentCategory.id,
       categoryName: currentCategory.name,
       requestText: normalizedText,
+      imageUrls: requestImageUrls,
     })
 
     router.push(`/checkout?requestMode=${TEXT_CATEGORY_ORDER_MODE}&categoryId=${currentCategory.id}`)
@@ -235,7 +315,9 @@ export default function CategoryPage() {
               {searchQuery
                 ? `تم العثور على ${productCards.length} منتج`
                 : isTextRequestCategoryPage
-                  ? 'اكتب طلبك كنص واضح، وسيراه الأدمن والمندوب كما كتبته بالضبط.'
+                  ? currentCategory?.name === 'صيدلية'
+                    ? 'اكتب طلبك الصيدلي أو ارفع الروشتة بصور واضحة جدًا، ثم سيراه الأدمن والمندوب كما أرسلته.'
+                    : 'اكتب طلبك كنص واضح، وسيراه الأدمن والمندوب كما كتبته بالضبط.'
                   : 'تصفح أفضل المنتجات المختارة لك خصيصاً في هذا القسم.'}
             </p>
           </div>
@@ -248,12 +330,16 @@ export default function CategoryPage() {
                 <div className="rounded-[2rem] border border-surface-hover bg-surface p-6 shadow-premium sm:p-8">
                   <div className="flex items-start gap-4">
                     <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary/10 text-primary">
-                      <ShoppingBasket className="h-7 w-7" />
+                      {currentCategory?.name === 'صيدلية' ? <Pill className="h-7 w-7" /> : <ShoppingBasket className="h-7 w-7" />}
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-foreground">اطلب من السوبر ماركت بالنص</h2>
+                      <h2 className="text-2xl font-black text-foreground">
+                        {currentCategory?.name === 'صيدلية' ? 'اطلب من الصيدلية بالنص أو بالروشتة' : 'اطلب من السوبر ماركت بالنص'}
+                      </h2>
                       <p className="mt-2 text-sm leading-7 text-gray-500">
-                        اكتب احتياجاتك بالتفصيل بدل اختيار منتجات جاهزة. الإدارة ستراجع الطلب، ثم نرسله للمندوب كما كتبته تمامًا.
+                        {currentCategory?.name === 'صيدلية'
+                          ? 'اكتب أسماء الأدوية أو ارفع حتى 3 صور واضحة جدًا للروشتة أو العبوة. الإدارة ستراجع الطلب، ثم نرسله للمندوب كما أرسلته.'
+                          : 'اكتب احتياجاتك بالتفصيل بدل اختيار منتجات جاهزة. الإدارة ستراجع الطلب، ثم نرسله للمندوب كما كتبته تمامًا.'}
                       </p>
                     </div>
                   </div>
@@ -264,28 +350,101 @@ export default function CategoryPage() {
                       <p className="text-xs font-black">كيف تكتب الطلب بشكل صحيح؟</p>
                     </div>
                     <ul className="mt-3 space-y-2 text-sm leading-7 text-gray-500">
-                      <li>اكتب اسم كل منتج والكمية المطلوبة.</li>
-                      <li>اذكر المقاسات أو الوزن أو النوع إن وجد.</li>
-                      <li>لو عندك بديل مقبول، اكتبه بوضوح.</li>
+                      {currentCategory?.name === 'صيدلية' ? (
+                        <>
+                          <li>اكتب اسم الدواء أو التركيز والكمية المطلوبة إن كنت تعرفها.</li>
+                          <li>لو سترفع روشتة، اجعل الصور واضحة جدًا ومقروءة بالكامل.</li>
+                          <li>يمكنك الجمع بين النص والصور لو تحب توضيحًا أكبر.</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>اكتب اسم كل منتج والكمية المطلوبة.</li>
+                          <li>اذكر المقاسات أو الوزن أو النوع إن وجد.</li>
+                          <li>لو عندك بديل مقبول، اكتبه بوضوح.</li>
+                        </>
+                      )}
                     </ul>
                   </div>
 
-                  <div className="mt-6">
+                  {textRequestCategoryConfig?.allowText && (
+                    <div className="mt-6">
                     <label className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
                       <NotebookPen className="h-4 w-4 text-primary" />
-                      تفاصيل الطلب النصي
+                      {currentCategory?.name === 'صيدلية' ? 'تفاصيل الطلب أو أسماء الأدوية' : 'تفاصيل الطلب النصي'}
                     </label>
                     <textarea
                       value={textRequest}
                       onChange={(e) => setTextRequest(e.target.value)}
                       rows={9}
-                      placeholder={`مثال:\n2 كيلو أرز الضحى\n1 زيت عباد الشمس 2 لتر\n4 علب تونة مفتاح سهل\nلو نوع الجبن غير موجود بدّله بأي نوع مشابه`}
+                      placeholder={currentCategory?.name === 'صيدلية'
+                        ? `مثال:\nأوجمنتين 1 جم - عبوة\nكونجستال - 2 شريط\nلو دواء غير متوفر كلموني قبل الاستبدال`
+                        : `مثال:\n2 كيلو أرز الضحى\n1 زيت عباد الشمس 2 لتر\n4 علب تونة مفتاح سهل\nلو نوع الجبن غير موجود بدّله بأي نوع مشابه`}
                       className="w-full resize-none rounded-[1.5rem] border border-surface-hover bg-background px-4 py-4 text-sm leading-7 text-foreground outline-none transition-colors focus:border-primary/40"
                     />
                     <p className="mt-2 text-xs text-gray-500">
-                      هذا النص سيصل إلى الأدمن والمندوب كما هو، فحاول يكون واضحًا ومباشرًا.
+                      {currentCategory?.name === 'صيدلية'
+                        ? 'هذا النص سيصل إلى الأدمن والمندوب كما هو، فحاول تكتب الاسم أو التركيز بشكل واضح.'
+                        : 'هذا النص سيصل إلى الأدمن والمندوب كما هو، فحاول يكون واضحًا ومباشرًا.'}
                     </p>
-                  </div>
+                    </div>
+                  )}
+
+                  {textRequestCategoryConfig?.allowImages && (
+                    <div className="mt-6">
+                      <label className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
+                        <ImagePlus className="h-4 w-4 text-primary" />
+                        ارفع صورة الروشتة أو الدواء
+                      </label>
+                      <div className="rounded-[1.5rem] border border-dashed border-primary/25 bg-background/70 p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="text-sm font-black text-foreground">حتى 3 صور واضحة جدًا</p>
+                            <p className="mt-1 text-xs leading-6 text-gray-500">
+                              صوّر الروشتة كاملة وبوضوح، أو صور عبوة الدواء من الأمام. الصور غير الواضحة قد تؤخر التنفيذ.
+                            </p>
+                          </div>
+                          <label className="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-black text-primary transition-colors hover:bg-primary hover:text-white">
+                            {isUploadingImages ? 'جاري الرفع...' : 'اختيار الصور'}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="hidden"
+                              disabled={isUploadingImages || requestImageUrls.length >= (textRequestCategoryConfig.maxImages || 0)}
+                              onChange={(event) => {
+                                handleUploadRequestImages(event.target.files)
+                                event.currentTarget.value = ''
+                              }}
+                            />
+                          </label>
+                        </div>
+
+                        {requestImageUrls.length > 0 && (
+                          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                            {requestImageUrls.map((imageUrl, index) => (
+                              <div key={`${imageUrl}-${index}`} className="relative overflow-hidden rounded-2xl border border-surface-hover bg-surface">
+                                <img src={imageUrl} alt={`مرفق الطلب ${index + 1}`} className="h-32 w-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveRequestImage(imageUrl)}
+                                  className="absolute left-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/90 text-rose-500 shadow-sm transition-colors hover:bg-rose-500 hover:text-white"
+                                  aria-label="حذف الصورة"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {requestError ? (
+                    <div className="mt-4 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
+                      {requestError}
+                    </div>
+                  ) : null}
 
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs text-gray-500">
@@ -293,7 +452,7 @@ export default function CategoryPage() {
                     </p>
                     <Button
                       onClick={handleContinueTextOrder}
-                      disabled={textRequest.trim().length < 12}
+                      disabled={!canContinueTextRequest || isUploadingImages}
                       className="rounded-2xl px-6 py-6 text-sm font-black"
                     >
                       متابعة الطلب
@@ -302,23 +461,39 @@ export default function CategoryPage() {
                 </div>
 
                 <div className="rounded-[2rem] border border-surface-hover bg-surface p-6 shadow-premium sm:p-8">
-                  <h3 className="text-lg font-black text-foreground">نموذج كتابة مقترح</h3>
+                  <h3 className="text-lg font-black text-foreground">
+                    {currentCategory?.name === 'صيدلية' ? 'طريقة الطلب المقترحة' : 'نموذج كتابة مقترح'}
+                  </h3>
                   <div className="mt-4 rounded-3xl border border-surface-hover bg-background/70 p-4 text-sm leading-7 text-gray-500">
-                    لبن 3 علب
-                    <br />
-                    جبنة فيتا نصف كيلو
-                    <br />
-                    مكرونة 2 كيس رقم 5
-                    <br />
-                    6 زبادي فراولة
-                    <br />
-                    لو نوع اللبن غير موجود خذ أي بديل كامل الدسم
+                    {currentCategory?.name === 'صيدلية' ? (
+                      <>
+                        أوجمنتين 1 جم - عبوة
+                        <br />
+                        بروفين شراب للأطفال
+                        <br />
+                        لو التركيز غير واضح في الروشتة سأتواصل معكم
+                      </>
+                    ) : (
+                      <>
+                        لبن 3 علب
+                        <br />
+                        جبنة فيتا نصف كيلو
+                        <br />
+                        مكرونة 2 كيس رقم 5
+                        <br />
+                        6 زبادي فراولة
+                        <br />
+                        لو نوع اللبن غير موجود خذ أي بديل كامل الدسم
+                      </>
+                    )}
                   </div>
 
                   <div className="mt-6 rounded-3xl border border-amber-400/20 bg-amber-400/10 p-4">
                     <p className="text-xs font-black text-amber-500">مهم</p>
                     <p className="mt-2 text-sm leading-7 text-gray-500">
-                      لا تكتب كلامًا عامًا مثل "هاتلي شوية طلبات". كلما كان الطلب أدق، كان التنفيذ أسرع وأصح.
+                      {currentCategory?.name === 'صيدلية'
+                        ? 'اكتب اسم الدواء بوضوح أو ارفع صورًا مقروءة جدًا. الصور أو النصوص غير الواضحة قد تؤخر تجهيز الطلب.'
+                        : 'لا تكتب كلامًا عامًا مثل "هاتلي شوية طلبات". كلما كان الطلب أدق، كان التنفيذ أسرع وأصح.'}
                     </p>
                   </div>
                 </div>

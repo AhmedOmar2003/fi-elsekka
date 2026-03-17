@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown, ChevronUp, Bell, BellOff, X, AlertCircle, Coffee } from 'lucide-react'
 import { toast } from 'sonner'
+import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery'
 
 // Helper for VAPID key conversion
 function urlBase64ToUint8Array(base64String: string) {
@@ -78,6 +79,7 @@ function OrderCard({ order, onMarkDelivered, onSubmitPricing, isUpdating, isPric
     const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
     const textRequest = order.shipping_address?.custom_request_text
     const textRequestCategory = order.shipping_address?.custom_request_category_name
+    const textRequestImageUrls = Array.isArray(order.shipping_address?.custom_request_image_urls) ? order.shipping_address.custom_request_image_urls : []
     const pricingPending = order.shipping_address?.pricing_pending === true
 
     useEffect(() => {
@@ -155,13 +157,21 @@ function OrderCard({ order, onMarkDelivered, onSubmitPricing, isUpdating, isPric
                         <span className="font-black text-primary text-lg">{pricingPending ? 'يحدد لاحقًا' : `${order.total_amount?.toLocaleString() || 0} ج.م`}</span>
                     </div>
 
-                    {isTextRequestOrder && textRequest && (
+                    {isTextRequestOrder && (textRequest || textRequestImageUrls.length > 0) && (
                         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
                             <p className="text-xs font-black text-primary/80">
                                 {textRequestCategory ? `طلب ${textRequestCategory} النصي` : 'طلب نصي'}
                             </p>
-                            <p className="text-sm leading-7 text-foreground whitespace-pre-wrap">{textRequest}</p>
+                            <p className="text-sm leading-7 text-foreground whitespace-pre-wrap">
+                                {textRequest?.trim() || 'هذا الطلب يعتمد على الصور المرفقة فقط بدون نص إضافي.'}
+                            </p>
                             <p className="text-xs text-gray-500">هذا هو النص الذي كتبه العميل، فنفّذه كما هو أو تواصل مع الإدارة لو احتجت توضيحًا.</p>
+                            <RequestAttachmentsGallery
+                                imageUrls={textRequestImageUrls}
+                                title="صور الطلب المرفقة"
+                                hint="افتح الصورة في نافذة جديدة لو احتجت تكبير الروشتة أو قراءة الاسم بوضوح."
+                                compact
+                            />
                         </div>
                     )}
 
@@ -686,12 +696,18 @@ export default function DriverDashboard() {
                                 <p className="text-gray-500 mb-1 line-clamp-1">العنوان:</p>
                                 <p className="font-bold text-foreground line-clamp-2">{pendingOrders[0].shipping_address?.street || 'عنوان غير معروف'}</p>
                             </div>
-                            {pendingOrders[0].shipping_address?.request_mode === 'custom_category_text' && pendingOrders[0].shipping_address?.custom_request_text && (
+                            {pendingOrders[0].shipping_address?.request_mode === 'custom_category_text' && (
                                 <div className="pt-2 mt-2 border-t border-surface-hover text-sm">
                                     <p className="text-gray-500 mb-1">الطلب النصي:</p>
                                     <p className="font-bold text-foreground line-clamp-4 whitespace-pre-wrap">
-                                        {pendingOrders[0].shipping_address.custom_request_text}
+                                        {pendingOrders[0].shipping_address?.custom_request_text?.trim() || 'الطلب يعتمد على الصور المرفقة فقط.'}
                                     </p>
+                                    <RequestAttachmentsGallery
+                                        imageUrls={Array.isArray(pendingOrders[0].shipping_address?.custom_request_image_urls) ? pendingOrders[0].shipping_address.custom_request_image_urls : []}
+                                        title="المرفقات"
+                                        hint="الصور المرسلة مع الطلب"
+                                        compact
+                                    />
                                 </div>
                             )}
                         </div>

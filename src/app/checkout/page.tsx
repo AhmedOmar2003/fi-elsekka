@@ -20,10 +20,12 @@ import { incrementDiscountCodeUsage } from "@/services/discountCodesService"
 import { CURRENT_DELIVERY_FEE } from "@/lib/order-economics"
 import {
    clearTextCategoryOrderDraft,
+   getTextRequestCategoryConfig,
    readTextCategoryOrderDraft,
    TEXT_CATEGORY_ORDER_MODE,
    type TextCategoryOrderDraft,
 } from "@/lib/text-category-orders"
+import { RequestAttachmentsGallery } from "@/components/orders/request-attachments-gallery"
 
 function CheckoutContent() {
    const router = useRouter()
@@ -65,6 +67,19 @@ function CheckoutContent() {
    
    const isUsingOverride = !!(buyNowId && overrideProduct)
    const isTextRequestCheckout = requestMode === TEXT_CATEGORY_ORDER_MODE
+   const textRequestCategoryConfig = React.useMemo(
+      () => getTextRequestCategoryConfig(textRequestDraft?.categoryName),
+      [textRequestDraft?.categoryName]
+   )
+   const textRequestHasText = !!textRequestDraft?.requestText?.trim()
+   const textRequestHasImages = (textRequestDraft?.imageUrls?.length || 0) > 0
+   const canSubmitTextRequest = React.useMemo(() => {
+      if (!isTextRequestCheckout) return true
+      if (!textRequestCategoryConfig) return textRequestHasText
+      return textRequestCategoryConfig.requireText
+         ? (textRequestDraft?.requestText || '').trim().length >= 12
+         : (textRequestHasText || textRequestHasImages)
+   }, [isTextRequestCheckout, textRequestCategoryConfig, textRequestDraft?.requestText, textRequestHasImages, textRequestHasText])
 
    const displayItems = isUsingOverride ? [{
       id: "override-item",
@@ -136,8 +151,8 @@ function CheckoutContent() {
       e.preventDefault()
       if (!user) return
       if (!isTextRequestCheckout && displayItems.length === 0) return
-      if (isTextRequestCheckout && !textRequestDraft?.requestText?.trim()) {
-         setErrorMsg("اكتب طلب السوبر ماركت أولًا من القسم ثم أكمل الطلب.")
+      if (isTextRequestCheckout && !canSubmitTextRequest) {
+         setErrorMsg("أكمل طلبك أولًا بالنص أو بالصور ثم ارجع لإتمام الطلب.")
          return
       }
       setIsSubmitting(true)
@@ -152,6 +167,9 @@ function CheckoutContent() {
             custom_request_text: textRequestDraft?.requestText?.trim(),
             custom_request_category_id: textRequestDraft?.categoryId,
             custom_request_category_name: textRequestDraft?.categoryName,
+            custom_request_image_urls: textRequestDraft?.imageUrls || [],
+            custom_request_attachment_count: textRequestDraft?.imageUrls?.length || 0,
+            custom_request_has_attachments: (textRequestDraft?.imageUrls?.length || 0) > 0,
             pricing_pending: true,
             quoted_delivery_fee: CURRENT_DELIVERY_FEE,
          } : {}),
@@ -350,8 +368,17 @@ function CheckoutContent() {
                                  </div>
                                  <div className="rounded-2xl border border-surface-hover bg-background/60 p-4">
                                     <p className="text-xs font-black text-gray-500">النص الذي سيراه الأدمن والمندوب</p>
-                                    <p className="mt-2 text-sm leading-7 text-foreground whitespace-pre-wrap">{textRequestDraft.requestText}</p>
+                                    <p className="mt-2 text-sm leading-7 text-foreground whitespace-pre-wrap">
+                                       {textRequestDraft.requestText?.trim() || 'لم يكتب العميل نصًا، وسيعتمد الطلب على الصور المرفقة.'}
+                                    </p>
                                  </div>
+                                 {(textRequestDraft.imageUrls?.length || 0) > 0 && (
+                                    <RequestAttachmentsGallery
+                                       imageUrls={textRequestDraft.imageUrls || []}
+                                       title="الصور التي ستصل إلى الأدمن والمندوب"
+                                       hint="لو رفعت روشتة أو صور دواء، ستظهر هنا كما ستُرسل مع الطلب."
+                                    />
+                                 )}
                                  <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
                                     <p className="text-xs font-black text-amber-500">التسعير</p>
                                     <p className="mt-2 text-sm leading-7 text-gray-500">
@@ -436,11 +463,11 @@ function CheckoutContent() {
                            <p className="text-rose-500 text-sm text-center mb-4 bg-rose-500/10 p-3 rounded-xl">{errorMsg}</p>
                         )}
 
-                        <Button
+                           <Button
                            type="submit"
                            size="lg"
                            className="w-full text-lg font-bold rounded-xl h-14"
-                           disabled={isSubmitting || (!isTextRequestCheckout && displayItems.length === 0) || (isTextRequestCheckout && !textRequestDraft?.requestText?.trim())}
+                           disabled={isSubmitting || (!isTextRequestCheckout && displayItems.length === 0) || (isTextRequestCheckout && !canSubmitTextRequest)}
                         >
                            {isSubmitting ? (
                               <div className="flex items-center gap-2">

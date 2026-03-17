@@ -31,7 +31,9 @@ export const createOrder = async (
     shippingDetails: any,
     subtotalAmount: number
 ) => {
-    const isTextRequestOrder = shippingDetails?.request_mode === 'custom_category_text' && !!shippingDetails?.custom_request_text;
+    const hasTextRequestText = !!shippingDetails?.custom_request_text;
+    const hasTextRequestImages = Array.isArray(shippingDetails?.custom_request_image_urls) && shippingDetails.custom_request_image_urls.length > 0;
+    const isTextRequestOrder = shippingDetails?.request_mode === 'custom_category_text' && (hasTextRequestText || hasTextRequestImages);
     const shippingWithEconomics = isTextRequestOrder
         ? {
             ...(shippingDetails || {}),
