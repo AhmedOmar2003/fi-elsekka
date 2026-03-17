@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { requireAdminApi } from '@/lib/admin-guard';
+import { recordServerAdminAudit } from '@/lib/admin-audit-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || ''; // Must be in .env.local
@@ -50,6 +51,18 @@ export async function DELETE(request: Request) {
              console.error('Failed to delete auth user:', authError);
              return NextResponse.json({ error: 'Failed to delete driver authentication: ' + authError.message }, { status: 500 });
         }
+
+        await recordServerAdminAudit(auth.profile, {
+            action: 'driver.delete',
+            entityType: 'driver',
+            entityId: driverId,
+            entityLabel: userToDelete.email || driverId,
+            severity: 'critical',
+            details: {
+                email: userToDelete.email || null,
+                full_name: userToDelete.user_metadata?.full_name || null,
+            },
+        });
 
         return NextResponse.json({ success: true });
 

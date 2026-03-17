@@ -9,12 +9,12 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import {
     LayoutDashboard, Package, Tag, ShoppingCart, Users,
     Menu, X, LogOut, ChevronRight, Bell, Settings, Bike, Megaphone, Ticket,
-    UserPlus, ShoppingBag, CheckCircle2, Clock, Truck, XCircle, Loader2, ShieldAlert, MessageSquare, Star
+    UserPlus, ShoppingBag, CheckCircle2, Clock, Truck, XCircle, Loader2, ShieldAlert, MessageSquare, Star, Search, History, AlertTriangle
 } from 'lucide-react';
 import { signOut } from '@/services/authService';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { hasPermission } from '@/lib/permissions';
+import { hasFullAdminAccess, hasPermission } from '@/lib/permissions';
 
 // ── Types ────────────────────────────────────────────────────
 interface Notification {
@@ -31,11 +31,14 @@ interface Notification {
 const NAV_ITEMS = [
     { label: 'لوحة التحكم', href: '/admin', icon: LayoutDashboard, perm: null },
     { label: 'الطلبات', href: '/admin/orders', icon: ShoppingCart, perm: 'view_orders' },
+    { label: 'مركز العمليات', href: '/admin/operations', icon: AlertTriangle, fullAdmin: true },
     { label: 'المندوبين', href: '/admin/drivers', icon: Bike, perm: 'view_drivers' },
     { label: 'المنتجات', href: '/admin/products', icon: Package, perm: 'manage_products' },
     { label: 'الأقسام', href: '/admin/categories', icon: Tag, perm: 'manage_categories' },
     { label: 'المستخدمون', href: '/admin/users', icon: Users, perm: 'manage_users' },
     { label: 'إدارة الطاقم', href: '/admin/staff', icon: ShieldAlert, perm: 'manage_admins' },
+    { label: 'البحث الشامل', href: '/admin/search', icon: Search, fullAdmin: true },
+    { label: 'سجل الإدارة', href: '/admin/audit-log', icon: History, fullAdmin: true },
     { label: 'التقييمات', href: '/admin/reviews', icon: MessageSquare, perm: 'view_reports' },
     { label: 'العروض الترويجية', href: '/admin/promotions', icon: Megaphone, perm: 'manage_offers' },
     { label: 'أكواد الخصم', href: '/admin/discounts', icon: Ticket, perm: 'manage_discounts' },
@@ -46,6 +49,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
     const pathname = usePathname();
     const router = useRouter();
     const { user, profile } = useAuth();
+    const canAccessControlCenter = hasFullAdminAccess(profile);
 
     const handleLogout = async () => {
         await signOut();
@@ -77,6 +81,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
             {/* Nav */}
             <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
                 {NAV_ITEMS.filter(item => {
+                    if (item.fullAdmin) return canAccessControlCenter;
                     if (item.perm === null) return true;
                     return hasPermission(profile, item.perm as any);
                 }).map((item) => {
@@ -435,6 +440,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const canManageSettings = hasPermission(profile, 'manage_settings');
+    const canAccessControlCenter = hasFullAdminAccess(profile);
 
     useEffect(() => {
         if (!isLoading) {
@@ -526,6 +532,12 @@ WHERE email = '${user.email}';`}
                         لوحة الإدارة — في السكة
                     </div>
                     <div className="flex items-center gap-2 mr-auto lg:mr-0">
+                        {canAccessControlCenter && (
+                            <Link href="/admin/search" className="hidden md:flex items-center gap-2 rounded-xl border border-surface-hover bg-surface px-3 py-2 text-xs text-gray-500 transition-colors hover:text-foreground hover:border-primary/20">
+                                <Search className="w-4 h-4" />
+                                بحث شامل
+                            </Link>
+                        )}
                         {/* Realtime Notification Bell */}
                         <NotificationBell />
                         <ThemeToggle />

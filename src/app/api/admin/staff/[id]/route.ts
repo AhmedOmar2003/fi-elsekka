@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireAdminApi } from '@/lib/admin-guard';
+import { recordServerAdminAudit } from '@/lib/admin-audit-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
@@ -63,6 +64,12 @@ export async function PATCH(request: NextRequest, context: any) {
     const body = await request.json();
     const { full_name, username, role, permissions, disabled } = body;
 
+    const { data: beforeUpdate } = await supabaseAdmin
+      .from('users')
+      .select('id, full_name, email, username, role, permissions, disabled')
+      .eq('id', id)
+      .single();
+
     // Validate body
     if (disabled === undefined && full_name === undefined && username === undefined && role === undefined && permissions === undefined) {
       return NextResponse.json({ error: 'Nothing to update', stage: 'validate.body' }, { status: 400 });
@@ -104,6 +111,22 @@ export async function PATCH(request: NextRequest, context: any) {
         return NextResponse.json({ error: authErr.message, stage: 'auth.updateUserById' }, { status: 500 });
       }
     }
+
+    await recordServerAdminAudit(auth.profile, {
+      action: disabled === true && beforeUpdate?.disabled !== true
+        ? 'staff.disable'
+        : disabled === false && beforeUpdate?.disabled === true
+          ? 'staff.enable'
+          : 'staff.update',
+      entityType: 'staff',
+      entityId: id,
+      entityLabel: full_name || beforeUpdate?.full_name || beforeUpdate?.email || id,
+      severity: disabled === true ? 'warning' : 'info',
+      details: {
+        before: beforeUpdate || null,
+        after: updates,
+      },
+    });
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
@@ -247,6 +270,20 @@ export async function DELETE(request: NextRequest, context: any) {
     if (dbDeleteError) {
       return NextResponse.json({ error: dbDeleteError.message, stage: 'db.delete' }, { status: 500 });
     }
+
+    await recordServerAdminAudit(auth.profile, {
+      action: 'staff.delete',
+      entityType: 'staff',
+      entityId: targetStaff.id,
+      entityLabel: targetStaff.full_name || targetStaff.email || targetStaff.id,
+      severity: 'critical',
+      details: {
+        email: targetStaff.email,
+        role: targetStaff.role,
+        deletedOrdersCount: ownedOrderIds.length,
+        authUserDeleted: authUserExists,
+      },
+    });
 
     return NextResponse.json({
       success: true,

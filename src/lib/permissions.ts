@@ -16,10 +16,27 @@ export type Permission =
 
 type RolePermShape = { role?: string | null; permissions?: string[] | null };
 
+const FULL_ADMIN_PERMISSIONS = [
+  'manage_admins',
+  'manage_users',
+  'manage_products',
+  'manage_categories',
+  'manage_offers',
+  'manage_discounts',
+  'manage_settings',
+  'view_reports',
+] as const;
+
 export function hasPermission(profile: RolePermShape | null | undefined, perm: Permission) {
   if (!profile) return false;
   if (profile.role === 'super_admin' || profile.role === 'admin') return true;
   return Array.isArray(profile.permissions ?? []) && (profile.permissions as string[]).includes(perm);
+}
+
+export function hasFullAdminAccess(profile: RolePermShape | null | undefined) {
+  if (!profile) return false;
+  if (profile.role === 'super_admin' || profile.role === 'admin') return true;
+  return Array.isArray(profile.permissions ?? []) && FULL_ADMIN_PERMISSIONS.some((perm) => (profile.permissions as string[]).includes(perm));
 }
 
 export function requiredPermissionForPath(pathname: string): Permission | null {

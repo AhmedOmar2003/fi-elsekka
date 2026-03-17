@@ -10,6 +10,48 @@ export function logError(ctx: string, error: unknown) {
     console.error(`[adminService] ${ctx}:`, e.message || e.code || JSON.stringify(e));
 }
 
+type AuditSeverity = 'info' | 'warning' | 'critical';
+
+type AuditPayload = {
+    action: string;
+    entityType: string;
+    entityId?: string | null;
+    entityLabel?: string | null;
+    severity?: AuditSeverity;
+    details?: Record<string, unknown>;
+};
+
+async function logAdminAction(payload: AuditPayload) {
+    try {
+        const { data: authData } = await supabase.auth.getUser();
+        const user = authData.user;
+        if (!user) return;
+
+        const { data: profile } = await supabase
+            .from('users')
+            .select('email, role')
+            .eq('id', user.id)
+            .single();
+
+        const role = profile?.role || user.user_metadata?.role || null;
+        const email = profile?.email || user.email || null;
+
+        await supabase.from('admin_audit_logs').insert({
+            actor_user_id: user.id,
+            actor_email: email,
+            actor_role: role,
+            action: payload.action,
+            entity_type: payload.entityType,
+            entity_id: payload.entityId || null,
+            entity_label: payload.entityLabel || null,
+            severity: payload.severity || 'info',
+            details: payload.details || {},
+        });
+    } catch (error) {
+        logError('logAdminAction', error);
+    }
+}
+
 // ─── Analytics ────────────────────────────────────────────────────────────────
 export async function fetchAdminStats() {
     const [usersRes, productsRes, ordersRes, revenueRes] = await Promise.all([
@@ -100,8 +142,84 @@ export type AdminOverview = {
     }>;
 };
 
+export type AdminAuditLog = {
+    id: string;
+    actor_user_id: string | null;
+    actor_email: string | null;
+    actor_role: string | null;
+    action: string;
+    entity_type: string;
+    entity_id: string | null;
+    entity_label: string | null;
+    severity: AuditSeverity;
+    details: Record<string, any> | null;
+    created_at: string;
+};
+
+export type AdminSearchResults = {
+    staff: Array<{
+        id: string;
+        full_name: string;
+        email: string;
+        username?: string | null;
+        role?: string | null;
+        disabled?: boolean | null;
+    }>;
+    users: Array<{
+        id: string;
+        full_name: string;
+        email: string;
+        phone?: string | null;
+        role?: string | null;
+    }>;
+    products: Array<{
+        id: string;
+        name: string;
+        price: number;
+        stock_quantity?: number | null;
+    }>;
+    categories: Array<{
+        id: string;
+        name: string;
+        description?: string | null;
+    }>;
+    orders: Array<{
+        id: string;
+        status: string;
+        total_amount: number;
+        created_at: string;
+        customer_name: string;
+        customer_email: string;
+        phone: string;
+    }>;
+};
+
+export type OperationsCenterData = {
+    summary: {
+        criticalCount: number;
+        pendingWithoutDriver: number;
+        overdueShipping: number;
+        addressIssues: number;
+        rejectedByDrivers: number;
+        gracePeriodOrders: number;
+    };
+    pendingWithoutDriver: any[];
+    overdueShipping: any[];
+    addressIssues: any[];
+    rejectedByDrivers: any[];
+    gracePeriodOrders: any[];
+};
+
 function isStaffRole(role?: string | null) {
     return ['super_admin', 'admin', 'operations_manager', 'catalog_manager', 'support_agent'].includes(role || '');
+}
+
+function sanitizeSearchTerm(query: string) {
+    return query.trim().replace(/[,%()]/g, ' ');
+}
+
+function relationUser(order: any) {
+    return Array.isArray(order?.users) ? order.users[0] : order?.users;
 }
 
 export async function fetchAdminOverview(): Promise<AdminOverview> {
@@ -250,6 +368,190 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
     };
 }
 
+export async function fetchAdminAuditLogs(limit = 80): Promise<AdminAuditLog[]> {
+    const { data, error } = await supabase
+        .from('admin_audit_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+    if (error) logError('fetchAdminAuditLogs', error);
+    return (data as AdminAuditLog[]) || [];
+}
+
+export async function fetchAdminSearchResults(query: string): Promise<AdminSearchResults> {
+    const term = sanitizeSearchTerm(query);
+    if (term.length < 2) {
+        return { staff: [], users: [], products: [], categories: [], orders: [] };
+    }
+
+    const like = `%${term}%`;
+    const [usersRes, productsRes, categoriesRes, ordersRes] = await Promise.all([
+        supabase
+            .from('users')
+            .select('id, full_name, email, username, role, phone, disabled')
+            .or(`full_name.ilike.${like},email.ilike.${like},username.ilike.${like},phone.ilike.${like}`)
+            .limit(20),
+        supabase
+            .from('products')
+            .select('id, name, price, stock_quantity')
+            .ilike('name', like)
+            .limit(8),
+        supabase
+            .from('categories')
+            .select('id, name, description')
+            .or(`name.ilike.${like},description.ilike.${like}`)
+            .limit(8),
+        supabase
+            .from('orders')
+            .select('id, status, total_amount, created_at, shipping_address, users(full_name, email)')
+            .order('created_at', { ascending: false })
+            .limit(120),
+    ]);
+
+    if (usersRes.error) logError('fetchAdminSearchResults.users', usersRes.error);
+    if (productsRes.error) logError('fetchAdminSearchResults.products', productsRes.error);
+    if (categoriesRes.error) logError('fetchAdminSearchResults.categories', categoriesRes.error);
+    if (ordersRes.error) logError('fetchAdminSearchResults.orders', ordersRes.error);
+
+    const allUsers = usersRes.data || [];
+    const staff = allUsers
+        .filter((user) => isStaffRole(user.role))
+        .slice(0, 8);
+    const users = allUsers
+        .filter((user) => !isStaffRole(user.role) && user.role !== 'driver')
+        .slice(0, 8);
+
+    const orders = (ordersRes.data || [])
+        .filter((order) => {
+            const user = relationUser(order);
+            const haystacks = [
+                order.id,
+                order.status,
+                user?.full_name,
+                user?.email,
+                order.shipping_address?.phone,
+                order.shipping_address?.city,
+                order.shipping_address?.area,
+                order.shipping_address?.street,
+                order.shipping_address?.address,
+            ]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
+            return haystacks.includes(term.toLowerCase());
+        })
+        .slice(0, 8)
+        .map((order) => {
+            const user = relationUser(order);
+            return {
+                id: order.id,
+                status: order.status,
+                total_amount: order.total_amount || 0,
+                created_at: order.created_at,
+                customer_name: user?.full_name || 'غير معروف',
+                customer_email: user?.email || '',
+                phone: order.shipping_address?.phone || '',
+            };
+        });
+
+    return {
+        staff: staff as AdminSearchResults['staff'],
+        users: users as AdminSearchResults['users'],
+        products: (productsRes.data || []) as AdminSearchResults['products'],
+        categories: (categoriesRes.data || []) as AdminSearchResults['categories'],
+        orders,
+    };
+}
+
+export async function fetchOperationsCenterData(): Promise<OperationsCenterData> {
+    const { data, error } = await supabase
+        .from('orders')
+        .select('id, status, total_amount, created_at, shipping_address, users(full_name, email)')
+        .order('created_at', { ascending: false })
+        .limit(150);
+
+    if (error) {
+        logError('fetchOperationsCenterData', error);
+        return {
+            summary: {
+                criticalCount: 0,
+                pendingWithoutDriver: 0,
+                overdueShipping: 0,
+                addressIssues: 0,
+                rejectedByDrivers: 0,
+                gracePeriodOrders: 0,
+            },
+            pendingWithoutDriver: [],
+            overdueShipping: [],
+            addressIssues: [],
+            rejectedByDrivers: [],
+            gracePeriodOrders: [],
+        };
+    }
+
+    const now = Date.now();
+    const orders = data || [];
+    const activeStatuses = ['pending', 'processing', 'shipped'];
+
+    const pendingWithoutDriver = orders.filter((order) =>
+        activeStatuses.includes(order.status) && !order.shipping_address?.driver?.id
+    );
+
+    const overdueShipping = orders.filter((order) => {
+        const ageHours = (now - new Date(order.created_at).getTime()) / (1000 * 60 * 60);
+        return order.status === 'shipped' && ageHours >= 24;
+    });
+
+    const addressIssues = orders.filter((order) => {
+        const shipping = order.shipping_address || {};
+        return activeStatuses.includes(order.status) && (!shipping.phone || (!shipping.city && !shipping.area) || (!shipping.street && !shipping.address));
+    });
+
+    const rejectedByDrivers = orders.filter((order) =>
+        activeStatuses.includes(order.status) && Array.isArray(order.shipping_address?.rejected_by) && order.shipping_address.rejected_by.length > 0
+    );
+
+    const gracePeriodOrders = orders.filter((order) =>
+        order.status === 'pending' && order.shipping_address?.is_grace_period === true
+    );
+
+    const mapOrders = (list: any[]) =>
+        list.slice(0, 12).map((order) => {
+            const user = relationUser(order);
+            return {
+                ...order,
+                customer_name: user?.full_name || 'غير معروف',
+                customer_email: user?.email || '',
+                driver_name: order.shipping_address?.driver?.name || '',
+                phone: order.shipping_address?.phone || '',
+                rejected_count: Array.isArray(order.shipping_address?.rejected_by) ? order.shipping_address.rejected_by.length : 0,
+            };
+        });
+
+    const summary = {
+        criticalCount:
+            pendingWithoutDriver.length +
+            overdueShipping.length +
+            addressIssues.length +
+            rejectedByDrivers.length,
+        pendingWithoutDriver: pendingWithoutDriver.length,
+        overdueShipping: overdueShipping.length,
+        addressIssues: addressIssues.length,
+        rejectedByDrivers: rejectedByDrivers.length,
+        gracePeriodOrders: gracePeriodOrders.length,
+    };
+
+    return {
+        summary,
+        pendingWithoutDriver: mapOrders(pendingWithoutDriver),
+        overdueShipping: mapOrders(overdueShipping),
+        addressIssues: mapOrders(addressIssues),
+        rejectedByDrivers: mapOrders(rejectedByDrivers),
+        gracePeriodOrders: mapOrders(gracePeriodOrders),
+    };
+}
+
 // ─── Products ─────────────────────────────────────────────────────────────────
 export async function fetchAdminProducts() {
     const { data, error } = await supabase
@@ -281,6 +583,18 @@ export async function createProduct(payload: Record<string, unknown>) {
         res = await supabase.from('products').insert([safe]).select().single();
     }
     if (res.error) logError('createProduct', res.error);
+    if (!res.error) {
+        await logAdminAction({
+            action: 'product.create',
+            entityType: 'product',
+            entityId: (res.data as any)?.id,
+            entityLabel: String(payload.name || (res.data as any)?.name || 'منتج'),
+            details: {
+                price: payload.price,
+                category_id: payload.category_id,
+            },
+        });
+    }
     return res;
 }
 
@@ -291,6 +605,15 @@ export async function updateProduct(id: string, payload: Record<string, unknown>
         res = await supabase.from('products').update(safe).eq('id', id).select().single();
     }
     if (res.error) logError('updateProduct', res.error);
+    if (!res.error) {
+        await logAdminAction({
+            action: 'product.update',
+            entityType: 'product',
+            entityId: id,
+            entityLabel: String(payload.name || id),
+            details: payload,
+        });
+    }
     return res;
 }
 
@@ -319,6 +642,13 @@ export async function deleteProduct(id: string) {
         logError('deleteProduct', res.error);
         return { success: false, error: res.error.message || 'Error' };
     }
+    await logAdminAction({
+        action: 'product.delete',
+        entityType: 'product',
+        entityId: id,
+        entityLabel: id,
+        severity: 'warning',
+    });
     return { success: true };
 }
 
@@ -345,18 +675,45 @@ export async function fetchAdminCategories() {
 export async function createCategory(name: string, description: string) {
     const res = await supabase.from('categories').insert([{ name, description }]).select().single();
     if (res.error) logError('createCategory', res.error);
+    if (!res.error) {
+        await logAdminAction({
+            action: 'category.create',
+            entityType: 'category',
+            entityId: (res.data as any)?.id,
+            entityLabel: name,
+            details: { description },
+        });
+    }
     return res;
 }
 
 export async function updateCategory(id: string, name: string, description: string) {
     const res = await supabase.from('categories').update({ name, description }).eq('id', id);
     if (res.error) logError('updateCategory', res.error);
+    if (!res.error) {
+        await logAdminAction({
+            action: 'category.update',
+            entityType: 'category',
+            entityId: id,
+            entityLabel: name,
+            details: { description },
+        });
+    }
     return res;
 }
 
 export async function deleteCategory(id: string) {
     const res = await supabase.from('categories').delete().eq('id', id);
     if (res.error) logError('deleteCategory', res.error);
+    if (!res.error) {
+        await logAdminAction({
+            action: 'category.delete',
+            entityType: 'category',
+            entityId: id,
+            entityLabel: id,
+            severity: 'warning',
+        });
+    }
     return res;
 }
 
@@ -389,6 +746,16 @@ export async function fetchOrderDetails(orderId: string) {
 export async function updateOrderStatus(orderId: string, status: string) {
     const res = await supabase.from('orders').update({ status }).eq('id', orderId);
     if (res.error) logError('updateOrderStatus', res.error);
+    if (!res.error) {
+        await logAdminAction({
+            action: 'order.status_update',
+            entityType: 'order',
+            entityId: orderId,
+            entityLabel: orderId.slice(0, 8),
+            details: { status },
+            severity: status === 'cancelled' ? 'warning' : 'info',
+        });
+    }
     return res;
 }
 
@@ -403,6 +770,15 @@ export async function updateOrderEstimation(orderId: string, estimatedTime: stri
     // 3. Update the order
     const res = await supabase.from('orders').update({ shipping_address: newShipping }).eq('id', orderId);
     if (res.error) logError('updateOrderEstimation', res.error);
+    if (!res.error) {
+        await logAdminAction({
+            action: 'order.estimation_update',
+            entityType: 'order',
+            entityId: orderId,
+            entityLabel: orderId.slice(0, 8),
+            details: { estimated_delivery: estimatedTime },
+        });
+    }
     return res;
 }
 
@@ -422,6 +798,16 @@ export async function updateOrderDriver(orderId: string, driver: { id: string, n
     // 3. Update the order
     const res = await supabase.from('orders').update({ shipping_address: newShipping }).eq('id', orderId);
     if (res.error) logError('updateOrderDriver', res.error);
+    if (!res.error) {
+        await logAdminAction({
+            action: driver ? 'order.assign_driver' : 'order.unassign_driver',
+            entityType: 'order',
+            entityId: orderId,
+            entityLabel: orderId.slice(0, 8),
+            details: driver ? { driver_id: driver.id, driver_name: driver.name } : { driver_id: null },
+            severity: driver ? 'info' : 'warning',
+        });
+    }
     return res;
 }
 
@@ -438,6 +824,15 @@ export async function fetchAdminUsers() {
 export async function deleteUser(userId: string) {
     const res = await supabase.from('users').delete().eq('id', userId);
     if (res.error) logError('deleteUser', res.error);
+    if (!res.error) {
+        await logAdminAction({
+            action: 'user.delete',
+            entityType: 'user',
+            entityId: userId,
+            entityLabel: userId,
+            severity: 'warning',
+        });
+    }
     return res;
 }
 
@@ -474,6 +869,13 @@ export async function broadcastOfferNotification(title: string, message: string,
         logError('broadcastOfferNotification - insert', res.error);
         return { error: res.error };
     }
+
+    await logAdminAction({
+        action: 'promotion.broadcast_notification',
+        entityType: 'notification',
+        entityLabel: title,
+        details: { recipients: notifications.length, link },
+    });
     
     return { success: true, count: notifications.length };
 }

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { requireAdminApi } from '@/lib/admin-guard';
+import { recordServerAdminAudit } from '@/lib/admin-audit-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
@@ -51,6 +52,14 @@ export async function POST(request: Request) {
             console.error('Failed to sync public.users:', dbError);
             // Don't fail — auth was updated which is the source of truth
         }
+
+        await recordServerAdminAudit(auth.profile, {
+            action: 'driver.update',
+            entityType: 'driver',
+            entityId: driverId,
+            entityLabel: full_name || email || driverId,
+            details: { full_name, phone, email, password_changed: Boolean(password) },
+        });
 
         return NextResponse.json({ success: true });
 

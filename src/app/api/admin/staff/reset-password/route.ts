@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireAdminApi } from '@/lib/admin-guard';
+import { recordServerAdminAudit } from '@/lib/admin-audit-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
@@ -34,6 +35,15 @@ export async function POST(request: Request) {
 
     const { error: upErr } = await supabaseAdmin.from('users').update({ must_change_password: true }).eq('id', id);
     if (upErr) return NextResponse.json({ error: upErr.message, stage: 'db.update' }, { status: 500 });
+
+    await recordServerAdminAudit(auth.profile, {
+      action: 'staff.reset_password',
+      entityType: 'staff',
+      entityId: id,
+      entityLabel: id,
+      severity: 'warning',
+      details: { forced_password_change: true },
+    });
 
     return NextResponse.json({ success: true, tempPassword: newPass });
   } catch (e: any) {

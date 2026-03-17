@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { requireAdminApi } from '@/lib/admin-guard';
+import { recordServerAdminAudit } from '@/lib/admin-audit-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || ''; // Must be added to .env.local
@@ -64,6 +65,14 @@ export async function POST(request: Request) {
              console.error("Failed to update driver role in public.users:", dbError);
              // We won't block the response, auth user was still created
         }
+
+        await recordServerAdminAudit(auth.profile, {
+            action: 'driver.create',
+            entityType: 'driver',
+            entityId: newUser.id,
+            entityLabel: full_name || email,
+            details: { email, phone },
+        });
 
         return NextResponse.json({ success: true, user: newUser });
 

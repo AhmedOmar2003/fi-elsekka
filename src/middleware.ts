@@ -52,6 +52,9 @@ export async function middleware(request: NextRequest) {
 
     const requiredPerm = requiredPermissionForPath(pathname);
     const hasManageAdmins = permissions?.includes?.('manage_admins');
+    const hasFullAdmin = role === 'super_admin' || role === 'admin' || permissions?.some(p =>
+        ['manage_admins','manage_users','manage_products','manage_categories','manage_offers','manage_discounts','manage_settings','view_reports'].includes(p)
+    );
 
     // Staff page needs manage_admins (or admin/super_admin)
     if (pathname.startsWith('/admin/staff') && !(role === 'super_admin' || role === 'admin' || hasManageAdmins)) {
@@ -61,6 +64,15 @@ export async function middleware(request: NextRequest) {
         const loginUrl = new URL('/admin', request.url);
         loginUrl.searchParams.set('error', 'forbidden');
         return NextResponse.redirect(loginUrl);
+    }
+
+    if ((pathname.startsWith('/admin/audit-log') || pathname.startsWith('/admin/search') || pathname.startsWith('/admin/operations')) && !hasFullAdmin) {
+        if (isAdminApi) {
+            return NextResponse.json({ error: 'Forbidden: full admin access required' }, { status: 403 });
+        }
+        const redirectUrl = new URL('/admin/orders', request.url);
+        redirectUrl.searchParams.set('error', 'forbidden');
+        return NextResponse.redirect(redirectUrl);
     }
 
     // Per-route permission guard
@@ -74,9 +86,6 @@ export async function middleware(request: NextRequest) {
     }
 
     // If a restricted operator hits /admin root, sendهم للطلبات
-    const hasFullAdmin = role === 'super_admin' || role === 'admin' || permissions?.some(p =>
-        ['manage_admins','manage_users','manage_products','manage_categories','manage_offers','manage_discounts','manage_settings','view_reports'].includes(p)
-    );
     if (pathname === '/admin' && !hasFullAdmin) {
         return NextResponse.redirect(new URL('/admin/orders', request.url));
     }

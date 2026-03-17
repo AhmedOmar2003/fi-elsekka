@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireAdminApi } from '@/lib/admin-guard';
+import { recordServerAdminAudit } from '@/lib/admin-audit-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
@@ -110,6 +111,20 @@ export async function POST(request: Request) {
       }
       return NextResponse.json({ error: msg, stage: 'db.upsert' }, { status: 500 });
     }
+
+    await recordServerAdminAudit(auth.profile, {
+      action: 'staff.create',
+      entityType: 'staff',
+      entityId: supaUser.id,
+      entityLabel: full_name || email,
+      details: {
+        email,
+        username,
+        role,
+        disabled,
+        permissionsCount: perms.length,
+      },
+    });
 
     return NextResponse.json({ success: true, tempPassword: password });
   } catch (e: any) {
