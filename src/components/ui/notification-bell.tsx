@@ -8,8 +8,45 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
+const DUPLICATE_NOTIFICATION_WINDOW_MS = 10000
+
 function isDeliveryNotification(notification: AppNotification) {
     return notification.link === "/account" || notification.title.includes("توصيل") || notification.title.includes("طلبك")
+}
+
+function getNotificationFingerprint(notification: Pick<AppNotification, "title" | "message" | "link">) {
+    return `${notification.title}__${notification.message}__${notification.link || ""}`
+}
+
+function dedupeNotifications(notifications: AppNotification[]) {
+    const seenIds = new Set<string>()
+    const seenFingerprints = new Map<string, number>()
+
+    return notifications
+        .slice()
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .filter((notification) => {
+            if (seenIds.has(notification.id)) {
+                return false
+            }
+
+            seenIds.add(notification.id)
+
+            const fingerprint = getNotificationFingerprint(notification)
+            const createdAt = new Date(notification.created_at).getTime()
+            const lastSeenAt = seenFingerprints.get(fingerprint)
+
+            if (
+                typeof lastSeenAt === "number" &&
+                Number.isFinite(createdAt) &&
+                Math.abs(lastSeenAt - createdAt) <= DUPLICATE_NOTIFICATION_WINDOW_MS
+            ) {
+                return false
+            }
+
+            seenFingerprints.set(fingerprint, Number.isFinite(createdAt) ? createdAt : Date.now())
+            return true
+        })
 }
 
 export function NotificationBell() {
@@ -19,16 +56,48 @@ export function NotificationBell() {
     const [isOpen, setIsOpen] = React.useState(false)
     const [isLoading, setIsLoading] = React.useState(true)
     const popoverRef = React.useRef<HTMLDivElement>(null)
+    const seenNotificationIdsRef = React.useRef<Set<string>>(new Set())
+    const recentFingerprintsRef = React.useRef<Map<string, number>>(new Map())
 
     const unreadCount = notifications.filter((notification) => !notification.is_read).length
     const previewNotifications = notifications.slice(0, 4)
 
+    const rememberNotification = React.useCallback((notification: AppNotification) => {
+        seenNotificationIdsRef.current.add(notification.id)
+        recentFingerprintsRef.current.set(
+            getNotificationFingerprint(notification),
+            Number.isFinite(new Date(notification.created_at).getTime()) ? new Date(notification.created_at).getTime() : Date.now()
+        )
+    }, [])
+
+    const shouldIgnoreNotification = React.useCallback((notification: AppNotification) => {
+        if (seenNotificationIdsRef.current.has(notification.id)) {
+            return true
+        }
+
+        const fingerprint = getNotificationFingerprint(notification)
+        const createdAt = new Date(notification.created_at).getTime()
+        const comparableTime = Number.isFinite(createdAt) ? createdAt : Date.now()
+        const lastSeenAt = recentFingerprintsRef.current.get(fingerprint)
+
+        if (typeof lastSeenAt === "number" && Math.abs(lastSeenAt - comparableTime) <= DUPLICATE_NOTIFICATION_WINDOW_MS) {
+            seenNotificationIdsRef.current.add(notification.id)
+            return true
+        }
+
+        return false
+    }, [])
+
     const loadNotifications = React.useCallback(async () => {
         if (!user) return
         const data = await fetchUserNotifications(user.id, 50)
-        setNotifications(data)
+        const uniqueNotifications = dedupeNotifications(data)
+        seenNotificationIdsRef.current = new Set()
+        recentFingerprintsRef.current = new Map()
+        uniqueNotifications.forEach(rememberNotification)
+        setNotifications(uniqueNotifications)
         setIsLoading(false)
-    }, [user])
+    }, [rememberNotification, user])
 
     React.useEffect(() => {
         void loadNotifications()
@@ -37,7 +106,7 @@ export function NotificationBell() {
     React.useEffect(() => {
         if (!user) return
 
-        const channelId = `notifications-${user.id}-${Math.random().toString(36).slice(2, 8)}`
+        const channelId = `notifications-${user.id}`
         const channel = supabase
             .channel(channelId)
             .on(
@@ -50,7 +119,12 @@ export function NotificationBell() {
                 },
                 (payload) => {
                     const newNotification = payload.new as AppNotification
-                    setNotifications((prev) => [newNotification, ...prev])
+                    if (shouldIgnoreNotification(newNotification)) {
+                        return
+                    }
+
+                    rememberNotification(newNotification)
+                    setNotifications((prev) => dedupeNotifications([newNotification, ...prev]))
 
                     try {
                         const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3")
@@ -101,6 +175,7 @@ export function NotificationBell() {
                             </div>
                         </div>
                     ), {
+                        id: `notification-${newNotification.id}`,
                         duration: 7000,
                         position: "top-center",
                     })
@@ -111,7 +186,7 @@ export function NotificationBell() {
         return () => {
             supabase.removeChannel(channel)
         }
-    }, [router, user])
+    }, [rememberNotification, router, shouldIgnoreNotification, user])
 
     React.useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {

@@ -10,8 +10,45 @@ export interface AppNotification {
     created_at: string;
 }
 
+const DUPLICATE_NOTIFICATION_WINDOW_MS = 10000;
+
 const logNotificationMutationFailure = (action: string, details: Record<string, unknown>) => {
     console.error(`[notifications] ${action} failed`, details);
+};
+
+const getNotificationFingerprint = (notification: Pick<AppNotification, 'title' | 'message' | 'link'>) => {
+    return `${notification.title}__${notification.message}__${notification.link || ''}`;
+};
+
+const dedupeNotifications = (notifications: AppNotification[]) => {
+    const seenIds = new Set<string>();
+    const seenFingerprints = new Map<string, number>();
+
+    return notifications
+        .slice()
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .filter((notification) => {
+            if (seenIds.has(notification.id)) {
+                return false;
+            }
+
+            seenIds.add(notification.id);
+
+            const fingerprint = getNotificationFingerprint(notification);
+            const createdAt = new Date(notification.created_at).getTime();
+            const lastSeenAt = seenFingerprints.get(fingerprint);
+
+            if (
+                typeof lastSeenAt === 'number' &&
+                Number.isFinite(createdAt) &&
+                Math.abs(lastSeenAt - createdAt) <= DUPLICATE_NOTIFICATION_WINDOW_MS
+            ) {
+                return false;
+            }
+
+            seenFingerprints.set(fingerprint, Number.isFinite(createdAt) ? createdAt : Date.now());
+            return true;
+        });
 };
 
 /**
@@ -32,7 +69,7 @@ export const fetchUserNotifications = async (userId: string, limit = 20): Promis
         return [];
     }
 
-    return data as AppNotification[];
+    return dedupeNotifications(data as AppNotification[]);
 };
 
 /**

@@ -41,7 +41,7 @@ export default function AccountPage() {
     const fileInputRef = React.useRef<HTMLInputElement>(null)
     const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false)
 
-    const [activeTab, setActiveTab] = React.useState<Tab>("orders")
+    const [activeTab, setActiveTab] = React.useState<Tab>("favorites")
     const [orders, setOrders] = React.useState<Order[]>([])
     const [ordersLoading, setOrdersLoading] = React.useState(true)
 
@@ -74,10 +74,14 @@ export default function AccountPage() {
 
     React.useEffect(() => {
         const requestedTab = new URLSearchParams(window.location.search).get('tab')
+        if (requestedTab === 'orders') {
+            router.replace('/orders')
+            return
+        }
         if (requestedTab === 'search_requests') {
             setActiveTab('search_requests')
         }
-    }, [])
+    }, [router])
 
     React.useEffect(() => {
         if (!isLoading && !user) {
@@ -347,7 +351,7 @@ export default function AccountPage() {
 
                     {/* Tabs */}
                     <div className="flex gap-2 bg-surface border border-surface-hover p-1.5 rounded-2xl mb-6 w-fit flex-wrap">
-                        <button onClick={() => setActiveTab("orders")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "orders" ? "bg-primary text-white shadow-lg" : "text-gray-500 hover:text-foreground"}`}>
+                        <button onClick={() => router.push("/orders")} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-gray-500 transition-all hover:text-foreground">
                             <Package className="w-4 h-4" /> طلباتي
                         </button>
                         <button onClick={() => setActiveTab("search_requests")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "search_requests" ? "bg-primary text-white shadow-lg" : "text-gray-500 hover:text-foreground"}`}>
