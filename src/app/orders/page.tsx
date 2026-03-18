@@ -669,6 +669,16 @@ export default function OrdersPage() {
     )
   }
 
+  const pendingPricingOrders = orders.filter(order => {
+    const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
+    return isTextRequestOrder && order.shipping_address?.pricing_pending === true
+  })
+
+  const visibleOrders = orders.filter(order => {
+    const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
+    return !(isTextRequestOrder && order.shipping_address?.pricing_pending === true)
+  })
+
   useEffect(() => {
     const activePromptOrder = orders.find(order => order.id === quotePromptOrderId)
     if (quotePromptOrderId && activePromptOrder && isAwaitingTextOrderConfirmation(activePromptOrder)) {
@@ -791,23 +801,43 @@ export default function OrdersPage() {
           </div>
 
           {/* Orders list */}
-          {orders.length === 0 ? (
+          {visibleOrders.length === 0 ? (
             <div className="text-center py-20">
-              <div className="w-20 h-20 rounded-full bg-surface-hover flex items-center justify-center mx-auto mb-4">
-                <ShoppingBag className="w-10 h-10 text-gray-600 dark:text-gray-400" />
-              </div>
-              <h2 className="text-xl font-black text-foreground mb-2">مفيش طلبات لسه</h2>
-              <p className="text-gray-500 text-sm mb-6">ابدأ تسوق وطلباتك هتظهر هنا فوراً!</p>
-              <Link href="/">
-                <button className="bg-primary hover:bg-primary/90 text-white font-bold px-8 py-3 rounded-2xl transition-all flex items-center gap-2 mx-auto">
-                  <ShoppingBag className="w-5 h-5" />
-                  تسوق دلوقتي
-                </button>
-              </Link>
+              {pendingPricingOrders.length > 0 ? (
+                <div className="mx-auto max-w-xl rounded-3xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-right shadow-premium">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10">
+                    <Clock className="h-8 w-8 text-emerald-500 animate-pulse" />
+                  </div>
+                  <h2 className="text-center text-xl font-black text-foreground">طلبك ما زال قيد التسعير</h2>
+                  <p className="mt-3 text-center text-sm leading-7 text-gray-500">
+                    لن يظهر هذا الطلب في صفحة التتبع قبل أن تحدد الإدارة السعر. بمجرد وصول التسعيرة ستستطيع الدخول هنا ومتابعة تجهيز الطلب والمندوب فقط.
+                  </p>
+                  <div className="mt-5 h-3 overflow-hidden rounded-full bg-emerald-500/10">
+                    <div className="h-full w-2/3 animate-pulse rounded-full bg-emerald-500" />
+                  </div>
+                  <p className="mt-4 text-center text-xs font-bold text-emerald-600">
+                    تسعيرة طلبك ستكون شاملة مصاريف الشحن
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="w-20 h-20 rounded-full bg-surface-hover flex items-center justify-center mx-auto mb-4">
+                    <ShoppingBag className="w-10 h-10 text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <h2 className="text-xl font-black text-foreground mb-2">مفيش طلبات لسه</h2>
+                  <p className="text-gray-500 text-sm mb-6">ابدأ تسوق وطلباتك هتظهر هنا فوراً!</p>
+                  <Link href="/">
+                    <button className="bg-primary hover:bg-primary/90 text-white font-bold px-8 py-3 rounded-2xl transition-all flex items-center gap-2 mx-auto">
+                      <ShoppingBag className="w-5 h-5" />
+                      تسوق دلوقتي
+                    </button>
+                  </Link>
+                </>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
-              {orders.map(order => (
+              {visibleOrders.map(order => (
                 <OrderCard
                   key={order.id}
                   order={order}

@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { ShoppingBag, Phone, Timer, XCircle, CheckCircle2 } from "lucide-react"
 import { cancelOrderByCustomer, confirmOrderGracePeriod } from "@/services/ordersService"
+import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
 function MotorcycleIcon({ className }: { className?: string }) {
@@ -69,6 +70,8 @@ function OrderSuccessContent() {
   const awaitingQuote = searchParams.get("awaitingQuote") === "1"
 
   const [showBike, setShowBike] = useState(false)
+  const [quoteReady, setQuoteReady] = useState(false)
+  const [quoteProgress, setQuoteProgress] = useState(12)
   
   // Grace period state
   const GRACE_PERIOD_SECONDS = 300 // 5 minutes
@@ -105,6 +108,55 @@ function OrderSuccessContent() {
       return () => clearTimeout(t1)
     }
   }, [awaitingQuote, orderId])
+
+  useEffect(() => {
+    if (!awaitingQuote || !orderId) return
+
+    const progressTimer = window.setInterval(() => {
+      setQuoteProgress(prev => {
+        if (quoteReady) return 100
+        if (prev >= 92) return prev
+        const next = prev + (prev < 55 ? 6 : prev < 80 ? 3 : 1)
+        return Math.min(next, 92)
+      })
+    }, 900)
+
+    const hydrate = async () => {
+      const { data } = await supabase
+        .from('orders')
+        .select('id, total_amount, shipping_address')
+        .eq('id', orderId)
+        .maybeSingle()
+
+      if (data && data.shipping_address?.pricing_pending !== true && Number(data.shipping_address?.quoted_final_total || data.total_amount || 0) > 0) {
+        setQuoteReady(true)
+        setQuoteProgress(100)
+      }
+    }
+
+    hydrate()
+
+    const channel = supabase
+      .channel(`quote-wait-${orderId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` },
+        (payload) => {
+          const shipping = payload.new.shipping_address as any
+          const hasQuote = shipping?.pricing_pending !== true && Number(shipping?.quoted_final_total || payload.new.total_amount || 0) > 0
+          if (hasQuote) {
+            setQuoteReady(true)
+            setQuoteProgress(100)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      window.clearInterval(progressTimer)
+      supabase.removeChannel(channel)
+    }
+  }, [awaitingQuote, orderId, quoteReady])
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60)
@@ -161,31 +213,57 @@ function OrderSuccessContent() {
     return (
       <div className="w-full max-w-lg text-center animate-in fade-in zoom-in duration-500">
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
-          <Timer className="h-10 w-10 text-primary animate-pulse" />
+          <Timer className={`h-10 w-10 text-primary ${quoteReady ? '' : 'animate-pulse'}`} />
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-4">تم استلام طلب التسعير بنجاح</h1>
+        <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-4">
+          {quoteReady ? 'تم تحديد تسعيرة طلبك' : 'تم استلام طلب التسعير بنجاح'}
+        </h1>
         <div className="rounded-3xl border border-primary/20 bg-primary/5 p-6 text-right shadow-premium">
-          <p className="text-lg font-black text-foreground">انتظر عدة دقائق قبل الضغط على تأكيد الطلب</p>
-          <p className="mt-3 text-sm leading-8 text-gray-500">
-            الإدارة ستراجع تفاصيل طلبك أولًا، ثم سترسل لك تسعيرة المنتجات مع التوصيل. بعد وصول التسعيرة سيظهر لك زر تأكيد الطلب الحقيقي،
-            وعند ضغطه فقط تبدأ مهلة الخمس دقائق المعتادة.
+          <p className="text-lg font-black text-foreground">
+            {quoteReady ? 'يمكنك الآن متابعة طلبك' : 'انتظر عدة دقائق قبل متابعة الطلب'}
           </p>
+          <p className="mt-3 text-sm leading-8 text-gray-500">
+            {quoteReady
+              ? 'الإدارة انتهت من مراجعة طلبك وحددت السعر. ستدخل الآن لصفحة طلباتك لمتابعة التأكيد ثم تجهيز الطلب والمندوب.'
+              : 'الإدارة ستراجع تفاصيل طلبك أولًا، ثم سترسل لك تسعيرة المنتجات مع التوصيل. تسعيرة طلبك ستكون شاملة مصاريف الشحن كاملة.'}
+          </p>
+          <div className="mt-5 rounded-2xl border border-emerald-500/20 bg-background/70 p-4">
+            <div className="mb-2 flex items-center justify-between text-xs font-black">
+              <span className="text-emerald-600">حالة مراجعة التسعير</span>
+              <span className="text-gray-500">{quoteReady ? 'اكتملت' : 'جاري المراجعة'}</span>
+            </div>
+            <div className="h-3 overflow-hidden rounded-full bg-emerald-500/10">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all duration-700 ease-out"
+                style={{ width: `${quoteProgress}%` }}
+              />
+            </div>
+            <p className="mt-3 text-sm leading-7 text-gray-500">
+              {quoteReady
+                ? 'تم إرسال التسعيرة بالفعل، ويمكنك الآن المتابعة.'
+                : 'الشريط سيتقدم تدريجيًا حتى تنتهي الإدارة من التسعير وترسل لك السعر النهائي.'}
+            </p>
+          </div>
           <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
             <p className="text-xs font-black text-amber-500">ما الذي سيحدث بعد ذلك؟</p>
             <p className="mt-2 text-sm leading-7 text-gray-500">
-              عندما يتم تسعير الطلب ستصلك إشعارة، وستجد نافذة واضحة داخل طلباتك تعرض السعر الكامل وتطلب منك إما تأكيد الطلب أو رفضه.
+              {quoteReady
+                ? 'عند الدخول لطلباتك ستجد السعر الكامل، ثم تتابع بعد ذلك تجهيز الطلب وتعيين المندوب فقط.'
+                : 'عندما يتم تسعير الطلب ستصلك إشعارة، وبعدها فقط ستدخل لطلباتك لمتابعة السعر وتأكيد الطلب.'}
             </p>
           </div>
         </div>
         <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-          <Link href="/orders">
-            <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 active:scale-95 transition-all text-white font-bold px-8 py-3.5 rounded-2xl shadow-lg shadow-primary/20">
-              تابع طلباتي
-            </button>
-          </Link>
+          {quoteReady ? (
+            <Link href="/orders">
+              <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 active:scale-95 transition-all text-white font-bold px-8 py-3.5 rounded-2xl shadow-lg shadow-primary/20">
+                تابع طلبي الآن
+              </button>
+            </Link>
+          ) : null}
           <Link href="/">
             <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-surface hover:bg-surface-hover border border-surface-border active:scale-95 transition-all text-foreground font-bold px-8 py-3.5 rounded-2xl">
-              العودة للرئيسية
+              {quoteReady ? 'العودة للرئيسية' : 'العودة للرئيسية والانتظار'}
             </button>
           </Link>
         </div>
