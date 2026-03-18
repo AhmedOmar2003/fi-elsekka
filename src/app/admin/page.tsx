@@ -9,6 +9,7 @@ import {
     fetchAdminStats,
     fetchRecentOrders,
     broadcastOfferNotification,
+    getAdminOrderKind,
     type AdminOverview,
 } from '@/services/adminService';
 import {
@@ -47,6 +48,9 @@ const EMPTY_OVERVIEW: AdminOverview = {
         deliveredToday: 0,
         needsAssignment: 0,
         overdueShipping: 0,
+        standardOrders: 0,
+        searchingRequests: 0,
+        pricedSearchRequests: 0,
     },
     financeHealth: {
         deliveredRevenueToday: 0,
@@ -113,8 +117,26 @@ function activityStatusMeta(status: AdminOverview['staffActivity'][number]['stat
     }
 }
 
+function orderKindMeta(order: any) {
+    switch (getAdminOrderKind(order)) {
+        case 'searching_request':
+            return { label: 'بندور عليه', tone: 'text-violet-400 bg-violet-400/10' };
+        case 'priced_request':
+            return { label: 'لقيناه ومستني رد', tone: 'text-sky-400 bg-sky-400/10' };
+        default:
+            return { label: 'طلب عادي', tone: 'text-emerald-400 bg-emerald-400/10' };
+    }
+}
+
 export default function AdminPage() {
-    const [stats, setStats] = useState({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalRevenue: 0 });
+    const [stats, setStats] = useState({
+        totalUsers: 0,
+        totalProducts: 0,
+        totalOrders: 0,
+        totalTrackedOrders: 0,
+        totalSearchRequests: 0,
+        totalRevenue: 0
+    });
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
     const [overview, setOverview] = useState<AdminOverview>(EMPTY_OVERVIEW);
     const { user, profile, isLoading: isAuthLoading } = useAuth();
@@ -179,7 +201,8 @@ export default function AdminPage() {
     const metricCards = [
         { label: 'المستخدمون', value: stats.totalUsers, icon: Users, color: 'text-violet-400', bg: 'bg-violet-400/10', href: '/admin/users' },
         { label: 'المنتجات', value: stats.totalProducts, icon: Package, color: 'text-sky-400', bg: 'bg-sky-400/10', href: '/admin/products' },
-        { label: 'الطلبات', value: stats.totalOrders, icon: ShoppingCart, color: 'text-amber-400', bg: 'bg-amber-400/10', href: '/admin/orders' },
+        { label: 'الطلبات العادية', value: stats.totalOrders, icon: ShoppingCart, color: 'text-amber-400', bg: 'bg-amber-400/10', href: '/admin/orders' },
+        { label: 'طلبات بندور عليها', value: stats.totalSearchRequests, icon: Clock, color: 'text-violet-400', bg: 'bg-violet-400/10', href: '/admin/orders?kind=searching_request' },
         { label: 'إيراد المنصة', value: `${stats.totalRevenue.toLocaleString()} ج.م`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', href: '/admin/orders' },
     ];
 
@@ -199,18 +222,25 @@ export default function AdminPage() {
             tone: 'text-rose-400 bg-rose-400/10 border-rose-400/20',
         },
         {
+            label: 'طلبات لسه بندور عليها',
+            value: overview.orderHealth.searchingRequests,
+            href: '/admin/orders?kind=searching_request',
+            icon: Clock,
+            tone: 'text-violet-400 bg-violet-400/10 border-violet-400/20',
+        },
+        {
+            label: 'لقيناها ومستنية رد العميل',
+            value: overview.orderHealth.pricedSearchRequests,
+            href: '/admin/orders?kind=priced_request',
+            icon: CircleDot,
+            tone: 'text-sky-400 bg-sky-400/10 border-sky-400/20',
+        },
+        {
             label: 'موظفون يحتاجون تحديث كلمة المرور',
             value: overview.teamHealth.mustChangePassword,
             href: '/admin/staff',
             icon: ShieldAlert,
             tone: 'text-violet-400 bg-violet-400/10 border-violet-400/20',
-        },
-        {
-            label: 'منتجات منخفضة المخزون',
-            value: overview.inventoryHealth.lowStockCount,
-            href: '/admin/products',
-            icon: Warehouse,
-            tone: 'text-sky-400 bg-sky-400/10 border-sky-400/20',
         },
     ];
 
@@ -304,7 +334,7 @@ export default function AdminPage() {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                     <h1 className="text-2xl font-heading font-black text-foreground">غرفة قيادة الإدارة</h1>
-                    <p className="text-sm text-gray-500 mt-1">ملخص فوري للحالة التشغيلية، الفريق، المخزون، وآخر ما يحتاج تدخلك</p>
+                    <p className="text-sm text-gray-500 mt-1">ملخص فوري للحالة التشغيلية، مع فصل واضح بين الطلبات العادية وطلبات المنتجات اللي لسه بندور عليها</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <Link href="/admin/staff" className="rounded-2xl border border-violet-500/20 bg-violet-500/10 px-4 py-2.5 text-sm font-bold text-violet-400 transition-colors hover:bg-violet-500/15">
@@ -316,7 +346,7 @@ export default function AdminPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 xl:grid-cols-5 gap-4">
                 {metricCards.map((card) => {
                     const Icon = card.icon;
                     return (
@@ -355,7 +385,7 @@ export default function AdminPage() {
                 })}
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
                 {operationAlerts.map((item) => {
                     const Icon = item.icon;
                     return (
@@ -411,7 +441,7 @@ export default function AdminPage() {
                             </Link>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 p-5">
+                        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3 p-5">
                             {[
                                 { label: 'قيد الانتظار', value: overview.orderHealth.pending, icon: Clock, tone: 'text-amber-400 bg-amber-400/10' },
                                 { label: 'قيد التجهيز', value: overview.orderHealth.processing, icon: CircleDot, tone: 'text-violet-400 bg-violet-400/10' },
@@ -457,6 +487,7 @@ export default function AdminPage() {
                             <div className="divide-y divide-surface-hover">
                                 {recentOrders.map((order: any) => {
                                     const status = STATUS_MAP[order.status] || { label: order.status, color: 'text-gray-500 bg-surface-hover' };
+                                    const kind = orderKindMeta(order);
                                     return (
                                         <Link href={`/admin/orders?id=${order.id}`} key={order.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-surface-hover transition-colors group">
                                             <div className="flex-1 min-w-0">
@@ -467,6 +498,9 @@ export default function AdminPage() {
                                                     {new Date(order.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric' })}
                                                 </p>
                                             </div>
+                                            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${kind.tone}`}>
+                                                {kind.label}
+                                            </span>
                                             <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${status.color}`}>
                                                 {status.label}
                                             </span>

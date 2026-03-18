@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { cancelAdminOrder, fetchAdminOrders, fetchOrderDetails, isCustomerSelfCancelledGraceOrder, reopenCancelledOrderAfterCustomerRequest, saveAdminOrderDeliveryPlan, saveAdminOrderEconomics, saveAdminTextOrderQuote, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { cancelAdminOrder, fetchAdminOrders, fetchOrderDetails, getAdminOrderKind, isCustomerSelfCancelledGraceOrder, isPricedSearchRequestOrder, isSearchRequestOrder, isSearchingRequestOrder, reopenCancelledOrderAfterCustomerRequest, saveAdminOrderDeliveryPlan, saveAdminOrderEconomics, saveAdminTextOrderQuote, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
 import { ShoppingCart, ChevronDown, X, Package, Download, Filter, Bike, Clock, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
@@ -21,9 +21,28 @@ const STATUS_FILTERS = [
 ];
 
 const STATUS_UPDATE_OPTIONS = STATUS_FILTERS.filter((status) => status.value !== 'cancelled');
+const KIND_FILTERS = [
+    { value: 'all', label: 'الكل' },
+    { value: 'standard', label: 'طلبات عادية' },
+    { value: 'searching_request', label: 'بندور عليها' },
+    { value: 'priced_request', label: 'لقيناها ومستنية رد' },
+] as const;
+
+type OrderKindFilter = (typeof KIND_FILTERS)[number]['value'];
 
 function statusMeta(val: string) {
     return STATUS_FILTERS.find(s => s.value === val) || { label: val, color: 'text-gray-500 bg-surface-hover border-surface-hover' };
+}
+
+function orderKindMeta(order: any) {
+    switch (getAdminOrderKind(order)) {
+        case 'searching_request':
+            return { label: 'بندور عليه', color: 'text-violet-400 bg-violet-400/10 border-violet-400/20' };
+        case 'priced_request':
+            return { label: 'لقيناه ومستني رد', color: 'text-sky-400 bg-sky-400/10 border-sky-400/20' };
+        default:
+            return { label: 'طلب عادي', color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' };
+    }
 }
 
 function formatWindow(days: number, hours: number) {
@@ -70,6 +89,7 @@ function exportToCSV(orders: any[], statusFilter: string) {
 
 export default function AdminOrdersPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { profile, isLoading: authLoading } = useAuth();
     const canViewOrders = hasPermission(profile, 'view_orders');
     const canUpdateStatus = hasPermission(profile, 'update_order_status');
@@ -82,6 +102,7 @@ export default function AdminOrdersPage() {
     const [orderItems, setOrderItems] = useState<any[]>([]);
     const [loadingDetail, setLoadingDetail] = useState(false);
     const [filterStatus, setFilterStatus] = useState('all');
+    const [filterKind, setFilterKind] = useState<OrderKindFilter>('all');
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     
     // Delivery estimation UI state
@@ -189,6 +210,13 @@ export default function AdminOrdersPage() {
 
         return () => { supabase.removeChannel(channel); };
     }, [authLoading, canViewOrders, canViewDrivers, router]);
+
+    useEffect(() => {
+        const requestedKind = searchParams.get('kind');
+        if (requestedKind === 'standard' || requestedKind === 'searching_request' || requestedKind === 'priced_request' || requestedKind === 'all') {
+            setFilterKind(requestedKind);
+        }
+    }, [searchParams]);
 
     const handleViewOrder = async (order: any) => {
         setSelectedOrder(order);
@@ -409,8 +437,19 @@ export default function AdminOrdersPage() {
         }
     };
 
-    const displayedOrders = filterStatus === 'all' ? orders : orders.filter(o => o.status === filterStatus);
+    const orderBuckets = useMemo(() => ({
+        standard: orders.filter((order) => !isSearchRequestOrder(order)).length,
+        searching_request: orders.filter((order) => isSearchingRequestOrder(order)).length,
+        priced_request: orders.filter((order) => isPricedSearchRequestOrder(order)).length,
+    }), [orders]);
+
+    const displayedOrders = orders.filter((order) => {
+        const matchesStatus = filterStatus === 'all' ? true : order.status === filterStatus;
+        const matchesKind = filterKind === 'all' ? true : getAdminOrderKind(order) === filterKind;
+        return matchesStatus && matchesKind;
+    });
     const selectedOrderEconomics = selectedOrder ? getOrderEconomics(selectedOrder) : null;
+    const selectedOrderKind = selectedOrder ? orderKindMeta(selectedOrder) : null;
     const selectedOrderIsTextRequest = selectedOrder?.shipping_address?.request_mode === 'custom_category_text';
     const selectedOrderTextRequest = selectedOrder?.shipping_address?.custom_request_text;
     const selectedOrderTextCategory = selectedOrder?.shipping_address?.custom_request_category_name;

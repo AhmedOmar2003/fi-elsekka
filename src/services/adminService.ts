@@ -63,6 +63,8 @@ export async function fetchAdminStats() {
     ]);
 
     const visibleOrders = (ordersRes.data || []).filter((order) => !isCustomerSelfCancelledGraceOrder(order));
+    const standardOrders = visibleOrders.filter((order) => !isSearchRequestOrder(order));
+    const searchRequests = visibleOrders.filter((order) => isSearchRequestOrder(order));
     const totalRevenue = (revenueRes.data || [])
         .filter((order) => !isCustomerSelfCancelledGraceOrder(order))
         .reduce((sum, order) => sum + getOrderEconomics(order).platformRevenue, 0);
@@ -70,7 +72,9 @@ export async function fetchAdminStats() {
     return {
         totalUsers: usersRes.count || 0,
         totalProducts: productsRes.count || 0,
-        totalOrders: visibleOrders.length,
+        totalOrders: standardOrders.length,
+        totalTrackedOrders: visibleOrders.length,
+        totalSearchRequests: searchRequests.length,
         totalRevenue,
     };
 }
@@ -94,6 +98,9 @@ export type AdminOverview = {
         deliveredToday: number;
         needsAssignment: number;
         overdueShipping: number;
+        standardOrders: number;
+        searchingRequests: number;
+        pricedSearchRequests: number;
     };
     financeHealth: {
         deliveredRevenueToday: number;
@@ -232,6 +239,50 @@ function relationUser(order: any) {
     return Array.isArray(order?.users) ? order.users[0] : order?.users;
 }
 
+function orderShipping(order: any) {
+    return order?.shipping_address || {};
+}
+
+function isPharmacyTextRequest(order: any) {
+    const shipping = orderShipping(order);
+    return shipping.request_mode === 'custom_category_text' && String(shipping.custom_request_category_name || '').trim() === 'صيدلية';
+}
+
+export function isSearchRequestOrder(order: any) {
+    if (!order || isPharmacyTextRequest(order)) return false;
+
+    const shipping = orderShipping(order);
+    if (shipping.request_mode !== 'custom_category_text') return false;
+
+    return (
+        shipping.search_pending === true ||
+        (
+            shipping.search_pending !== true &&
+            !shipping.customer_quote_response &&
+            order?.status !== 'cancelled'
+        )
+    );
+}
+
+export function isSearchingRequestOrder(order: any) {
+    return isSearchRequestOrder(order) && orderShipping(order).search_pending === true;
+}
+
+export function isPricedSearchRequestOrder(order: any) {
+    const shipping = orderShipping(order);
+    return (
+        isSearchRequestOrder(order) &&
+        shipping.search_pending !== true &&
+        shipping.search_status === 'found_and_priced'
+    );
+}
+
+export function getAdminOrderKind(order: any): 'standard' | 'searching_request' | 'priced_request' {
+    if (isSearchingRequestOrder(order)) return 'searching_request';
+    if (isPricedSearchRequestOrder(order)) return 'priced_request';
+    return 'standard';
+}
+
 function getOrderDeadline(order: any) {
     const deadline = order?.shipping_address?.delivery_deadline_at;
     if (!deadline) return null;
@@ -270,6 +321,10 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
     if (productsRes.error) logError('fetchAdminOverview.products', productsRes.error);
 
     const orders = (ordersRes.data || []).filter(order => !isCustomerSelfCancelledGraceOrder(order));
+    const standardOrders = orders.filter(order => !isSearchRequestOrder(order));
+    const searchRequests = orders.filter(order => isSearchRequestOrder(order));
+    const searchingRequests = searchRequests.filter(order => isSearchingRequestOrder(order));
+    const pricedSearchRequests = searchRequests.filter(order => isPricedSearchRequestOrder(order));
     const users = usersRes.data || [];
     const products = productsRes.data || [];
 
@@ -280,24 +335,24 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
     weekStart.setDate(weekStart.getDate() - 6);
     const staleThreshold = new Date(now - (1000 * 60 * 60 * 24 * 7));
 
-    const pending = orders.filter(order => order.status === 'pending').length;
-    const processing = orders.filter(order => order.status === 'processing').length;
-    const shipped = orders.filter(order => order.status === 'shipped').length;
-    const ordersToday = orders.filter(order => new Date(order.created_at).getTime() >= todayStart.getTime()).length;
-    const deliveredTodayOrders = orders.filter(order => order.status === 'delivered' && new Date(order.created_at).getTime() >= todayStart.getTime());
+    const pending = standardOrders.filter(order => order.status === 'pending').length;
+    const processing = standardOrders.filter(order => order.status === 'processing').length;
+    const shipped = standardOrders.filter(order => order.status === 'shipped').length;
+    const ordersToday = standardOrders.filter(order => new Date(order.created_at).getTime() >= todayStart.getTime()).length;
+    const deliveredTodayOrders = standardOrders.filter(order => order.status === 'delivered' && new Date(order.created_at).getTime() >= todayStart.getTime());
     const deliveredToday = deliveredTodayOrders.length;
-    const needsAssignment = orders.filter(order => {
+    const needsAssignment = standardOrders.filter(order => {
         const activeStatus = ['pending', 'processing', 'shipped'].includes(order.status);
         return activeStatus && !order.shipping_address?.driver?.id;
     }).length;
-    const overdueShipping = orders.filter(order => isOrderOverdue(order)).length;
+    const overdueShipping = standardOrders.filter(order => isOrderOverdue(order)).length;
 
     const staff = users.filter(user => isStaffRole(user.role));
     const drivers = users.filter(user => user.role === 'driver');
     const customers = users.filter(user => !user.role || user.role === 'user');
-    const deliveredOrders = orders.filter(order => order.status === 'delivered');
+    const deliveredOrders = standardOrders.filter(order => order.status === 'delivered');
     const deliveredTodayEconomics = deliveredTodayOrders.map(order => getOrderEconomics(order));
-    const openOrders = orders.filter(order => ['pending', 'processing', 'shipped'].includes(order.status));
+    const openOrders = standardOrders.filter(order => ['pending', 'processing', 'shipped'].includes(order.status));
     const openEconomics = openOrders.map(order => getOrderEconomics(order));
 
     const outOfStockProducts = products
@@ -365,6 +420,9 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
             deliveredToday,
             needsAssignment,
             overdueShipping,
+            standardOrders: standardOrders.length,
+            searchingRequests: searchingRequests.length,
+            pricedSearchRequests: pricedSearchRequests.length,
         },
         financeHealth: {
             deliveredRevenueToday: deliveredTodayEconomics.reduce((sum, order) => sum + order.platformRevenue, 0),
