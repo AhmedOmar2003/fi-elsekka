@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { ProductCard } from "@/components/ui/product-card"
 import { useAuth } from "@/contexts/AuthContext"
 import { useFavorites } from "@/contexts/FavoritesContext"
-import { cancelOrderByCustomer, fetchUserOrders, updateUserProfile, Order } from "@/services/ordersService"
+import { cancelOrderByCustomer, fetchUserOrders, respondToQuotedTextOrder, updateUserProfile, Order } from "@/services/ordersService"
 import { fetchUserFavorites } from "@/services/favoritesService"
 import { fetchUserDeliveryAddresses, saveDeliveryAddress, updateDeliveryAddress, deleteDeliveryAddress, setDefaultDeliveryAddress, DeliveryInfo } from "@/services/deliveryService"
 import { Product } from "@/services/productsService"
@@ -24,7 +24,7 @@ import {
 import { LogoutModal } from "@/components/ui/logout-modal"
 import { toast } from "sonner"
 
-type Tab = "orders" | "favorites" | "addresses" | "settings"
+type Tab = "orders" | "search_requests" | "favorites" | "addresses" | "settings"
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
     pending: { label: "قيد المراجعة", color: "text-yellow-500 bg-yellow-500/10", icon: <Clock className="w-4 h-4" /> },
@@ -71,6 +71,13 @@ export default function AccountPage() {
     const [passwordInput, setPasswordInput] = React.useState("")
     const [isSaving, setIsSaving] = React.useState(false)
     const [saveMsg, setSaveMsg] = React.useState("")
+
+    React.useEffect(() => {
+        const requestedTab = new URLSearchParams(window.location.search).get('tab')
+        if (requestedTab === 'search_requests') {
+            setActiveTab('search_requests')
+        }
+    }, [])
 
     React.useEffect(() => {
         if (!isLoading && !user) {
@@ -180,6 +187,20 @@ export default function AccountPage() {
         }
     }
 
+    const handleSearchRequestDecision = async (orderId: string, decision: 'approve' | 'reject') => {
+        try {
+            const data = await respondToQuotedTextOrder(orderId, decision)
+            setOrders(prev => prev.map(order => order.id === orderId ? {
+                ...order,
+                status: data.status,
+                shipping_address: data.shipping_address,
+            } : order))
+            toast.success(decision === 'approve' ? 'تمام، هنجهز الطلب ونكملك عليه' : 'تمام، اتلغى الطلب')
+        } catch (error: any) {
+            toast.error(error.message || 'تعذر تنفيذ طلبك دلوقتي')
+        }
+    }
+
     const handleSaveSettings = async () => {
         if (!user) return
         setIsSaving(true)
@@ -266,6 +287,15 @@ export default function AccountPage() {
 
     const displayName = profile?.full_name || user.email || "المستخدم"
     const initials = displayName.slice(0, 2).toUpperCase()
+    const searchRequests = orders.filter(order => {
+        const shipping = order.shipping_address || {}
+        return shipping.request_mode === 'custom_category_text' &&
+            (
+                shipping.search_pending === true ||
+                (shipping.search_pending !== true && !shipping.customer_quote_response && order.status !== 'cancelled')
+            )
+    })
+    const visibleRegularOrders = orders.filter(order => !searchRequests.some(request => request.id === order.id))
 
     return (
         <>
@@ -320,6 +350,9 @@ export default function AccountPage() {
                         <button onClick={() => setActiveTab("orders")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "orders" ? "bg-primary text-white shadow-lg" : "text-gray-500 hover:text-foreground"}`}>
                             <Package className="w-4 h-4" /> طلباتي
                         </button>
+                        <button onClick={() => setActiveTab("search_requests")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "search_requests" ? "bg-primary text-white shadow-lg" : "text-gray-500 hover:text-foreground"}`}>
+                            <Clock className="w-4 h-4" /> حاجات بندور عليها
+                        </button>
                         <button onClick={() => setActiveTab("favorites")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "favorites" ? "bg-secondary text-white shadow-lg" : "text-gray-500 hover:text-foreground"}`}>
                             <Heart className="w-4 h-4" /> مفضلتي
                         </button>
@@ -338,7 +371,7 @@ export default function AccountPage() {
                                 <div className="flex items-center justify-center min-h-48">
                                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
                                 </div>
-                            ) : orders.length === 0 ? (
+                            ) : visibleRegularOrders.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-16 text-center">
                                     <div className="w-20 h-20 bg-surface rounded-2xl flex items-center justify-center mb-4 border border-surface-hover">
                                         <ShoppingBag className="w-9 h-9 text-gray-500" />
@@ -349,7 +382,7 @@ export default function AccountPage() {
                                         <Link href="/categories">اكتشف المنتجات</Link>
                                     </Button>
                                 </div>
-                            ) : orders.map(order => {
+                            ) : visibleRegularOrders.map(order => {
                                 const status = statusConfig[order.status] || statusConfig.pending
                                 const dateStr = new Date(order.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
                                 return (
@@ -395,6 +428,97 @@ export default function AccountPage() {
                                                     <XCircle className="w-4 h-4" />
                                                     إلغاء الطلب
                                                 </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+
+                    {activeTab === "search_requests" && (
+                        <div className="space-y-4">
+                            {ordersLoading ? (
+                                <div className="flex items-center justify-center min-h-48">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                                </div>
+                            ) : searchRequests.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-center">
+                                    <div className="w-20 h-20 bg-surface rounded-2xl flex items-center justify-center mb-4 border border-surface-hover">
+                                        <Clock className="w-9 h-9 text-gray-500" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-foreground mb-2">مفيش طلبات بحث دلوقتي</h3>
+                                    <p className="text-gray-500 mb-6">لو ملقتش منتج في أي قسم، ابعته من صفحة الطلب السريع وهيظهر لك هنا.</p>
+                                    <Button asChild className="rounded-xl px-8">
+                                        <Link href="/categories">ارجع للأقسام</Link>
+                                    </Button>
+                                </div>
+                            ) : searchRequests.map(order => {
+                                const shipping = order.shipping_address || {}
+                                const dateStr = new Date(order.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
+                                const requestTitle = shipping.custom_request_category_name || 'طلب خاص'
+                                const requestText = shipping.custom_request_text || 'الطلب معتمد على التفاصيل اللي كتبتها وقت الإرسال.'
+                                const isSearching = shipping.search_pending === true
+                                const quotedProductsTotal = Number(shipping.quoted_products_total || 0)
+                                const quotedFinalTotal = Number(shipping.quoted_final_total || order.total_amount || 0)
+
+                                return (
+                                    <div key={order.id} className="bg-surface border border-surface-hover rounded-3xl p-5 md:p-6 transition-all hover:border-primary/30">
+                                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                            <div>
+                                                <p className="text-xs text-gray-500 mb-1">نوع الطلب</p>
+                                                <h3 className="text-lg font-black text-foreground">{requestTitle}</h3>
+                                                <p className="mt-1 text-xs text-gray-500">بتاريخ {dateStr}</p>
+                                            </div>
+                                            <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-xs font-black ${isSearching ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                                                {isSearching ? <Clock className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                                                {isSearching ? 'بندور على طلبك' : 'لقيناه وسعرناه'}
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4 rounded-2xl border border-surface-hover bg-background/70 p-4">
+                                            <p className="text-xs font-black text-gray-500">التفاصيل اللي بعتهالنا</p>
+                                            <p className="mt-2 text-sm leading-7 text-foreground whitespace-pre-wrap">{requestText}</p>
+                                        </div>
+
+                                        {isSearching ? (
+                                            <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
+                                                <p className="text-sm font-black text-amber-500">إحنا لسه بندور على طلبك</p>
+                                                <p className="mt-2 text-sm leading-7 text-gray-500">
+                                                    أول ما نلاقيه هنبعتلك إشعار ونقولك سعره. طول ما الحالة دي موجودة تقدر تلغي الطلب من الزر اللي تحت.
+                                                </p>
+                                                <div className="mt-4">
+                                                    <button
+                                                        onClick={() => handleCancelOrder(order.id)}
+                                                        className="inline-flex items-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-black text-rose-500 transition-colors hover:bg-rose-500 hover:text-white"
+                                                    >
+                                                        <XCircle className="w-4 h-4" />
+                                                        إلغاء الطلب
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+                                                <p className="text-sm font-black text-emerald-600">لقينا طلبك وسعرناه</p>
+                                                <p className="mt-2 text-sm text-gray-500">قيمة المنتجات: <span className="font-black text-foreground">{quotedProductsTotal.toLocaleString()} ج.م</span></p>
+                                                <p className="mt-1 text-base font-black text-emerald-600">السعر النهائي شامل الشحن: {quotedFinalTotal.toLocaleString()} ج.م</p>
+                                                <p className="mt-2 text-sm leading-7 text-gray-500">
+                                                    لو مناسبك السعر هنجهز الطلب ونبعتهولك. ولو مش مناسبك نلغي الطلب عادي.
+                                                </p>
+                                                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                                                    <button
+                                                        onClick={() => handleSearchRequestDecision(order.id, 'approve')}
+                                                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-black text-white transition-colors hover:bg-primary/90"
+                                                    >
+                                                        نعم، جهزوه وابعتهولي
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleSearchRequestDecision(order.id, 'reject')}
+                                                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-black text-rose-500 transition-colors hover:bg-rose-500 hover:text-white"
+                                                    >
+                                                        لا، خلاص مش حابب
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                     </div>

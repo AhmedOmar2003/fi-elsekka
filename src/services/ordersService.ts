@@ -47,6 +47,9 @@ export const createOrder = async (
             platform_revenue: 0,
             merchant_settlement: 0,
             economics_version: ORDER_ECONOMICS_VERSION,
+            search_pending: true,
+            search_status: 'searching',
+            search_requested_at: new Date().toISOString(),
             pricing_pending: true,
         }
         : attachOrderEconomics(

@@ -5,8 +5,8 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
-import { ShoppingBag, Phone, Timer, XCircle, CheckCircle2, Loader2 } from "lucide-react"
-import { cancelOrderByCustomer, confirmOrderGracePeriod, respondToQuotedTextOrder } from "@/services/ordersService"
+import { ShoppingBag, Phone, Timer, XCircle, CheckCircle2 } from "lucide-react"
+import { cancelOrderByCustomer, confirmOrderGracePeriod } from "@/services/ordersService"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
@@ -64,60 +64,6 @@ function Particle({ style }: { style: React.CSSProperties }) {
   )
 }
 
-function QuoteApprovalPopup({
-  quotedProductsTotal,
-  quotedFinalTotal,
-  isSubmitting,
-  onApprove,
-  onReject,
-}: {
-  quotedProductsTotal: number
-  quotedFinalTotal: number
-  isSubmitting: 'approve' | 'reject' | null
-  onApprove: () => void
-  onReject: () => void
-}) {
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl border border-primary/20 bg-surface p-6 shadow-premium">
-        <p className="text-xs font-black uppercase tracking-wider text-primary/80">تم تحديد تسعيرة طلبك</p>
-        <h3 className="mt-2 text-2xl font-black text-foreground">راجع السعر وأكمل القرار</h3>
-        <p className="mt-3 text-sm leading-7 text-gray-500">
-          تسعيرة منتجك شاملة مصاريف الشحن. إذا وافقت الآن سنحوّل الطلب مباشرة إلى خطوة التأكيد ونبدأ مهلة الخمس دقائق.
-        </p>
-
-        <div className="mt-5 space-y-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-          <p className="text-sm text-gray-500">
-            قيمة المنتجات: <span className="font-black text-foreground">{quotedProductsTotal.toLocaleString()} ج.م</span>
-          </p>
-          <p className="text-lg font-black text-emerald-600">
-            السعر النهائي شامل الشحن: {quotedFinalTotal.toLocaleString()} ج.م
-          </p>
-        </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <button
-            onClick={onApprove}
-            disabled={!!isSubmitting}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-black text-white transition-colors hover:bg-primary/90 disabled:opacity-60"
-          >
-            {isSubmitting === 'approve' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            تأكيد الطلب
-          </button>
-          <button
-            onClick={onReject}
-            disabled={!!isSubmitting}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-black text-rose-400 transition-colors hover:bg-rose-500 hover:text-white disabled:opacity-60"
-          >
-            {isSubmitting === 'reject' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            لا، مش هكمل
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function OrderSuccessContent() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get("orderId")
@@ -126,10 +72,6 @@ function OrderSuccessContent() {
   const [showBike, setShowBike] = useState(false)
   const [quoteReady, setQuoteReady] = useState(false)
   const [quoteProgress, setQuoteProgress] = useState(12)
-  const [quotedProductsTotal, setQuotedProductsTotal] = useState(0)
-  const [quotedFinalTotal, setQuotedFinalTotal] = useState(0)
-  const [showQuotePopup, setShowQuotePopup] = useState(false)
-  const [quoteDecisionLoading, setQuoteDecisionLoading] = useState<'approve' | 'reject' | null>(null)
   const [hasAnnouncedQuoteReady, setHasAnnouncedQuoteReady] = useState(false)
   
   // Grace period state
@@ -177,12 +119,9 @@ function OrderSuccessContent() {
 
       setQuoteReady(true)
       setQuoteProgress(100)
-      setQuotedProductsTotal(Number(shipping?.quoted_products_total || 0))
-      setQuotedFinalTotal(finalTotal)
-      setShowQuotePopup(true)
 
       if (!hasAnnouncedQuoteReady) {
-        toast.success('تم تحديد تسعيرة طلبك، راجعها الآن')
+        toast.success('لقينالك طلبك وسعرناه، تقدر تراجعه من حسابك')
         setHasAnnouncedQuoteReady(true)
       }
 
@@ -263,29 +202,6 @@ function OrderSuccessContent() {
     setShowOverlay(false)
   }
 
-  const handleQuoteDecision = async (decision: 'approve' | 'reject') => {
-    if (!orderId) return
-
-    setQuoteDecisionLoading(decision)
-    try {
-      await respondToQuotedTextOrder(orderId, decision)
-      setShowQuotePopup(false)
-
-      if (decision === 'approve') {
-        toast.success('تم تأكيد الطلب، وستبدأ الآن مهلة الخمس دقائق')
-        window.location.assign(`/order-success?orderId=${orderId}`)
-        return
-      }
-
-      toast.success('تم إلغاء الطلب بناءً على رفضك للتسعيرة')
-      setIsCancelled(true)
-    } catch (error: any) {
-      toast.error(error.message || 'تعذر إرسال ردك على التسعيرة الآن')
-    } finally {
-      setQuoteDecisionLoading(null)
-    }
-  }
-
   if (isCancelled) {
     return (
       <div className="w-full max-w-lg text-center animate-in fade-in zoom-in duration-500">
@@ -309,36 +225,26 @@ function OrderSuccessContent() {
   if (awaitingQuote) {
     return (
       <>
-        {showQuotePopup && quoteReady && (
-          <QuoteApprovalPopup
-            quotedProductsTotal={quotedProductsTotal}
-            quotedFinalTotal={quotedFinalTotal}
-            isSubmitting={quoteDecisionLoading}
-            onApprove={() => handleQuoteDecision('approve')}
-            onReject={() => handleQuoteDecision('reject')}
-          />
-        )}
-
         <div className="w-full max-w-lg text-center animate-in fade-in zoom-in duration-500">
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
             <Timer className={`h-10 w-10 text-primary ${quoteReady ? '' : 'animate-pulse'}`} />
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-4">
-            {quoteReady ? 'تم تحديد تسعيرة طلبك' : 'تم استلام طلب التسعير بنجاح'}
+            {quoteReady ? 'لقينالك طلبك' : 'استلمنا طلبك وبندور عليه'}
           </h1>
           <div className="rounded-3xl border border-primary/20 bg-primary/5 p-6 text-right shadow-premium">
             <p className="text-lg font-black text-foreground">
-              {quoteReady ? 'راجع التسعيرة الظاهرة أمامك الآن' : 'انتظر عدة دقائق قبل متابعة الطلب'}
+              {quoteReady ? 'راجع التفاصيل من حسابك' : 'استنى شوية لحد ما ندور عليه'}
             </p>
             <p className="mt-3 text-sm leading-8 text-gray-500">
               {quoteReady
-                ? 'الإدارة انتهت من مراجعة طلبك وحددت السعر. ظهرت لك نافذة الموافقة أو الرفض مباشرة على نفس الصفحة.'
-                : 'الإدارة ستراجع تفاصيل طلبك أولًا، ثم سترسل لك تسعيرة المنتجات مع التوصيل. تسعيرة طلبك ستكون شاملة مصاريف الشحن كاملة.'}
+                ? 'لقينا طلبك وحددنا سعره. هتلاقيه دلوقتي في حسابك داخل قسم المنتجات اللي بندور عليها، وهناك تختار نكمل أو لا.'
+                : 'إحنا بندور على المنتج اللي طلبته. أول ما نلاقيه هنبلغك بالسعر شامل الشحن، وهتتابع كل ده من حسابك.'}
             </p>
             <div className="mt-5 rounded-2xl border border-emerald-500/20 bg-background/70 p-4">
               <div className="mb-2 flex items-center justify-between text-xs font-black">
-                <span className="text-emerald-600">حالة مراجعة التسعير</span>
-                <span className="text-gray-500">{quoteReady ? 'اكتملت' : 'جاري المراجعة'}</span>
+                <span className="text-emerald-600">حالة البحث عن الطلب</span>
+                <span className="text-gray-500">{quoteReady ? 'لقيناه' : 'بندور عليه'}</span>
               </div>
               <div className="h-3 overflow-hidden rounded-full bg-emerald-500/10">
                 <div
@@ -348,23 +254,28 @@ function OrderSuccessContent() {
               </div>
               <p className="mt-3 text-sm leading-7 text-gray-500">
                 {quoteReady
-                  ? 'اكتمل الشريط لأن التسعيرة وصلت فعلًا، ولا تحتاج إلى فتح الإشعار لتراها.'
-                  : 'الشريط سيتقدم تدريجيًا حتى تنتهي الإدارة من التسعير وترسل لك السعر النهائي.'}
+                  ? 'الشريط اكتمل لأننا لقينا طلبك وحددنا سعره فعلًا.'
+                  : 'الشريط سيتقدم تدريجيًا لحد ما نلاقي طلبك ونرجعلك بالسعر.'}
               </p>
             </div>
             <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
-              <p className="text-xs font-black text-amber-500">ما الذي سيحدث بعد ذلك؟</p>
+              <p className="text-xs font-black text-amber-500">مهم</p>
               <p className="mt-2 text-sm leading-7 text-gray-500">
                 {quoteReady
-                  ? 'اختر الآن من النافذة: تأكيد الطلب أو رفض التسعيرة. الإشعار ليس شرطًا لظهور هذه الخطوة.'
-                  : 'بمجرد أن تنتهي الإدارة من التسعير، سيكتمل الشريط وتظهر لك نافذة القرار تلقائيًا حتى لو لم تفتح الإشعار.'}
+                  ? 'ادخل حسابك الآن من الزر اللي تحت وشوف السعر وقرر تحب نجهزه ونبعتهولك ولا لا.'
+                  : 'طول ما إحنا لسه بندور على الطلب تقدر تلغيه من حسابك لو غيرت رأيك.'}
               </p>
             </div>
           </div>
           <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/account?tab=search_requests">
+              <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 active:scale-95 transition-all text-white font-bold px-8 py-3.5 rounded-2xl shadow-lg shadow-primary/20">
+                تابع من حسابي
+              </button>
+            </Link>
             <Link href="/">
               <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-surface hover:bg-surface-hover border border-surface-border active:scale-95 transition-all text-foreground font-bold px-8 py-3.5 rounded-2xl">
-                العودة للرئيسية والانتظار
+                رجّع للرئيسية
               </button>
             </Link>
           </div>

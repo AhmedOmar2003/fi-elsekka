@@ -306,11 +306,14 @@ export async function PATCH(request: NextRequest, context: any) {
     const quotedFinalTotal = productsSubtotal + CURRENT_DELIVERY_FEE;
     const nowIso = new Date().toISOString();
     const updatedShipping = attachOrderEconomics(
-      {
-        ...(order.shipping_address || {}),
-        pricing_pending: false,
-        quoted_products_total: productsSubtotal,
-        quoted_delivery_fee: CURRENT_DELIVERY_FEE,
+        {
+          ...(order.shipping_address || {}),
+          search_pending: false,
+          search_status: 'found_and_priced',
+          search_found_at: nowIso,
+          pricing_pending: false,
+          quoted_products_total: productsSubtotal,
+          quoted_delivery_fee: CURRENT_DELIVERY_FEE,
         quoted_final_total: quotedFinalTotal,
         pricing_updated_at: nowIso,
         pricing_updated_by_admin_id: null,
