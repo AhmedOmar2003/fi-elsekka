@@ -56,7 +56,7 @@ function QuoteReadyPopup({
           <p className="text-sm text-gray-500">قيمة المنتجات: <span className="font-black text-foreground">{quotedProductsTotal.toLocaleString()} ج.م</span></p>
           <p className="text-lg font-black text-emerald-600">الإجمالي مع التوصيل: {quotedFinalTotal.toLocaleString()} ج.م</p>
           <p className="text-xs leading-6 text-gray-500">
-            إذا وافقت الآن فسنعتبر الطلب مؤكدًا رسميًا، وبعدها تبدأ مهلة الخمس دقائق الخاصة بالإلغاء.
+            لو السعر مناسبك اضغط تأكيد الطلب، وسنكمل تجهيز الطلب على السعر ده مباشرة.
           </p>
         </div>
 
@@ -333,8 +333,7 @@ function OrderCard({
         shipping_address: data.shipping_address,
       })
       if (decision === 'approve') {
-        toast.success('تم تأكيد الطلب بالسعر المحدد، وأمامك الآن مهلة 5 دقائق إذا أردت الإلغاء')
-        window.location.assign(`/order-success?orderId=${order.id}`)
+        toast.success('تم تأكيد الطلب بالسعر المحدد، وهنكمل تجهيز الطلب على طول')
         return
       }
 
@@ -555,7 +554,7 @@ function OrderCard({
                 }`}>
                   <p className="font-bold">
                     {quoteDecision === 'approve'
-                      ? 'تم تأكيد الطلب بالسعر المحدد، وإن كنت قد دخلت مهلة الخمس دقائق بالفعل فستجدها في شاشة التأكيد.'
+                      ? `تم تأكيد الطلب على السعر المحدد: ${quotedFinalTotal.toLocaleString()} ج.م شامل التوصيل.`
                       : 'تم تسجيل رفضك للتسعيرة، وتم إلغاء الطلب.'}
                   </p>
                   {quoteDecisionAt && (
@@ -720,8 +719,7 @@ export default function OrdersPage() {
       setQuotePromptOrderId(null)
 
       if (decision === 'approve') {
-        toast.success('تم تأكيد الطلب بالسعر المحدد، وأمامك الآن مهلة 5 دقائق إذا أردت الإلغاء')
-        window.location.assign(`/order-success?orderId=${quotePromptOrder.id}`)
+        toast.success('تم تأكيد الطلب بالسعر المحدد، وهنكمل تجهيز الطلب على طول')
         return
       }
 
