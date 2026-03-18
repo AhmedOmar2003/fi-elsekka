@@ -19,6 +19,8 @@ const DEFAULT_CANCEL_MESSAGE =
   'لو كنت ما زلت تريد هذا الطلب، ادينا فرصة نجهزه على أكمل وجه، ولو أصبح جاهزًا هنرسل لك إشعارًا جديدًا بموعد الوصول المتوقع.';
 const REOPEN_CUSTOMER_MESSAGE =
   'استلمنا رغبتك في استمرار الطلب، وبدأنا نجهزه من جديد. سنتابع معك بخطة التوصيل فور اكتمال التجهيز.';
+const SEARCH_REQUEST_UNAVAILABLE_MESSAGE =
+  'للأسف مش عارفين نوفر طلبك دلوقتي. لو لقيناه في أي وقت بعد كده هنرجع نبلغك فورًا.';
 
 function resolveOrderId(request: NextRequest, context: any) {
   const params = context?.params || {};
@@ -340,9 +342,9 @@ export async function PATCH(request: NextRequest, context: any) {
     if (order.user_id) {
       await supabaseAdmin.from('notifications').insert([{
         user_id: order.user_id,
-        title: 'تم تحديد سعر طلبك',
-        message: `راجعت الإدارة طلبك وحددت السعر بمبلغ ${quotedFinalTotal.toLocaleString()} ج.م شامل التوصيل. افتح تتبع الطلب لتأكيد المتابعة أو رفض التسعيرة.`,
-        link: '/orders',
+        title: 'لقينالك طلبك',
+        message: `لقينالك طلبك وسعره ${quotedFinalTotal.toLocaleString()} ج.م شامل التوصيل. ادخل على حسابك وشوف لو تحب نكمل ونجهزهولك.`,
+        link: '/account?tab=search_requests',
         is_read: false,
       }]);
     }
@@ -361,6 +363,80 @@ export async function PATCH(request: NextRequest, context: any) {
     return NextResponse.json({
       success: true,
       total_amount: quotedFinalTotal,
+      shipping_address: updatedShipping,
+    });
+  }
+
+  if (action === 'search_request_unavailable') {
+    const auth = await requireAdminApi(request, ['update_order_status']);
+    if (!auth.ok) return auth.response;
+
+    const adminMessage = String(body?.customerMessage || SEARCH_REQUEST_UNAVAILABLE_MESSAGE).trim();
+
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .select('id, user_id, status, shipping_address')
+      .eq('id', id)
+      .single();
+
+    if (orderError || !order) {
+      return NextResponse.json({ error: 'Order not found', stage: 'db.order' }, { status: 404 });
+    }
+
+    if (order.shipping_address?.request_mode !== 'custom_category_text') {
+      return NextResponse.json({ error: 'هذا الطلب ليس طلب بحث نصي', stage: 'validate.mode' }, { status: 400 });
+    }
+
+    const nowIso = new Date().toISOString();
+    const updatedShipping = {
+      ...(order.shipping_address || {}),
+      search_pending: false,
+      search_status: 'not_found_for_now',
+      search_closed_at: nowIso,
+      search_closed_reason: 'not_available_now',
+      search_closed_message: adminMessage,
+      pricing_pending: false,
+      customer_quote_response: 'reject',
+      customer_quote_response_at: nowIso,
+    };
+
+    const { error: updateError } = await supabaseAdmin
+      .from('orders')
+      .update({
+        status: 'cancelled',
+        shipping_address: updatedShipping,
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message, stage: 'db.update' }, { status: 500 });
+    }
+
+    if (order.user_id) {
+      await supabaseAdmin.from('notifications').insert([{
+        user_id: order.user_id,
+        title: 'للأسف مش لقينا طلبك دلوقتي',
+        message: `${adminMessage} لو لقيناه في أي وقت بعد كده هنرجع نبعتلك فورًا.`,
+        link: '/account',
+        is_read: false,
+      }]);
+    }
+
+    await recordServerAdminAudit(auth.profile, {
+      action: 'order.search_request_unavailable',
+      entityType: 'order',
+      entityId: id,
+      entityLabel: id.slice(0, 8),
+      severity: 'warning',
+      details: {
+        search_status: 'not_found_for_now',
+        customer_message: adminMessage,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      status: 'cancelled',
       shipping_address: updatedShipping,
     });
   }

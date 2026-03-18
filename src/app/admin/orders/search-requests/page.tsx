@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle2, Clock, Search } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery';
 import { supabase } from '@/lib/supabase';
@@ -15,6 +16,8 @@ import {
     isPricedSearchRequestOrder,
     isSearchRequestOrder,
     isSearchingRequestOrder,
+    markAdminSearchRequestUnavailable,
+    saveAdminTextOrderQuote,
 } from '@/services/adminService';
 
 type SearchStateFilter = 'all' | 'searching' | 'priced';
@@ -63,6 +66,9 @@ export default function AdminSearchRequestsPage() {
     const [orders, setOrders] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [stateFilter, setStateFilter] = useState<SearchStateFilter>('all');
+    const [quotedInputs, setQuotedInputs] = useState<Record<string, number>>({});
+    const [unavailableMessages, setUnavailableMessages] = useState<Record<string, string>>({});
+    const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
 
     const loadOrders = async () => {
         setIsLoading(true);
@@ -133,6 +139,63 @@ export default function AdminSearchRequestsPage() {
         if (stateFilter === 'priced') return pricedOrders;
         return orders;
     }, [orders, pricedOrders, searchingOrders, stateFilter]);
+
+    useEffect(() => {
+        setQuotedInputs((prev) => {
+            const next = { ...prev };
+            for (const order of orders) {
+                if (next[order.id] === undefined) {
+                    next[order.id] = Number(order?.shipping_address?.quoted_products_total || order?.shipping_address?.subtotal_amount || 0);
+                }
+            }
+            return next;
+        });
+        setUnavailableMessages((prev) => {
+            const next = { ...prev };
+            for (const order of orders) {
+                if (next[order.id] === undefined) {
+                    next[order.id] = 'للأسف مش عارفين نجيب طلبك لحد دلوقتي، ولو لقيناه في أي وقت بعد كده هنرجع نبعتلك على طول.';
+                }
+            }
+            return next;
+        });
+    }, [orders]);
+
+    const handleSendPrice = async (orderId: string) => {
+        const productsSubtotal = Number(quotedInputs[orderId] || 0);
+        if (productsSubtotal < 0) {
+            toast.error('السعر لازم يكون رقم صحيح');
+            return;
+        }
+
+        setBusyOrderId(orderId);
+        try {
+            const data = await saveAdminTextOrderQuote(orderId, productsSubtotal);
+            setOrders((prev) => prev.map((order) => order.id === orderId ? {
+                ...order,
+                total_amount: data.total_amount,
+                shipping_address: data.shipping_address,
+            } : order));
+            toast.success('اتبعت للعميل رسالة إننا لقينا طلبه وسعره جاهز');
+        } catch (error: any) {
+            toast.error(error.message || 'تعذر إرسال السعر');
+        } finally {
+            setBusyOrderId(null);
+        }
+    };
+
+    const handleMarkUnavailable = async (orderId: string) => {
+        setBusyOrderId(orderId);
+        try {
+            await markAdminSearchRequestUnavailable(orderId, unavailableMessages[orderId]);
+            setOrders((prev) => prev.filter((order) => order.id !== orderId));
+            toast.success('اتبعت للعميل رسالة إننا لسه مش قادرين نوفر الطلب واتقفل الطلب عنده');
+        } catch (error: any) {
+            toast.error(error.message || 'تعذر إرسال رسالة التعذر');
+        } finally {
+            setBusyOrderId(null);
+        }
+    };
 
     const stateInfo = stateMeta(stateFilter);
 
@@ -272,10 +335,51 @@ export default function AdminSearchRequestsPage() {
                                         <p className="mt-2 text-sm leading-7 text-gray-500">
                                             أول ما تلاقي المنتج وتحدد سعره، ابعت التسعيرة من تفاصيل الطلب. العميل هيوصله إشعار، وبعدها يا إما يوافق أو يرفض.
                                         </p>
-                                        <div className="mt-4 flex flex-wrap gap-2">
-                                            <Link href={`/admin/orders?id=${order.id}`} className="rounded-2xl bg-primary px-4 py-2.5 text-sm font-black text-white transition-colors hover:bg-primary/90">
-                                                افتح الطلب وسعّره
-                                            </Link>
+                                        <div className="mt-4 space-y-3">
+                                            <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
+                                                <div className="rounded-2xl bg-background px-4 py-3">
+                                                    <p className="text-[11px] font-bold text-gray-500">الرسالة اللي هتتبعت للعميل لو ملقيناش الطلب</p>
+                                                    <textarea
+                                                        value={unavailableMessages[order.id] || ''}
+                                                        onChange={(event) => setUnavailableMessages((prev) => ({ ...prev, [order.id]: event.target.value }))}
+                                                        rows={3}
+                                                        className="mt-2 w-full resize-none rounded-xl border border-surface-hover bg-surface px-3 py-2 text-sm text-foreground outline-none focus:border-violet-500/40"
+                                                    />
+                                                </div>
+                                                <div className="rounded-2xl bg-background px-4 py-3">
+                                                    <p className="text-[11px] font-bold text-gray-500">سعر المنتجات</p>
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        value={quotedInputs[order.id] ?? 0}
+                                                        onChange={(event) => setQuotedInputs((prev) => ({ ...prev, [order.id]: Number(event.target.value || 0) }))}
+                                                        className="mt-2 w-full rounded-xl border border-surface-hover bg-surface px-3 py-3 text-sm font-black text-foreground outline-none focus:border-violet-500/40"
+                                                    />
+                                                    <p className="mt-2 text-[11px] text-gray-500">
+                                                        هيتبعت للعميل إن إجمالي طلبه <span className="font-black text-foreground">{(Number(quotedInputs[order.id] || 0) + 20).toLocaleString()} ج.م</span> شامل الشحن
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-2">
+                                                <button
+                                                    onClick={() => handleSendPrice(order.id)}
+                                                    disabled={busyOrderId === order.id}
+                                                    className="rounded-2xl bg-primary px-4 py-2.5 text-sm font-black text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
+                                                >
+                                                    {busyOrderId === order.id ? 'جاري الإرسال...' : 'ابعت إشعار: لقينالك طلبك وسعره كذا'}
+                                                </button>
+                                                <button
+                                                    onClick={() => handleMarkUnavailable(order.id)}
+                                                    disabled={busyOrderId === order.id}
+                                                    className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm font-black text-rose-500 transition-colors hover:bg-rose-500 hover:text-white disabled:opacity-50"
+                                                >
+                                                    {busyOrderId === order.id ? 'جاري الإرسال...' : 'للأسف مش عارفين نجيبه دلوقتي'}
+                                                </button>
+                                                <Link href={`/admin/orders?id=${order.id}`} className="rounded-2xl border border-surface-hover bg-white px-4 py-2.5 text-sm font-black text-gray-600 transition-colors hover:border-primary/20 hover:text-primary">
+                                                    افتح تفاصيل الطلب
+                                                </Link>
+                                            </div>
                                         </div>
                                     </div>
                                 ) : (
@@ -295,7 +399,7 @@ export default function AdminSearchRequestsPage() {
                                             </div>
                                         </div>
                                         <p className="mt-3 text-sm leading-7 text-gray-500">
-                                            العميل وصله الإشعار بالسعر، ولو وافق أو رفض هيوصلك إشعار فوق في جرس الإدارة ويتحدث الطلب هنا تلقائيًا.
+                                            العميل وصله الإشعار إننا لقينا طلبه وسعرناه. أول ما يوافق أو يرفض هيوصلك إشعار فوق في جرس الإدارة ويتحدث الطلب هنا تلقائيًا.
                                         </p>
                                         <div className="mt-4 flex flex-wrap gap-2">
                                             <Link href={`/admin/orders?id=${order.id}`} className="rounded-2xl border border-sky-500/20 bg-white px-4 py-2.5 text-sm font-black text-sky-500 transition-colors hover:bg-sky-500 hover:text-white">
