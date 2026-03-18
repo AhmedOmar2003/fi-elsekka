@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
-import { CheckCircle2, MapPin, CreditCard, User, AlertCircle } from "lucide-react"
+import { CheckCircle2, MapPin, CreditCard, User, AlertCircle, Search, XCircle } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useCart } from "@/contexts/CartContext"
 import { createOrder } from "@/services/ordersService"
@@ -71,6 +71,8 @@ function CheckoutContent() {
       () => getTextRequestCategoryConfig(textRequestDraft?.categoryName),
       [textRequestDraft?.categoryName]
    )
+   const isPharmacyTextRequestCheckout = isTextRequestCheckout && textRequestDraft?.categoryName === 'صيدلية'
+   const isSearchRequestCheckout = isTextRequestCheckout && !isPharmacyTextRequestCheckout
    const textRequestHasText = !!textRequestDraft?.requestText?.trim()
    const textRequestHasImages = (textRequestDraft?.imageUrls?.length || 0) > 0
    const canSubmitTextRequest = React.useMemo(() => {
@@ -110,6 +112,7 @@ function CheckoutContent() {
 
    const [isSubmitting, setIsSubmitting] = React.useState(false)
    const [errorMsg, setErrorMsg] = React.useState("")
+   const [showSearchConfirmPopup, setShowSearchConfirmPopup] = React.useState(false)
 
    // Form states
    const [firstName, setFirstName] = React.useState("")
@@ -147,8 +150,7 @@ function CheckoutContent() {
       })
    }, [user, profile])
 
-   const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault()
+   const submitOrder = async () => {
       if (!user) return
       if (!isTextRequestCheckout && displayItems.length === 0) return
       if (isTextRequestCheckout && !canSubmitTextRequest) {
@@ -203,8 +205,25 @@ function CheckoutContent() {
          localStorage.removeItem('applied_discount_code');
       }
 
-      // Pass orderId so the success page can offer a 5-minute cancellation window
+      if (isSearchRequestCheckout) {
+         router.push(`/account?tab=search_requests&searchRequestCreated=1`)
+         return
+      }
+
       router.push(`/order-success?orderId=${newOrder?.id || ''}${isTextRequestCheckout ? '&awaitingQuote=1' : ''}`)
+   }
+
+   const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault()
+      if (isSearchRequestCheckout) {
+         if (!canSubmitTextRequest) {
+            setErrorMsg("اكتب طلبك الأول بشكل واضح قبل ما نبعت ندوّر عليه.")
+            return
+         }
+         setShowSearchConfirmPopup(true)
+         return
+      }
+      await submitOrder()
    }
 
    const isLoading = isAuthLoading || isCartLoading
@@ -249,6 +268,49 @@ function CheckoutContent() {
       <>
          <Header />
          <main className="flex-1 pb-32 md:pb-8 min-h-screen bg-background">
+            {showSearchConfirmPopup && (
+               <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+                  <div className="w-full max-w-md rounded-3xl border border-primary/20 bg-surface p-6 shadow-premium">
+                     <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                        <Search className="h-7 w-7" />
+                     </div>
+                     <h2 className="text-center text-2xl font-black text-foreground">إحنا هندورلك عليه</h2>
+                     <p className="mt-3 text-center text-sm leading-7 text-gray-500">
+                        استنى شوية وإحنا هندورلك على طلبك. ولو لقيناه هنبعتلك إشعار ونقولك سعره كام، وتتابعه من صفحة حسابك في قسم
+                        <span className="font-black text-foreground"> حاجات بندور عليها</span>.
+                     </p>
+                     <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-right">
+                        <p className="text-xs font-black text-amber-500">مهم</p>
+                        <p className="mt-2 text-sm leading-7 text-gray-500">
+                           طول ما إحنا لسه بندور على الطلب، تقدر تلغيه من حسابك في أي وقت. لكن لو لقيناه ورجعنالك بالسعر، ساعتها أنت اللي هتقرر نكمل أو لا.
+                        </p>
+                     </div>
+                     <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                        <button
+                           type="button"
+                           onClick={async () => {
+                              setShowSearchConfirmPopup(false)
+                              await submitOrder()
+                           }}
+                           disabled={isSubmitting}
+                           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-black text-white transition-colors hover:bg-primary/90 disabled:opacity-60"
+                        >
+                           <CheckCircle2 className="h-4 w-4" />
+                           خلاص تمام في انتظاركم
+                        </button>
+                        <button
+                           type="button"
+                           onClick={() => setShowSearchConfirmPopup(false)}
+                           disabled={isSubmitting}
+                           className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-black text-rose-500 transition-colors hover:bg-rose-500 hover:text-white disabled:opacity-60"
+                        >
+                           <XCircle className="h-4 w-4" />
+                           لا خلاص مش عاوزكم تدوروا
+                        </button>
+                     </div>
+                  </div>
+               </div>
+            )}
 
             <div className="bg-surface border-b border-surface-hover py-4 md:py-6">
                <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
@@ -380,9 +442,11 @@ function CheckoutContent() {
                                     />
                                  )}
                                  <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
-                                    <p className="text-xs font-black text-amber-500">التسعير</p>
+                                    <p className="text-xs font-black text-amber-500">{isPharmacyTextRequestCheckout ? 'التسعير' : 'البحث عن الطلب'}</p>
                                     <p className="mt-2 text-sm leading-7 text-gray-500">
-                                       بعد إرسال طلب التسعير ستراجع الإدارة التفاصيل وترسل لك السعر الكامل شامل التوصيل، وبعدها فقط يظهر لك زر تأكيد الطلب الحقيقي.
+                                       {isPharmacyTextRequestCheckout
+                                          ? 'بعد إرسال طلب الصيدلية ستراجع الإدارة التفاصيل وترسل لك السعر الكامل شامل التوصيل، وبعدها فقط يظهر لك زر تأكيد الطلب الحقيقي.'
+                                          : 'بعد ما تبعت طلب البحث، إحنا هندور على المنتج الأول. ولو لقيناه هنبعتلك إشعار بالسعر وتكمل من صفحة حسابك.'}
                                     </p>
                                  </div>
                               </div>
@@ -419,12 +483,12 @@ function CheckoutContent() {
                            {isTextRequestCheckout ? (
                               <>
                                  <div className="flex justify-between items-center text-gray-500">
-                                    <span>قيمة المنتجات</span>
-                                    <span className="font-heading font-semibold text-foreground">ستراجعها الإدارة أولًا</span>
+                                    <span>{isPharmacyTextRequestCheckout ? 'قيمة المنتجات' : 'حالة الطلب'}</span>
+                                    <span className="font-heading font-semibold text-foreground">{isPharmacyTextRequestCheckout ? 'ستراجعها الإدارة أولًا' : 'هنبدأ ندوّر عليه الأول'}</span>
                                  </div>
                                  <div className="flex justify-between items-center text-gray-400 pt-2 border-t border-surface-hover/50">
                                     <span>الخطوة التالية</span>
-                                    <span className="font-heading font-semibold text-foreground">تصلك التسعيرة لتوافق أو ترفض</span>
+                                    <span className="font-heading font-semibold text-foreground">{isPharmacyTextRequestCheckout ? 'تصلك التسعيرة لتوافق أو ترفض' : 'يتسجل في حسابك كطلب بندور عليه'}</span>
                                  </div>
                               </>
                            ) : (
@@ -452,9 +516,9 @@ function CheckoutContent() {
                         </div>
 
                         <div className="flex justify-between items-center border-t border-surface-hover pt-6 mb-8 bg-surface-lighter/50 rounded-xl p-4 mt-2">
-                           <span className="text-lg font-bold text-foreground">{isTextRequestCheckout ? 'السعر النهائي' : 'الإجمالي للدفع'}</span>
+                           <span className="text-lg font-bold text-foreground">{isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'السعر النهائي' : 'حالة الطلب') : 'الإجمالي للدفع'}</span>
                            <span className="font-heading text-3xl font-black text-primary drop-shadow-sm">
-                              {isTextRequestCheckout ? 'بانتظار التسعير' : `${(displayCartTotal + CURRENT_DELIVERY_FEE).toFixed(0)} `}
+                              {isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'بانتظار التسعير' : 'بندور عليه') : `${(displayCartTotal + CURRENT_DELIVERY_FEE).toFixed(0)} `}
                               {!isTextRequestCheckout && <span className="text-sm">ج.م</span>}
                            </span>
                         </div>
@@ -473,14 +537,16 @@ function CheckoutContent() {
                               {isSubmitting ? (
                                  <div className="flex items-center gap-2">
                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    {isTextRequestCheckout ? 'جاري إرسال طلب التسعير...' : 'جاري التأكيد...'}
+                                    {isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'جاري إرسال طلب التسعير...' : 'جاري إرسال طلب البحث...') : 'جاري التأكيد...'}
                                  </div>
-                              ) : (isTextRequestCheckout ? 'إرسال طلب التسعير' : 'تأكيد الطلب')}
+                              ) : (isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'إرسال طلب التسعير' : 'ابعت طلب بحث') : 'تأكيد الطلب')}
                            </Button>
 
                            <p className="mt-4 text-xs text-center text-gray-500">
                               {isTextRequestCheckout
-                                 ? 'بالضغط على إرسال طلب التسعير، سنراجع الطلب أولًا ثم نرسل لك السعر لتؤكده بنفسك لاحقًا.'
+                                 ? (isPharmacyTextRequestCheckout
+                                    ? 'بالضغط على إرسال طلب التسعير، سنراجع الطلب أولًا ثم نرسل لك السعر لتؤكده بنفسك لاحقًا.'
+                                    : 'بالضغط على ابعت طلب بحث، إحنا هنبدأ ندوّر عليه ونبلغك من صفحة حسابك أول ما نلاقيه.')
                                  : 'بالضغط على تأكيد الطلب، أنت توافق على الشروط والأحكام وسياسة الخصوصية الخاصة بنا.'}
                            </p>
                         </div>
@@ -496,15 +562,17 @@ function CheckoutContent() {
                <div className="mb-3 flex items-center justify-between rounded-2xl border border-surface-hover bg-surface px-4 py-3">
                   <div>
                      <p className="text-[11px] font-bold text-gray-500">
-                        {isTextRequestCheckout ? 'السعر النهائي' : 'الإجمالي للدفع'}
+                        {isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'السعر النهائي' : 'حالة الطلب') : 'الإجمالي للدفع'}
                      </p>
                      <p className="mt-1 text-lg font-black text-primary">
-                        {isTextRequestCheckout ? 'بانتظار التسعير' : `${(displayCartTotal + CURRENT_DELIVERY_FEE).toFixed(0)} ج.م`}
+                        {isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'بانتظار التسعير' : 'بندور عليه') : `${(displayCartTotal + CURRENT_DELIVERY_FEE).toFixed(0)} ج.م`}
                      </p>
                   </div>
                   <p className="text-[11px] leading-5 text-gray-500 text-right max-w-[11rem]">
                      {isTextRequestCheckout
-                        ? 'سنراجع الطلب أولًا، وبعد وصول التسعيرة سيتحول داخل طلباتك إلى زر تأكيد الطلب.'
+                        ? (isPharmacyTextRequestCheckout
+                           ? 'سنراجع الطلب أولًا، وبعد وصول التسعيرة سيتحول داخل طلباتك إلى زر تأكيد الطلب.'
+                           : 'طلبك هيتسجل في حسابك تحت حاجات بندور عليها لحد ما نلاقيه.')
                         : 'رسوم التوصيل مضافة بالفعل داخل الإجمالي.'}
                   </p>
                </div>
@@ -519,9 +587,9 @@ function CheckoutContent() {
                   {isSubmitting ? (
                      <div className="flex items-center gap-2">
                         <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
-                        {isTextRequestCheckout ? 'جاري إرسال طلب التسعير...' : 'جاري التأكيد...'}
+                        {isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'جاري إرسال طلب التسعير...' : 'جاري إرسال طلب البحث...') : 'جاري التأكيد...'}
                      </div>
-                  ) : (isTextRequestCheckout ? 'إرسال طلب التسعير' : 'تأكيد الطلب')}
+                  ) : (isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'إرسال طلب التسعير' : 'ابعت طلب بحث') : 'تأكيد الطلب')}
                </Button>
             </div>
          </div>
