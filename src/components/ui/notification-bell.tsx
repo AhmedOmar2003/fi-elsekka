@@ -58,9 +58,68 @@ export function NotificationBell() {
     const popoverRef = React.useRef<HTMLDivElement>(null)
     const seenNotificationIdsRef = React.useRef<Set<string>>(new Set())
     const recentFingerprintsRef = React.useRef<Map<string, number>>(new Map())
+    const hasBootstrappedRef = React.useRef(false)
 
     const unreadCount = notifications.filter((notification) => !notification.is_read).length
     const previewNotifications = notifications.slice(0, 4)
+
+    const playNotificationSound = React.useCallback(() => {
+        try {
+            const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3")
+            audio.volume = 0.5
+            audio.play().catch(() => {})
+        } catch {
+            // Ignore audio playback issues
+        }
+    }, [])
+
+    const showNotificationToast = React.useCallback((notification: AppNotification) => {
+        toast.custom((toastId) => (
+            <div className="w-[min(92vw,420px)] overflow-hidden rounded-3xl border border-primary/20 bg-background/95 shadow-2xl backdrop-blur-xl">
+                <div className="h-1.5 bg-gradient-to-r from-primary via-emerald-400 to-primary" />
+                <div className="p-4">
+                    <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                            {isDeliveryNotification(notification) ? (
+                                <CheckCircle2 className="h-5 w-5" />
+                            ) : (
+                                <Bell className="h-5 w-5" />
+                            )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-black text-foreground">
+                                {notification.title}
+                            </p>
+                            <p className="mt-1 text-xs leading-6 text-gray-500">
+                                {notification.message}
+                            </p>
+                            <div className="mt-3 flex items-center gap-2">
+                                <button
+                                    onClick={() => {
+                                        toast.dismiss(toastId)
+                                        router.push(notification.link || "/notifications")
+                                    }}
+                                    className="rounded-2xl bg-primary px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-primary/90"
+                                >
+                                    افتح الإشعار
+                                </button>
+                                <button
+                                    onClick={() => toast.dismiss(toastId)}
+                                    className="rounded-2xl bg-surface-hover px-3 py-2 text-xs font-bold text-gray-500 transition-colors hover:text-foreground"
+                                >
+                                    لاحقًا
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        ), {
+            id: `notification-${notification.id}`,
+            duration: 7000,
+            position: "top-center",
+        })
+    }, [router])
 
     const rememberNotification = React.useCallback((notification: AppNotification) => {
         seenNotificationIdsRef.current.add(notification.id)
@@ -88,20 +147,68 @@ export function NotificationBell() {
         return false
     }, [])
 
-    const loadNotifications = React.useCallback(async () => {
+    const syncNotifications = React.useCallback(async (announceNewNotifications: boolean) => {
         if (!user) return
+
         const data = await fetchUserNotifications(user.id, 50)
         const uniqueNotifications = dedupeNotifications(data)
+        const incomingIds = new Set(uniqueNotifications.map((notification) => notification.id))
+        const newNotifications = uniqueNotifications.filter((notification) => !seenNotificationIdsRef.current.has(notification.id))
+
         seenNotificationIdsRef.current = new Set()
         recentFingerprintsRef.current = new Map()
         uniqueNotifications.forEach(rememberNotification)
         setNotifications(uniqueNotifications)
         setIsLoading(false)
-    }, [rememberNotification, user])
+
+        if (announceNewNotifications && hasBootstrappedRef.current) {
+            newNotifications
+                .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                .forEach((notification, index) => {
+                    window.setTimeout(() => {
+                        playNotificationSound()
+                        showNotificationToast(notification)
+                    }, index * 250)
+                })
+        }
+
+        if (!hasBootstrappedRef.current) {
+            hasBootstrappedRef.current = incomingIds.size >= 0
+        }
+    }, [playNotificationSound, rememberNotification, showNotificationToast, user])
+
+    const loadNotifications = React.useCallback(async () => {
+        await syncNotifications(false)
+    }, [syncNotifications])
 
     React.useEffect(() => {
         void loadNotifications()
     }, [loadNotifications])
+
+    React.useEffect(() => {
+        if (!user) return
+
+        const poll = () => {
+            void syncNotifications(true)
+        }
+
+        const interval = window.setInterval(poll, 5000)
+        const onFocus = () => poll()
+        const onVisible = () => {
+            if (document.visibilityState === "visible") {
+                poll()
+            }
+        }
+
+        window.addEventListener("focus", onFocus)
+        document.addEventListener("visibilitychange", onVisible)
+
+        return () => {
+            window.clearInterval(interval)
+            window.removeEventListener("focus", onFocus)
+            document.removeEventListener("visibilitychange", onVisible)
+        }
+    }, [syncNotifications, user])
 
     React.useEffect(() => {
         if (!user) return
@@ -125,60 +232,8 @@ export function NotificationBell() {
 
                     rememberNotification(newNotification)
                     setNotifications((prev) => dedupeNotifications([newNotification, ...prev]))
-
-                    try {
-                        const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3")
-                        audio.volume = 0.5
-                        audio.play().catch(() => {})
-                    } catch {
-                        // Ignore audio playback issues
-                    }
-
-                    toast.custom((toastId) => (
-                        <div className="w-[min(92vw,420px)] overflow-hidden rounded-3xl border border-primary/20 bg-background/95 shadow-2xl backdrop-blur-xl">
-                            <div className="h-1.5 bg-gradient-to-r from-primary via-emerald-400 to-primary" />
-                            <div className="p-4">
-                                <div className="flex items-start gap-3">
-                                    <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                                        {isDeliveryNotification(newNotification) ? (
-                                            <CheckCircle2 className="h-5 w-5" />
-                                        ) : (
-                                            <Bell className="h-5 w-5" />
-                                        )}
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-black text-foreground">
-                                            {newNotification.title}
-                                        </p>
-                                        <p className="mt-1 text-xs leading-6 text-gray-500">
-                                            {newNotification.message}
-                                        </p>
-                                        <div className="mt-3 flex items-center gap-2">
-                                            <button
-                                                onClick={() => {
-                                                    toast.dismiss(toastId)
-                                                    router.push(newNotification.link || "/notifications")
-                                                }}
-                                                className="rounded-2xl bg-primary px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-primary/90"
-                                            >
-                                                افتح الإشعار
-                                            </button>
-                                            <button
-                                                onClick={() => toast.dismiss(toastId)}
-                                                className="rounded-2xl bg-surface-hover px-3 py-2 text-xs font-bold text-gray-500 transition-colors hover:text-foreground"
-                                            >
-                                                لاحقًا
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ), {
-                        id: `notification-${newNotification.id}`,
-                        duration: 7000,
-                        position: "top-center",
-                    })
+                    playNotificationSound()
+                    showNotificationToast(newNotification)
                 }
             )
             .subscribe()
@@ -186,7 +241,7 @@ export function NotificationBell() {
         return () => {
             supabase.removeChannel(channel)
         }
-    }, [rememberNotification, router, shouldIgnoreNotification, user])
+    }, [playNotificationSound, rememberNotification, shouldIgnoreNotification, showNotificationToast, user])
 
     React.useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
