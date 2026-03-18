@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { useParams, useSearchParams } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { ProductCard } from "@/components/ui/product-card"
@@ -10,50 +11,34 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
-import { useParams } from "next/navigation"
-import { ImagePlus, Loader2, NotebookPen, ShoppingBasket, Sparkles, Trash2, Pill } from "lucide-react"
+import { Loader2, Search, X } from "lucide-react"
 import { Product, fetchProductsByCategory, fetchPaginatedProducts } from "@/services/productsService"
 import { useProducts } from "@/contexts/ProductsContext"
-import { X } from "lucide-react"
-import { useRouter } from "next/navigation"
-import {
-  getTextRequestCategoryConfig,
-  isRequestOnlyTextCategory,
-  TEXT_CATEGORY_ORDER_MODE,
-  uploadTextCategoryRequestImage,
-  writeTextCategoryOrderDraft,
-} from "@/lib/text-category-orders"
+import { isRequestOnlyTextCategory } from "@/lib/text-category-orders"
+import { CategoryRequestPanel } from "@/components/categories/category-request-panel"
 
 const PAGE_SIZE = 20
 
 export default function CategoryPage() {
   const params = useParams()
-  const router = useRouter()
   const searchParams = useSearchParams()
-  const slug = typeof params.slug === 'string' ? params.slug : 'all'
-  
+  const slug = typeof params.slug === "string" ? params.slug : "all"
+
   const [isFilterOpen, setIsFilterOpen] = React.useState(false)
   const { categories } = useProducts()
-  const [textRequest, setTextRequest] = React.useState("")
-  const [requestImageUrls, setRequestImageUrls] = React.useState<string[]>([])
-  const [isUploadingImages, setIsUploadingImages] = React.useState(false)
-  const [requestError, setRequestError] = React.useState("")
 
-  // ── State for paginated "all" view ──────────────────────────────────────
   const [allPageProducts, setAllPageProducts] = React.useState<Product[]>([])
   const [currentPage, setCurrentPage] = React.useState(0)
   const [hasMore, setHasMore] = React.useState(true)
   const [isLoadingMore, setIsLoadingMore] = React.useState(false)
   const [isInitialLoading, setIsInitialLoading] = React.useState(false)
 
-  // ── State for specific category view ────────────────────────────────────
   const [categoryProducts, setCategoryProducts] = React.useState<Product[]>([])
   const [isCategoryLoading, setIsCategoryLoading] = React.useState(false)
   const categoryFetchedSlug = React.useRef<string | null>(null)
 
-  const isAllPage = slug === 'all'
+  const isAllPage = slug === "all"
 
-  // ── Load first page for "all" ────────────────────────────────────────────
   React.useEffect(() => {
     if (!isAllPage) return
     setIsInitialLoading(true)
@@ -69,13 +54,11 @@ export default function CategoryPage() {
     })
   }, [isAllPage])
 
-  // ── Load more handler (infinite scroll) ──────────────────────────────────
   const loadMore = React.useCallback(async () => {
     if (isLoadingMore || !hasMore) return
     setIsLoadingMore(true)
     const { products, hasMore: more } = await fetchPaginatedProducts(currentPage, PAGE_SIZE)
     setAllPageProducts(prev => {
-      // Deduplicate by ID in case of repeated calls
       const ids = new Set(prev.map(p => p.id))
       return [...prev, ...products.filter(p => !ids.has(p.id))]
     })
@@ -84,7 +67,6 @@ export default function CategoryPage() {
     setIsLoadingMore(false)
   }, [currentPage, hasMore, isLoadingMore])
 
-  // ── Specific category DB fetch ───────────────────────────────────────────
   React.useEffect(() => {
     if (isAllPage) return
 
@@ -103,10 +85,8 @@ export default function CategoryPage() {
 
   const allProducts = isAllPage ? allPageProducts : categoryProducts
   const isLoading = isAllPage ? isInitialLoading : isCategoryLoading
+  const searchQuery = searchParams.get("q") || ""
 
-  const searchQuery = searchParams.get('q') || ''
-
-  // ── Filter State ─────────────────────────────────────────────────────────
   const [sortBy, setSortBy] = React.useState("popular")
   const [priceFilters, setPriceFilters] = React.useState<Set<string>>(new Set())
   const [categoryFilters, setCategoryFilters] = React.useState<Set<string>>(new Set())
@@ -116,44 +96,24 @@ export default function CategoryPage() {
     return categories.find(c => c.id === slug) || null
   }, [categories, slug, isAllPage])
 
-  const categoryName = currentCategory?.name || (isAllPage ? 'كل المنتجات' : 'قسم المنتجات')
+  const categoryName = currentCategory?.name || (isAllPage ? "كل المنتجات" : "قسم المنتجات")
   const isRequestOnlyCategoryPage = !!currentCategory && isRequestOnlyTextCategory(currentCategory.name)
-  const textRequestCategoryConfig = React.useMemo(
-    () => getTextRequestCategoryConfig(currentCategory?.name),
-    [currentCategory?.name]
-  )
-  const canShowCategoryRequestBox = !!currentCategory && !isAllPage && !!textRequestCategoryConfig
-  const canContinueTextRequest = React.useMemo(() => {
-    if (!textRequestCategoryConfig) return false
-    const hasText = textRequest.trim().length >= (textRequestCategoryConfig.requireText ? 12 : 1)
-    const hasImages = requestImageUrls.length > 0
-    return textRequestCategoryConfig.requireText ? hasText : hasText || hasImages
-  }, [requestImageUrls.length, textRequest, textRequestCategoryConfig])
-
-  React.useEffect(() => {
-    if (!canShowCategoryRequestBox || !currentCategory) return
-    setTextRequest("")
-    setRequestImageUrls([])
-    setRequestError("")
-    try {
-      const raw = window.sessionStorage.getItem(`text-category-order-draft:${currentCategory.id}`)
-      if (!raw) return
-      const draft = JSON.parse(raw) as { requestText?: string; imageUrls?: string[] }
-      if (draft?.requestText) {
-        setTextRequest(draft.requestText)
-      }
-      setRequestImageUrls(Array.isArray(draft?.imageUrls) ? draft.imageUrls.filter(Boolean) : [])
-    } catch {
-      // Ignore malformed draft state
-    }
-  }, [canShowCategoryRequestBox, currentCategory])
+  const canShowRequestPageLink = !!currentCategory && !isAllPage
 
   const togglePriceFilter = (range: string) => {
-    setPriceFilters(prev => { const next = new Set(prev); next.has(range) ? next.delete(range) : next.add(range); return next })
+    setPriceFilters(prev => {
+      const next = new Set(prev)
+      next.has(range) ? next.delete(range) : next.add(range)
+      return next
+    })
   }
 
   const toggleCategoryFilter = (catId: string) => {
-    setCategoryFilters(prev => { const next = new Set(prev); next.has(catId) ? next.delete(catId) : next.add(catId); return next })
+    setCategoryFilters(prev => {
+      const next = new Set(prev)
+      next.has(catId) ? next.delete(catId) : next.add(catId)
+      return next
+    })
   }
 
   const clearAllFilters = () => {
@@ -164,22 +124,18 @@ export default function CategoryPage() {
 
   const hasActiveFilters = priceFilters.size > 0 || categoryFilters.size > 0 || sortBy !== "popular"
 
-  // ── Compute displayed products ───────────────────────────────────────────
   const displayProducts = React.useMemo(() => {
     let filtered = [...allProducts]
 
-    // Search filter
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase()
       filtered = filtered.filter(p => p.name.toLowerCase().includes(q))
     }
 
-    // Category type filter (only on "all" page)
     if (categoryFilters.size > 0) {
       filtered = filtered.filter(p => p.category_id && categoryFilters.has(p.category_id))
     }
 
-    // Price filter
     if (priceFilters.size > 0) {
       filtered = filtered.filter(p => {
         const price = p.discount_percentage ? Math.round(p.price * (1 - p.discount_percentage / 100)) : p.price
@@ -191,7 +147,6 @@ export default function CategoryPage() {
       })
     }
 
-    // Sort
     switch (sortBy) {
       case "newest":
         filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -210,7 +165,7 @@ export default function CategoryPage() {
           return pb - pa
         })
         break
-      default: // "popular"
+      default:
         filtered.sort((a, b) => {
           if (a.is_best_seller && !b.is_best_seller) return -1
           if (!a.is_best_seller && b.is_best_seller) return 1
@@ -230,78 +185,17 @@ export default function CategoryPage() {
       oldPrice = p.price
       discountBadge = `خصم ${p.discount_percentage}%`
     }
-    return { id: p.id, title: p.name, price, oldPrice, discountBadge, rating: p.specifications?.rating, reviewsCount: p.specifications?.reviews_count, imageUrl: p.image_url || p.specifications?.image_url || '' }
+    return {
+      id: p.id,
+      title: p.name,
+      price,
+      oldPrice,
+      discountBadge,
+      rating: p.specifications?.rating,
+      reviewsCount: p.specifications?.reviews_count,
+      imageUrl: p.image_url || p.specifications?.image_url || "",
+    }
   })
-
-  const handleUploadRequestImages = async (files: FileList | null) => {
-    if (!files || !currentCategory || !textRequestCategoryConfig?.allowImages) return
-
-    const selectedFiles = Array.from(files)
-    const availableSlots = Math.max((textRequestCategoryConfig.maxImages || 0) - requestImageUrls.length, 0)
-
-    if (availableSlots <= 0) {
-      setRequestError(`يمكنك رفع ${textRequestCategoryConfig.maxImages} صور فقط لهذا الطلب.`)
-      return
-    }
-
-    const validFiles = selectedFiles.slice(0, availableSlots)
-    const invalidType = validFiles.find(file => !file.type.startsWith('image/'))
-
-    if (invalidType) {
-      setRequestError('ارفع صورًا واضحة فقط بصيغة صور فعلية مثل JPG أو PNG.')
-      return
-    }
-
-    setRequestError('')
-    setIsUploadingImages(true)
-
-    try {
-      const uploadedUrls: string[] = []
-
-      for (const file of validFiles) {
-        const uploadedUrl = await uploadTextCategoryRequestImage(currentCategory.id, file)
-        if (!uploadedUrl) {
-          throw new Error('تعذر رفع إحدى الصور. حاول مرة أخرى بصورة أوضح أو بعد تسجيل الدخول.')
-        }
-        uploadedUrls.push(uploadedUrl)
-      }
-
-      setRequestImageUrls(prev => [...prev, ...uploadedUrls].slice(0, textRequestCategoryConfig.maxImages))
-    } catch (error: any) {
-      setRequestError(error.message || 'تعذر رفع الصور الآن.')
-    } finally {
-      setIsUploadingImages(false)
-    }
-  }
-
-  const handleRemoveRequestImage = (imageUrl: string) => {
-    setRequestImageUrls(prev => prev.filter(url => url !== imageUrl))
-  }
-
-  const handleContinueTextOrder = () => {
-    const normalizedText = textRequest.trim()
-    const hasImages = requestImageUrls.length > 0
-    const requiresText = Boolean(textRequestCategoryConfig?.requireText)
-
-    if (!currentCategory || !textRequestCategoryConfig) return
-    if (requiresText && normalizedText.length < 12) {
-      setRequestError('اكتب الطلب بشكل واضح قبل المتابعة.')
-      return
-    }
-    if (!requiresText && normalizedText.length === 0 && !hasImages) {
-      setRequestError('اكتب طلبك أو ارفع صورة واحدة واضحة على الأقل قبل المتابعة.')
-      return
-    }
-
-    writeTextCategoryOrderDraft({
-      categoryId: currentCategory.id,
-      categoryName: currentCategory.name,
-      requestText: normalizedText,
-      imageUrls: requestImageUrls,
-    })
-
-    router.push(`/checkout?requestMode=${TEXT_CATEGORY_ORDER_MODE}&categoryId=${currentCategory.id}`)
-  }
 
   return (
     <>
@@ -316,356 +210,127 @@ export default function CategoryPage() {
               {searchQuery
                 ? `تم العثور على ${productCards.length} منتج`
                 : isRequestOnlyCategoryPage
-                  ? currentCategory?.name === 'صيدلية'
-                    ? 'اكتب طلبك الصيدلي أو ارفع الروشتة بصور واضحة جدًا، ثم سيراه الأدمن والمندوب كما أرسلته.'
-                    : 'اكتب طلبك كنص واضح، وسيراه الأدمن والمندوب كما كتبته بالضبط.'
-                  : 'تصفح أفضل المنتجات المختارة لك خصيصاً في هذا القسم.'}
+                  ? "القسم ده بيتطلب بالنص أو بالروشتة، وإحنا هنراجعه معاك خطوة بخطوة."
+                  : "تصفح المنتجات الأول، ولو ملقتش اللي عاوزه اطلبه من زر الطلب السريع."}
             </p>
+            {canShowRequestPageLink && currentCategory ? (
+              <div className="mt-4">
+                <Link
+                  href={`/category/${currentCategory.id}/request`}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-black text-primary transition-colors hover:bg-primary hover:text-white"
+                >
+                  <Search className="h-4 w-4" />
+                  {isRequestOnlyCategoryPage ? "افتح صفحة الطلب" : "ملقتش المنتج؟ اطلبه من هنا"}
+                </Link>
+              </div>
+            ) : null}
           </div>
         </div>
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           {isRequestOnlyCategoryPage ? (
-            <div className="mx-auto max-w-4xl">
-              <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-                <div className="rounded-[2rem] border border-surface-hover bg-surface p-6 shadow-premium sm:p-8">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary/10 text-primary">
-                      {currentCategory?.name === 'صيدلية' ? <Pill className="h-7 w-7" /> : <ShoppingBasket className="h-7 w-7" />}
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-black text-foreground">
-                        {currentCategory?.name === 'صيدلية' ? 'اطلب من الصيدلية بالنص أو بالروشتة' : 'اطلب من السوبر ماركت بالنص'}
-                      </h2>
-                      <p className="mt-2 text-sm leading-7 text-gray-500">
-                        {currentCategory?.name === 'صيدلية'
-                          ? 'اكتب أسماء الأدوية أو ارفع لحد 3 صور واضحة جدًا للروشتة أو العبوة. إحنا هنراجع الطلب وبعدها نكملك عليه.'
-                          : 'اكتب احتياجاتك بالتفصيل بدل اختيار منتجات جاهزة. إحنا هنراجع الطلب وبعدها نكملك عليه.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-8 rounded-3xl border border-primary/20 bg-primary/5 p-4">
-                    <div className="flex items-center gap-2 text-primary">
-                      <Sparkles className="h-4 w-4" />
-                      <p className="text-xs font-black">كيف تكتب الطلب بشكل صحيح؟</p>
-                    </div>
-                    <ul className="mt-3 space-y-2 text-sm leading-7 text-gray-500">
-                      {currentCategory?.name === 'صيدلية' ? (
-                        <>
-                          <li>اكتب اسم الدواء أو التركيز والكمية المطلوبة إن كنت تعرفها.</li>
-                          <li>لو سترفع روشتة، اجعل الصور واضحة جدًا ومقروءة بالكامل.</li>
-                          <li>يمكنك الجمع بين النص والصور لو تحب توضيحًا أكبر.</li>
-                        </>
-                      ) : (
-                        <>
-                          <li>اكتب اسم كل منتج والكمية المطلوبة.</li>
-                          <li>اذكر المقاسات أو الوزن أو النوع إن وجد.</li>
-                          <li>لو عندك بديل مقبول، اكتبه بوضوح.</li>
-                        </>
-                      )}
-                    </ul>
-                  </div>
-
-                  {textRequestCategoryConfig?.allowText && (
-                    <div className="mt-6">
-                    <label className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
-                      <NotebookPen className="h-4 w-4 text-primary" />
-                      {currentCategory?.name === 'صيدلية' ? 'تفاصيل الطلب أو أسماء الأدوية' : 'اكتب طلبك هنا'}
-                    </label>
-                    <textarea
-                      value={textRequest}
-                      onChange={(e) => setTextRequest(e.target.value)}
-                      rows={9}
-                      placeholder={currentCategory?.name === 'صيدلية'
-                        ? `مثال:\nأوجمنتين 1 جم - عبوة\nكونجستال - 2 شريط\nلو دواء غير متوفر كلموني قبل الاستبدال`
-                        : `مثال:\n2 كيلو أرز الضحى\n1 زيت عباد الشمس 2 لتر\n4 علب تونة مفتاح سهل\nلو نوع الجبن غير موجود بدّله بأي نوع مشابه`}
-                      className="w-full resize-none rounded-[1.5rem] border border-surface-hover bg-background px-4 py-4 text-sm leading-7 text-foreground outline-none transition-colors focus:border-primary/40"
-                    />
-                    <p className="mt-2 text-xs text-gray-500">
-                      {currentCategory?.name === 'صيدلية'
-                        ? 'حاول تكتب الاسم أو التركيز بشكل واضح عشان نراجع الطلب بسرعة.'
-                        : 'اكتب اللي عاوزه بشكل واضح عشان نعرف نوصله لك من غير لخبطة.'}
-                    </p>
-                    </div>
-                  )}
-
-                  {textRequestCategoryConfig?.allowImages && (
-                    <div className="mt-6">
-                      <label className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
-                        <ImagePlus className="h-4 w-4 text-primary" />
-                        ارفع صورة الروشتة أو الدواء
-                      </label>
-                      <div className="rounded-[1.5rem] border border-dashed border-primary/25 bg-background/70 p-4">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <div>
-                            <p className="text-sm font-black text-foreground">حتى 3 صور واضحة جدًا</p>
-                            <p className="mt-1 text-xs leading-6 text-gray-500">
-                              صوّر الروشتة كاملة وبوضوح، أو صور عبوة الدواء من الأمام. الصور غير الواضحة قد تؤخر التنفيذ.
-                            </p>
-                          </div>
-                          <label className="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-black text-primary transition-colors hover:bg-primary hover:text-white">
-                            {isUploadingImages ? 'جاري الرفع...' : 'اختيار الصور'}
-                            <input
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              className="hidden"
-                              disabled={isUploadingImages || requestImageUrls.length >= (textRequestCategoryConfig.maxImages || 0)}
-                              onChange={(event) => {
-                                handleUploadRequestImages(event.target.files)
-                                event.currentTarget.value = ''
-                              }}
-                            />
-                          </label>
-                        </div>
-
-                        {requestImageUrls.length > 0 && (
-                          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                            {requestImageUrls.map((imageUrl, index) => (
-                              <div key={`${imageUrl}-${index}`} className="relative overflow-hidden rounded-2xl border border-surface-hover bg-surface">
-                                <img src={imageUrl} alt={`مرفق الطلب ${index + 1}`} className="h-32 w-full object-cover" />
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveRequestImage(imageUrl)}
-                                  className="absolute left-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/90 text-rose-500 shadow-sm transition-colors hover:bg-rose-500 hover:text-white"
-                                  aria-label="حذف الصورة"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {requestError ? (
-                    <div className="mt-4 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
-                      {requestError}
-                    </div>
-                  ) : null}
-
-                  <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-xs text-gray-500">
-                      هنراجع الطلب ونقولك السعر وبعدها أنت تقرر نكمل ولا لأ.
-                    </p>
-                    <Button
-                      onClick={handleContinueTextOrder}
-                      disabled={!canContinueTextRequest || isUploadingImages}
-                      className="rounded-2xl px-6 py-6 text-sm font-black"
-                    >
-                      ابعت طلبك
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="rounded-[2rem] border border-surface-hover bg-surface p-6 shadow-premium sm:p-8">
-                  <h3 className="text-lg font-black text-foreground">
-                    {currentCategory?.name === 'صيدلية' ? 'طريقة الطلب المقترحة' : 'نموذج كتابة مقترح'}
-                  </h3>
-                  <div className="mt-4 rounded-3xl border border-surface-hover bg-background/70 p-4 text-sm leading-7 text-gray-500">
-                    {currentCategory?.name === 'صيدلية' ? (
-                      <>
-                        أوجمنتين 1 جم - عبوة
-                        <br />
-                        بروفين شراب للأطفال
-                        <br />
-                        لو التركيز غير واضح في الروشتة سأتواصل معكم
-                      </>
-                    ) : (
-                      <>
-                        لبن 3 علب
-                        <br />
-                        جبنة فيتا نصف كيلو
-                        <br />
-                        مكرونة 2 كيس رقم 5
-                        <br />
-                        6 زبادي فراولة
-                        <br />
-                        لو نوع اللبن غير موجود خذ أي بديل كامل الدسم
-                      </>
-                    )}
-                  </div>
-
-                  <div className="mt-6 rounded-3xl border border-amber-400/20 bg-amber-400/10 p-4">
-                    <p className="text-xs font-black text-amber-500">مهم</p>
-                    <p className="mt-2 text-sm leading-7 text-gray-500">
-                      {currentCategory?.name === 'صيدلية'
-                        ? 'اكتب اسم الدواء بوضوح أو ارفع صورًا مقروءة جدًا. الصور أو النصوص غير الواضحة قد تؤخر تجهيز الطلب.'
-                        : 'لا تكتب كلامًا عامًا مثل "هاتلي شوية طلبات". كلما كان الطلب أدق، كان التنفيذ أسرع وأصح.'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            currentCategory ? <CategoryRequestPanel category={currentCategory} compact /> : null
           ) : (
-          <div className="flex flex-col md:flex-row gap-8">
-
-            {/* Mobile Filter Toggle */}
-            <div className="flex items-center justify-between mb-4 md:hidden">
-              <span className="text-sm text-gray-500 font-medium">عرض {productCards.length} منتج</span>
-              <button onClick={() => setIsFilterOpen(!isFilterOpen)} className="flex items-center gap-2 bg-surface border border-surface-hover px-4 py-2.5 rounded-xl text-sm font-bold text-foreground hover:bg-surface-hover active:scale-95 transition-all">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-                تصفية وترتيب
-                {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-primary"></span>}
-              </button>
-            </div>
-
-            {/* Sidebar */}
-            <aside className={`md:w-64 shrink-0 flex-col gap-8 ${isFilterOpen ? 'flex' : 'hidden md:flex'}`}>
-              {hasActiveFilters && (
-                <button onClick={clearAllFilters} className="flex items-center gap-1.5 text-xs font-bold text-rose-500 hover:text-rose-400 mb-2 transition-colors">
-                  <X className="w-3.5 h-3.5" />مسح كل الفلاتر
+            <div className="flex flex-col md:flex-row gap-8">
+              <div className="flex items-center justify-between mb-4 md:hidden">
+                <span className="text-sm text-gray-500 font-medium">عرض {productCards.length} منتج</span>
+                <button
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  className="flex items-center gap-2 bg-surface border border-surface-hover px-4 py-2.5 rounded-xl text-sm font-bold text-foreground hover:bg-surface-hover active:scale-95 transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                  تصفية وترتيب
+                  {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-primary"></span>}
                 </button>
-              )}
-              <div className="space-y-4">
-                <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">الترتيب</h3>
-                <Select value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value)} className="w-full">
-                  <option value="popular">الأكثر شعبية</option>
-                  <option value="newest">أضيف حديثاً</option>
-                  <option value="price-low">السعر: من الأقل للأعلى</option>
-                  <option value="price-high">السعر: من الأعلى للأقل</option>
-                </Select>
               </div>
-              <div className="space-y-4">
-                <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">السعر</h3>
-                <div className="space-y-3">
-                  {[{ id: "under50", label: "أقل من 50 ج.م" }, { id: "50to200", label: "50 - 200 ج.م" }, { id: "200to500", label: "200 - 500 ج.م" }, { id: "over500", label: "أكثر من 500 ج.م" }].map(range => (
-                    <div key={range.id} className="flex items-center space-x-3 rtl:space-x-reverse">
-                      <Checkbox id={`price-${range.id}`} checked={priceFilters.has(range.id)} onChange={() => togglePriceFilter(range.id)} />
-                      <Label htmlFor={`price-${range.id}`} className="text-foreground cursor-pointer">{range.label}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {isAllPage && categories.length > 0 && (
+
+              <aside className={`md:w-64 shrink-0 flex-col gap-8 ${isFilterOpen ? "flex" : "hidden md:flex"}`}>
+                {hasActiveFilters && (
+                  <button onClick={clearAllFilters} className="flex items-center gap-1.5 text-xs font-bold text-rose-500 hover:text-rose-400 mb-2 transition-colors">
+                    <X className="w-3.5 h-3.5" />مسح كل الفلاتر
+                  </button>
+                )}
                 <div className="space-y-4">
-                  <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">النوع</h3>
+                  <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">الترتيب</h3>
+                  <Select value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value)} className="w-full">
+                    <option value="popular">الأكثر شعبية</option>
+                    <option value="newest">أضيف حديثاً</option>
+                    <option value="price-low">السعر: من الأقل للأعلى</option>
+                    <option value="price-high">السعر: من الأعلى للأقل</option>
+                  </Select>
+                </div>
+                <div className="space-y-4">
+                  <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">السعر</h3>
                   <div className="space-y-3">
-                    {categories.map(cat => (
-                      <div key={cat.id} className="flex items-center space-x-3 rtl:space-x-reverse">
-                        <Checkbox id={`cat-${cat.id}`} checked={categoryFilters.has(cat.id)} onChange={() => toggleCategoryFilter(cat.id)} />
-                        <Label htmlFor={`cat-${cat.id}`} className="text-foreground cursor-pointer">{cat.name}</Label>
-                        <span className="text-[10px] text-gray-500 ms-auto">({allProducts.filter(p => p.category_id === cat.id).length})</span>
+                    {[{ id: "under50", label: "أقل من 50 ج.م" }, { id: "50to200", label: "50 - 200 ج.م" }, { id: "200to500", label: "200 - 500 ج.م" }, { id: "over500", label: "أكثر من 500 ج.م" }].map(range => (
+                      <div key={range.id} className="flex items-center space-x-3 rtl:space-x-reverse">
+                        <Checkbox id={`price-${range.id}`} checked={priceFilters.has(range.id)} onChange={() => togglePriceFilter(range.id)} />
+                        <Label htmlFor={`price-${range.id}`} className="text-foreground cursor-pointer">{range.label}</Label>
                       </div>
                     ))}
                   </div>
                 </div>
-              )}
-              <Button onClick={() => setIsFilterOpen(false)} className="md:hidden mt-4">عرض {productCards.length} نتيجة</Button>
-            </aside>
-
-            {/* Product Grid */}
-            <div className="flex-1">
-              {canShowCategoryRequestBox && currentCategory && (
-                <div className="mb-6 rounded-[2rem] border border-primary/20 bg-primary/5 p-5 shadow-premium sm:p-6">
-                  <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="max-w-2xl">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                          <ShoppingBasket className="h-6 w-6" />
+                {isAllPage && categories.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">النوع</h3>
+                    <div className="space-y-3">
+                      {categories.map(cat => (
+                        <div key={cat.id} className="flex items-center space-x-3 rtl:space-x-reverse">
+                          <Checkbox id={`cat-${cat.id}`} checked={categoryFilters.has(cat.id)} onChange={() => toggleCategoryFilter(cat.id)} />
+                          <Label htmlFor={`cat-${cat.id}`} className="text-foreground cursor-pointer">{cat.name}</Label>
+                          <span className="text-[10px] text-gray-500 ms-auto">({allProducts.filter(p => p.category_id === cat.id).length})</span>
                         </div>
-                        <div>
-                          <h2 className="text-xl font-black text-foreground">ملقتش المنتج اللي عاوزه؟</h2>
-                          <p className="mt-1 text-sm leading-7 text-gray-500">
-                            اكتب لنا اللي محتاجه وإحنا هندورلك عليه. أول ما نلاقيه هنقولك السعر شامل الشحن، وساعتها تقرر تكمل أو تلغي.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
-                        <p className="text-xs font-black text-amber-500">مهم</p>
-                        <p className="mt-2 text-sm leading-7 text-gray-500">
-                          طول ما إحنا لسه بندور على طلبك تقدر تلغيه. لكن بعد ما نبعتلك إن الطلب اتوفر والسعر اتحدد، ساعتها هتختار نكمل أو تقفل الطلب.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="w-full max-w-xl rounded-[1.75rem] border border-surface-hover bg-surface p-4 sm:p-5">
-                      <label className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
-                        <NotebookPen className="h-4 w-4 text-primary" />
-                        اكتب اسم المنتج أو الطلب اللي مش لاقيه
-                      </label>
-                      <textarea
-                        value={textRequest}
-                        onChange={(e) => setTextRequest(e.target.value)}
-                        rows={6}
-                        placeholder={`مثال:\nعاوز لبن كامل الدسم 3 علب\nأو شوكولاتة دارك نوع معين\nأو رز 5 كيلو نوع الضحى`}
-                        className="w-full resize-none rounded-[1.25rem] border border-surface-hover bg-background px-4 py-4 text-sm leading-7 text-foreground outline-none transition-colors focus:border-primary/40"
-                      />
-                      <p className="mt-2 text-xs text-gray-500">
-                        اكتب الاسم والكمية أو النوع اللي يريحك، وإحنا هنكلمك لما نلاقيه.
-                      </p>
-
-                      {requestError ? (
-                        <div className="mt-4 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
-                          {requestError}
-                        </div>
-                      ) : null}
-
-                      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-xs text-gray-500">
-                          مش هتدفع دلوقتي. هنرد عليك الأول لو لقينا الطلب.
-                        </p>
-                        <Button
-                          onClick={handleContinueTextOrder}
-                          disabled={!canContinueTextRequest || isUploadingImages}
-                          className="rounded-2xl px-5 py-3 text-sm font-black"
-                        >
-                          ابعت طلب البحث
-                        </Button>
-                      </div>
+                      ))}
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+                <Button onClick={() => setIsFilterOpen(false)} className="md:hidden mt-4">عرض {productCards.length} نتيجة</Button>
+              </aside>
 
-              <div className="hidden md:flex justify-between items-center mb-6">
-                <span className="text-sm text-gray-500">عرض {productCards.length} نتيجة</span>
-                {hasActiveFilters && <button onClick={clearAllFilters} className="text-xs font-bold text-rose-500 hover:text-rose-400 transition-colors">مسح الفلاتر</button>}
-              </div>
+              <div className="flex-1">
+                <div className="hidden md:flex justify-between items-center mb-6">
+                  <span className="text-sm text-gray-500">عرض {productCards.length} نتيجة</span>
+                  {hasActiveFilters && <button onClick={clearAllFilters} className="text-xs font-bold text-rose-500 hover:text-rose-400 transition-colors">مسح الفلاتر</button>}
+                </div>
 
-              {isLoading ? (
-                <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
-                  {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
-                </div>
-              ) : productCards.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <div className="w-20 h-20 bg-surface rounded-2xl flex items-center justify-center mb-4 border border-surface-hover">
-                    <svg className="w-9 h-9 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">مفيش منتجات بالمواصفات دي</h3>
-                  <p className="text-gray-500 mb-6">جرب تغير الفلاتر أو تبحث بكلمة تانية</p>
-                  {hasActiveFilters && <Button variant="outline" onClick={clearAllFilters} className="rounded-xl">مسح كل الفلاتر</Button>}
-                </div>
-              ) : (
-                <>
+                {isLoading ? (
                   <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
-                    {productCards.map((product) => <ProductCard key={product.id} {...product} />)}
+                    {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
                   </div>
-
-                  {/* Load More button — only shown on "all" page when more products exist */}
-                  {isAllPage && hasMore && !hasActiveFilters && (
-                    <div className="flex justify-center mt-10">
-                      <button
-                        onClick={loadMore}
-                        disabled={isLoadingMore}
-                        className="flex items-center gap-2 bg-surface border border-surface-hover hover:bg-surface-hover text-foreground font-bold px-8 py-3.5 rounded-xl transition-all disabled:opacity-50"
-                      >
-                        {isLoadingMore ? (
-                          <><Loader2 className="w-4 h-4 animate-spin" />جاري التحميل...</>
-                        ) : (
-                          'تحميل المزيد من المنتجات'
-                        )}
-                      </button>
+                ) : productCards.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-20 h-20 bg-surface rounded-2xl flex items-center justify-center mb-4 border border-surface-hover">
+                      <svg className="w-9 h-9 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     </div>
-                  )}
-                </>
-              )}
+                    <h3 className="text-xl font-bold text-foreground mb-2">مفيش منتجات بالمواصفات دي</h3>
+                    <p className="text-gray-500 mb-6">جرب تغير الفلاتر أو اطلب المنتج من زر "ملقتش المنتج؟"</p>
+                    {hasActiveFilters && <Button variant="outline" onClick={clearAllFilters} className="rounded-xl">مسح كل الفلاتر</Button>}
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+                      {productCards.map(product => <ProductCard key={product.id} {...product} />)}
+                    </div>
+
+                    {isAllPage && hasMore && !hasActiveFilters && (
+                      <div className="flex justify-center mt-10">
+                        <button
+                          onClick={loadMore}
+                          disabled={isLoadingMore}
+                          className="flex items-center gap-2 bg-surface border border-surface-hover hover:bg-surface-hover text-foreground font-bold px-8 py-3.5 rounded-xl transition-all disabled:opacity-50"
+                        >
+                          {isLoadingMore ? (
+                            <><Loader2 className="w-4 h-4 animate-spin" />جاري التحميل...</>
+                          ) : (
+                            "تحميل المزيد من المنتجات"
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
-          </div>
           )}
         </div>
       </main>
