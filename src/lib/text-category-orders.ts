@@ -2,18 +2,21 @@ import { supabase } from '@/lib/supabase';
 
 export const TEXT_CATEGORY_ORDER_MODE = 'text-category';
 
+const DEFAULT_TEXT_REQUEST_CATEGORY_CONFIG = {
+  allowText: true,
+  requireText: true,
+  allowImages: false,
+  maxImages: 0,
+  requestOnly: false,
+} as const;
+
 const TEXT_REQUEST_CATEGORY_CONFIG = {
-  'سوبر ماركت': {
-    allowText: true,
-    requireText: true,
-    allowImages: false,
-    maxImages: 0,
-  },
   'صيدلية': {
     allowText: true,
     requireText: false,
     allowImages: true,
     maxImages: 3,
+    requestOnly: true,
   },
 } as const;
 
@@ -31,7 +34,13 @@ export function isTextRequestCategory(name?: string | null) {
 }
 
 export function getTextRequestCategoryConfig(name?: string | null) {
-  return TEXT_REQUEST_CATEGORY_CONFIG[(name || '').trim() as keyof typeof TEXT_REQUEST_CATEGORY_CONFIG] || null;
+  const normalizedName = (name || '').trim();
+  if (!normalizedName) return null;
+  return TEXT_REQUEST_CATEGORY_CONFIG[normalizedName as keyof typeof TEXT_REQUEST_CATEGORY_CONFIG] || DEFAULT_TEXT_REQUEST_CATEGORY_CONFIG;
+}
+
+export function isRequestOnlyTextCategory(name?: string | null) {
+  return getTextRequestCategoryConfig(name)?.requestOnly === true;
 }
 
 export function getTextCategoryOrderDraftKey(categoryId: string) {

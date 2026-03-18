@@ -18,7 +18,7 @@ import { X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import {
   getTextRequestCategoryConfig,
-  isTextRequestCategory,
+  isRequestOnlyTextCategory,
   TEXT_CATEGORY_ORDER_MODE,
   uploadTextCategoryRequestImage,
   writeTextCategoryOrderDraft,
@@ -117,11 +117,12 @@ export default function CategoryPage() {
   }, [categories, slug, isAllPage])
 
   const categoryName = currentCategory?.name || (isAllPage ? 'كل المنتجات' : 'قسم المنتجات')
-  const isTextRequestCategoryPage = !!currentCategory && isTextRequestCategory(currentCategory.name)
+  const isRequestOnlyCategoryPage = !!currentCategory && isRequestOnlyTextCategory(currentCategory.name)
   const textRequestCategoryConfig = React.useMemo(
     () => getTextRequestCategoryConfig(currentCategory?.name),
     [currentCategory?.name]
   )
+  const canShowCategoryRequestBox = !!currentCategory && !isAllPage && !!textRequestCategoryConfig
   const canContinueTextRequest = React.useMemo(() => {
     if (!textRequestCategoryConfig) return false
     const hasText = textRequest.trim().length >= (textRequestCategoryConfig.requireText ? 12 : 1)
@@ -130,7 +131,7 @@ export default function CategoryPage() {
   }, [requestImageUrls.length, textRequest, textRequestCategoryConfig])
 
   React.useEffect(() => {
-    if (!isTextRequestCategoryPage || !currentCategory) return
+    if (!canShowCategoryRequestBox || !currentCategory) return
     setTextRequest("")
     setRequestImageUrls([])
     setRequestError("")
@@ -145,7 +146,7 @@ export default function CategoryPage() {
     } catch {
       // Ignore malformed draft state
     }
-  }, [currentCategory, isTextRequestCategoryPage])
+  }, [canShowCategoryRequestBox, currentCategory])
 
   const togglePriceFilter = (range: string) => {
     setPriceFilters(prev => { const next = new Set(prev); next.has(range) ? next.delete(range) : next.add(range); return next })
@@ -280,7 +281,7 @@ export default function CategoryPage() {
   const handleContinueTextOrder = () => {
     const normalizedText = textRequest.trim()
     const hasImages = requestImageUrls.length > 0
-    const requiresText = textRequestCategoryConfig?.requireText === true
+    const requiresText = Boolean(textRequestCategoryConfig?.requireText)
 
     if (!currentCategory || !textRequestCategoryConfig) return
     if (requiresText && normalizedText.length < 12) {
@@ -314,7 +315,7 @@ export default function CategoryPage() {
             <p className="mt-2 text-gray-500">
               {searchQuery
                 ? `تم العثور على ${productCards.length} منتج`
-                : isTextRequestCategoryPage
+                : isRequestOnlyCategoryPage
                   ? currentCategory?.name === 'صيدلية'
                     ? 'اكتب طلبك الصيدلي أو ارفع الروشتة بصور واضحة جدًا، ثم سيراه الأدمن والمندوب كما أرسلته.'
                     : 'اكتب طلبك كنص واضح، وسيراه الأدمن والمندوب كما كتبته بالضبط.'
@@ -324,7 +325,7 @@ export default function CategoryPage() {
         </div>
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-          {isTextRequestCategoryPage ? (
+          {isRequestOnlyCategoryPage ? (
             <div className="mx-auto max-w-4xl">
               <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
                 <div className="rounded-[2rem] border border-surface-hover bg-surface p-6 shadow-premium sm:p-8">
@@ -338,8 +339,8 @@ export default function CategoryPage() {
                       </h2>
                       <p className="mt-2 text-sm leading-7 text-gray-500">
                         {currentCategory?.name === 'صيدلية'
-                          ? 'اكتب أسماء الأدوية أو ارفع حتى 3 صور واضحة جدًا للروشتة أو العبوة. الإدارة ستراجع الطلب، ثم نرسله للمندوب كما أرسلته.'
-                          : 'اكتب احتياجاتك بالتفصيل بدل اختيار منتجات جاهزة. الإدارة ستراجع الطلب، ثم نرسله للمندوب كما كتبته تمامًا.'}
+                          ? 'اكتب أسماء الأدوية أو ارفع لحد 3 صور واضحة جدًا للروشتة أو العبوة. إحنا هنراجع الطلب وبعدها نكملك عليه.'
+                          : 'اكتب احتياجاتك بالتفصيل بدل اختيار منتجات جاهزة. إحنا هنراجع الطلب وبعدها نكملك عليه.'}
                       </p>
                     </div>
                   </div>
@@ -370,7 +371,7 @@ export default function CategoryPage() {
                     <div className="mt-6">
                     <label className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
                       <NotebookPen className="h-4 w-4 text-primary" />
-                      {currentCategory?.name === 'صيدلية' ? 'تفاصيل الطلب أو أسماء الأدوية' : 'تفاصيل الطلب النصي'}
+                      {currentCategory?.name === 'صيدلية' ? 'تفاصيل الطلب أو أسماء الأدوية' : 'اكتب طلبك هنا'}
                     </label>
                     <textarea
                       value={textRequest}
@@ -383,8 +384,8 @@ export default function CategoryPage() {
                     />
                     <p className="mt-2 text-xs text-gray-500">
                       {currentCategory?.name === 'صيدلية'
-                        ? 'هذا النص سيصل إلى الأدمن والمندوب كما هو، فحاول تكتب الاسم أو التركيز بشكل واضح.'
-                        : 'هذا النص سيصل إلى الأدمن والمندوب كما هو، فحاول يكون واضحًا ومباشرًا.'}
+                        ? 'حاول تكتب الاسم أو التركيز بشكل واضح عشان نراجع الطلب بسرعة.'
+                        : 'اكتب اللي عاوزه بشكل واضح عشان نعرف نوصله لك من غير لخبطة.'}
                     </p>
                     </div>
                   )}
@@ -448,14 +449,14 @@ export default function CategoryPage() {
 
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs text-gray-500">
-                      السعر النهائي للمنتجات يتحدد بعد مراجعة الطلب، ثم يتم التوصيل كالمعتاد.
+                      هنراجع الطلب ونقولك السعر وبعدها أنت تقرر نكمل ولا لأ.
                     </p>
                     <Button
                       onClick={handleContinueTextOrder}
                       disabled={!canContinueTextRequest || isUploadingImages}
                       className="rounded-2xl px-6 py-6 text-sm font-black"
                     >
-                      متابعة الطلب
+                      ابعت طلبك
                     </Button>
                   </div>
                 </div>
@@ -558,6 +559,69 @@ export default function CategoryPage() {
 
             {/* Product Grid */}
             <div className="flex-1">
+              {canShowCategoryRequestBox && currentCategory && (
+                <div className="mb-6 rounded-[2rem] border border-primary/20 bg-primary/5 p-5 shadow-premium sm:p-6">
+                  <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="max-w-2xl">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                          <ShoppingBasket className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-black text-foreground">ملقتش المنتج اللي عاوزه؟</h2>
+                          <p className="mt-1 text-sm leading-7 text-gray-500">
+                            اكتب لنا اللي محتاجه وإحنا هندورلك عليه. أول ما نلاقيه هنقولك السعر شامل الشحن، وساعتها تقرر تكمل أو تلغي.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
+                        <p className="text-xs font-black text-amber-500">مهم</p>
+                        <p className="mt-2 text-sm leading-7 text-gray-500">
+                          طول ما إحنا لسه بندور على طلبك تقدر تلغيه. لكن بعد ما نبعتلك إن الطلب اتوفر والسعر اتحدد، ساعتها هتختار نكمل أو تقفل الطلب.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="w-full max-w-xl rounded-[1.75rem] border border-surface-hover bg-surface p-4 sm:p-5">
+                      <label className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
+                        <NotebookPen className="h-4 w-4 text-primary" />
+                        اكتب اسم المنتج أو الطلب اللي مش لاقيه
+                      </label>
+                      <textarea
+                        value={textRequest}
+                        onChange={(e) => setTextRequest(e.target.value)}
+                        rows={6}
+                        placeholder={`مثال:\nعاوز لبن كامل الدسم 3 علب\nأو شوكولاتة دارك نوع معين\nأو رز 5 كيلو نوع الضحى`}
+                        className="w-full resize-none rounded-[1.25rem] border border-surface-hover bg-background px-4 py-4 text-sm leading-7 text-foreground outline-none transition-colors focus:border-primary/40"
+                      />
+                      <p className="mt-2 text-xs text-gray-500">
+                        اكتب الاسم والكمية أو النوع اللي يريحك، وإحنا هنكلمك لما نلاقيه.
+                      </p>
+
+                      {requestError ? (
+                        <div className="mt-4 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
+                          {requestError}
+                        </div>
+                      ) : null}
+
+                      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-xs text-gray-500">
+                          مش هتدفع دلوقتي. هنرد عليك الأول لو لقينا الطلب.
+                        </p>
+                        <Button
+                          onClick={handleContinueTextOrder}
+                          disabled={!canContinueTextRequest || isUploadingImages}
+                          className="rounded-2xl px-5 py-3 text-sm font-black"
+                        >
+                          ابعت طلب البحث
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="hidden md:flex justify-between items-center mb-6">
                 <span className="text-sm text-gray-500">عرض {productCards.length} نتيجة</span>
                 {hasActiveFilters && <button onClick={clearAllFilters} className="text-xs font-bold text-rose-500 hover:text-rose-400 transition-colors">مسح الفلاتر</button>}
