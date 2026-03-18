@@ -5,8 +5,8 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
-import { ShoppingBag, Phone, Timer, XCircle, CheckCircle2 } from "lucide-react"
-import { cancelOrderByCustomer, confirmOrderGracePeriod } from "@/services/ordersService"
+import { ShoppingBag, Phone, Timer, XCircle, CheckCircle2, Loader2 } from "lucide-react"
+import { cancelOrderByCustomer, confirmOrderGracePeriod, respondToQuotedTextOrder } from "@/services/ordersService"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
@@ -64,6 +64,60 @@ function Particle({ style }: { style: React.CSSProperties }) {
   )
 }
 
+function QuoteApprovalPopup({
+  quotedProductsTotal,
+  quotedFinalTotal,
+  isSubmitting,
+  onApprove,
+  onReject,
+}: {
+  quotedProductsTotal: number
+  quotedFinalTotal: number
+  isSubmitting: 'approve' | 'reject' | null
+  onApprove: () => void
+  onReject: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-3xl border border-primary/20 bg-surface p-6 shadow-premium">
+        <p className="text-xs font-black uppercase tracking-wider text-primary/80">تم تحديد تسعيرة طلبك</p>
+        <h3 className="mt-2 text-2xl font-black text-foreground">راجع السعر وأكمل القرار</h3>
+        <p className="mt-3 text-sm leading-7 text-gray-500">
+          تسعيرة منتجك شاملة مصاريف الشحن. إذا وافقت الآن سنحوّل الطلب مباشرة إلى خطوة التأكيد ونبدأ مهلة الخمس دقائق.
+        </p>
+
+        <div className="mt-5 space-y-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+          <p className="text-sm text-gray-500">
+            قيمة المنتجات: <span className="font-black text-foreground">{quotedProductsTotal.toLocaleString()} ج.م</span>
+          </p>
+          <p className="text-lg font-black text-emerald-600">
+            السعر النهائي شامل الشحن: {quotedFinalTotal.toLocaleString()} ج.م
+          </p>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <button
+            onClick={onApprove}
+            disabled={!!isSubmitting}
+            className="flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-black text-white transition-colors hover:bg-primary/90 disabled:opacity-60"
+          >
+            {isSubmitting === 'approve' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            تأكيد الطلب
+          </button>
+          <button
+            onClick={onReject}
+            disabled={!!isSubmitting}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-black text-rose-400 transition-colors hover:bg-rose-500 hover:text-white disabled:opacity-60"
+          >
+            {isSubmitting === 'reject' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            لا، مش هكمل
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function OrderSuccessContent() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get("orderId")
@@ -72,6 +126,10 @@ function OrderSuccessContent() {
   const [showBike, setShowBike] = useState(false)
   const [quoteReady, setQuoteReady] = useState(false)
   const [quoteProgress, setQuoteProgress] = useState(12)
+  const [quotedProductsTotal, setQuotedProductsTotal] = useState(0)
+  const [quotedFinalTotal, setQuotedFinalTotal] = useState(0)
+  const [showQuotePopup, setShowQuotePopup] = useState(false)
+  const [quoteDecisionLoading, setQuoteDecisionLoading] = useState<'approve' | 'reject' | null>(null)
   
   // Grace period state
   const GRACE_PERIOD_SECONDS = 300 // 5 minutes
@@ -131,6 +189,9 @@ function OrderSuccessContent() {
       if (data && data.shipping_address?.pricing_pending !== true && Number(data.shipping_address?.quoted_final_total || data.total_amount || 0) > 0) {
         setQuoteReady(true)
         setQuoteProgress(100)
+        setQuotedProductsTotal(Number(data.shipping_address?.quoted_products_total || 0))
+        setQuotedFinalTotal(Number(data.shipping_address?.quoted_final_total || data.total_amount || 0))
+        setShowQuotePopup(true)
       }
     }
 
@@ -147,6 +208,10 @@ function OrderSuccessContent() {
           if (hasQuote) {
             setQuoteReady(true)
             setQuoteProgress(100)
+            setQuotedProductsTotal(Number(shipping?.quoted_products_total || 0))
+            setQuotedFinalTotal(Number(shipping?.quoted_final_total || payload.new.total_amount || 0))
+            setShowQuotePopup(true)
+            toast.success('تم تحديد تسعيرة طلبك، راجعها الآن')
           }
         }
       )
@@ -187,6 +252,29 @@ function OrderSuccessContent() {
     
     setIsCancelled(true)
     setShowOverlay(false)
+  }
+
+  const handleQuoteDecision = async (decision: 'approve' | 'reject') => {
+    if (!orderId) return
+
+    setQuoteDecisionLoading(decision)
+    try {
+      await respondToQuotedTextOrder(orderId, decision)
+      setShowQuotePopup(false)
+
+      if (decision === 'approve') {
+        toast.success('تم تأكيد الطلب، وستبدأ الآن مهلة الخمس دقائق')
+        window.location.assign(`/order-success?orderId=${orderId}`)
+        return
+      }
+
+      toast.success('تم إلغاء الطلب بناءً على رفضك للتسعيرة')
+      setIsCancelled(true)
+    } catch (error: any) {
+      toast.error(error.message || 'تعذر إرسال ردك على التسعيرة الآن')
+    } finally {
+      setQuoteDecisionLoading(null)
+    }
   }
 
   if (isCancelled) {
@@ -273,6 +361,16 @@ function OrderSuccessContent() {
 
   return (
     <>
+      {showQuotePopup && quoteReady && (
+        <QuoteApprovalPopup
+          quotedProductsTotal={quotedProductsTotal}
+          quotedFinalTotal={quotedFinalTotal}
+          isSubmitting={quoteDecisionLoading}
+          onApprove={() => handleQuoteDecision('approve')}
+          onReject={() => handleQuoteDecision('reject')}
+        />
+      )}
+
       {/* GRACE PERIOD OVERLAY */}
       {showOverlay && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-300">
