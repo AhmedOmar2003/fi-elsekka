@@ -202,7 +202,7 @@ export default function AdminPage() {
         { label: 'المستخدمون', value: stats.totalUsers, icon: Users, color: 'text-violet-400', bg: 'bg-violet-400/10', href: '/admin/users' },
         { label: 'المنتجات', value: stats.totalProducts, icon: Package, color: 'text-sky-400', bg: 'bg-sky-400/10', href: '/admin/products' },
         { label: 'الطلبات العادية', value: stats.totalOrders, icon: ShoppingCart, color: 'text-amber-400', bg: 'bg-amber-400/10', href: '/admin/orders' },
-        { label: 'طلبات بندور عليها', value: stats.totalSearchRequests, icon: Clock, color: 'text-violet-400', bg: 'bg-violet-400/10', href: '/admin/orders?kind=searching_request' },
+        { label: 'طلبات بندور عليها', value: stats.totalSearchRequests, icon: Clock, color: 'text-violet-400', bg: 'bg-violet-400/10', href: '/admin/orders/search-requests' },
         { label: 'إيراد المنصة', value: `${stats.totalRevenue.toLocaleString()} ج.م`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', href: '/admin/orders' },
     ];
 
@@ -224,14 +224,14 @@ export default function AdminPage() {
         {
             label: 'طلبات لسه بندور عليها',
             value: overview.orderHealth.searchingRequests,
-            href: '/admin/orders?kind=searching_request',
+            href: '/admin/orders/search-requests?state=searching',
             icon: Clock,
             tone: 'text-violet-400 bg-violet-400/10 border-violet-400/20',
         },
         {
             label: 'لقيناها ومستنية رد العميل',
             value: overview.orderHealth.pricedSearchRequests,
-            href: '/admin/orders?kind=priced_request',
+            href: '/admin/orders/search-requests?state=priced',
             icon: CircleDot,
             tone: 'text-sky-400 bg-sky-400/10 border-sky-400/20',
         },

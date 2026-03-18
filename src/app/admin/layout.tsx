@@ -31,6 +31,7 @@ interface Notification {
 const NAV_ITEMS = [
     { label: 'لوحة التحكم', href: '/admin', icon: LayoutDashboard, perm: null },
     { label: 'الطلبات', href: '/admin/orders', icon: ShoppingCart, perm: 'view_orders' },
+    { label: 'طلبات بندور عليها', href: '/admin/orders/search-requests', icon: Clock, perm: 'view_orders' },
     { label: 'مركز العمليات', href: '/admin/operations', icon: AlertTriangle, fullAdmin: true },
     { label: 'المندوبين', href: '/admin/drivers', icon: Bike, perm: 'view_drivers' },
     { label: 'المنتجات', href: '/admin/products', icon: Package, perm: 'manage_products' },
@@ -338,7 +339,7 @@ function NotificationBell() {
                           type: 'driver_priced_text_order',
                           title: 'تم إرسال تسعيرة لطلب نصي',
                           body: `${newShipping.pricing_updated_by_admin_name || newShipping.pricing_updated_by_driver_name || 'الإدارة'} حدّد سعر الطلب #${payload.new.id.slice(-6).toUpperCase()} بمبلغ ${Number(newShipping.quoted_final_total || payload.new.total_amount || 0).toLocaleString()} ج.م`,
-                          link: '/admin/orders',
+                          link: '/admin/orders/search-requests',
                       });
                   }
 
@@ -363,7 +364,7 @@ function NotificationBell() {
                           body: quoteResponseType === 'approve'
                               ? `${customerName} وافق على تسعيرة الطلب #${payload.new.id.slice(-6).toUpperCase()} ويمكنك الآن تعيين مندوب`
                               : `${customerName} رفض تسعيرة الطلب #${payload.new.id.slice(-6).toUpperCase()} وتم إلغاء الطلب`,
-                          link: '/admin/orders',
+                          link: '/admin/orders/search-requests',
                       });
                   }
               })
