@@ -19,7 +19,7 @@ import { hasFullAdminAccess, hasPermission } from '@/lib/permissions';
 // ── Types ────────────────────────────────────────────────────
 interface Notification {
     id: string;
-    type: 'new_order' | 'new_user' | 'new_driver' | 'new_staff' | 'order_delivered' | 'new_review' | 'customer_order_response' | 'driver_priced_text_order';
+    type: 'new_order' | 'new_user' | 'new_driver' | 'new_staff' | 'order_delivered' | 'new_review' | 'customer_order_response' | 'driver_priced_text_order' | 'customer_quote_response';
     title: string;
     body: string;
     time: Date;
@@ -255,7 +255,8 @@ function NotificationBell() {
         // since payload.old doesn't contain the full record by default in Supabase.
         const notifiedOrderIds = new Set<string>();
         const notifiedCancellationResponseKeys = new Set<string>();
-        const notifiedPricingKeys = new Set<string>();
+          const notifiedPricingKeys = new Set<string>();
+          const notifiedQuoteResponseKeys = new Set<string>();
 
         // Subscribe to new orders (Handling the 5-minute grace period)
         const ordersChannel = supabase
@@ -326,21 +327,46 @@ function NotificationBell() {
 
                 const pricingUpdatedAt = newShipping.pricing_updated_at;
                 const pricingKey = pricingUpdatedAt ? `${payload.new.id}:${pricingUpdatedAt}` : null;
-                if (
-                    newShipping.request_mode === 'custom_category_text' &&
-                    pricingKey &&
-                    !notifiedPricingKeys.has(pricingKey) &&
-                    Number(newShipping.quoted_final_total || payload.new.total_amount || 0) > 0
-                ) {
-                    notifiedPricingKeys.add(pricingKey);
-                    addNotification({
-                        type: 'driver_priced_text_order',
-                        title: 'تم تسعير طلب نصي من المندوب',
-                        body: `المندوب ${newShipping.pricing_updated_by_driver_name || 'المكلّف'} حدّد سعر الطلب #${payload.new.id.slice(-6).toUpperCase()} بمبلغ ${Number(newShipping.quoted_final_total || payload.new.total_amount || 0).toLocaleString()} ج.م`,
-                        link: '/admin/orders',
-                    });
-                }
-            })
+                  if (
+                      newShipping.request_mode === 'custom_category_text' &&
+                      pricingKey &&
+                      !notifiedPricingKeys.has(pricingKey) &&
+                      Number(newShipping.quoted_final_total || payload.new.total_amount || 0) > 0
+                  ) {
+                      notifiedPricingKeys.add(pricingKey);
+                      addNotification({
+                          type: 'driver_priced_text_order',
+                          title: 'تم إرسال تسعيرة لطلب نصي',
+                          body: `${newShipping.pricing_updated_by_admin_name || newShipping.pricing_updated_by_driver_name || 'الإدارة'} حدّد سعر الطلب #${payload.new.id.slice(-6).toUpperCase()} بمبلغ ${Number(newShipping.quoted_final_total || payload.new.total_amount || 0).toLocaleString()} ج.م`,
+                          link: '/admin/orders',
+                      });
+                  }
+
+                  const quoteResponseAt = newShipping.customer_quote_response_at;
+                  const quoteResponseType = newShipping.customer_quote_response;
+                  const quoteResponseKey = quoteResponseAt ? `${payload.new.id}:${quoteResponseAt}:${quoteResponseType}` : null;
+                  if (
+                      quoteResponseKey &&
+                      !notifiedQuoteResponseKeys.has(quoteResponseKey) &&
+                      (quoteResponseType === 'approve' || quoteResponseType === 'reject')
+                  ) {
+                      notifiedQuoteResponseKeys.add(quoteResponseKey);
+                      const customerName =
+                          newShipping.recipient ||
+                          newShipping.recipientName ||
+                          newShipping.full_name ||
+                          'العميل';
+
+                      addNotification({
+                          type: 'customer_quote_response',
+                          title: quoteResponseType === 'approve' ? 'العميل وافق على التسعيرة' : 'العميل رفض التسعيرة',
+                          body: quoteResponseType === 'approve'
+                              ? `${customerName} وافق على تسعيرة الطلب #${payload.new.id.slice(-6).toUpperCase()} ويمكنك الآن تعيين مندوب`
+                              : `${customerName} رفض تسعيرة الطلب #${payload.new.id.slice(-6).toUpperCase()} وتم إلغاء الطلب`,
+                          link: '/admin/orders',
+                      });
+                  }
+              })
             .subscribe();
 
         // Subscribe to new users
@@ -395,8 +421,9 @@ function NotificationBell() {
             case 'order_delivered': return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
             case 'customer_order_response': return <AlertTriangle className="w-4 h-4 text-amber-400" />;
             case 'driver_priced_text_order': return <Package className="w-4 h-4 text-emerald-500" />;
+            case 'customer_quote_response': return <Package className="w-4 h-4 text-primary" />;
         }
-    };
+      };
 
     const formatTime = (date: Date) => {
         const now = new Date();

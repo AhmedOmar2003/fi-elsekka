@@ -49,15 +49,12 @@ function playNotificationSound() {
     }
 }
 
-function OrderCard({ order, onMarkDelivered, onSubmitPricing, isUpdating, isPricing }: {
+function OrderCard({ order, onMarkDelivered, isUpdating }: {
     order: DriverOrder;
     onMarkDelivered: (id: string) => void;
-    onSubmitPricing: (id: string, productsSubtotal: number) => void;
     isUpdating: boolean;
-    isPricing: boolean;
 }) {
     const [expanded, setExpanded] = useState(false)
-    const [quotedSubtotal, setQuotedSubtotal] = useState<string>(String(order.shipping_address?.quoted_products_total ?? order.shipping_address?.subtotal_amount ?? ''))
     const isDelivered = order.status === 'delivered'
 
     const customerName = order.users?.full_name || 'غير معروف'
@@ -73,10 +70,6 @@ function OrderCard({ order, onMarkDelivered, onSubmitPricing, isUpdating, isPric
     const textRequestCategory = order.shipping_address?.custom_request_category_name
     const textRequestImageUrls = Array.isArray(order.shipping_address?.custom_request_image_urls) ? order.shipping_address.custom_request_image_urls : []
     const pricingPending = order.shipping_address?.pricing_pending === true
-
-    useEffect(() => {
-        setQuotedSubtotal(String(order.shipping_address?.quoted_products_total ?? order.shipping_address?.subtotal_amount ?? ''))
-    }, [order.shipping_address?.quoted_products_total, order.shipping_address?.subtotal_amount])
 
     return (
         <div className={`rounded-2xl border overflow-hidden transition-all ${isDelivered
@@ -146,7 +139,7 @@ function OrderCard({ order, onMarkDelivered, onSubmitPricing, isUpdating, isPric
 
                     <div className="flex items-center justify-between pt-1 border-t border-surface-hover">
                         <span className="text-xs text-gray-500">إجمالي الطلب</span>
-                        <span className="font-black text-primary text-lg">{pricingPending ? 'يحدد لاحقًا' : `${order.total_amount?.toLocaleString() || 0} ج.م`}</span>
+                        <span className="font-black text-primary text-lg">{pricingPending ? 'بانتظار تسعير الإدارة' : `${order.total_amount?.toLocaleString() || 0} ج.م`}</span>
                     </div>
 
                     {isTextRequestOrder && (textRequest || textRequestImageUrls.length > 0) && (
@@ -169,41 +162,20 @@ function OrderCard({ order, onMarkDelivered, onSubmitPricing, isUpdating, isPric
 
                     {isTextRequestOrder && !isDelivered && (
                         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3">
-                            <p className="text-xs font-black text-emerald-500/80">تسعير الطلب للعميل</p>
-                            <p className="text-xs leading-6 text-gray-500">
-                                اكتب قيمة المنتجات من المحل، والنظام سيضيف رسوم التوصيل تلقائيًا حتى يصل السعر النهائي للإدارة والعميل.
-                            </p>
-                            <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                                <div>
-                                    <p className="mb-2 text-xs font-bold text-gray-500">سعر المنتجات من المحل</p>
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        value={quotedSubtotal}
-                                        onChange={(e) => setQuotedSubtotal(e.target.value)}
-                                        className="w-full rounded-xl border border-surface-hover bg-background px-3 py-3 text-sm font-bold text-foreground outline-none focus:border-emerald-500/40"
-                                        placeholder="مثال: 180"
-                                    />
+                            <p className="text-xs font-black text-emerald-500/80">التسعيرة المعتمدة</p>
+                            {pricingPending ? (
+                                <p className="text-xs leading-6 text-gray-500">
+                                    الإدارة ما زالت تراجع سعر هذا الطلب. بعد اعتماد العميل للتسعيرة سيصلك الطلب بالمبلغ النهائي الواجب الالتزام به.
+                                </p>
+                            ) : (
+                                <div className="rounded-xl bg-background/70 px-3 py-3 text-sm">
+                                    <p className="text-gray-500">التسعيرة التي وافق عليها العميل:</p>
+                                    <p className="mt-1 font-black text-foreground">
+                                        {Number(order.shipping_address?.quoted_final_total || order.total_amount || 0).toLocaleString()} ج.م
+                                        <span className="mr-2 text-xs font-medium text-gray-500">(شامل 20 ج.م توصيل)</span>
+                                    </p>
+                                    <p className="mt-2 text-xs text-gray-500">التزم بهذه التسعيرة عند تنفيذ الطلب وتسليمه للعميل.</p>
                                 </div>
-                                <button
-                                    onClick={() => onSubmitPricing(order.id, Number(quotedSubtotal || 0))}
-                                    disabled={isPricing || quotedSubtotal === '' || Number(quotedSubtotal) < 0}
-                                    className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-black text-emerald-600 transition-colors hover:bg-emerald-500 hover:text-white disabled:opacity-50"
-                                >
-                                    {isPricing ? 'جاري الحفظ...' : pricingPending ? 'إرسال السعر' : 'تحديث السعر'}
-                                </button>
-                            </div>
-                            <div className="rounded-xl bg-background/70 px-3 py-3 text-sm">
-                                <p className="text-gray-500">العميل سيدفع:</p>
-                                <p className="mt-1 font-black text-foreground">
-                                    {(Number(quotedSubtotal || 0) + 20).toLocaleString()} ج.م
-                                    <span className="mr-2 text-xs font-medium text-gray-500">(شامل 20 ج.م توصيل)</span>
-                                </p>
-                            </div>
-                            {!pricingPending && (
-                                <p className="text-xs text-gray-500">
-                                    تم إرسال السعر الحالي للعميل والإدارة، ويمكنك تحديثه عند الحاجة.
-                                </p>
                             )}
                         </div>
                     )}
@@ -241,7 +213,6 @@ export default function DriverDashboard() {
     const [deliveredOrders, setDeliveredOrders] = useState<DriverOrder[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [updatingId, setUpdatingId] = useState<string | null>(null)
-    const [pricingOrderId, setPricingOrderId] = useState<string | null>(null)
     const [driverUser, setDriverUser] = useState<any>(null)
     const [notificationsAllowed, setNotificationsAllowed] = useState(true)
     const [pushStatus, setPushStatus] = useState<NotificationPermission | 'prompt' | 'unsupported'>('prompt')
@@ -539,44 +510,6 @@ export default function DriverDashboard() {
         }
     }
 
-    const submitPricing = async (orderId: string, productsSubtotal: number) => {
-        setPricingOrderId(orderId)
-        try {
-            const { data: { session } } = await supabase.auth.getSession()
-            if (!session) return
-
-            const res = await fetch('/api/driver/quote-order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
-                body: JSON.stringify({ orderId, productsSubtotal })
-            })
-
-            const data = await res.json().catch(() => ({}))
-            if (!res.ok) {
-                throw new Error(data?.error || 'فشل حفظ سعر الطلب')
-            }
-
-            setActiveOrders(prev => prev.map(order =>
-                order.id === orderId
-                    ? {
-                        ...order,
-                        total_amount: data.totalAmount ?? order.total_amount,
-                        shipping_address: data.shipping_address ?? order.shipping_address,
-                    }
-                    : order
-            ))
-
-            toast.success('تم إرسال السعر للإدارة والعميل بنجاح')
-        } catch (err: any) {
-            toast.error(err.message || 'حدث خطأ أثناء حفظ السعر')
-        } finally {
-            setPricingOrderId(null)
-        }
-    }
-
     const handleLogout = async () => {
         await supabase.auth.signOut()
         router.push('/login')
@@ -677,7 +610,7 @@ export default function DriverDashboard() {
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-gray-500">إجمالي المبلغ</span>
                                 <span className="font-black text-primary">
-                                    {pendingOrders[0].shipping_address?.pricing_pending ? 'يحدد لاحقًا' : `${pendingOrders[0].total_amount?.toLocaleString() || 0} ج.م`}
+                                    {pendingOrders[0].shipping_address?.pricing_pending ? 'بانتظار تسعير الإدارة' : `${pendingOrders[0].total_amount?.toLocaleString() || 0} ج.م`}
                                 </span>
                             </div>
                             <div className="pt-2 mt-2 border-t border-surface-hover text-sm">
@@ -802,9 +735,7 @@ export default function DriverDashboard() {
                             key={order.id}
                             order={order}
                             onMarkDelivered={markAsDelivered}
-                            onSubmitPricing={submitPricing}
                             isUpdating={updatingId === order.id}
-                            isPricing={pricingOrderId === order.id}
                         />
                     ))
                 )}
@@ -823,9 +754,7 @@ export default function DriverDashboard() {
                             key={order.id}
                             order={order}
                             onMarkDelivered={markAsDelivered}
-                            onSubmitPricing={submitPricing}
                             isUpdating={false}
-                            isPricing={false}
                         />
                     ))}
                 </div>

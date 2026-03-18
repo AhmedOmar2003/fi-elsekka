@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { useAuth } from "@/contexts/AuthContext"
-import { fetchUserOrders, Order, respondToCancelledOrder } from "@/services/ordersService"
+import { fetchUserOrders, Order, respondToCancelledOrder, respondToQuotedTextOrder } from "@/services/ordersService"
 import { supabase } from "@/lib/supabase"
 import { Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, ChevronDown, ChevronUp, Wifi, Phone, Star, Loader2 } from "lucide-react"
 import { toast } from "sonner"
@@ -211,6 +211,8 @@ function OrderCard({
   const customerCancelMessage = order.shipping_address?.cancellation_message
   const cancellationDecision = order.shipping_address?.customer_cancellation_response as 'insist' | 'confirm_cancel' | undefined
   const cancellationDecisionAt = order.shipping_address?.customer_cancellation_response_at
+  const quoteDecision = order.shipping_address?.customer_quote_response as 'approve' | 'reject' | undefined
+  const quoteDecisionAt = order.shipping_address?.customer_quote_response_at
 
   const etaWindow = etaDays > 0 && etaHours > 0
     ? `${etaDays} يوم و${etaHours} ساعة`
@@ -227,6 +229,7 @@ function OrderCard({
   const quotedProductsTotal = Number(order.shipping_address?.quoted_products_total || 0)
   const quotedFinalTotal = Number(order.shipping_address?.quoted_final_total || order.total_amount || 0)
   const pricingUpdatedAt = order.shipping_address?.pricing_updated_at
+  const [isSubmittingQuoteResponse, setIsSubmittingQuoteResponse] = useState<null | 'approve' | 'reject'>(null)
 
   const handleCancelledOrderDecision = async (decision: 'insist' | 'confirm_cancel') => {
     setIsSubmittingCancelResponse(decision)
@@ -245,6 +248,27 @@ function OrderCard({
       toast.error(error.message || 'تعذر إرسال ردك الآن')
     } finally {
       setIsSubmittingCancelResponse(null)
+    }
+  }
+
+  const handleQuotedOrderDecision = async (decision: 'approve' | 'reject') => {
+    setIsSubmittingQuoteResponse(decision)
+    try {
+      const data = await respondToQuotedTextOrder(order.id, decision)
+      onOrderUpdated({
+        ...order,
+        status: data.status,
+        shipping_address: data.shipping_address,
+      })
+      toast.success(
+        decision === 'approve'
+          ? 'تم إبلاغ الإدارة أنك وافقت على التسعيرة'
+          : 'تم إلغاء الطلب بناءً على رفضك للتسعيرة'
+      )
+    } catch (error: any) {
+      toast.error(error.message || 'تعذر إرسال ردك على التسعيرة الآن')
+    } finally {
+      setIsSubmittingQuoteResponse(null)
     }
   }
 
@@ -410,6 +434,15 @@ function OrderCard({
             </div>
           )}
 
+          {isTextRequestOrder && pricingPending && (
+            <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-4 space-y-2">
+              <p className="text-xs font-black uppercase tracking-wide text-amber-500">بانتظار التسعير من الإدارة</p>
+              <p className="text-sm leading-7 text-gray-500">
+                يجري الآن مراجعة طلبك لتحديد سعر المنتجات. بعد دقائق ستصلك التسعيرة كاملة مع التوصيل، ثم تختار أنت هل تكمل الطلب أم لا.
+              </p>
+            </div>
+          )}
+
           {isTextRequestOrder && !pricingPending && quotedFinalTotal > 0 && (
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 space-y-2">
               <p className="text-xs font-black uppercase tracking-wide text-emerald-600">تم تحديد السعر</p>
@@ -417,6 +450,46 @@ function OrderCard({
               <p className="text-base font-black text-emerald-600">السعر النهائي الحالي: {quotedFinalTotal.toLocaleString()} ج.م شامل التوصيل</p>
               {pricingUpdatedAt && (
                 <p className="text-xs text-gray-500">آخر تحديث: {new Date(pricingUpdatedAt).toLocaleString('ar-EG')}</p>
+              )}
+
+              {!quoteDecision && order.status !== 'cancelled' && (
+                <div className="grid gap-2 pt-2 sm:grid-cols-2">
+                  <button
+                    onClick={() => handleQuotedOrderDecision('approve')}
+                    disabled={!!isSubmittingQuoteResponse}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-bold text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-60"
+                  >
+                    {isSubmittingQuoteResponse === 'approve' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    نعم، أكمل الطلب
+                  </button>
+                  <button
+                    onClick={() => handleQuotedOrderDecision('reject')}
+                    disabled={!!isSubmittingQuoteResponse}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-400 transition-colors hover:bg-rose-500 hover:text-white disabled:opacity-60"
+                  >
+                    {isSubmittingQuoteResponse === 'reject' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    لا، مش هكمل
+                  </button>
+                </div>
+              )}
+
+              {quoteDecision && (
+                <div className={`rounded-xl px-3 py-3 text-sm ${
+                  quoteDecision === 'approve'
+                    ? 'border border-primary/20 bg-primary/10 text-primary'
+                    : 'border border-rose-500/20 bg-rose-500/10 text-rose-400'
+                }`}>
+                  <p className="font-bold">
+                    {quoteDecision === 'approve'
+                      ? 'تم إرسال موافقتك للإدارة، وسيتم تجهيز الطلب وتعيين مندوب بالتسعيرة المحددة.'
+                      : 'تم تسجيل رفضك للتسعيرة، وتم إلغاء الطلب.'}
+                  </p>
+                  {quoteDecisionAt && (
+                    <p className="mt-1 text-xs opacity-80">
+                      {new Date(quoteDecisionAt).toLocaleString('ar-EG')}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -460,9 +533,9 @@ function OrderCard({
 
           {/* Total */}
           <div className="flex items-center justify-between pt-2 border-t border-surface-hover">
-            <span className="text-sm text-gray-500 font-medium">{pricingPending ? 'السعر النهائي' : 'المجموع الكلي (شاملاً التوصيل)'}</span>
+            <span className="text-sm text-gray-500 font-medium">{pricingPending ? 'حالة التسعير' : 'المجموع الكلي (شاملاً التوصيل)'}</span>
             <span className="text-lg font-black text-primary">
-              {pricingPending ? 'يحدد لاحقًا' : `${order.total_amount?.toLocaleString()} ج.م`}
+              {pricingPending ? 'بانتظار التسعير' : `${order.total_amount?.toLocaleString()} ج.م`}
             </span>
           </div>
         </div>

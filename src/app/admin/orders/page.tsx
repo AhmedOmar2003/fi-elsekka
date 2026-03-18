@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { cancelAdminOrder, fetchAdminOrders, fetchOrderDetails, isCustomerSelfCancelledGraceOrder, reopenCancelledOrderAfterCustomerRequest, saveAdminOrderDeliveryPlan, saveAdminOrderEconomics, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
+import { cancelAdminOrder, fetchAdminOrders, fetchOrderDetails, isCustomerSelfCancelledGraceOrder, reopenCancelledOrderAfterCustomerRequest, saveAdminOrderDeliveryPlan, saveAdminOrderEconomics, saveAdminTextOrderQuote, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
 import { ShoppingCart, ChevronDown, X, Package, Download, Filter, Bike, Clock, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
@@ -96,6 +96,8 @@ export default function AdminOrdersPage() {
     const [isReopeningOrder, setIsReopeningOrder] = useState(false);
     const [merchantDiscountAmount, setMerchantDiscountAmount] = useState(0);
     const [isSavingEconomics, setIsSavingEconomics] = useState(false);
+    const [quotedSubtotalInput, setQuotedSubtotalInput] = useState(0);
+    const [isSavingTextQuote, setIsSavingTextQuote] = useState(false);
 
     // Driver Assignment UI state
     const [drivers, setDrivers] = useState<any[]>([]);
@@ -200,6 +202,7 @@ export default function AdminOrdersPage() {
             'لو كنت ما زلت تريد هذا الطلب، ادينا فرصة نجهزه على أكمل وجه، ولو أصبح جاهزًا هنرسل لك إشعارًا جديدًا بموعد الوصول المتوقع.'
         );
         setMerchantDiscountAmount(Number(order.shipping_address?.merchant_discount_amount || 0));
+        setQuotedSubtotalInput(Number(order.shipping_address?.quoted_products_total || order.shipping_address?.subtotal_amount || 0));
         setSelectedDriverId(order.shipping_address?.driver?.id || '');
         // Use already-fetched items embedded in the order object (from the enriched query)
         setOrderItems(order.order_items || []);
@@ -333,6 +336,34 @@ export default function AdminOrdersPage() {
         }
     };
 
+    const handleSaveTextQuote = async () => {
+        if (!selectedOrder) return;
+        if (quotedSubtotalInput < 0) {
+            toast.error('قيمة المنتجات لا يمكن أن تكون سالبة');
+            return;
+        }
+
+        setIsSavingTextQuote(true);
+        try {
+            const data = await saveAdminTextOrderQuote(selectedOrder.id, quotedSubtotalInput);
+            setOrders(prev => prev.map(o => o.id === selectedOrder.id ? {
+                ...o,
+                total_amount: data.total_amount,
+                shipping_address: data.shipping_address,
+            } : o));
+            setSelectedOrder((prev: any) => ({
+                ...prev,
+                total_amount: data.total_amount,
+                shipping_address: data.shipping_address,
+            }));
+            toast.success('تم إرسال التسعيرة للعميل بنجاح');
+        } catch (error: any) {
+            toast.error(error.message || 'فشل إرسال التسعيرة');
+        } finally {
+            setIsSavingTextQuote(false);
+        }
+    };
+
     const handleAssignDriver = async (driverId: string) => {
         if (!canAssignDriver) return;
         if (!selectedOrder) return;
@@ -390,7 +421,10 @@ export default function AdminOrdersPage() {
     const selectedOrderQuotedProductsTotal = Number(selectedOrder?.shipping_address?.quoted_products_total || 0);
     const selectedOrderQuotedFinalTotal = Number(selectedOrder?.shipping_address?.quoted_final_total || selectedOrder?.total_amount || 0);
     const selectedOrderPricingUpdatedAt = selectedOrder?.shipping_address?.pricing_updated_at;
-    const selectedOrderPricingDriverName = selectedOrder?.shipping_address?.pricing_updated_by_driver_name;
+    const selectedOrderPricingDriverName = selectedOrder?.shipping_address?.pricing_updated_by_admin_name || selectedOrder?.shipping_address?.pricing_updated_by_driver_name;
+    const selectedOrderQuoteResponse = selectedOrder?.shipping_address?.customer_quote_response;
+    const selectedOrderQuoteResponseAt = selectedOrder?.shipping_address?.customer_quote_response_at;
+    const canAssignSelectedTextOrderDriver = !selectedOrderIsTextRequest || selectedOrderQuoteResponse === 'approve';
 
     return (
         <div className="space-y-5">
@@ -579,12 +613,12 @@ export default function AdminOrdersPage() {
                                 <div className="flex-1">
                                     <p className="text-xs font-bold text-gray-500 mb-2 whitespace-nowrap overflow-hidden">مندوب التوصيل</p>
                                     <div className="relative">
-                                        <select
-                                            value={selectedDriverId}
-                                            onChange={e => handleAssignDriver(e.target.value)}
-                                            disabled={isAssigningDriver || !canAssignDriver}
-                                            className={`w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary/50 ${selectedDriverId ? 'text-primary font-bold' : 'text-foreground'} ${(!canAssignDriver || isAssigningDriver) ? 'opacity-60 cursor-not-allowed' : ''}`}
-                                        >
+                                            <select
+                                                value={selectedDriverId}
+                                                onChange={e => handleAssignDriver(e.target.value)}
+                                                disabled={isAssigningDriver || !canAssignDriver || !canAssignSelectedTextOrderDriver}
+                                                className={`w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary/50 ${selectedDriverId ? 'text-primary font-bold' : 'text-foreground'} ${(!canAssignDriver || isAssigningDriver || !canAssignSelectedTextOrderDriver) ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                            >
                                             <option value="">بدون مندوب</option>
                                             {drivers.map(d => {
                                                 const hasRejected = selectedOrder.shipping_address?.rejected_by?.includes(d.id);
@@ -615,6 +649,11 @@ export default function AdminOrdersPage() {
                                             </div>
                                         )}
                                     </div>
+                                    {selectedOrderIsTextRequest && !canAssignSelectedTextOrderDriver && (
+                                        <p className="mt-2 text-[11px] text-amber-500">
+                                            لا تعيّن مندوبًا لهذا الطلب قبل أن يوافق العميل على التسعيرة أولًا.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
@@ -856,7 +895,7 @@ export default function AdminOrdersPage() {
                                         <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-foreground">
                                             {selectedOrderTextRequest?.trim() || 'هذا الطلب يعتمد على الصور المرفقة فقط دون نص إضافي من العميل.'}
                                         </p>
-                                        <p className="mt-2 text-[11px] text-gray-500">هذا النص هو ما سيصل للمندوب حرفيًا عند التعيين.</p>
+                                        <p className="mt-2 text-[11px] text-gray-500">هذا النص هو ما ستراجعه الإدارة أولًا، ثم يصل للمندوب بعد موافقة العميل على التسعيرة.</p>
                                         <div className="mt-3">
                                             <RequestAttachmentsGallery
                                                 imageUrls={selectedOrderTextRequestImages}
@@ -866,9 +905,69 @@ export default function AdminOrdersPage() {
                                         </div>
                                     </div>
                                 )}
+                                {selectedOrderIsTextRequest && (
+                                    <div className="mb-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-4">
+                                        <div>
+                                            <p className="text-xs font-black text-emerald-600">تسعير الطلب من الإدارة</p>
+                                            <p className="mt-1 text-[11px] leading-6 text-gray-500">
+                                                حدّد قيمة المنتجات من المحل، والنظام سيضيف 20 ج.م توصيل تلقائيًا ثم يرسل التسعيرة للعميل للموافقة أو الرفض.
+                                            </p>
+                                        </div>
+
+                                        <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                                            <div>
+                                                <p className="mb-2 text-xs font-bold text-gray-500">قيمة المنتجات</p>
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    value={quotedSubtotalInput}
+                                                    onChange={e => setQuotedSubtotalInput(Number(e.target.value || 0))}
+                                                    className="w-full rounded-xl border border-surface-hover bg-background px-3 py-3 text-sm font-bold text-foreground outline-none focus:border-emerald-500/40"
+                                                />
+                                            </div>
+                                            <button
+                                                onClick={handleSaveTextQuote}
+                                                disabled={isSavingTextQuote}
+                                                className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-600 transition-colors hover:bg-emerald-500 hover:text-white disabled:opacity-50"
+                                            >
+                                                {isSavingTextQuote ? 'جاري الإرسال...' : 'إرسال التسعيرة للعميل'}
+                                            </button>
+                                        </div>
+
+                                        <div className="rounded-xl bg-background px-3 py-3 text-sm">
+                                            <p className="text-gray-500">العميل سيدفع بعد اعتماد الطلب:</p>
+                                            <p className="mt-1 text-lg font-black text-foreground">
+                                                {(Number(quotedSubtotalInput || 0) + 20).toLocaleString()} ج.م
+                                            </p>
+                                        </div>
+
+                                        {selectedOrderPricingPending ? (
+                                            <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-3 text-xs text-amber-500">
+                                                الطلب بانتظار أن تحدد له الإدارة السعر أولًا قبل أن يراه العميل.
+                                            </div>
+                                        ) : (
+                                            <div className="rounded-xl border border-surface-hover bg-background px-3 py-3 text-xs text-gray-500 space-y-1">
+                                                <p>آخر تسعيرة مرسلة: <span className="font-black text-foreground">{selectedOrderQuotedFinalTotal.toLocaleString()} ج.م</span></p>
+                                                {selectedOrderPricingDriverName ? <p>آخر تحديث بواسطة: {selectedOrderPricingDriverName}</p> : null}
+                                                {selectedOrderPricingUpdatedAt ? <p>وقت الإرسال: {new Date(selectedOrderPricingUpdatedAt).toLocaleString('ar-EG')}</p> : null}
+                                                <p className="pt-1">
+                                                    حالة العميل:
+                                                    <span className="mr-1 font-bold text-foreground">
+                                                        {selectedOrderQuoteResponse === 'approved'
+                                                            ? 'وافق على التسعيرة'
+                                                            : selectedOrderQuoteResponse === 'reject'
+                                                                ? 'رفض التسعيرة'
+                                                                : 'بانتظار رد العميل'}
+                                                    </span>
+                                                </p>
+                                                {selectedOrderQuoteResponseAt ? <p>وقت الرد: {new Date(selectedOrderQuoteResponseAt).toLocaleString('ar-EG')}</p> : null}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 {selectedOrderIsTextRequest && !selectedOrderPricingPending && selectedOrderQuotedFinalTotal > 0 && (
                                     <div className="mb-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-                                        <p className="text-xs font-black text-emerald-600">تم تسعير الطلب من المندوب</p>
+                                        <p className="text-xs font-black text-emerald-600">آخر تسعيرة معتمدة لهذا الطلب</p>
                                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
                                             <div className="rounded-xl bg-background px-3 py-3">
                                                 <p className="text-[11px] text-gray-500">قيمة المنتجات</p>
@@ -925,7 +1024,7 @@ export default function AdminOrdersPage() {
                             <div className="border-t border-surface-hover pt-4 flex items-center justify-between">
                                 <span className="text-sm text-gray-500">{selectedOrderPricingPending ? 'السعر النهائي' : 'الإجمالي الكلي'}</span>
                                 <span className="text-xl font-black text-primary">
-                                    {selectedOrderPricingPending ? 'يحدد لاحقًا' : `${(selectedOrder.total_amount || 0).toLocaleString()} ج.م`}
+                                    {selectedOrderPricingPending ? 'بانتظار تسعير الإدارة' : `${(selectedOrder.total_amount || 0).toLocaleString()} ج.م`}
                                 </span>
                             </div>
                         </div>

@@ -66,18 +66,20 @@ function Particle({ style }: { style: React.CSSProperties }) {
 function OrderSuccessContent() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get("orderId")
+  const awaitingQuote = searchParams.get("awaitingQuote") === "1"
 
   const [showBike, setShowBike] = useState(false)
   
   // Grace period state
   const GRACE_PERIOD_SECONDS = 300 // 5 minutes
-  const [showOverlay, setShowOverlay] = useState(!!orderId)
+  const [showOverlay, setShowOverlay] = useState(!!orderId && !awaitingQuote)
   const [timeLeft, setTimeLeft] = useState(GRACE_PERIOD_SECONDS)
   const [isCancelling, setIsCancelling] = useState(false)
   const [isCancelled, setIsCancelled] = useState(false)
 
   // Countdown timer logic
   useEffect(() => {
+    if (awaitingQuote) return
     if (!showOverlay || isCancelled) return
 
     if (timeLeft <= 0) {
@@ -97,11 +99,12 @@ function OrderSuccessContent() {
 
   // Start bike animation immediately if no orderId (e.g. direct visit)
   useEffect(() => {
+    if (awaitingQuote) return
     if (!orderId) {
       const t1 = setTimeout(() => setShowBike(true), 200)
       return () => clearTimeout(t1)
     }
-  }, [orderId])
+  }, [awaitingQuote, orderId])
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60)
@@ -150,6 +153,42 @@ function OrderSuccessContent() {
             العودة للتسوق
           </button>
         </Link>
+      </div>
+    )
+  }
+
+  if (awaitingQuote) {
+    return (
+      <div className="w-full max-w-lg text-center animate-in fade-in zoom-in duration-500">
+        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+          <Timer className="h-10 w-10 text-primary animate-pulse" />
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-4">تم استلام طلبك بنجاح</h1>
+        <div className="rounded-3xl border border-primary/20 bg-primary/5 p-6 text-right shadow-premium">
+          <p className="text-lg font-black text-foreground">انتظر عدة دقائق لتحديد السعر</p>
+          <p className="mt-3 text-sm leading-8 text-gray-500">
+            الإدارة ستراجع تفاصيل طلبك أولًا، ثم سترسل لك تسعيرة المنتجات مع التوصيل. بعد وصول التسعيرة ستستطيع أن تقرر:
+            هل تكمل الطلب أم لا.
+          </p>
+          <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
+            <p className="text-xs font-black text-amber-500">ما الذي سيحدث بعد ذلك؟</p>
+            <p className="mt-2 text-sm leading-7 text-gray-500">
+              عندما يتم تسعير الطلب ستجد السعر داخل تتبع الطلبات، وهناك تختار الموافقة أو رفض التسعيرة.
+            </p>
+          </div>
+        </div>
+        <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+          <Link href="/orders">
+            <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 active:scale-95 transition-all text-white font-bold px-8 py-3.5 rounded-2xl shadow-lg shadow-primary/20">
+              تابع طلباتي
+            </button>
+          </Link>
+          <Link href="/">
+            <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-surface hover:bg-surface-hover border border-surface-border active:scale-95 transition-all text-foreground font-bold px-8 py-3.5 rounded-2xl">
+              العودة للرئيسية
+            </button>
+          </Link>
+        </div>
       </div>
     )
   }

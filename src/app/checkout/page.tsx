@@ -161,7 +161,7 @@ function CheckoutContent() {
       const shippingDetails = {
          recipient: `${firstName} ${lastName}`,
          phone, city, area, street: address, notes,
-         is_grace_period: true,
+         is_grace_period: !isTextRequestCheckout,
          ...(isTextRequestCheckout ? {
             request_mode: 'custom_category_text',
             custom_request_text: textRequestDraft?.requestText?.trim(),
@@ -204,7 +204,7 @@ function CheckoutContent() {
       }
 
       // Pass orderId so the success page can offer a 5-minute cancellation window
-      router.push(`/order-success?orderId=${newOrder?.id || ''}`)
+      router.push(`/order-success?orderId=${newOrder?.id || ''}${isTextRequestCheckout ? '&awaitingQuote=1' : ''}`)
    }
 
    const isLoading = isAuthLoading || isCartLoading
@@ -382,7 +382,7 @@ function CheckoutContent() {
                                  <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
                                     <p className="text-xs font-black text-amber-500">التسعير</p>
                                     <p className="mt-2 text-sm leading-7 text-gray-500">
-                                       السعر النهائي للمنتجات سيتحدد بعد مراجعة الطلب من الإدارة أو المندوب، وسيتم تحصيله عند الاستلام بالإضافة إلى رسوم التوصيل.
+                                       بعد إرسال الطلب ستراجع الإدارة التفاصيل وترسل لك التسعيرة الكاملة شامل التوصيل، ثم تقرر أنت هل تكمل الطلب أم لا.
                                     </p>
                                  </div>
                               </div>
@@ -420,11 +420,11 @@ function CheckoutContent() {
                               <>
                                  <div className="flex justify-between items-center text-gray-500">
                                     <span>قيمة المنتجات</span>
-                                    <span className="font-heading font-semibold text-foreground">تتحدد بعد المراجعة</span>
+                                    <span className="font-heading font-semibold text-foreground">ستراجعها الإدارة أولًا</span>
                                  </div>
                                  <div className="flex justify-between items-center text-gray-400 pt-2 border-t border-surface-hover/50">
-                                    <span>ملاحظات التسعير</span>
-                                    <span className="font-heading font-semibold text-foreground">سيتم إبلاغك بها لاحقًا</span>
+                                    <span>الخطوة التالية</span>
+                                    <span className="font-heading font-semibold text-foreground">تصلك التسعيرة لتوافق أو ترفض</span>
                                  </div>
                               </>
                            ) : (
@@ -454,7 +454,7 @@ function CheckoutContent() {
                         <div className="flex justify-between items-center border-t border-surface-hover pt-6 mb-8 bg-surface-lighter/50 rounded-xl p-4 mt-2">
                            <span className="text-lg font-bold text-foreground">{isTextRequestCheckout ? 'السعر النهائي' : 'الإجمالي للدفع'}</span>
                            <span className="font-heading text-3xl font-black text-primary drop-shadow-sm">
-                              {isTextRequestCheckout ? 'يحدد لاحقًا' : `${(displayCartTotal + CURRENT_DELIVERY_FEE).toFixed(0)} `}
+                              {isTextRequestCheckout ? 'بانتظار التسعير' : `${(displayCartTotal + CURRENT_DELIVERY_FEE).toFixed(0)} `}
                               {!isTextRequestCheckout && <span className="text-sm">ج.م</span>}
                            </span>
                         </div>
@@ -497,12 +497,12 @@ function CheckoutContent() {
                         {isTextRequestCheckout ? 'السعر النهائي' : 'الإجمالي للدفع'}
                      </p>
                      <p className="mt-1 text-lg font-black text-primary">
-                        {isTextRequestCheckout ? 'يحدد لاحقًا' : `${(displayCartTotal + CURRENT_DELIVERY_FEE).toFixed(0)} ج.م`}
+                        {isTextRequestCheckout ? 'بانتظار التسعير' : `${(displayCartTotal + CURRENT_DELIVERY_FEE).toFixed(0)} ج.م`}
                      </p>
                   </div>
                   <p className="text-[11px] leading-5 text-gray-500 text-right max-w-[11rem]">
                      {isTextRequestCheckout
-                        ? 'سنراجع الطلب أولًا ثم نبلغك بالسعر النهائي.'
+                        ? 'بعد دقائق ستصلك التسعيرة لتختار الموافقة أو الرفض.'
                         : 'رسوم التوصيل مضافة بالفعل داخل الإجمالي.'}
                   </p>
                </div>

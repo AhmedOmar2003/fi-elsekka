@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireAdminApi } from '@/lib/admin-guard';
 import { recordServerAdminAudit } from '@/lib/admin-audit-server';
-import { attachOrderEconomics, getOrderEconomics } from '@/lib/order-economics';
+import { attachOrderEconomics, CURRENT_DELIVERY_FEE, getOrderEconomics } from '@/lib/order-economics';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
@@ -274,6 +274,92 @@ export async function PATCH(request: NextRequest, context: any) {
     });
 
     return NextResponse.json({ success: true, shipping_address: updatedShipping });
+  }
+
+  if (action === 'text_order_quote') {
+    const auth = await requireAdminApi(request, ['update_order_status']);
+    if (!auth.ok) return auth.response;
+
+    const productsSubtotal = Number(body?.productsSubtotal);
+    if (!Number.isFinite(productsSubtotal) || productsSubtotal < 0) {
+      return NextResponse.json({ error: 'قيمة المنتجات غير صحيحة', stage: 'validate.products_subtotal' }, { status: 400 });
+    }
+
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .select('id, user_id, status, total_amount, shipping_address')
+      .eq('id', id)
+      .single();
+
+    if (orderError || !order) {
+      return NextResponse.json({ error: 'Order not found', stage: 'db.order' }, { status: 404 });
+    }
+
+    if (order.shipping_address?.request_mode !== 'custom_category_text') {
+      return NextResponse.json({ error: 'هذا الطلب ليس طلبًا نصيًا قابلًا للتسعير الإداري', stage: 'validate.mode' }, { status: 400 });
+    }
+
+    if (order.status === 'cancelled' || order.status === 'delivered') {
+      return NextResponse.json({ error: 'لا يمكن تسعير طلب غير نشط', stage: 'validate.status' }, { status: 400 });
+    }
+
+    const quotedFinalTotal = productsSubtotal + CURRENT_DELIVERY_FEE;
+    const nowIso = new Date().toISOString();
+    const updatedShipping = attachOrderEconomics(
+      {
+        ...(order.shipping_address || {}),
+        pricing_pending: false,
+        quoted_products_total: productsSubtotal,
+        quoted_delivery_fee: CURRENT_DELIVERY_FEE,
+        quoted_final_total: quotedFinalTotal,
+        pricing_updated_at: nowIso,
+        pricing_updated_by_admin_id: null,
+        pricing_updated_by_admin_name: 'الإدارة',
+        customer_quote_response: null,
+        customer_quote_response_at: null,
+      },
+      quotedFinalTotal,
+      Number(order.shipping_address?.merchant_discount_amount || 0)
+    );
+
+    const { error: updateError } = await supabaseAdmin
+      .from('orders')
+      .update({
+        total_amount: quotedFinalTotal,
+        shipping_address: updatedShipping,
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message, stage: 'db.update' }, { status: 500 });
+    }
+
+    if (order.user_id) {
+      await supabaseAdmin.from('notifications').insert([{
+        user_id: order.user_id,
+        title: 'تم تحديد سعر طلبك',
+        message: `راجعت الإدارة طلبك وحددت السعر بمبلغ ${quotedFinalTotal.toLocaleString()} ج.م شامل التوصيل. افتح تتبع الطلب لتأكيد المتابعة أو رفض التسعيرة.`,
+        link: '/orders',
+        is_read: false,
+      }]);
+    }
+
+    await recordServerAdminAudit(auth.profile, {
+      action: 'order.text_quote_sent_to_customer',
+      entityType: 'order',
+      entityId: id,
+      entityLabel: id.slice(0, 8),
+      details: {
+        products_subtotal: productsSubtotal,
+        quoted_final_total: quotedFinalTotal,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      total_amount: quotedFinalTotal,
+      shipping_address: updatedShipping,
+    });
   }
 
   if (action === 'pricing') {

@@ -23,6 +23,7 @@ export interface OrderItem {
 }
 
 export type CancelledOrderDecision = 'insist' | 'confirm_cancel';
+export type QuotedOrderDecision = 'approve' | 'reject';
 type CustomerCancelOrigin = 'grace_period' | 'account';
 
 export const createOrder = async (
@@ -210,6 +211,20 @@ export const respondToCancelledOrder = async (orderId: string, decision: Cancell
         throw new Error(data?.error || 'فشل إرسال ردك على الإلغاء');
     }
     return data as { success: true; decision: CancelledOrderDecision; shipping_address: any };
+};
+
+export const respondToQuotedTextOrder = async (orderId: string, decision: QuotedOrderDecision) => {
+    const res = await fetch(`/api/orders/${orderId}/quote-response`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data?.error || 'فشل إرسال ردك على التسعيرة');
+    }
+    return data as { success: true; decision: QuotedOrderDecision; shipping_address: any; status: Order['status'] };
 };
 
 export const updateUserProfile = async (userId: string, updates: any) => {

@@ -812,6 +812,23 @@ export async function saveAdminOrderEconomics(orderId: string, merchantDiscountA
     return data;
 }
 
+export async function saveAdminTextOrderQuote(orderId: string, productsSubtotal: number) {
+    const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            action: 'text_order_quote',
+            productsSubtotal,
+        }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data?.error || 'فشل إرسال التسعيرة للعميل');
+    }
+    return data;
+}
+
 export async function updateOrderEstimation(orderId: string, estimatedTime: string) {
     // 1. Fetch current shipping_address JSON
     const { data: order } = await supabase.from('orders').select('shipping_address').eq('id', orderId).single();
