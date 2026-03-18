@@ -130,6 +130,7 @@ function OrderSuccessContent() {
   const [quotedFinalTotal, setQuotedFinalTotal] = useState(0)
   const [showQuotePopup, setShowQuotePopup] = useState(false)
   const [quoteDecisionLoading, setQuoteDecisionLoading] = useState<'approve' | 'reject' | null>(null)
+  const [hasAnnouncedQuoteReady, setHasAnnouncedQuoteReady] = useState(false)
   
   // Grace period state
   const GRACE_PERIOD_SECONDS = 300 // 5 minutes
@@ -170,6 +171,24 @@ function OrderSuccessContent() {
   useEffect(() => {
     if (!awaitingQuote || !orderId) return
 
+    const applyQuoteState = (shipping: any, totalAmount: number) => {
+      const finalTotal = Number(shipping?.quoted_final_total || totalAmount || 0)
+      if (shipping?.pricing_pending === true || !finalTotal) return false
+
+      setQuoteReady(true)
+      setQuoteProgress(100)
+      setQuotedProductsTotal(Number(shipping?.quoted_products_total || 0))
+      setQuotedFinalTotal(finalTotal)
+      setShowQuotePopup(true)
+
+      if (!hasAnnouncedQuoteReady) {
+        toast.success('تم تحديد تسعيرة طلبك، راجعها الآن')
+        setHasAnnouncedQuoteReady(true)
+      }
+
+      return true
+    }
+
     const progressTimer = window.setInterval(() => {
       setQuoteProgress(prev => {
         if (quoteReady) return 100
@@ -186,16 +205,14 @@ function OrderSuccessContent() {
         .eq('id', orderId)
         .maybeSingle()
 
-      if (data && data.shipping_address?.pricing_pending !== true && Number(data.shipping_address?.quoted_final_total || data.total_amount || 0) > 0) {
-        setQuoteReady(true)
-        setQuoteProgress(100)
-        setQuotedProductsTotal(Number(data.shipping_address?.quoted_products_total || 0))
-        setQuotedFinalTotal(Number(data.shipping_address?.quoted_final_total || data.total_amount || 0))
-        setShowQuotePopup(true)
-      }
+      if (data) applyQuoteState(data.shipping_address, data.total_amount)
     }
 
     hydrate()
+
+    const pollingTimer = window.setInterval(() => {
+      hydrate()
+    }, 5000)
 
     const channel = supabase
       .channel(`quote-wait-${orderId}`)
@@ -203,25 +220,17 @@ function OrderSuccessContent() {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` },
         (payload) => {
-          const shipping = payload.new.shipping_address as any
-          const hasQuote = shipping?.pricing_pending !== true && Number(shipping?.quoted_final_total || payload.new.total_amount || 0) > 0
-          if (hasQuote) {
-            setQuoteReady(true)
-            setQuoteProgress(100)
-            setQuotedProductsTotal(Number(shipping?.quoted_products_total || 0))
-            setQuotedFinalTotal(Number(shipping?.quoted_final_total || payload.new.total_amount || 0))
-            setShowQuotePopup(true)
-            toast.success('تم تحديد تسعيرة طلبك، راجعها الآن')
-          }
+          applyQuoteState(payload.new.shipping_address, payload.new.total_amount)
         }
       )
       .subscribe()
 
     return () => {
       window.clearInterval(progressTimer)
+      window.clearInterval(pollingTimer)
       supabase.removeChannel(channel)
     }
-  }, [awaitingQuote, orderId, quoteReady])
+  }, [awaitingQuote, orderId, quoteReady, hasAnnouncedQuoteReady])
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60)
@@ -299,78 +308,73 @@ function OrderSuccessContent() {
 
   if (awaitingQuote) {
     return (
-      <div className="w-full max-w-lg text-center animate-in fade-in zoom-in duration-500">
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
-          <Timer className={`h-10 w-10 text-primary ${quoteReady ? '' : 'animate-pulse'}`} />
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-4">
-          {quoteReady ? 'تم تحديد تسعيرة طلبك' : 'تم استلام طلب التسعير بنجاح'}
-        </h1>
-        <div className="rounded-3xl border border-primary/20 bg-primary/5 p-6 text-right shadow-premium">
-          <p className="text-lg font-black text-foreground">
-            {quoteReady ? 'يمكنك الآن متابعة طلبك' : 'انتظر عدة دقائق قبل متابعة الطلب'}
-          </p>
-          <p className="mt-3 text-sm leading-8 text-gray-500">
-            {quoteReady
-              ? 'الإدارة انتهت من مراجعة طلبك وحددت السعر. ستدخل الآن لصفحة طلباتك لمتابعة التأكيد ثم تجهيز الطلب والمندوب.'
-              : 'الإدارة ستراجع تفاصيل طلبك أولًا، ثم سترسل لك تسعيرة المنتجات مع التوصيل. تسعيرة طلبك ستكون شاملة مصاريف الشحن كاملة.'}
-          </p>
-          <div className="mt-5 rounded-2xl border border-emerald-500/20 bg-background/70 p-4">
-            <div className="mb-2 flex items-center justify-between text-xs font-black">
-              <span className="text-emerald-600">حالة مراجعة التسعير</span>
-              <span className="text-gray-500">{quoteReady ? 'اكتملت' : 'جاري المراجعة'}</span>
-            </div>
-            <div className="h-3 overflow-hidden rounded-full bg-emerald-500/10">
-              <div
-                className="h-full rounded-full bg-emerald-500 transition-all duration-700 ease-out"
-                style={{ width: `${quoteProgress}%` }}
-              />
-            </div>
-            <p className="mt-3 text-sm leading-7 text-gray-500">
-              {quoteReady
-                ? 'تم إرسال التسعيرة بالفعل، ويمكنك الآن المتابعة.'
-                : 'الشريط سيتقدم تدريجيًا حتى تنتهي الإدارة من التسعير وترسل لك السعر النهائي.'}
-            </p>
+      <>
+        {showQuotePopup && quoteReady && (
+          <QuoteApprovalPopup
+            quotedProductsTotal={quotedProductsTotal}
+            quotedFinalTotal={quotedFinalTotal}
+            isSubmitting={quoteDecisionLoading}
+            onApprove={() => handleQuoteDecision('approve')}
+            onReject={() => handleQuoteDecision('reject')}
+          />
+        )}
+
+        <div className="w-full max-w-lg text-center animate-in fade-in zoom-in duration-500">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+            <Timer className={`h-10 w-10 text-primary ${quoteReady ? '' : 'animate-pulse'}`} />
           </div>
-          <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
-            <p className="text-xs font-black text-amber-500">ما الذي سيحدث بعد ذلك؟</p>
-            <p className="mt-2 text-sm leading-7 text-gray-500">
-              {quoteReady
-                ? 'عند الدخول لطلباتك ستجد السعر الكامل، ثم تتابع بعد ذلك تجهيز الطلب وتعيين المندوب فقط.'
-                : 'عندما يتم تسعير الطلب ستصلك إشعارة، وبعدها فقط ستدخل لطلباتك لمتابعة السعر وتأكيد الطلب.'}
+          <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-4">
+            {quoteReady ? 'تم تحديد تسعيرة طلبك' : 'تم استلام طلب التسعير بنجاح'}
+          </h1>
+          <div className="rounded-3xl border border-primary/20 bg-primary/5 p-6 text-right shadow-premium">
+            <p className="text-lg font-black text-foreground">
+              {quoteReady ? 'راجع التسعيرة الظاهرة أمامك الآن' : 'انتظر عدة دقائق قبل متابعة الطلب'}
             </p>
+            <p className="mt-3 text-sm leading-8 text-gray-500">
+              {quoteReady
+                ? 'الإدارة انتهت من مراجعة طلبك وحددت السعر. ظهرت لك نافذة الموافقة أو الرفض مباشرة على نفس الصفحة.'
+                : 'الإدارة ستراجع تفاصيل طلبك أولًا، ثم سترسل لك تسعيرة المنتجات مع التوصيل. تسعيرة طلبك ستكون شاملة مصاريف الشحن كاملة.'}
+            </p>
+            <div className="mt-5 rounded-2xl border border-emerald-500/20 bg-background/70 p-4">
+              <div className="mb-2 flex items-center justify-between text-xs font-black">
+                <span className="text-emerald-600">حالة مراجعة التسعير</span>
+                <span className="text-gray-500">{quoteReady ? 'اكتملت' : 'جاري المراجعة'}</span>
+              </div>
+              <div className="h-3 overflow-hidden rounded-full bg-emerald-500/10">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-700 ease-out"
+                  style={{ width: `${quoteProgress}%` }}
+                />
+              </div>
+              <p className="mt-3 text-sm leading-7 text-gray-500">
+                {quoteReady
+                  ? 'اكتمل الشريط لأن التسعيرة وصلت فعلًا، ولا تحتاج إلى فتح الإشعار لتراها.'
+                  : 'الشريط سيتقدم تدريجيًا حتى تنتهي الإدارة من التسعير وترسل لك السعر النهائي.'}
+              </p>
+            </div>
+            <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
+              <p className="text-xs font-black text-amber-500">ما الذي سيحدث بعد ذلك؟</p>
+              <p className="mt-2 text-sm leading-7 text-gray-500">
+                {quoteReady
+                  ? 'اختر الآن من النافذة: تأكيد الطلب أو رفض التسعيرة. الإشعار ليس شرطًا لظهور هذه الخطوة.'
+                  : 'بمجرد أن تنتهي الإدارة من التسعير، سيكتمل الشريط وتظهر لك نافذة القرار تلقائيًا حتى لو لم تفتح الإشعار.'}
+              </p>
+            </div>
           </div>
         </div>
         <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-          {quoteReady ? (
-            <Link href="/orders">
-              <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 active:scale-95 transition-all text-white font-bold px-8 py-3.5 rounded-2xl shadow-lg shadow-primary/20">
-                تابع طلبي الآن
-              </button>
-            </Link>
-          ) : null}
           <Link href="/">
             <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-surface hover:bg-surface-hover border border-surface-border active:scale-95 transition-all text-foreground font-bold px-8 py-3.5 rounded-2xl">
-              {quoteReady ? 'العودة للرئيسية' : 'العودة للرئيسية والانتظار'}
+              العودة للرئيسية والانتظار
             </button>
           </Link>
         </div>
-      </div>
+      </>
     )
   }
 
   return (
     <>
-      {showQuotePopup && quoteReady && (
-        <QuoteApprovalPopup
-          quotedProductsTotal={quotedProductsTotal}
-          quotedFinalTotal={quotedFinalTotal}
-          isSubmitting={quoteDecisionLoading}
-          onApprove={() => handleQuoteDecision('approve')}
-          onReject={() => handleQuoteDecision('reject')}
-        />
-      )}
-
       {/* GRACE PERIOD OVERLAY */}
       {showOverlay && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-300">
