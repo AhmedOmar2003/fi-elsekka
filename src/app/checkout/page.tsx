@@ -179,7 +179,7 @@ function CheckoutContent() {
       setIsSubmitting(false)
 
       if (error) {
-         setErrorMsg((error as any).message || "حصل خطأ أثناء تأكيد الطلب، حاول مرة أخرى!")
+         setErrorMsg((error as any).message || (isTextRequestCheckout ? "حصل خطأ أثناء إرسال طلب التسعير، حاول مرة أخرى!" : "حصل خطأ أثناء تأكيد الطلب، حاول مرة أخرى!"))
          return
       }
 
@@ -382,7 +382,7 @@ function CheckoutContent() {
                                  <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
                                     <p className="text-xs font-black text-amber-500">التسعير</p>
                                     <p className="mt-2 text-sm leading-7 text-gray-500">
-                                       بعد إرسال الطلب ستراجع الإدارة التفاصيل وترسل لك التسعيرة الكاملة شامل التوصيل، ثم تقرر أنت هل تكمل الطلب أم لا.
+                                       بعد إرسال طلب التسعير ستراجع الإدارة التفاصيل وترسل لك السعر الكامل شامل التوصيل، وبعدها فقط يظهر لك زر تأكيد الطلب الحقيقي.
                                     </p>
                                  </div>
                               </div>
@@ -473,13 +473,15 @@ function CheckoutContent() {
                               {isSubmitting ? (
                                  <div className="flex items-center gap-2">
                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    جاري التأكيد...
+                                    {isTextRequestCheckout ? 'جاري إرسال طلب التسعير...' : 'جاري التأكيد...'}
                                  </div>
-                              ) : 'تأكيد الطلب'}
+                              ) : (isTextRequestCheckout ? 'إرسال طلب التسعير' : 'تأكيد الطلب')}
                            </Button>
 
                            <p className="mt-4 text-xs text-center text-gray-500">
-                              بالضغط على تأكيد الطلب، أنت توافق على الشروط والأحكام وسياسة الخصوصية الخاصة بنا.
+                              {isTextRequestCheckout
+                                 ? 'بالضغط على إرسال طلب التسعير، سنراجع الطلب أولًا ثم نرسل لك السعر لتؤكده بنفسك لاحقًا.'
+                                 : 'بالضغط على تأكيد الطلب، أنت توافق على الشروط والأحكام وسياسة الخصوصية الخاصة بنا.'}
                            </p>
                         </div>
                      </div>
@@ -502,7 +504,7 @@ function CheckoutContent() {
                   </div>
                   <p className="text-[11px] leading-5 text-gray-500 text-right max-w-[11rem]">
                      {isTextRequestCheckout
-                        ? 'بعد دقائق ستصلك التسعيرة لتختار الموافقة أو الرفض.'
+                        ? 'سنراجع الطلب أولًا، وبعد وصول التسعيرة سيتحول داخل طلباتك إلى زر تأكيد الطلب.'
                         : 'رسوم التوصيل مضافة بالفعل داخل الإجمالي.'}
                   </p>
                </div>
@@ -517,9 +519,9 @@ function CheckoutContent() {
                   {isSubmitting ? (
                      <div className="flex items-center gap-2">
                         <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
-                        جاري التأكيد...
+                        {isTextRequestCheckout ? 'جاري إرسال طلب التسعير...' : 'جاري التأكيد...'}
                      </div>
-                  ) : 'تأكيد الطلب'}
+                  ) : (isTextRequestCheckout ? 'إرسال طلب التسعير' : 'تأكيد الطلب')}
                </Button>
             </div>
          </div>

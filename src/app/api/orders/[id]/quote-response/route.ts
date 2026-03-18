@@ -94,6 +94,10 @@ export async function POST(request: NextRequest, context: any) {
     updatedShipping.customer_cancelled_reason = 'customer_rejected_quote';
     updatedShipping.cancellation_reason = updatedShipping.cancellation_reason || 'رفض العميل التسعيرة المحددة للطلب';
     updatedShipping.cancellation_message = updatedShipping.cancellation_message || 'تم إلغاء الطلب بناءً على رفضك للتسعيرة بعد المراجعة.';
+  } else {
+    updatedShipping.is_grace_period = true;
+    updatedShipping.customer_confirmed_after_quote_at = nowIso;
+    updatedShipping.customer_confirmed_after_quote = true;
   }
 
   const { error: updateError } = await supabaseAdmin

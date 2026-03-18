@@ -11,6 +11,78 @@ import { Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, ChevronDown,
 import { toast } from "sonner"
 import { RequestAttachmentsGallery } from "@/components/orders/request-attachments-gallery"
 
+function isAwaitingTextOrderConfirmation(order: Order) {
+  const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
+  const pricingPending = order.shipping_address?.pricing_pending === true
+  const quoteDecision = order.shipping_address?.customer_quote_response as 'approve' | 'reject' | undefined
+  const quotedFinalTotal = Number(order.shipping_address?.quoted_final_total || order.total_amount || 0)
+
+  return isTextRequestOrder && !pricingPending && !quoteDecision && order.status !== 'cancelled' && quotedFinalTotal > 0
+}
+
+function QuoteReadyPopup({
+  order,
+  onApprove,
+  onReject,
+  onClose,
+  isSubmitting,
+}: {
+  order: Order
+  onApprove: () => void
+  onReject: () => void
+  onClose: () => void
+  isSubmitting: 'approve' | 'reject' | null
+}) {
+  const quotedProductsTotal = Number(order.shipping_address?.quoted_products_total || 0)
+  const quotedFinalTotal = Number(order.shipping_address?.quoted_final_total || order.total_amount || 0)
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-3xl border border-primary/20 bg-surface p-6 shadow-premium">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-wider text-primary/80">تم تحديد تسعيرة طلبك</p>
+            <h3 className="mt-1 text-xl font-black text-foreground">راجع السعر قبل تأكيد الطلب</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-xl border border-surface-hover px-3 py-2 text-xs font-bold text-gray-500 transition-colors hover:bg-surface-hover hover:text-foreground"
+          >
+            لاحقًا
+          </button>
+        </div>
+
+        <div className="space-y-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+          <p className="text-sm text-gray-500">قيمة المنتجات: <span className="font-black text-foreground">{quotedProductsTotal.toLocaleString()} ج.م</span></p>
+          <p className="text-lg font-black text-emerald-600">الإجمالي مع التوصيل: {quotedFinalTotal.toLocaleString()} ج.م</p>
+          <p className="text-xs leading-6 text-gray-500">
+            إذا وافقت الآن فسنعتبر الطلب مؤكدًا رسميًا، وبعدها تبدأ مهلة الخمس دقائق الخاصة بالإلغاء.
+          </p>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <button
+            onClick={onApprove}
+            disabled={!!isSubmitting}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-primary/20 bg-primary px-4 py-3 text-sm font-black text-white transition-colors hover:bg-primary/90 disabled:opacity-60"
+          >
+            {isSubmitting === 'approve' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            تأكيد الطلب
+          </button>
+          <button
+            onClick={onReject}
+            disabled={!!isSubmitting}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-black text-rose-400 transition-colors hover:bg-rose-500 hover:text-white disabled:opacity-60"
+          >
+            {isSubmitting === 'reject' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            لا، مش هكمل
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Driver Rating Widget ──────────────────────────────────────────────────
 function DriverRating({ orderId, driverId, userId }: { orderId: string; driverId: string; userId: string }) {
   const [existingRating, setExistingRating] = React.useState<number | null>(null)
@@ -260,11 +332,13 @@ function OrderCard({
         status: data.status,
         shipping_address: data.shipping_address,
       })
-      toast.success(
-        decision === 'approve'
-          ? 'تم إبلاغ الإدارة أنك وافقت على التسعيرة'
-          : 'تم إلغاء الطلب بناءً على رفضك للتسعيرة'
-      )
+      if (decision === 'approve') {
+        toast.success('تم تأكيد الطلب بالسعر المحدد، وأمامك الآن مهلة 5 دقائق إذا أردت الإلغاء')
+        window.location.assign(`/order-success?orderId=${order.id}`)
+        return
+      }
+
+      toast.success('تم إلغاء الطلب بناءً على رفضك للتسعيرة')
     } catch (error: any) {
       toast.error(error.message || 'تعذر إرسال ردك على التسعيرة الآن')
     } finally {
@@ -460,7 +534,7 @@ function OrderCard({
                     className="flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-bold text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-60"
                   >
                     {isSubmittingQuoteResponse === 'approve' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    نعم، أكمل الطلب
+                    تأكيد الطلب بالسعر المحدد
                   </button>
                   <button
                     onClick={() => handleQuotedOrderDecision('reject')}
@@ -481,7 +555,7 @@ function OrderCard({
                 }`}>
                   <p className="font-bold">
                     {quoteDecision === 'approve'
-                      ? 'تم إرسال موافقتك للإدارة، وسيتم تجهيز الطلب وتعيين مندوب بالتسعيرة المحددة.'
+                      ? 'تم تأكيد الطلب بالسعر المحدد، وإن كنت قد دخلت مهلة الخمس دقائق بالفعل فستجدها في شاشة التأكيد.'
                       : 'تم تسجيل رفضك للتسعيرة، وتم إلغاء الطلب.'}
                   </p>
                   {quoteDecisionAt && (
@@ -548,6 +622,8 @@ export default function OrdersPage() {
   const { user, isLoading: isAuthLoading } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [quotePromptOrderId, setQuotePromptOrderId] = useState<string | null>(null)
+  const [popupSubmittingDecision, setPopupSubmittingDecision] = useState<'approve' | 'reject' | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -591,6 +667,60 @@ export default function OrdersPage() {
           : order
       )
     )
+  }
+
+  useEffect(() => {
+    const activePromptOrder = orders.find(order => order.id === quotePromptOrderId)
+    if (quotePromptOrderId && activePromptOrder && isAwaitingTextOrderConfirmation(activePromptOrder)) {
+      return
+    }
+
+    const nextPromptOrder = orders.find(order => {
+      if (!isAwaitingTextOrderConfirmation(order)) return false
+      const popupKey = `text-order-quote-popup:${order.id}:${order.shipping_address?.pricing_updated_at || 'initial'}`
+      if (typeof window === 'undefined') return false
+      return !window.localStorage.getItem(popupKey)
+    })
+
+    if (!nextPromptOrder) {
+      setQuotePromptOrderId(null)
+      return
+    }
+
+    const popupKey = `text-order-quote-popup:${nextPromptOrder.id}:${nextPromptOrder.shipping_address?.pricing_updated_at || 'initial'}`
+    window.localStorage.setItem(popupKey, 'shown')
+    setQuotePromptOrderId(nextPromptOrder.id)
+  }, [orders, quotePromptOrderId])
+
+  const quotePromptOrder = orders.find(order => order.id === quotePromptOrderId) || null
+
+  const handlePopupQuoteDecision = async (decision: 'approve' | 'reject') => {
+    if (!quotePromptOrder) return
+
+    setPopupSubmittingDecision(decision)
+    try {
+      const data = await respondToQuotedTextOrder(quotePromptOrder.id, decision)
+      const updatedOrder = {
+        ...quotePromptOrder,
+        status: data.status,
+        shipping_address: data.shipping_address,
+      }
+
+      handleOrderUpdated(updatedOrder)
+      setQuotePromptOrderId(null)
+
+      if (decision === 'approve') {
+        toast.success('تم تأكيد الطلب بالسعر المحدد، وأمامك الآن مهلة 5 دقائق إذا أردت الإلغاء')
+        window.location.assign(`/order-success?orderId=${quotePromptOrder.id}`)
+        return
+      }
+
+      toast.success('تم إلغاء الطلب بناءً على رفضك للتسعيرة')
+    } catch (error: any) {
+      toast.error(error.message || 'تعذر إرسال ردك على التسعيرة الآن')
+    } finally {
+      setPopupSubmittingDecision(null)
+    }
   }
 
   if (isAuthLoading || (isLoading && user)) {
@@ -690,6 +820,15 @@ export default function OrdersPage() {
 
         </div>
       </main>
+      {quotePromptOrder && (
+        <QuoteReadyPopup
+          order={quotePromptOrder}
+          isSubmitting={popupSubmittingDecision}
+          onApprove={() => handlePopupQuoteDecision('approve')}
+          onReject={() => handlePopupQuoteDecision('reject')}
+          onClose={() => setQuotePromptOrderId(null)}
+        />
+      )}
       <Footer />
     </>
   )

@@ -163,17 +163,17 @@ function OrderSuccessContent() {
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
           <Timer className="h-10 w-10 text-primary animate-pulse" />
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-4">تم استلام طلبك بنجاح</h1>
+        <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-4">تم استلام طلب التسعير بنجاح</h1>
         <div className="rounded-3xl border border-primary/20 bg-primary/5 p-6 text-right shadow-premium">
-          <p className="text-lg font-black text-foreground">انتظر عدة دقائق لتحديد السعر</p>
+          <p className="text-lg font-black text-foreground">انتظر عدة دقائق قبل الضغط على تأكيد الطلب</p>
           <p className="mt-3 text-sm leading-8 text-gray-500">
-            الإدارة ستراجع تفاصيل طلبك أولًا، ثم سترسل لك تسعيرة المنتجات مع التوصيل. بعد وصول التسعيرة ستستطيع أن تقرر:
-            هل تكمل الطلب أم لا.
+            الإدارة ستراجع تفاصيل طلبك أولًا، ثم سترسل لك تسعيرة المنتجات مع التوصيل. بعد وصول التسعيرة سيظهر لك زر تأكيد الطلب الحقيقي،
+            وعند ضغطه فقط تبدأ مهلة الخمس دقائق المعتادة.
           </p>
           <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
             <p className="text-xs font-black text-amber-500">ما الذي سيحدث بعد ذلك؟</p>
             <p className="mt-2 text-sm leading-7 text-gray-500">
-              عندما يتم تسعير الطلب ستجد السعر داخل تتبع الطلبات، وهناك تختار الموافقة أو رفض التسعيرة.
+              عندما يتم تسعير الطلب ستصلك إشعارة، وستجد نافذة واضحة داخل طلباتك تعرض السعر الكامل وتطلب منك إما تأكيد الطلب أو رفضه.
             </p>
           </div>
         </div>
