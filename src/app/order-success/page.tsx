@@ -361,13 +361,13 @@ function OrderSuccessContent() {
               </p>
             </div>
           </div>
-        </div>
-        <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-          <Link href="/">
-            <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-surface hover:bg-surface-hover border border-surface-border active:scale-95 transition-all text-foreground font-bold px-8 py-3.5 rounded-2xl">
-              العودة للرئيسية والانتظار
-            </button>
-          </Link>
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/">
+              <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-surface hover:bg-surface-hover border border-surface-border active:scale-95 transition-all text-foreground font-bold px-8 py-3.5 rounded-2xl">
+                العودة للرئيسية والانتظار
+              </button>
+            </Link>
+          </div>
         </div>
       </>
     )
