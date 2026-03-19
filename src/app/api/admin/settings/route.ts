@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireAdminApi } from '@/lib/admin-guard';
 import { APP_SETTINGS_ID, DEFAULT_APP_SETTINGS } from '@/services/appSettingsService';
+import { createUserNotificationWithPush } from '@/lib/user-push-server';
+import { sendPushToDriverDevices } from '@/lib/driver-push-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
@@ -16,6 +18,14 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
+    const { data: existingSettings } = await supabaseAdmin
+      .from('app_settings')
+      .select('maintenance_mode')
+      .eq('id', APP_SETTINGS_ID)
+      .maybeSingle();
+
+    const previousMaintenanceMode = existingSettings?.maintenance_mode ?? DEFAULT_APP_SETTINGS.maintenanceMode;
+    const nextMaintenanceMode = Boolean(body.maintenanceMode);
 
     const payload = {
       id: APP_SETTINGS_ID,
@@ -27,7 +37,7 @@ export async function PUT(request: Request) {
       default_shipping_cost: Number(body.defaultShippingCost || DEFAULT_APP_SETTINGS.defaultShippingCost),
       notify_new_orders: Boolean(body.notifyNewOrders),
       notify_new_users: Boolean(body.notifyNewUsers),
-      maintenance_mode: Boolean(body.maintenanceMode),
+      maintenance_mode: nextMaintenanceMode,
       updated_at: new Date().toISOString(),
     };
 
@@ -40,6 +50,67 @@ export async function PUT(request: Request) {
     if (error) {
       console.error('Failed to save app settings:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    if (previousMaintenanceMode !== nextMaintenanceMode) {
+      const maintenanceEnabledPayload = {
+        title: 'الموقع داخل على صيانة خفيفة',
+        message: 'إحنا بنظبط شوية حاجات ونحسن الأداء. استنى علينا شوية وهنرجعلك أسرع وأظبط.',
+      };
+
+      const maintenanceDisabledPayload = {
+        title: 'رجعنا تاني',
+        message: 'الدنيا رجعت تمام. تقدر تكمل طلباتك وتستخدم في السكة بشكل طبيعي دلوقتي.',
+      };
+
+      const customerPayload = nextMaintenanceMode ? maintenanceEnabledPayload : maintenanceDisabledPayload;
+      const driverPayload = nextMaintenanceMode
+        ? {
+            title: 'في السكة داخل على صيانة خفيفة',
+            message: 'استنى علينا شوية يا بطل. بنظبط الشغل ونرجعلك الطلبات والدنيا ماشية تمام.',
+          }
+        : {
+            title: 'في السكة رجع تمام',
+            message: 'نقدر نكمل شغلنا عادي دلوقتي. افتح التطبيق وتابع طلباتك براحتك.',
+          };
+
+      const [{ data: customers }, { data: drivers }] = await Promise.all([
+        supabaseAdmin
+          .from('users')
+          .select('id')
+          .or('role.is.null,role.eq.user'),
+        supabaseAdmin
+          .from('users')
+          .select('id')
+          .eq('role', 'driver'),
+      ]);
+
+      await Promise.all([
+        Promise.all(
+          (customers || [])
+            .map((customer: any) => customer.id)
+            .filter(Boolean)
+            .map((userId: string) =>
+              createUserNotificationWithPush(supabaseAdmin, userId, {
+                ...customerPayload,
+                link: '/notifications',
+                requireInteraction: nextMaintenanceMode,
+              })
+            )
+        ),
+        Promise.all(
+          (drivers || [])
+            .map((driver: any) => driver.id)
+            .filter(Boolean)
+            .map((driverId: string) =>
+              sendPushToDriverDevices(supabaseAdmin, driverId, {
+                ...driverPayload,
+                link: '/driver',
+                requireInteraction: nextMaintenanceMode,
+              })
+            )
+        ),
+      ]);
     }
 
     return NextResponse.json({
