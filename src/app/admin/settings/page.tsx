@@ -3,40 +3,42 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Globe, Bell, ShieldCheck, Palette, Save, CheckCircle2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-
-const SETTING_KEY = 'fi_elsekka_admin_settings';
-
-const DEFAULT_SETTINGS = {
-    siteName: 'في السكة',
-    siteTagline: 'بالسكة الصح',
-    supportPhone: '',
-    supportEmail: '',
-    freeShippingThreshold: '0',
-    defaultShippingCost: '35',
-    notifyNewOrders: true,
-    notifyNewUsers: true,
-    maintenanceMode: false,
-};
+import { DEFAULT_APP_SETTINGS, saveAdminAppSettings, fetchPublicAppSettings } from '@/services/appSettingsService';
 
 export default function AdminSettingsPage() {
-    const [settings, setSettings] = useState({ ...DEFAULT_SETTINGS });
+    const [settings, setSettings] = useState({ ...DEFAULT_APP_SETTINGS });
     const [saved, setSaved] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        try {
-            const stored = localStorage.getItem(SETTING_KEY);
-            if (stored) setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(stored) });
-        } catch { }
+        let active = true;
+
+        const load = async () => {
+            const remoteSettings = await fetchPublicAppSettings();
+            if (active) {
+                setSettings(remoteSettings);
+            }
+        };
+
+        void load();
+
+        return () => {
+            active = false;
+        };
     }, []);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         try {
-            localStorage.setItem(SETTING_KEY, JSON.stringify(settings));
+            setIsSaving(true);
+            const updated = await saveAdminAppSettings(settings);
+            setSettings(updated);
             setSaved(true);
             toast.success('تم حفظ الإعدادات ✅');
             setTimeout(() => setSaved(false), 3000);
-        } catch {
-            toast.error('فشل الحفظ');
+        } catch (error: any) {
+            toast.error(error?.message || 'فشل الحفظ');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -81,10 +83,11 @@ export default function AdminSettingsPage() {
                 </div>
                 <button
                     onClick={handleSave}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg ${saved ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'}`}
+                    disabled={isSaving}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg disabled:opacity-60 ${saved ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'}`}
                 >
                     {saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                    {saved ? 'تم الحفظ!' : 'حفظ الإعدادات'}
+                    {saved ? 'تم الحفظ!' : isSaving ? 'جارٍ الحفظ...' : 'حفظ الإعدادات'}
                 </button>
             </div>
 

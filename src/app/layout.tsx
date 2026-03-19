@@ -4,6 +4,7 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 import { Providers } from "@/components/providers";
 import { Toaster } from "sonner";
 import { InstallPrompt } from "@/components/ui/install-prompt";
+import { MaintenanceModeOverlay } from "@/components/system/maintenance-mode-overlay";
 import "./globals.css";
 
 const ibmPlex = IBM_Plex_Sans_Arabic({
@@ -53,6 +54,7 @@ export default function RootLayout({
         className={`${ibmPlex.variable} ${lalezar.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col transition-colors duration-300`}
       >
         <Providers>
+          <MaintenanceModeOverlay />
           {children}
           <MobileNav />
           <InstallPrompt />
