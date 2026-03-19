@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { createUserNotificationWithPush } from '@/lib/user-push-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
@@ -76,13 +77,11 @@ export async function POST(request: Request) {
 
             // CREATE IN-APP NOTIFICATION FOR THE CUSTOMER
             if (order.user_id) {
-                await supabaseAdmin.from('notifications').insert([{
-                    user_id: order.user_id,
+                await createUserNotificationWithPush(supabaseAdmin, order.user_id, {
                     title: 'تم توصيل طلبك! 📦',
                     message: `تم تسليم طلبك رقم #${orderId.substring(0,6)} بنجاح. نتمنى لك تجربة سعيدة!`,
                     link: '/orders',
-                    is_read: false
-                }]);
+                });
             }
         }
 

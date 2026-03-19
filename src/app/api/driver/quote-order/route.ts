@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { attachOrderEconomics, CURRENT_DELIVERY_FEE } from '@/lib/order-economics';
+import { createUserNotificationWithPush } from '@/lib/user-push-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
@@ -100,13 +101,11 @@ export async function POST(request: Request) {
         }
 
         if (order.user_id) {
-            await supabaseAdmin.from('notifications').insert([{
-                user_id: order.user_id,
+            await createUserNotificationWithPush(supabaseAdmin, order.user_id, {
                 title: 'تم تحديد سعر طلبك النصي',
                 message: `تم تسعير طلبك بمبلغ ${quotedFinalTotal.toLocaleString()} ج.م شامل التوصيل. افتح تتبع الطلب لمراجعة التفاصيل.`,
                 link: '/orders',
-                is_read: false
-            }]);
+            });
         }
 
         await supabaseAdmin.channel('admin-notifications').send({

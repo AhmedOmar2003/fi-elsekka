@@ -21,6 +21,7 @@ self.addEventListener('push', (event: any) => {
 
 self.addEventListener('notificationclick', (event: any) => {
   event.notification.close();
+  const targetUrl = event.notification.data?.url || '/notifications';
 
   event.waitUntil(
     (self as any).clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList: any) => {
@@ -31,9 +32,12 @@ self.addEventListener('notificationclick', (event: any) => {
             client = clientList[i];
           }
         }
+        if ('navigate' in client) {
+          client.navigate(targetUrl);
+        }
         return client.focus();
       }
-      return (self as any).clients.openWindow(event.notification.data.url || '/driver');
+      return (self as any).clients.openWindow(targetUrl);
     })
   );
 });

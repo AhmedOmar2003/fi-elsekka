@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { requireAdminApi } from '@/lib/admin-guard';
 import { recordServerAdminAudit } from '@/lib/admin-audit-server';
 import { attachOrderEconomics, CURRENT_DELIVERY_FEE, getOrderEconomics } from '@/lib/order-economics';
+import { createUserNotificationWithPush } from '@/lib/user-push-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
@@ -88,13 +89,11 @@ export async function PATCH(request: NextRequest, context: any) {
     }
 
     if (order.user_id) {
-      await supabaseAdmin.from('notifications').insert([{
-        user_id: order.user_id,
+      await createUserNotificationWithPush(supabaseAdmin, order.user_id, {
         title: 'تم إلغاء طلبك',
         message: `تم إلغاء الطلب بسبب: ${cancellationReason}. ${customerMessage}`,
         link: '/orders',
-        is_read: false,
-      }]);
+      });
     }
 
     await recordServerAdminAudit(auth.profile, {
@@ -161,13 +160,11 @@ export async function PATCH(request: NextRequest, context: any) {
     }
 
     if (order.user_id) {
-      await supabaseAdmin.from('notifications').insert([{
-        user_id: order.user_id,
+      await createUserNotificationWithPush(supabaseAdmin, order.user_id, {
         title: 'طلبك عاد لقيد التجهيز',
         message: REOPEN_CUSTOMER_MESSAGE,
         link: '/orders',
-        is_read: false,
-      }]);
+      });
     }
 
     await recordServerAdminAudit(auth.profile, {
@@ -253,13 +250,11 @@ export async function PATCH(request: NextRequest, context: any) {
           ? `${etaDays} يوم`
           : `${etaHours} ساعة`;
 
-      await supabaseAdmin.from('notifications').insert([{
-        user_id: order.user_id,
+      await createUserNotificationWithPush(supabaseAdmin, order.user_id, {
         title: 'تم تجهيز طلبك للتوصيل',
         message: `${estimatedText}. المدة المتوقعة: ${humanWindow}. سنبلغك فور أي تحديث جديد.`,
         link: '/orders',
-        is_read: false,
-      }]);
+      });
     }
 
     await recordServerAdminAudit(auth.profile, {
@@ -340,13 +335,11 @@ export async function PATCH(request: NextRequest, context: any) {
     }
 
     if (order.user_id) {
-      await supabaseAdmin.from('notifications').insert([{
-        user_id: order.user_id,
+      await createUserNotificationWithPush(supabaseAdmin, order.user_id, {
         title: 'لقينالك طلبك',
         message: `لقينالك طلبك وسعره ${quotedFinalTotal.toLocaleString()} ج.م شامل التوصيل. ادخل على حسابك وشوف لو تحب نكمل ونجهزهولك.`,
         link: '/account?tab=search_requests',
-        is_read: false,
-      }]);
+      });
     }
 
     await recordServerAdminAudit(auth.profile, {
@@ -413,13 +406,11 @@ export async function PATCH(request: NextRequest, context: any) {
     }
 
     if (order.user_id) {
-      await supabaseAdmin.from('notifications').insert([{
-        user_id: order.user_id,
+      await createUserNotificationWithPush(supabaseAdmin, order.user_id, {
         title: 'للأسف مش لقينا طلبك دلوقتي',
         message: `${adminMessage} لو لقيناه في أي وقت بعد كده هنرجع نبعتلك فورًا.`,
         link: '/account',
-        is_read: false,
-      }]);
+      });
     }
 
     await recordServerAdminAudit(auth.profile, {

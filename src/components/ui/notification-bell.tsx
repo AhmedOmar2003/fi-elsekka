@@ -9,6 +9,9 @@ import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
 const DUPLICATE_NOTIFICATION_WINDOW_MS = 10000
+const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_KEY || ""
+
+type PushSetupState = "checking" | "enabled" | "prompt" | "blocked" | "unsupported" | "error"
 
 function isDeliveryNotification(notification: AppNotification) {
     return notification.link === "/account" || notification.title.includes("توصيل") || notification.title.includes("طلبك")
@@ -49,12 +52,21 @@ function dedupeNotifications(notifications: AppNotification[]) {
         })
 }
 
+function urlBase64ToUint8Array(base64String: string) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4)
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/")
+    const rawData = window.atob(base64)
+    return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)))
+}
+
 export function NotificationBell() {
-    const { user } = useAuth()
+    const { user, session } = useAuth()
     const router = useRouter()
     const [notifications, setNotifications] = React.useState<AppNotification[]>([])
     const [isOpen, setIsOpen] = React.useState(false)
     const [isLoading, setIsLoading] = React.useState(true)
+    const [pushSetupState, setPushSetupState] = React.useState<PushSetupState>("checking")
+    const [isSubscribingPush, setIsSubscribingPush] = React.useState(false)
     const popoverRef = React.useRef<HTMLDivElement>(null)
     const seenNotificationIdsRef = React.useRef<Set<string>>(new Set())
     const recentFingerprintsRef = React.useRef<Map<string, number>>(new Map())
@@ -181,9 +193,96 @@ export function NotificationBell() {
         await syncNotifications(false)
     }, [syncNotifications])
 
+    const syncPushSubscription = React.useCallback(async (subscription: PushSubscription) => {
+        if (!session?.access_token) {
+            setPushSetupState("error")
+            return false
+        }
+
+        const response = await fetch("/api/notifications/subscribe", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ subscription }),
+        })
+
+        if (!response.ok) {
+            setPushSetupState("error")
+            return false
+        }
+
+        setPushSetupState("enabled")
+        return true
+    }, [session?.access_token])
+
+    const subscribeToPhoneNotifications = React.useCallback(async (interactive: boolean) => {
+        if (typeof window === "undefined" || !user) return false
+        if (!("serviceWorker" in navigator) || !("PushManager" in window) || !window.isSecureContext || !publicVapidKey) {
+            setPushSetupState("unsupported")
+            return false
+        }
+
+        setIsSubscribingPush(interactive)
+
+        try {
+            const currentPermission = Notification.permission
+            if (currentPermission === "denied") {
+                setPushSetupState("blocked")
+                return false
+            }
+
+            const registration = await navigator.serviceWorker.ready
+            const existingSubscription = await registration.pushManager.getSubscription()
+            if (existingSubscription) {
+                return await syncPushSubscription(existingSubscription)
+            }
+
+            if (currentPermission === "default" && !interactive) {
+                setPushSetupState("prompt")
+                return false
+            }
+
+            const permission = currentPermission === "granted"
+                ? "granted"
+                : await Notification.requestPermission()
+
+            if (permission !== "granted") {
+                setPushSetupState(permission === "denied" ? "blocked" : "prompt")
+                return false
+            }
+
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(publicVapidKey),
+            })
+
+            const success = await syncPushSubscription(subscription)
+            if (success && interactive) {
+                toast.success("تم تفعيل إشعارات الهاتف بنجاح")
+            }
+            return success
+        } catch (error) {
+            console.error("Customer push subscription error:", error)
+            setPushSetupState("error")
+            if (interactive) {
+                toast.error("حصلت مشكلة أثناء تفعيل إشعارات الهاتف")
+            }
+            return false
+        } finally {
+            setIsSubscribingPush(false)
+        }
+    }, [syncPushSubscription, user])
+
     React.useEffect(() => {
         void loadNotifications()
     }, [loadNotifications])
+
+    React.useEffect(() => {
+        if (!user) return
+        void subscribeToPhoneNotifications(false)
+    }, [subscribeToPhoneNotifications, user])
 
     React.useEffect(() => {
         if (!user) return
@@ -284,6 +383,47 @@ export function NotificationBell() {
                     <div className="border-b border-surface-hover bg-surface-lighter/50 px-4 py-3">
                         <h3 className="font-heading font-black text-foreground">الإشعارات</h3>
                         <p className="mt-1 text-[11px] text-gray-500">أحدث 4 إشعارات فقط</p>
+                    </div>
+
+                    <div className="border-b border-surface-hover/70 p-3">
+                        <div className="rounded-2xl border border-primary/15 bg-primary/5 p-3">
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-sm font-black text-foreground">إشعارات الهاتف</p>
+                                    <p className="mt-1 text-xs leading-6 text-gray-500">
+                                        فعّلها علشان لما نلاقي طلبك أو يحصل تحديث مهم، الإشعار ينزل على الجهاز حتى لو الموقع مقفول.
+                                    </p>
+                                </div>
+                                {pushSetupState === "enabled" ? (
+                                    <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-black text-emerald-600">
+                                        مفعلة
+                                    </span>
+                                ) : (
+                                    <button
+                                        onClick={() => void subscribeToPhoneNotifications(true)}
+                                        disabled={isSubscribingPush || pushSetupState === "unsupported"}
+                                        className="shrink-0 rounded-2xl bg-primary px-3 py-2 text-xs font-black text-white transition-colors hover:bg-primary/90 disabled:opacity-60"
+                                    >
+                                        {isSubscribingPush ? "جارٍ التفعيل..." : "فعّلها"}
+                                    </button>
+                                )}
+                            </div>
+                            {pushSetupState === "blocked" && (
+                                <p className="mt-3 text-[11px] leading-5 text-rose-400">
+                                    المتصفح قافل الإشعارات حاليًا. اسمح بها من إعدادات الموقع ثم جرّب مرة ثانية.
+                                </p>
+                            )}
+                            {pushSetupState === "unsupported" && (
+                                <p className="mt-3 text-[11px] leading-5 text-amber-500">
+                                    الجهاز أو المتصفح الحالي لا يدعم Web Push بالطريقة المطلوبة.
+                                </p>
+                            )}
+                            {pushSetupState === "error" && (
+                                <p className="mt-3 text-[11px] leading-5 text-rose-400">
+                                    حصلت مشكلة أثناء ربط الجهاز بالإشعارات. حاول تاني من الزر.
+                                </p>
+                            )}
+                        </div>
                     </div>
 
                     <div className="max-h-[60vh] overflow-y-auto">
