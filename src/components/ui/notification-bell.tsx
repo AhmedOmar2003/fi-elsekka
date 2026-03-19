@@ -3,7 +3,14 @@
 import * as React from "react"
 import { Bell, CheckCircle2, ChevronLeft } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
-import { AppNotification, fetchUserNotifications } from "@/services/notificationsService"
+import {
+    AppNotification,
+    NOTIFICATIONS_SYNC_EVENT,
+    NotificationsSyncDetail,
+    emitNotificationsSync,
+    fetchUserNotifications,
+    mergeNotificationIntoList,
+} from "@/services/notificationsService"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
@@ -330,9 +337,39 @@ export function NotificationBell() {
                     }
 
                     rememberNotification(newNotification)
-                    setNotifications((prev) => dedupeNotifications([newNotification, ...prev]))
+                    setNotifications((prev) => mergeNotificationIntoList(prev, newNotification))
+                    emitNotificationsSync({ type: "upsert", userId: user.id, notification: newNotification })
                     playNotificationSound()
                     showNotificationToast(newNotification)
+                }
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "notifications",
+                    filter: `user_id=eq.${user.id}`,
+                },
+                (payload) => {
+                    const updatedNotification = payload.new as AppNotification
+                    setNotifications((prev) =>
+                        prev.map((item) => item.id === updatedNotification.id ? { ...item, ...updatedNotification } : item)
+                    )
+                }
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event: "DELETE",
+                    schema: "public",
+                    table: "notifications",
+                    filter: `user_id=eq.${user.id}`,
+                },
+                (payload) => {
+                    const deletedNotificationId = String((payload.old as { id?: string })?.id || "")
+                    if (!deletedNotificationId) return
+                    setNotifications((prev) => prev.filter((item) => item.id !== deletedNotificationId))
                 }
             )
             .subscribe()
@@ -341,6 +378,35 @@ export function NotificationBell() {
             supabase.removeChannel(channel)
         }
     }, [playNotificationSound, rememberNotification, shouldIgnoreNotification, showNotificationToast, user])
+
+    React.useEffect(() => {
+        if (!user) return
+
+        const handleSync = (event: Event) => {
+            const detail = (event as CustomEvent<NotificationsSyncDetail>).detail
+            if (!detail || detail.userId !== user.id) return
+
+            setNotifications((prev) => {
+                switch (detail.type) {
+                    case "mark-read":
+                        return prev.map((item) => item.id === detail.notificationId ? { ...item, is_read: true } : item)
+                    case "mark-all-read":
+                        return prev.map((item) => ({ ...item, is_read: true }))
+                    case "delete-one":
+                        return prev.filter((item) => item.id !== detail.notificationId)
+                    case "delete-all":
+                        return []
+                    case "upsert":
+                        return mergeNotificationIntoList(prev, detail.notification)
+                    default:
+                        return prev
+                }
+            })
+        }
+
+        window.addEventListener(NOTIFICATIONS_SYNC_EVENT, handleSync as EventListener)
+        return () => window.removeEventListener(NOTIFICATIONS_SYNC_EVENT, handleSync as EventListener)
+    }, [user])
 
     React.useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {

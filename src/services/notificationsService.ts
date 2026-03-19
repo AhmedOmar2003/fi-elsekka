@@ -11,6 +11,14 @@ export interface AppNotification {
 }
 
 const DUPLICATE_NOTIFICATION_WINDOW_MS = 10000;
+export const NOTIFICATIONS_SYNC_EVENT = 'fi-elsekka:notifications-sync';
+
+export type NotificationsSyncDetail =
+    | { type: 'mark-read'; userId: string; notificationId: string }
+    | { type: 'mark-all-read'; userId: string }
+    | { type: 'delete-one'; userId: string; notificationId: string }
+    | { type: 'delete-all'; userId: string }
+    | { type: 'upsert'; userId: string; notification: AppNotification };
 
 const logNotificationMutationFailure = (action: string, details: Record<string, unknown>) => {
     console.error(`[notifications] ${action} failed`, details);
@@ -18,6 +26,11 @@ const logNotificationMutationFailure = (action: string, details: Record<string, 
 
 const getNotificationFingerprint = (notification: Pick<AppNotification, 'title' | 'message' | 'link'>) => {
     return `${notification.title}__${notification.message}__${notification.link || ''}`;
+};
+
+export const emitNotificationsSync = (detail: NotificationsSyncDetail) => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent<NotificationsSyncDetail>(NOTIFICATIONS_SYNC_EVENT, { detail }));
 };
 
 const dedupeNotifications = (notifications: AppNotification[]) => {
@@ -49,6 +62,10 @@ const dedupeNotifications = (notifications: AppNotification[]) => {
             seenFingerprints.set(fingerprint, Number.isFinite(createdAt) ? createdAt : Date.now());
             return true;
         });
+};
+
+export const mergeNotificationIntoList = (notifications: AppNotification[], notification: AppNotification) => {
+    return dedupeNotifications([notification, ...notifications]);
 };
 
 /**

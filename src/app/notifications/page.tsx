@@ -12,6 +12,7 @@ import {
     AppNotification,
     deleteAllNotifications,
     deleteNotification,
+    emitNotificationsSync,
     fetchUserNotifications,
     markAllNotificationsAsRead,
     markNotificationAsRead,
@@ -71,10 +72,16 @@ export default function NotificationsPage() {
         if (!user) return
 
         if (!notification.is_read) {
+            const previous = notifications
             setNotifications((prev) =>
                 prev.map((item) => item.id === notification.id ? { ...item, is_read: true } : item)
             )
-            await markNotificationAsRead(notification.id, user.id)
+            emitNotificationsSync({ type: "mark-read", userId: user.id, notificationId: notification.id })
+            const ok = await markNotificationAsRead(notification.id, user.id)
+            if (!ok) {
+                setNotifications(previous)
+                emitNotificationsSync({ type: "upsert", userId: user.id, notification })
+            }
         }
 
         router.push(notification.link || "/account")
@@ -82,8 +89,17 @@ export default function NotificationsPage() {
 
     const handleMarkAllRead = async () => {
         if (!user || unreadCount === 0) return
+        const previous = notifications
         setNotifications((prev) => prev.map((item) => ({ ...item, is_read: true })))
-        await markAllNotificationsAsRead(user.id)
+        emitNotificationsSync({ type: "mark-all-read", userId: user.id })
+        const ok = await markAllNotificationsAsRead(user.id)
+        if (!ok) {
+            setNotifications(previous)
+            previous.forEach((notification) => {
+                emitNotificationsSync({ type: "upsert", userId: user.id, notification })
+            })
+            toast.error("تعذر تعليم الإشعارات كمقروءة")
+        }
     }
 
     const handleDeleteOne = async (notificationId: string) => {
@@ -92,10 +108,15 @@ export default function NotificationsPage() {
         setDeletingId(notificationId)
         const previous = notifications
         setNotifications((prev) => prev.filter((item) => item.id !== notificationId))
+        emitNotificationsSync({ type: "delete-one", userId: user.id, notificationId })
 
         const ok = await deleteNotification(notificationId, user.id)
         if (!ok) {
             setNotifications(previous)
+            const deletedNotification = previous.find((item) => item.id === notificationId)
+            if (deletedNotification) {
+                emitNotificationsSync({ type: "upsert", userId: user.id, notification: deletedNotification })
+            }
             toast.error("تعذر حذف الإشعار")
         }
 
@@ -108,10 +129,14 @@ export default function NotificationsPage() {
         setIsDeletingAll(true)
         const previous = notifications
         setNotifications([])
+        emitNotificationsSync({ type: "delete-all", userId: user.id })
 
         const ok = await deleteAllNotifications(user.id)
         if (!ok) {
             setNotifications(previous)
+            previous.forEach((notification) => {
+                emitNotificationsSync({ type: "upsert", userId: user.id, notification })
+            })
             toast.error("تعذر حذف كل الإشعارات")
         } else {
             setShowAll(false)
