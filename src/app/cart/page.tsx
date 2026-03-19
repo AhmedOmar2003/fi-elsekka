@@ -8,6 +8,7 @@ import { useCart } from '@/contexts/CartContext';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Button } from '@/components/ui/button';
+import { CURRENT_DELIVERY_FEE } from '@/lib/order-economics';
 import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -34,7 +35,7 @@ export default function CartPage() {
       setUpdatingItems(prev => ({ ...prev, [id]: false }));
    };
 
-   const shippingCost: number = 0; // Free shipping for now based on hero banner logic
+   const shippingCost: number = CURRENT_DELIVERY_FEE;
    const grandTotal = cartTotal + shippingCost;
 
    if (isLoading) {
