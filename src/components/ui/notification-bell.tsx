@@ -445,26 +445,32 @@ export function NotificationBell() {
             </button>
 
             {isOpen && (
-                <div className="absolute top-full lg:-end-2 -end-24 mt-2 w-80 sm:w-96 overflow-hidden rounded-2xl border border-surface-hover bg-surface shadow-premium z-50">
+                <div className="absolute top-full lg:-end-2 -end-24 mt-2 z-50 flex max-h-[78vh] w-80 flex-col overflow-hidden rounded-2xl border border-surface-hover bg-surface shadow-premium sm:w-96">
                     <div className="border-b border-surface-hover bg-surface-lighter/50 px-4 py-3">
                         <h3 className="font-heading font-black text-foreground">الإشعارات</h3>
                         <p className="mt-1 text-[11px] text-gray-500">أحدث 4 إشعارات فقط</p>
                     </div>
 
                     <div className="border-b border-surface-hover/70 p-3">
-                        <div className="rounded-2xl border border-primary/15 bg-primary/5 p-3">
-                            <div className="flex items-start justify-between gap-3">
+                        {pushSetupState === "enabled" ? (
+                            <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/15 bg-emerald-500/5 px-3 py-2.5">
                                 <div>
                                     <p className="text-sm font-black text-foreground">إشعارات الهاتف</p>
-                                    <p className="mt-1 text-xs leading-6 text-gray-500">
-                                        فعّلها علشان لما نلاقي طلبك أو يحصل تحديث مهم، الإشعار ينزل على الجهاز حتى لو الموقع مقفول.
-                                    </p>
+                                    <p className="mt-0.5 text-[11px] text-gray-500">مفعلة وتمام</p>
                                 </div>
-                                {pushSetupState === "enabled" ? (
-                                    <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-black text-emerald-600">
-                                        مفعلة
-                                    </span>
-                                ) : (
+                                <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-black text-emerald-600">
+                                    مفعلة
+                                </span>
+                            </div>
+                        ) : (
+                            <div className="rounded-2xl border border-primary/15 bg-primary/5 p-3">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-black text-foreground">إشعارات الهاتف</p>
+                                        <p className="mt-1 text-xs leading-6 text-gray-500">
+                                            فعّلها علشان لما نلاقي طلبك أو يحصل تحديث مهم، الإشعار ينزل على الجهاز حتى لو الموقع مقفول.
+                                        </p>
+                                    </div>
                                     <button
                                         onClick={() => void subscribeToPhoneNotifications(true)}
                                         disabled={isSubscribingPush || pushSetupState === "unsupported"}
@@ -472,27 +478,27 @@ export function NotificationBell() {
                                     >
                                         {isSubscribingPush ? "جارٍ التفعيل..." : "فعّلها"}
                                     </button>
+                                </div>
+                                {pushSetupState === "blocked" && (
+                                    <p className="mt-3 text-[11px] leading-5 text-rose-400">
+                                        المتصفح قافل الإشعارات حاليًا. اسمح بها من إعدادات الموقع ثم جرّب مرة ثانية.
+                                    </p>
+                                )}
+                                {pushSetupState === "unsupported" && (
+                                    <p className="mt-3 text-[11px] leading-5 text-amber-500">
+                                        الجهاز أو المتصفح الحالي لا يدعم Web Push بالطريقة المطلوبة.
+                                    </p>
+                                )}
+                                {pushSetupState === "error" && (
+                                    <p className="mt-3 text-[11px] leading-5 text-rose-400">
+                                        حصلت مشكلة أثناء ربط الجهاز بالإشعارات. حاول تاني من الزر.
+                                    </p>
                                 )}
                             </div>
-                            {pushSetupState === "blocked" && (
-                                <p className="mt-3 text-[11px] leading-5 text-rose-400">
-                                    المتصفح قافل الإشعارات حاليًا. اسمح بها من إعدادات الموقع ثم جرّب مرة ثانية.
-                                </p>
-                            )}
-                            {pushSetupState === "unsupported" && (
-                                <p className="mt-3 text-[11px] leading-5 text-amber-500">
-                                    الجهاز أو المتصفح الحالي لا يدعم Web Push بالطريقة المطلوبة.
-                                </p>
-                            )}
-                            {pushSetupState === "error" && (
-                                <p className="mt-3 text-[11px] leading-5 text-rose-400">
-                                    حصلت مشكلة أثناء ربط الجهاز بالإشعارات. حاول تاني من الزر.
-                                </p>
-                            )}
-                        </div>
+                        )}
                     </div>
 
-                    <div className="max-h-[60vh] overflow-y-auto">
+                    <div className="min-h-0 max-h-[42vh] flex-1 overflow-y-auto">
                         {isLoading ? (
                             <div className="p-8 text-center text-gray-500">جاري التحميل...</div>
                         ) : previewNotifications.length === 0 ? (
