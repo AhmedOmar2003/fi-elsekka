@@ -16,15 +16,27 @@ type PushNotificationPayload = {
 };
 
 function buildPushPayload(payload: PushNotificationPayload) {
+  const title = payload.title.startsWith('في السكة')
+    ? payload.title
+    : `في السكة | ${payload.title}`;
+  const notificationLink = payload.link || '/notifications';
+
   return JSON.stringify({
-    title: payload.title,
+    title,
     body: payload.message,
-    icon: '/icon512_maskable.png',
-    badge: '/icon512_maskable.png',
+    icon: '/icon-192x192.svg',
+    badge: '/icon-192x192.svg',
+    image: '/icon-512x512.svg',
     silent: false,
     requireInteraction: payload.requireInteraction ?? true,
+    renotify: true,
+    dir: 'rtl',
+    lang: 'ar-EG',
+    vibrate: [180, 80, 220, 80, 320],
+    tag: `${notificationLink}::${payload.title}`,
+    timestamp: Date.now(),
     data: {
-      url: payload.link || '/notifications',
+      url: notificationLink,
     },
   });
 }

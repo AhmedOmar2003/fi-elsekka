@@ -60,11 +60,18 @@ export async function POST(request: Request) {
         }
 
         const payload = JSON.stringify({
-            title,
+            title: title.startsWith('في السكة') ? title : `في السكة | ${title}`,
             body,
-            icon: '/icon512_maskable.png', // Optional: standard PWA icon
+            icon: '/icon-192x192.svg',
+            badge: '/icon-192x192.svg',
+            image: '/icon-512x512.svg',
             silent: false,
             requireInteraction: true,
+            renotify: true,
+            dir: 'rtl',
+            lang: 'ar-EG',
+            vibrate: [180, 80, 220, 80, 320],
+            tag: `/driver${orderId ? `?order=${orderId}` : ''}::${title}`,
             data: {
                 url: `/driver${orderId ? `?order=${orderId}` : ''}`
             }
