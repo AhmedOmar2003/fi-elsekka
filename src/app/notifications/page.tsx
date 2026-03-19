@@ -19,8 +19,6 @@ import {
 } from "@/services/notificationsService"
 import { toast } from "sonner"
 
-const PREVIEW_LIMIT = 4
-
 function formatNotifTime(createdAt: string) {
     const date = new Date(createdAt)
     const diffMs = Date.now() - date.getTime()
@@ -41,13 +39,10 @@ export default function NotificationsPage() {
 
     const [notifications, setNotifications] = React.useState<AppNotification[]>([])
     const [loadingNotifications, setLoadingNotifications] = React.useState(true)
-    const [showAll, setShowAll] = React.useState(false)
     const [deletingId, setDeletingId] = React.useState<string | null>(null)
     const [isDeletingAll, setIsDeletingAll] = React.useState(false)
 
     const unreadCount = notifications.filter((notification) => !notification.is_read).length
-    const latestNotifications = notifications.slice(0, PREVIEW_LIMIT)
-    const olderNotifications = notifications.slice(PREVIEW_LIMIT)
 
     const loadNotifications = React.useCallback(async () => {
         if (!user) return
@@ -138,8 +133,6 @@ export default function NotificationsPage() {
                 emitNotificationsSync({ type: "upsert", userId: user.id, notification })
             })
             toast.error("تعذر حذف كل الإشعارات")
-        } else {
-            setShowAll(false)
         }
 
         setIsDeletingAll(false)
@@ -190,7 +183,7 @@ export default function NotificationsPage() {
                                 <div>
                                     <h1 className="text-2xl font-black text-foreground">الإشعارات</h1>
                                     <p className="mt-1 text-sm text-gray-500">
-                                        نعرض لك أحدث 4 إشعارات أولاً، ويمكنك فتح السجل الكامل عند الحاجة.
+                                        هنا هتلاقي كل الإشعارات اللي وصلتك بترتيبها من الأحدث للأقدم.
                                     </p>
                                 </div>
                             </div>
@@ -238,40 +231,14 @@ export default function NotificationsPage() {
                             <p className="mt-2 text-sm text-gray-500">عندما يصلك تحديث جديد بخصوص طلباتك أو حسابك سيظهر هنا.</p>
                         </div>
                     ) : (
-                        <div className="space-y-8">
-                            <section className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <h2 className="text-lg font-black text-foreground">أحدث الإشعارات</h2>
-                                        <p className="mt-1 text-xs text-gray-500">أول {PREVIEW_LIMIT} إشعارات فقط للعرض السريع</p>
-                                    </div>
-                                    {notifications.length > PREVIEW_LIMIT && (
-                                        <button
-                                            onClick={() => setShowAll((prev) => !prev)}
-                                            className="flex items-center gap-2 rounded-2xl bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/15 transition-colors"
-                                        >
-                                            {showAll ? "إخفاء السجل الكامل" : "عرض كل الإشعارات"}
-                                            <ChevronLeft className={`h-4 w-4 transition-transform ${showAll ? "rotate-90" : ""}`} />
-                                        </button>
-                                    )}
-                                </div>
-
-                                <div className="grid gap-4">
-                                    {latestNotifications.map(renderNotificationCard)}
-                                </div>
-                            </section>
-
-                            {showAll && olderNotifications.length > 0 && (
-                                <section className="space-y-4">
-                                    <div>
-                                        <h2 className="text-lg font-black text-foreground">كل الإشعارات السابقة</h2>
-                                        <p className="mt-1 text-xs text-gray-500">هنا تجد كل الإشعارات القديمة مع إمكانية حذفها</p>
-                                    </div>
-                                    <div className="grid gap-4">
-                                        {olderNotifications.map(renderNotificationCard)}
-                                    </div>
-                                </section>
-                            )}
+                        <div className="space-y-4">
+                            <div>
+                                <h2 className="text-lg font-black text-foreground">كل الإشعارات</h2>
+                                <p className="mt-1 text-xs text-gray-500">كل التنبيهات موجودة هنا مع إمكانية فتحها أو حذفها.</p>
+                            </div>
+                            <div className="grid gap-4">
+                                {notifications.map(renderNotificationCard)}
+                            </div>
                         </div>
                     )}
 
