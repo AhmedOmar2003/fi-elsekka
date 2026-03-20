@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ProductCard } from "@/components/ui/product-card"
-import { CategoryCard } from "@/components/ui/category-card"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import Link from "next/link"
-import { ShoppingBasket, Pill, Shirt, Smartphone, Baby, HomeIcon, Sparkles, ShieldCheck, Zap, Banknote, Clock } from "lucide-react"
+import Image from "next/image"
+import { ShieldCheck, Zap, Banknote, Clock } from "lucide-react"
 import { fetchHomeProducts, fetchOffers, fetchBestSellers } from "@/services/productsService"
 import { HomeCategoriesList } from "@/components/ui/home-categories"
 import { PromoBanner } from "@/components/ui/promo-banner"
@@ -22,14 +22,6 @@ const MOCK_FEATURED_PRODUCTS = [
   { id: "3", title: "تيشيرت قطن 100% رجالي أسود", price: 250, imageUrl: "https://th.bing.com/th/id/OIG2.M_o_l_L_v_R_J_p_f_M_?pid=ImgGn" },
   { id: "4", title: "سماعة بلوتوث لاسلكية", price: 450, oldPrice: 600, discountBadge: "عروض جامدة", imageUrl: "https://th.bing.com/th/id/OIG3.C_W_T_P_j_B_k_O_d_J_?pid=ImgGn" },
 ];
-
-const MOCK_BEST_SELLERS = [
-  { id: "5", title: "زيت عباد الشمس 1 لتر", price: 65, rating: 4.7, reviewsCount: 520, imageUrl: "https://th.bing.com/th/id/OIG4.X_Y_Z_A_B_C_D_E_F_G?pid=ImgGn" },
-  { id: "6", title: "بنطلون جينز أزرق سليم فيت", price: 350, rating: 4.6, reviewsCount: 150, imageUrl: "https://th.bing.com/th/id/OIG1.A_B_C_D_E_F_G_H_I_J?pid=ImgGn" },
-  { id: "7", title: "شاشة 32 بوصة سمارت", price: 4200, oldPrice: 4800, discountBadge: "تصفية", imageUrl: "https://th.bing.com/th/id/OIG2.K_L_M_N_O_P_Q_R_S_T?pid=ImgGn" },
-  { id: "8", title: "حفاضات أطفال مقاس 4", price: 210, rating: 4.9, reviewsCount: 412, imageUrl: "https://th.bing.com/th/id/OIG3.U_V_W_X_Y_Z_1_2_3_4?pid=ImgGn" },
-];
-
 export default async function Home() {
   // 3 separate lightweight queries — each fetches only relevant items:
   // - fetchHomeProducts: 8 newest products for the featured section
@@ -40,12 +32,6 @@ export default async function Home() {
     fetchBestSellers(),
     fetchOffers(),
   ]);
-
-  console.log('--- NEXT.JS SERVER COMPONENT DEBUG ---');
-  console.log('Home Products count:', dbProducts.length);
-  console.log('Best Sellers count:', bestSellerProducts.length);
-  console.log('Offers count:', offerProducts.length);
-  console.log('--------------------------------------');
 
   const displayProducts = dbProducts.length > 0 ? dbProducts.slice(0, 4).map(p => {
     let price = p.price;
@@ -180,7 +166,14 @@ export default async function Home() {
               <div className="relative mx-auto mt-8 w-full max-w-md lg:mt-0 lg:max-w-none perspective-1000">
                 <div className="aspect-[4/3] rounded-3xl bg-surface border border-surface-hover/50 p-4 shadow-premium relative overflow-hidden group transform hover:-rotate-y-2 transition-transform duration-700">
                   <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-secondary/20 opacity-60 mix-blend-overlay"></div>
-                  <img src="https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop" alt="Shopping Box" className="object-cover w-full h-full rounded-2xl group-hover:scale-110 transition-transform duration-1000" />
+                  <Image
+                    src="https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop"
+                    alt="Shopping Box"
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-cover w-full h-full rounded-2xl group-hover:scale-110 transition-transform duration-1000"
+                  />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="text-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
                       <span className="block text-6xl drop-shadow-2xl">📦</span>

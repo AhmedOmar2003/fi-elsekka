@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button, cn } from "./button"
 import { Heart, Star, ShoppingCart, Check } from "lucide-react"
 import { useCart } from "@/contexts/CartContext"
@@ -53,7 +54,13 @@ export function ProductCard({
       <Link href={`/product/${id}`} className="relative aspect-[4/3] sm:aspect-[3/2] w-full overflow-hidden bg-surface-lighter">
 
         <div className="absolute inset-0 flex items-center justify-center">
-          <img src={imageUrl} alt={title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+          <Image
+            src={imageUrl}
+            alt={title}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
         </div>
 
         {/* Discount Badge */}

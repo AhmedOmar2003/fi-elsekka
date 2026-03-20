@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
@@ -138,12 +139,13 @@ function SearchResults({ query, onSelect }: { query: string; onSelect: () => voi
                     onClick={onSelect}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-hover transition-colors group"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-surface-lighter overflow-hidden shrink-0 border border-surface-hover">
-                      <img
-                        src={product.image_url || (product.specifications as any)?.image_url || ''}
+                    <div className="relative w-12 h-12 rounded-xl bg-surface-lighter overflow-hidden shrink-0 border border-surface-hover">
+                      <Image
+                        src={product.image_url || (product.specifications as any)?.image_url || "/icon-192x192.svg"}
                         alt={product.name}
+                        fill
+                        sizes="48px"
                         className="w-full h-full object-cover"
-                        loading="lazy"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -192,6 +194,8 @@ export function Header() {
   const [mobileQuery, setMobileQuery] = React.useState("")
   const [showDesktopResults, setShowDesktopResults] = React.useState(false)
   const desktopSearchRef = React.useRef<HTMLDivElement>(null)
+  const deferredDesktopQuery = React.useDeferredValue(desktopQuery)
+  const deferredMobileQuery = React.useDeferredValue(mobileQuery)
 
   // Close desktop dropdown when clicking outside
   React.useEffect(() => {
@@ -260,10 +264,13 @@ export function Header() {
 
         {/* ── Logo ──────────────────────────────────────────────────────────── */}
         <Link href="/" className="flex items-center gap-2 shrink-0 group">
-          <img 
-            src="/icon-192x192.svg" 
-            alt="في السكة Logo" 
-            className="w-10 h-10 rounded-xl shadow-lg shadow-primary/30 group-hover:shadow-primary/50 transition-shadow" 
+          <Image
+            src="/icon-192x192.svg"
+            alt="في السكة Logo"
+            width={40}
+            height={40}
+            priority
+            className="rounded-xl shadow-lg shadow-primary/30 group-hover:shadow-primary/50 transition-shadow"
           />
           <div className="hidden sm:flex items-baseline gap-0 leading-none" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
             <span className="font-black text-2xl text-foreground drop-shadow-sm">فِي&nbsp;</span>
@@ -286,13 +293,13 @@ export function Header() {
                 setDesktopQuery(e.target.value)
                 setShowDesktopResults(true)
               }}
-              onFocus={() => desktopQuery.trim().length >= 2 && setShowDesktopResults(true)}
+              onFocus={() => deferredDesktopQuery.trim().length >= 2 && setShowDesktopResults(true)}
               onKeyDown={handleDesktopSearch}
             />
             {/* Autocomplete dropdown */}
-            {showDesktopResults && desktopQuery.trim().length >= 2 && (
+            {showDesktopResults && deferredDesktopQuery.trim().length >= 2 && (
               <SearchResults
-                query={desktopQuery}
+                query={deferredDesktopQuery}
                 onSelect={() => {
                   setShowDesktopResults(false)
                   setDesktopQuery("")
@@ -403,10 +410,10 @@ export function Header() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {mobileQuery.trim().length >= 2 ? (
+            {deferredMobileQuery.trim().length >= 2 ? (
               /* Live search results */
               <SearchResults
-                query={mobileQuery}
+                query={deferredMobileQuery}
                 onSelect={() => { setIsSearchOpen(false); setMobileQuery("") }}
               />
             ) : (

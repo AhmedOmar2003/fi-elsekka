@@ -17,7 +17,7 @@ drop policy if exists "user_subscriptions_update_own" on public.user_subscriptio
 drop policy if exists "user_subscriptions_delete_own" on public.user_subscriptions;
 
 create policy "user_subscriptions_select_own"
-on public.user_subscriptions
+on public.user_subscriptions 
 for select
 using (auth.uid() = user_id);
 
