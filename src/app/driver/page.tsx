@@ -81,6 +81,7 @@ function OrderCard({ order, onMarkDelivered, onMarkPickedUp, isUpdating }: {
         }`}>
             {/* Header row - always visible */}
             <button
+                type="button"
                 onClick={() => setExpanded(v => !v)}
                 className="w-full flex items-center justify-between gap-3 p-4 text-right"
             >
@@ -196,6 +197,7 @@ function OrderCard({ order, onMarkDelivered, onMarkPickedUp, isUpdating }: {
 
                     {!isDelivered && isProcessing && (
                         <button
+                            type="button"
                             onClick={() => onMarkPickedUp(order.id)}
                             disabled={isUpdating}
                             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
@@ -209,6 +211,7 @@ function OrderCard({ order, onMarkDelivered, onMarkPickedUp, isUpdating }: {
 
                     {!isDelivered && isShipped && (
                         <button
+                            type="button"
                             onClick={() => onMarkDelivered(order.id)}
                             disabled={isUpdating}
                             className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3.5 rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
