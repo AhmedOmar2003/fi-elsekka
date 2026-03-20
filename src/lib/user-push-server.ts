@@ -24,7 +24,7 @@ function buildPushPayload(payload: PushNotificationPayload) {
   return JSON.stringify({
     title,
     body: payload.message,
-    icon: '/icon-192x192.svg',
+    icon: '/icon-512x512.svg',
     badge: '/icon-192x192.svg',
     image: '/icon-512x512.svg',
     silent: false,
@@ -37,6 +37,7 @@ function buildPushPayload(payload: PushNotificationPayload) {
     timestamp: Date.now(),
     data: {
       url: notificationLink,
+      allowWhileVisible: false,
     },
   });
 }
@@ -64,10 +65,15 @@ export async function sendPushToUserDevices(
     return { success: true, skipped: true, devicesNotified: 0 };
   }
 
+  const uniqueSubscriptions = subscriptions.filter((record: any, index: number, all: any[]) => {
+    const endpoint = record.endpoint || record.subscription?.endpoint;
+    return !!endpoint && all.findIndex((item: any) => (item.endpoint || item.subscription?.endpoint) === endpoint) === index;
+  });
+
   const pushPayload = buildPushPayload(payload);
 
   await Promise.all(
-    subscriptions.map(async (subscriptionRecord: any) => {
+    uniqueSubscriptions.map(async (subscriptionRecord: any) => {
       try {
         await webpush.sendNotification(subscriptionRecord.subscription, pushPayload);
       } catch (pushError: any) {
@@ -83,7 +89,7 @@ export async function sendPushToUserDevices(
     })
   );
 
-  return { success: true, skipped: false, devicesNotified: subscriptions.length };
+  return { success: true, skipped: false, devicesNotified: uniqueSubscriptions.length };
 }
 
 export async function createUserNotificationWithPush(
