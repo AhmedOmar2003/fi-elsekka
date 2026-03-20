@@ -41,7 +41,7 @@ export async function POST(request: Request) {
         // Verify the order actually belongs to this driver
         const { data: order, error: orderError } = await supabaseAdmin
             .from('orders')
-            .select('user_id, shipping_address')
+      .select('user_id, shipping_address, status')
             .eq('id', orderId)
             .single();
 
@@ -57,7 +57,18 @@ export async function POST(request: Request) {
         // Update order status securely
         const { error: updateError } = await supabaseAdmin
             .from('orders')
-            .update({ status })
+      .update({
+        status,
+        shipping_address: {
+          ...(order.shipping_address || {}),
+          ...(status === 'shipped'
+            ? {
+                driver_picked_up_at: new Date().toISOString(),
+                driver_delivery_state: 'on_the_way_to_customer'
+              }
+            : {})
+        }
+      })
             .eq('id', orderId);
 
         if (updateError) {
@@ -65,7 +76,30 @@ export async function POST(request: Request) {
         }
 
         // Notify Admin Dashboard immediately so they see the status change live
-        if (status === 'delivered') {
+    if (status === 'shipped') {
+      await supabaseAdmin.channel('admin-notifications').send({
+        type: 'broadcast',
+        event: 'order-shipped',
+        payload: {
+          orderId,
+          driverName: user.email || 'المندوب'
+        }
+      })
+
+      if (order.user_id) {
+        await createUserNotificationWithPush(
+          order.user_id,
+          'طلبك بقى في الطريق 🛵',
+          {
+            title: 'طلبك بقى في الطريق 🛵',
+            message: 'المندوب استلم طلبك من المكان وخرج بالفعل علشان يوصلهولك. تابع الطلب وشوف هو وصل لفين.',
+            link: '/orders'
+          }
+        )
+      }
+    }
+
+    if (status === 'delivered') {
             await supabaseAdmin.channel('admin-notifications').send({
                 type: 'broadcast',
                 event: 'order-delivered',

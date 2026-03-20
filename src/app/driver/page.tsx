@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown, ChevronUp, Bell, BellOff, X, AlertCircle, Coffee } from 'lucide-react'
+import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown, ChevronUp, Bell, BellOff, X, AlertCircle, Coffee, Truck } from 'lucide-react'
 import { toast } from 'sonner'
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery'
 
@@ -49,13 +49,16 @@ function playNotificationSound() {
     }
 }
 
-function OrderCard({ order, onMarkDelivered, isUpdating }: {
+function OrderCard({ order, onMarkDelivered, onMarkPickedUp, isUpdating }: {
     order: DriverOrder;
     onMarkDelivered: (id: string) => void;
+    onMarkPickedUp: (id: string) => void;
     isUpdating: boolean;
 }) {
     const [expanded, setExpanded] = useState(false)
     const isDelivered = order.status === 'delivered'
+    const isShipped = order.status === 'shipped'
+    const isProcessing = order.status === 'processing' || order.status === 'pending'
 
     const customerName = order.users?.full_name || 'غير معروف'
     const phone = order.shipping_address?.phone || order.users?.phone || 'لا يوجد رقم'
@@ -97,9 +100,11 @@ function OrderCard({ order, onMarkDelivered, isUpdating }: {
                 <div className="flex items-center gap-2 shrink-0">
                     <span className={`text-xs font-bold px-2 py-1 rounded-full border ${isDelivered
                         ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20'
-                        : 'bg-amber-400/10 text-amber-500 border-amber-400/20'
+                        : isShipped
+                            ? 'bg-blue-500/15 text-blue-400 border-blue-500/20'
+                            : 'bg-amber-400/10 text-amber-500 border-amber-400/20'
                     }`}>
-                        {isDelivered ? 'تم التوصيل ✓' : 'جاري التوصيل'}
+                        {isDelivered ? 'تم التوصيل ✓' : isShipped ? 'في الطريق للعميل' : 'لسه بيستلم الطلب'}
                     </span>
                     {expanded
                         ? <ChevronUp className="w-5 h-5 text-gray-400" />
@@ -189,7 +194,20 @@ function OrderCard({ order, onMarkDelivered, isUpdating }: {
                         )}
                     </div>
 
-                    {!isDelivered && (
+                    {!isDelivered && isProcessing && (
+                        <button
+                            onClick={() => onMarkPickedUp(order.id)}
+                            disabled={isUpdating}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+                        >
+                            {isUpdating
+                                ? <Loader2 className="w-5 h-5 animate-spin" />
+                                : <><Truck className="w-5 h-5" /> استلمت الطلب من المحل ورايح للعميل</>
+                            }
+                        </button>
+                    )}
+
+                    {!isDelivered && isShipped && (
                         <button
                             onClick={() => onMarkDelivered(order.id)}
                             disabled={isUpdating}
@@ -531,6 +549,41 @@ export default function DriverDashboard() {
         }
     }
 
+    const markAsPickedUp = async (orderId: string) => {
+        setUpdatingId(orderId)
+        try {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session) return
+            const res = await fetch('/api/driver/update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                body: JSON.stringify({ orderId, status: 'shipped' })
+            })
+            if (!res.ok) {
+                const e = await res.json()
+                throw new Error(e.error || 'Failed to update status')
+            }
+
+            toast.success('تمام، بلغنا الإدارة والعميل إنك بقيت في الطريق 🛵')
+            setActiveOrders(prev => prev.map(o => (
+                o.id === orderId
+                    ? {
+                        ...o,
+                        status: 'shipped',
+                        shipping_address: {
+                            ...o.shipping_address,
+                            driver_pickup_confirmed_at: new Date().toISOString(),
+                        }
+                    }
+                    : o
+            )))
+        } catch (err: any) {
+            toast.error(err.message || 'في حاجة عطلت تحديث حالة الشحن')
+        } finally {
+            setUpdatingId(null)
+        }
+    }
+
     const markAsDelivered = async (orderId: string) => {
         setUpdatingId(orderId)
         try {
@@ -792,6 +845,7 @@ export default function DriverDashboard() {
                             key={order.id}
                             order={order}
                             onMarkDelivered={markAsDelivered}
+                            onMarkPickedUp={markAsPickedUp}
                             isUpdating={updatingId === order.id}
                         />
                     ))
@@ -811,6 +865,7 @@ export default function DriverDashboard() {
                             key={order.id}
                             order={order}
                             onMarkDelivered={markAsDelivered}
+                            onMarkPickedUp={markAsPickedUp}
                             isUpdating={false}
                         />
                     ))}
