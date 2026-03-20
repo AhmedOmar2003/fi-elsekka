@@ -166,6 +166,69 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        let isRefreshingSession = false;
+
+        const refreshSessionState = async () => {
+            if (isRefreshingSession) return;
+            isRefreshingSession = true;
+
+            try {
+                const { data: { session: freshSession }, error } = await supabase.auth.getSession();
+                if (error) {
+                    console.error('AuthContext: refresh session error', error);
+                    return;
+                }
+
+                setSession(freshSession);
+                setUser(freshSession?.user ?? null);
+                setAuthCookie(freshSession?.access_token);
+
+                if (freshSession?.user) {
+                    await loadProfile(freshSession.user.id);
+                } else {
+                    setProfile(null);
+                }
+            } catch (err) {
+                console.error('AuthContext: visibility refresh error', err);
+            } finally {
+                isRefreshingSession = false;
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                void refreshSessionState();
+            }
+        };
+
+        const handleWindowFocus = () => {
+            void refreshSessionState();
+        };
+
+        const handlePageShow = () => {
+            void refreshSessionState();
+        };
+
+        const handleOnline = () => {
+            void refreshSessionState();
+        };
+
+        window.addEventListener('focus', handleWindowFocus);
+        window.addEventListener('pageshow', handlePageShow);
+        window.addEventListener('online', handleOnline);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener('focus', handleWindowFocus);
+            window.removeEventListener('pageshow', handlePageShow);
+            window.removeEventListener('online', handleOnline);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [user]);
+
     return (
         <AuthContext.Provider value={{ session, user, profile, isLoading, refreshProfile }}>
             {children}
