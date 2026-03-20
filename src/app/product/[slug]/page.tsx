@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
-import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Tag, Camera, Send, MessageSquare, X } from "lucide-react"
+import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Tag, Camera, Send, MessageSquare, X, Share2, Copy } from "lucide-react"
 import { fetchProductDetails, Product } from "@/services/productsService"
 import { fetchProductReviews, calcReviewStats, createReview, checkUserPurchased, checkUserReviewed, uploadReviewImage, Review, ReviewStats } from "@/services/reviewsService"
 import { useCart } from "@/contexts/CartContext"
@@ -24,6 +24,8 @@ export default function ProductPage() {
   const [quantity, setQuantity] = React.useState(1)
   const [isAdded, setIsAdded] = React.useState(false)
   const [isMounted, setIsMounted] = React.useState(false)
+  const [isShareSheetOpen, setIsShareSheetOpen] = React.useState(false)
+  const [shareUrl, setShareUrl] = React.useState("")
   
   const [appliedDiscountPrice, setAppliedDiscountPrice] = React.useState<number | null>(null)
   const [appliedDiscountLabel, setAppliedDiscountLabel] = React.useState<string | null>(null)
@@ -31,6 +33,12 @@ export default function ProductPage() {
   React.useEffect(() => {
     const t = setTimeout(() => setIsMounted(true), 80)
     return () => clearTimeout(t)
+  }, [])
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      setShareUrl(window.location.href)
+    }
   }, [])
 
   const handleAddToCart = async () => {
@@ -51,6 +59,26 @@ export default function ProductPage() {
     }
     router.push(`/checkout?${searchParams.toString()}`);
   }
+
+  const copyShareLink = React.useCallback(async (targetLabel?: string) => {
+    if (!shareUrl) {
+      toast.error("لسه الرابط مش جاهز")
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      toast.success(targetLabel ? `نسخت الرابط علشان تشاركه على ${targetLabel} ✨` : "تم نسخ الرابط ✨")
+    } catch {
+      toast.error("مقدرتش أنسخ الرابط، جرب تاني")
+    }
+  }, [shareUrl])
+
+  const openShareUrl = React.useCallback((targetUrl: string) => {
+    if (typeof window !== "undefined") {
+      window.open(targetUrl, "_blank", "noopener,noreferrer")
+    }
+  }, [])
 
   const slugOrId = typeof params.slug === 'string' ? params.slug : ''
 
@@ -261,6 +289,83 @@ export default function ProductPage() {
   }
 
   const [activeImage, setActiveImage] = React.useState(0)
+
+  const shareTitle = React.useMemo(() => `شوف ${dbProduct?.name || "المنتج ده"} على في السكة`, [dbProduct?.name])
+  const shareMessage = React.useMemo(
+    () => `المنتج ده عاجبني على في السكة 👇\n${dbProduct?.name || product.title}`,
+    [dbProduct?.name, product.title]
+  )
+
+  const handleNativeShare = React.useCallback(async () => {
+    if (!shareUrl) {
+      toast.error("لسه الرابط مش جاهز")
+      return
+    }
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareMessage,
+          url: shareUrl,
+        })
+      } catch (error: any) {
+        if (error?.name !== "AbortError") {
+          setIsShareSheetOpen(true)
+        }
+      }
+      return
+    }
+
+    setIsShareSheetOpen(true)
+  }, [shareMessage, shareTitle, shareUrl])
+
+  const shareTargets = React.useMemo(() => {
+    if (!shareUrl) return []
+
+    const encodedUrl = encodeURIComponent(shareUrl)
+    const encodedText = encodeURIComponent(`${shareMessage}\n${shareUrl}`)
+    const encodedTitle = encodeURIComponent(shareTitle)
+
+    return [
+      {
+        label: "واتساب",
+        emoji: "🟢",
+        helper: "ابعتها لأي حد بسرعة",
+        action: () => openShareUrl(`https://wa.me/?text=${encodedText}`),
+      },
+      {
+        label: "فيسبوك",
+        emoji: "🔵",
+        helper: "انشرها على فيسبوك",
+        action: () => openShareUrl(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`),
+      },
+      {
+        label: "X / تويتر",
+        emoji: "⚫",
+        helper: "شاركها على X",
+        action: () => openShareUrl(`https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`),
+      },
+      {
+        label: "تيليجرام",
+        emoji: "📨",
+        helper: "ابعتها على تيليجرام",
+        action: () => openShareUrl(`https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`),
+      },
+      {
+        label: "إنستجرام",
+        emoji: "📸",
+        helper: "هننسخ الرابط وانت شاركه هناك",
+        action: () => copyShareLink("إنستجرام"),
+      },
+      {
+        label: "تيك توك",
+        emoji: "🎵",
+        helper: "هننسخ الرابط وانت شاركه هناك",
+        action: () => copyShareLink("تيك توك"),
+      },
+    ]
+  }, [copyShareLink, openShareUrl, shareMessage, shareTitle, shareUrl])
 
   if (isLoading) {
     return (
@@ -534,6 +639,15 @@ export default function ProductPage() {
                       onClick={handleBuyNow}
                     >
                       اخلص واشتري دلوقتي
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsShareSheetOpen(true)}
+                      className="mt-3 w-full h-12 rounded-2xl border border-primary/20 bg-primary/5 text-primary font-bold inline-flex items-center justify-center gap-2 hover:bg-primary/10 transition-colors"
+                    >
+                      <Share2 className="w-5 h-5" />
+                      شارك المنتج مع صحابك
                     </button>
 
                     {/* Trust note */}
@@ -891,10 +1005,92 @@ export default function ProductPage() {
             >
               اشتري ⚡
             </button>
+
+            <button
+              type="button"
+              onClick={() => setIsShareSheetOpen(true)}
+              className="h-14 w-14 shrink-0 rounded-2xl border border-primary/20 bg-primary/5 text-primary inline-flex items-center justify-center shadow-[0_6px_24px_rgba(16,185,129,0.12)] active:scale-[0.96] transition-all duration-300"
+              aria-label="شارك المنتج"
+            >
+              <Share2 className="w-5 h-5" />
+            </button>
           </div>
 
         </div>
       </div>
+
+      {isShareSheetOpen && (
+        <div className="fixed inset-0 z-[80] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm px-4" onClick={() => setIsShareSheetOpen(false)}>
+          <div
+            className="w-full max-w-md rounded-t-[2rem] md:rounded-[2rem] border border-surface-hover bg-[#0b1016] p-5 md:p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 mb-5">
+              <div>
+                <p className="text-sm font-bold text-primary mb-1">شارك المنتج وخلي ناس أكتر تشوفه ✨</p>
+                <h3 className="text-xl font-black text-white leading-snug">لو المنتج عاجبك ابعته لحد ممكن يستفيد بيه</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsShareSheetOpen(false)}
+                className="w-10 h-10 rounded-2xl border border-surface-hover text-gray-400 hover:text-white hover:bg-surface transition-colors inline-flex items-center justify-center shrink-0"
+                aria-label="إغلاق"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 mb-4">
+              <p className="text-white font-bold line-clamp-2 mb-1">{product.title}</p>
+              <p className="text-sm text-gray-400">رابط مباشر للمنتج من في السكة، وهننسخه لك فورًا لو المنصة محتاجة كده.</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <button
+                type="button"
+                onClick={handleNativeShare}
+                className="col-span-2 h-12 rounded-2xl bg-primary text-white font-bold inline-flex items-center justify-center gap-2 hover:bg-primary-hover transition-colors"
+              >
+                <Share2 className="w-5 h-5" />
+                مشاركة سريعة
+              </button>
+
+              {shareTargets.map((target) => (
+                <button
+                  key={target.label}
+                  type="button"
+                  onClick={target.action}
+                  className="rounded-2xl border border-surface-hover bg-surface px-4 py-3 text-start hover:bg-surface-hover transition-colors"
+                >
+                  <div className="flex items-center gap-2 text-white font-bold mb-1">
+                    <span className="text-lg leading-none">{target.emoji}</span>
+                    <span>{target.label}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 leading-relaxed">{target.helper}</p>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => copyShareLink()}
+                className="flex-1 h-11 rounded-2xl border border-surface-hover bg-surface text-white font-bold inline-flex items-center justify-center gap-2 hover:bg-surface-hover transition-colors"
+              >
+                <Copy className="w-4 h-4" />
+                انسخ الرابط
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsShareSheetOpen(false)}
+                className="flex-1 h-11 rounded-2xl bg-white/5 text-gray-300 font-bold hover:bg-white/10 transition-colors"
+              >
+                تمام
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </>
