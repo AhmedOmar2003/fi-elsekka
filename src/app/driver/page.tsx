@@ -223,6 +223,7 @@ export default function DriverDashboard() {
     const [isAvailable, setIsAvailable] = useState<boolean | null>(null) // null = not loaded yet
     const knownOrderIds = useRef<Set<string>>(new Set())
     const isFirstLoad = useRef(true)
+    const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_KEY
 
     const fetchOrders = useCallback(async (session: any, userId: string) => {
         try {
@@ -388,44 +389,100 @@ export default function DriverDashboard() {
         }
     }, [fetchOrders, fetchDeliveredOrders, notificationsAllowed, router])
 
-    const subscribeToPush = async () => {
-        setIsSubscribing(true)
+    const syncDriverPushSubscription = useCallback(async (subscription: PushSubscription) => {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+            throw new Error('جلسة المندوب خلصت، سجل دخول تاني')
+        }
+
+        const res = await fetch('/api/driver/subscribe', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({ subscription })
+        })
+
+        if (!res.ok) {
+            const payload = await res.json().catch(() => null)
+            throw new Error(payload?.error || 'فشل حفظ اشتراك إشعارات المندوب')
+        }
+
+        setPushStatus('granted')
+        return true
+    }, [])
+
+    const subscribeToPush = useCallback(async (interactive = true) => {
+        if (typeof window === 'undefined') return false
+        if (!('serviceWorker' in navigator) || !('PushManager' in window) || !window.isSecureContext || !publicVapidKey) {
+            setPushStatus('unsupported')
+            return false
+        }
+
+        setIsSubscribing(interactive)
+
         try {
-            const permission = await Notification.requestPermission()
-            setPushStatus(permission)
-            
-            if (permission !== 'granted') throw new Error('تم رفض تصريح الإشعارات')
+            const currentPermission = Notification.permission
+            if (currentPermission === 'denied') {
+                setPushStatus('denied')
+                return false
+            }
 
             const registration = await navigator.serviceWorker.ready
-            const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_KEY
-            if (!publicVapidKey) throw new Error('VAPID key مفقود')
+            const existingSubscription = await registration.pushManager.getSubscription()
+
+            if (existingSubscription) {
+                const success = await syncDriverPushSubscription(existingSubscription)
+                if (success && interactive) {
+                    toast.success('تم تفعيل إشعارات موبايل المندوب 🔔')
+                }
+                return success
+            }
+
+            if (currentPermission === 'default' && !interactive) {
+                setPushStatus('prompt')
+                return false
+            }
+
+            const permission = currentPermission === 'granted'
+                ? 'granted'
+                : await Notification.requestPermission()
+
+            setPushStatus(permission)
+
+            if (permission !== 'granted') {
+                if (interactive && permission === 'denied') {
+                    toast.error('المتصفح منع الإشعارات، فعّلها من الإعدادات')
+                }
+                return false
+            }
 
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
             })
 
-            const { data: { session } } = await supabase.auth.getSession()
-            if (!session) throw new Error('جلسة منتهية')
-
-            const res = await fetch('/api/driver/subscribe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-                body: JSON.stringify({ subscription })
-            })
-
-            if (!res.ok) throw new Error('فشل حفظ الاشتراك في الخادم')
-            
-            toast.success('تم تفعيل إشعارات الموبايل بنجاح! 🔔')
-        } catch (err: any) {
-            console.error('Push error:', err)
-            if (err.message !== 'تم رفض تصريح الإشعارات') {
-                toast.error(err.message || 'في حاجة عطلت تفعيل الإشعارات')
+            const success = await syncDriverPushSubscription(subscription)
+            if (success && interactive) {
+                toast.success('تم تفعيل إشعارات موبايل المندوب 🔔')
             }
+            return success
+        } catch (err: any) {
+            console.error('Driver push error:', err)
+            setPushStatus('prompt')
+            if (interactive) {
+                toast.error(err?.message || 'في حاجة عطلت تفعيل إشعارات الموبايل')
+            }
+            return false
         } finally {
             setIsSubscribing(false)
         }
-    }
+    }, [publicVapidKey, syncDriverPushSubscription])
+
+    useEffect(() => {
+        void subscribeToPush(false)
+    }, [subscribeToPush])
 
     const acceptOrder = async (orderId: string) => {
         setActionLoadingOrder(orderId)
@@ -686,7 +743,7 @@ export default function DriverDashboard() {
                         </div>
                     </div>
                     <button 
-                        onClick={subscribeToPush}
+                        onClick={() => { void subscribeToPush(true) }}
                         disabled={isSubscribing}
                         className="w-full sm:w-auto shrink-0 bg-primary hover:bg-primary/90 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                     >
