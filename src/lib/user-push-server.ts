@@ -25,7 +25,6 @@ function buildPushPayload(payload: PushNotificationPayload) {
     title,
     body: payload.message,
     icon: '/icon-512x512.svg',
-    badge: '/icon-192x192.svg',
     image: '/icon-512x512.svg',
     silent: false,
     requireInteraction: payload.requireInteraction ?? true,

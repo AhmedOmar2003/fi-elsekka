@@ -15,10 +15,9 @@ self.addEventListener('push', (event: any) => {
         return;
       }
 
-      return (self as any).registration.showNotification(data.title || "في السكة", {
+      const notificationOptions: Record<string, any> = {
         body: data.body || "لديك إشعار جديد",
         icon: data.icon || '/icon-192x192.svg',
-        badge: data.badge || '/icon-192x192.svg',
         image: data.image || '/icon-512x512.svg',
         vibrate: data.vibrate || [180, 80, 220, 80, 320],
         requireInteraction: data.requireInteraction ?? true,
@@ -31,7 +30,13 @@ self.addEventListener('push', (event: any) => {
         actions: data.data?.url ? [
           { action: 'open', title: 'افتح دلوقتي' }
         ] : undefined
-      });
+      };
+
+      if (data.badge) {
+        notificationOptions.badge = data.badge;
+      }
+
+      return (self as any).registration.showNotification(data.title || "في السكة", notificationOptions);
     })()
   );
 });

@@ -22,7 +22,6 @@ function buildDriverPushPayload(payload: DriverPushPayload) {
     title: payload.title.startsWith('في السكة') ? payload.title : `في السكة | ${payload.title}`,
     body: payload.message,
     icon: '/icon-512x512.svg',
-    badge: '/icon-192x192.svg',
     image: '/icon-512x512.svg',
     silent: false,
     requireInteraction: payload.requireInteraction ?? true,
@@ -72,7 +71,11 @@ export async function sendPushToDriverDevices(
   await Promise.all(
     uniqueSubscriptions.map(async (subscriptionRecord: any) => {
       try {
-        await webpush.sendNotification(subscriptionRecord.subscription, pushPayload);
+        await webpush.sendNotification(subscriptionRecord.subscription, pushPayload, {
+          TTL: 30,
+          urgency: 'high',
+          topic: 'driver-assignment'
+        });
       } catch (pushError: any) {
         if (pushError?.statusCode === 404 || pushError?.statusCode === 410) {
           await supabaseAdmin

@@ -22,20 +22,31 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        // ALWAYS send a realtime broadcast to the driver's active dashboard
-        // This makes the UI update instantly if the window is open.
-        await supabaseAdmin.channel(`driver-orders-${driverId}`).send({
-            type: 'broadcast',
-            event: 'new-assignment',
-            payload: { timestamp: Date.now() }
-        });
+        const driverLink = `/driver${orderId ? `?order=${orderId}` : ''}`;
 
-        const pushResult = await sendPushToDriverDevices(supabaseAdmin, driverId, {
-            title,
-            message: body,
-            link: `/driver${orderId ? `?order=${orderId}` : ''}`,
-            requireInteraction: true,
-        });
+        const [broadcastResult, pushResultSettled] = await Promise.allSettled([
+            supabaseAdmin.channel(`driver-orders-${driverId}`).send({
+                type: 'broadcast',
+                event: 'new-assignment',
+                payload: { timestamp: Date.now(), orderId }
+            }),
+            sendPushToDriverDevices(supabaseAdmin, driverId, {
+                title,
+                message: body,
+                link: driverLink,
+                requireInteraction: true,
+            })
+        ]);
+
+        if (broadcastResult.status === 'rejected') {
+            console.error('Driver assignment realtime broadcast failed:', broadcastResult.reason);
+        }
+
+        if (pushResultSettled.status === 'rejected') {
+            throw pushResultSettled.reason;
+        }
+
+        const pushResult = pushResultSettled.value;
 
         if (pushResult.success && pushResult.skipped) {
             return NextResponse.json({ message: 'Broadcast sent, but no push devices registered' });
