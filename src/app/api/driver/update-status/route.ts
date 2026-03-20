@@ -87,15 +87,11 @@ export async function POST(request: Request) {
       })
 
       if (order.user_id) {
-        await createUserNotificationWithPush(
-          order.user_id,
-          'طلبك بقى في الطريق 🛵',
-          {
-            title: 'طلبك بقى في الطريق 🛵',
-            message: 'المندوب استلم طلبك من المكان وخرج بالفعل علشان يوصلهولك. تابع الطلب وشوف هو وصل لفين.',
-            link: '/orders'
-          }
-        )
+        await createUserNotificationWithPush(supabaseAdmin, order.user_id, {
+          title: 'طلبك بقى في الطريق 🛵',
+          message: 'المندوب استلم طلبك من المكان وخرج بالفعل علشان يوصلهولك. تابع الطلب وشوف هو وصل لفين.',
+          link: '/orders'
+        })
       }
     }
 
