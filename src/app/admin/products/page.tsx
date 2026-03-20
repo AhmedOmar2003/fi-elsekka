@@ -21,6 +21,7 @@ type Product = {
     description: string | null;
     is_best_seller?: boolean;
     show_in_offers?: boolean;
+    specifications?: Record<string, any> | null;
     product_specifications?: { id?: string, label: string, description: string }[];
     categories?: { name: string } | null;
 };
@@ -37,6 +38,23 @@ const EMPTY_FORM = {
     show_in_offers: false,
     specs: [] as { id?: string, label: string, description: string }[]
 };
+
+function normalizeSpecs(
+    relationalSpecs?: { id?: string; label: string; description: string }[] | null,
+    jsonSpecs?: Record<string, any> | null,
+) {
+    if (Array.isArray(relationalSpecs) && relationalSpecs.length > 0) {
+        return relationalSpecs;
+    }
+
+    const fallbackSpecs = Array.isArray(jsonSpecs?.custom_specs) ? jsonSpecs.custom_specs : [];
+    return fallbackSpecs
+        .filter((spec: any) => spec?.label?.trim() && (spec?.description || spec?.value || '').trim())
+        .map((spec: any) => ({
+            label: spec.label.trim(),
+            description: String(spec.description || spec.value).trim(),
+        }));
+}
 
 export default function AdminProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
@@ -85,7 +103,7 @@ export default function AdminProductsPage() {
             images_files: [null, null, null, null],
             is_best_seller: !!p.is_best_seller,
             show_in_offers: !!p.show_in_offers,
-            specs: p.product_specifications || [],
+            specs: normalizeSpecs(p.product_specifications, p.specifications),
         });
         setIsModalOpen(true);
     };
@@ -162,20 +180,36 @@ export default function AdminProductsPage() {
                 images: finalImages.filter(url => url && url.trim() !== '' && !url.startsWith('blob:')),
                 is_best_seller: form.is_best_seller,
                 show_in_offers: form.show_in_offers,
+                specifications: {
+                    custom_specs: form.specs
+                        .filter(spec => spec.label.trim() && spec.description.trim())
+                        .map(spec => ({
+                            label: spec.label.trim(),
+                            description: spec.description.trim(),
+                        })),
+                },
             };
             let result;
+            let specsResult = { error: null as any };
             if (editingId) {
                 result = await updateProduct(editingId, payload);
-                if (!result.error) await saveProductSpecifications(editingId, form.specs);
+                if (!result.error) specsResult = await saveProductSpecifications(editingId, form.specs);
             } else {
                 result = await createProduct(payload);
-                if (!result.error && result.data?.id) await saveProductSpecifications(result.data.id, form.specs);
+                if (!result.error && result.data?.id) specsResult = await saveProductSpecifications(result.data.id, form.specs);
             }
 
             if (result?.error) {
                 const msg = (result.error as any).message || JSON.stringify(result.error);
                 setSaveError(`فشل الحفظ: ${msg}`);
                 toast.error(`فشل الحفظ: ${msg}`, { id: loadingToast });
+                return;
+            }
+
+            if (specsResult?.error) {
+                const msg = (specsResult.error as any).message || JSON.stringify(specsResult.error);
+                setSaveError(`المنتج اتحفظ بس المواصفات متسجلتش: ${msg}`);
+                toast.error(`المنتج اتحفظ بس المواصفات متسجلتش: ${msg}`, { id: loadingToast });
                 return;
             }
 

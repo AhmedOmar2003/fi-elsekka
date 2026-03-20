@@ -713,7 +713,11 @@ export async function updateProduct(id: string, payload: Record<string, unknown>
 
 export async function saveProductSpecifications(productId: string, specs: { id?: string, label: string, description: string }[]) {
     // 1. Delete all existing specs for this product to keep it simple
-    await supabase.from('product_specifications').delete().eq('product_id', productId);
+    const deleteRes = await supabase.from('product_specifications').delete().eq('product_id', productId);
+    if (deleteRes.error) {
+        logError('saveProductSpecifications.delete', deleteRes.error);
+        return { error: deleteRes.error };
+    }
 
     // 2. Insert new valid specs
     const newSpecs = specs.filter(s => s.label.trim() && s.description.trim()).map(s => ({
@@ -724,8 +728,13 @@ export async function saveProductSpecifications(productId: string, specs: { id?:
 
     if (newSpecs.length > 0) {
         const res = await supabase.from('product_specifications').insert(newSpecs);
-        if (res.error) logError('saveProductSpecifications', res.error);
+        if (res.error) {
+            logError('saveProductSpecifications.insert', res.error);
+            return { error: res.error };
+        }
     }
+
+    return { error: null };
 }
 
 

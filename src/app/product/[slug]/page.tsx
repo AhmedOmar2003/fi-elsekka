@@ -57,6 +57,28 @@ export default function ProductPage() {
   const [dbProduct, setDbProduct] = React.useState<Product | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
 
+  const normalizedSpecs = React.useMemo(() => {
+    if (!dbProduct) return []
+
+    if (Array.isArray(dbProduct.product_specifications) && dbProduct.product_specifications.length > 0) {
+      return dbProduct.product_specifications.map((spec) => ({
+        label: spec.label,
+        value: spec.description,
+      }))
+    }
+
+    const fallbackSpecs = Array.isArray(dbProduct.specifications?.custom_specs)
+      ? dbProduct.specifications.custom_specs
+      : []
+
+    return fallbackSpecs
+      .filter((spec: any) => spec?.label?.trim() && (spec?.description || spec?.value || '').trim())
+      .map((spec: any) => ({
+        label: spec.label.trim(),
+        value: String(spec.description || spec.value).trim(),
+      }))
+  }, [dbProduct])
+
   React.useEffect(() => {
     const loadProduct = async () => {
       setIsLoading(true)
@@ -191,8 +213,8 @@ export default function ProductPage() {
       stock: dbProduct.stock_quantity ? `متوفر ${dbProduct.stock_quantity} قطعة` : (dbProduct.specifications?.stock || "متوفر"),
       stockQty: dbProduct.stock_quantity ?? null,
       description: dbProduct.description || "لا يوجد وصف متاح لهذا المنتج حالياً.",
-      specs: dbProduct.product_specifications && dbProduct.product_specifications.length > 0
-        ? dbProduct.product_specifications.map(s => ({ label: s.label, value: s.description }))
+      specs: normalizedSpecs.length > 0
+        ? normalizedSpecs
         : [
           { label: "الماركة", value: dbProduct.categories?.name || "عام" },
         ],
