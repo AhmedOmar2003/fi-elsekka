@@ -72,7 +72,7 @@ const DRAWER_ITEMS = [
 // ── Search Results Component ────────────────────────────────────────────
 function SearchResults({ query, onSelect }: { query: string; onSelect: () => void }) {
   const router = useRouter()
-  const { products, categories } = useProducts()
+  const { products, categories, isLoadingProducts } = useProducts()
   
   const trimmed = query.trim().toLowerCase()
   
@@ -94,7 +94,12 @@ function SearchResults({ query, onSelect }: { query: string; onSelect: () => voi
 
   return (
     <div className="absolute top-full left-0 right-0 mt-2 bg-surface border border-surface-hover rounded-2xl shadow-premium overflow-hidden z-50 max-h-[70vh] overflow-y-auto">
-      {!hasResults ? (
+      {isLoadingProducts ? (
+        <div className="p-6 text-center">
+          <Search className="w-8 h-8 text-primary/60 mx-auto mb-2 animate-pulse" />
+          <p className="text-gray-500 text-sm font-bold">بندورلك على المنتج...</p>
+        </div>
+      ) : !hasResults ? (
         <div className="p-6 text-center">
           <Search className="w-8 h-8 text-gray-400 mx-auto mb-2" />
           <p className="text-gray-500 text-sm font-bold">مفيش نتايج لـ "{query}"</p>
@@ -183,7 +188,7 @@ export function Header() {
   const router = useRouter()
   const { cartCount } = useCart()
   const { user, profile } = useAuth()
-  const { categories } = useProducts()
+  const { categories, ensureProductsLoaded, ensureCategoriesLoaded } = useProducts()
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
   const [isSearchOpen, setIsSearchOpen] = React.useState(false)
@@ -230,6 +235,16 @@ export function Header() {
     document.body.style.overflow = overflow
     return () => { document.body.style.overflow = "unset" }
   }, [isMobileMenuOpen, isSearchOpen])
+
+  React.useEffect(() => {
+    void ensureCategoriesLoaded()
+  }, [ensureCategoriesLoaded])
+
+  React.useEffect(() => {
+    if (deferredDesktopQuery.trim().length >= 2 || deferredMobileQuery.trim().length >= 2 || isSearchOpen) {
+      void ensureProductsLoaded()
+    }
+  }, [deferredDesktopQuery, deferredMobileQuery, ensureProductsLoaded, isSearchOpen])
 
   const handleDesktopSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && desktopQuery.trim()) {
