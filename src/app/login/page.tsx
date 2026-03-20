@@ -7,7 +7,7 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { signIn } from "@/services/authService"
+import { signIn, signOut } from "@/services/authService"
 import { supabase } from "@/lib/supabase"
 import { LogIn, AlertCircle, Mail } from "lucide-react"
 import { PasswordInput } from "@/components/ui/password-input"
@@ -71,10 +71,10 @@ function LoginContent() {
       return
     }
 
-    // Redirect drivers directly to their dashboard
     const userRole = data?.user?.user_metadata?.role;
     if (userRole === 'driver') {
-      router.push('/driver');
+      await signOut()
+      router.push(`/driver/login?blocked=1&email=${encodeURIComponent(email)}`)
       return;
     }
 
@@ -156,6 +156,11 @@ function LoginContent() {
       </form>
 
       <div className="mt-8 text-center text-gray-500 text-sm">
+        <div className="mb-3">
+          <Link href="/driver/login" className="text-primary font-bold hover:underline">
+            لو إنت مندوب، ادخل من صفحة المندوبين من هنا
+          </Link>
+        </div>
         معندكش حساب؟ {" "}
         <Link href={`/register${redirectParams ? `?redirect=${redirectParams}` : ''}`} className="text-primary font-bold hover:underline">
           أنشئ حساب جديد

@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { signOut } from '@/services/authService'
 import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown, ChevronUp, Bell, BellOff, X, AlertCircle, Coffee, Truck } from 'lucide-react'
 import { toast } from 'sonner'
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery'
@@ -311,7 +312,7 @@ export default function DriverDashboard() {
         const init = async () => {
             setIsLoading(true)
             const { data: { session } } = await supabase.auth.getSession()
-            if (!session) { router.push('/login'); return; }
+            if (!session) { router.push('/driver/login'); return; }
             const user = session.user
 
             // Check role from auth metadata first, then fall back to public.users table
@@ -635,9 +636,9 @@ export default function DriverDashboard() {
     }
 
     const handleLogout = async () => {
-        await supabase.auth.signOut()
-        router.push('/login')
-    }
+        await signOut()
+        router.push('/driver/login?logged_out=1')
+     }
 
     if (isLoading) {
         return (
