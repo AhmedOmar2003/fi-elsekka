@@ -82,7 +82,10 @@ function OrderCard({ order, onMarkDelivered, onMarkPickedUp, isUpdating }: {
             {/* Header row - always visible */}
             <button
                 type="button"
-                onClick={() => setExpanded(v => !v)}
+                onClick={(event) => {
+                    event.preventDefault()
+                    setExpanded(v => !v)
+                }}
                 className="w-full flex items-center justify-between gap-3 p-4 text-right"
             >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -198,7 +201,11 @@ function OrderCard({ order, onMarkDelivered, onMarkPickedUp, isUpdating }: {
                     {!isDelivered && isProcessing && (
                         <button
                             type="button"
-                            onClick={() => onMarkPickedUp(order.id)}
+                            onClick={(event) => {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                onMarkPickedUp(order.id)
+                            }}
                             disabled={isUpdating}
                             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
                         >
@@ -212,7 +219,11 @@ function OrderCard({ order, onMarkDelivered, onMarkPickedUp, isUpdating }: {
                     {!isDelivered && isShipped && (
                         <button
                             type="button"
-                            onClick={() => onMarkDelivered(order.id)}
+                            onClick={(event) => {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                onMarkDelivered(order.id)
+                            }}
                             disabled={isUpdating}
                             className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3.5 rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
                         >
@@ -687,6 +698,7 @@ export default function DriverDashboard() {
                         
                         <div className="flex flex-col gap-3">
                             <button
+                                type="button"
                                 onClick={() => handleSetAvailability(true)}
                                 disabled={isSettingAvailability}
                                 className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary/20 transition-all flex justify-center items-center gap-2"
@@ -694,6 +706,7 @@ export default function DriverDashboard() {
                                 {isSettingAvailability ? <Loader2 className="w-5 h-5 animate-spin" /> : 'جاهز للطلبات ورزقي على الله 🛵'}
                             </button>
                             <button
+                                type="button"
                                 onClick={() => handleSetAvailability(false)}
                                 disabled={isSettingAvailability}
                                 className="w-full bg-surface-hover border border-surface-hover hover:bg-rose-500/10 hover:border-rose-500/20 hover:text-rose-400 text-gray-400 font-bold py-3.5 rounded-xl transition-all flex justify-center items-center gap-2"
