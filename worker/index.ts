@@ -17,8 +17,8 @@ self.addEventListener('push', (event: any) => {
 
       const notificationOptions: Record<string, any> = {
         body: data.body || "لديك إشعار جديد",
-        icon: data.icon || '/icon-192x192.svg',
-        image: data.image || '/icon-512x512.svg',
+        icon: data.icon || '/notification-icon-192.png',
+        image: data.image || '/notification-icon-512.png',
         vibrate: data.vibrate || [180, 80, 220, 80, 320],
         requireInteraction: data.requireInteraction ?? true,
         renotify: data.renotify ?? true,

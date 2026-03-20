@@ -24,8 +24,8 @@ function buildPushPayload(payload: PushNotificationPayload) {
   return JSON.stringify({
     title,
     body: payload.message,
-    icon: '/icon-512x512.svg',
-    image: '/icon-512x512.svg',
+    icon: '/notification-icon-512.png',
+    image: '/notification-icon-512.png',
     silent: false,
     requireInteraction: payload.requireInteraction ?? true,
     renotify: true,

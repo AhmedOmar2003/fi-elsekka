@@ -25,6 +25,16 @@ export const metadata: Metadata = {
   title: "في السكة - Fi El Sekka",
   description: "Your smart local marketplace companion in Egypt. Fast, friendly, and reliable.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/notification-icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/notification-icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/notification-icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    shortcut: ["/notification-icon-192.png"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

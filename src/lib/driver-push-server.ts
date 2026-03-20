@@ -21,8 +21,8 @@ function buildDriverPushPayload(payload: DriverPushPayload) {
   return JSON.stringify({
     title: payload.title.startsWith('في السكة') ? payload.title : `في السكة | ${payload.title}`,
     body: payload.message,
-    icon: '/icon-512x512.svg',
-    image: '/icon-512x512.svg',
+    icon: '/notification-icon-512.png',
+    image: '/notification-icon-512.png',
     silent: false,
     requireInteraction: payload.requireInteraction ?? true,
     renotify: true,
