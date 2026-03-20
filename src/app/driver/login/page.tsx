@@ -31,6 +31,8 @@ function DriverLoginContent() {
   const [showLoggedOutModal, setShowLoggedOutModal] = React.useState(false)
 
   React.useEffect(() => {
+    const logoutFlash = typeof window !== "undefined" ? sessionStorage.getItem("driver_logout_flash") : null
+
     if (searchParams.get("blocked") === "1") {
       setSuccessMsg("")
       setErrorMsg("الحساب ده خاص بصفحة المندوبين بس. ادخل من هنا وهتفتحلك لوحة المندوب على طول.")
@@ -38,7 +40,10 @@ function DriverLoginContent() {
       return
     }
 
-    if (searchParams.get("logged_out") === "1") {
+    if (searchParams.get("logged_out") === "1" || logoutFlash === "1") {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("driver_logout_flash")
+      }
       setErrorMsg("")
       setSuccessMsg("مستنيينك تيجي توصل طلبات تاني يا بطل 🛵")
       setShowLoggedOutModal(true)

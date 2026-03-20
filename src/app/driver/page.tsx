@@ -636,8 +636,11 @@ export default function DriverDashboard() {
     }
 
     const handleLogout = async () => {
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('driver_logout_flash', '1')
+        }
         await signOut()
-        router.push('/driver/login?logged_out=1')
+        window.location.href = '/driver/login?logged_out=1'
      }
 
     if (isLoading) {
