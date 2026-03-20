@@ -62,7 +62,7 @@ const DRAWER_ITEMS = [
   { label: "الأقسام", href: "/categories", icon: <LayoutGrid className="w-5 h-5" /> },
   { label: "حسابي", href: "/account", icon: <User className="w-5 h-5" /> },
   { label: "طلباتي", href: "/orders", icon: <Package className="w-5 h-5" /> },
-  { label: "اعرف عنا", href: "/about", icon: <Info className="w-5 h-5" /> },
+  { label: "احنا مين", href: "/about", icon: <Info className="w-5 h-5" /> },
   { label: "الأسئلة الشائعة", href: "/faq", icon: <MessageCircleQuestion className="w-5 h-5" /> },
   { label: "تواصل معنا", href: "/contact", icon: <Phone className="w-5 h-5" /> },
   { label: "الدعم", href: "/support", icon: <HelpCircle className="w-5 h-5" /> },
@@ -103,7 +103,7 @@ function SearchResults({ query, onSelect }: { query: string; onSelect: () => voi
         <div className="p-6 text-center">
           <Search className="w-8 h-8 text-gray-400 mx-auto mb-2" />
           <p className="text-gray-500 text-sm font-bold">مفيش نتايج لـ "{query}"</p>
-          <p className="text-gray-400 text-xs mt-1">جرب كلمة تانية أو تصفح الأقسام</p>
+          <p className="text-gray-400 text-xs mt-1">جرّب كلمة تانية أو لف في الأقسام</p>
         </div>
       ) : (
         <>
@@ -174,7 +174,7 @@ function SearchResults({ query, onSelect }: { query: string; onSelect: () => voi
               className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-primary hover:bg-primary/10 transition-colors"
             >
               <Search className="w-4 h-4" />
-              عرض كل النتايج لـ "{query}"
+              شوف كل النتايج لـ "{query}"
             </button>
           </div>
         </>
@@ -343,7 +343,7 @@ export function Header() {
             <Link href="/login">
               <Button variant="ghost" className="text-gray-500 hover:text-foreground flex items-center gap-2">
                 <LogIn className="h-4 w-4" />
-                <span>دخول</span>
+                <span>ادخل</span>
               </Button>
             </Link>
           )}
@@ -392,7 +392,7 @@ export function Header() {
           aria-label="ابحث عن منتج"
         >
           <Search className="h-4 w-4 shrink-0" />
-          <span>بتدور على إيه؟ ابحث هنا...</span>
+          <span>بتدوّر على إيه؟ اكتب هنا...</span>
         </button>
       </div>
 
@@ -434,7 +434,7 @@ export function Header() {
             ) : (
               /* Default: category suggestions */
               <div className="p-4">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">تصفح الأقسام</h3>
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">لف في الأقسام</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {categories.map(cat => (
                     <Link
@@ -507,7 +507,7 @@ export function Header() {
                 >
                   <div className="flex items-center gap-3">
                     <LogIn className="w-5 h-5" />
-                    <span className="font-bold text-sm">تسجيل الدخول / إنشاء حساب</span>
+                    <span className="font-bold text-sm">ادخل أو اعمل حساب</span>
                   </div>
                   <ChevronLeft className="w-4 h-4 text-gray-600" />
                 </Link>
@@ -534,7 +534,7 @@ export function Header() {
               >
                 <div className="flex items-center gap-3">
                   <BadgePercent className="w-5 h-5" />
-                  <span className="font-bold text-sm">أفضل العروض</span>
+                  <span className="font-bold text-sm">أحلى العروض</span>
                   <span className="text-[10px] bg-secondary/20 text-secondary px-2 py-0.5 rounded-full font-bold">جديد</span>
                 </div>
                 <ChevronLeft className="w-4 h-4 text-gray-600" />
@@ -543,8 +543,8 @@ export function Header() {
 
             <div className="p-4 border-t border-surface-hover">
               <div className="bg-gradient-to-br from-primary/15 to-transparent p-4 rounded-2xl border border-primary/20 bg-surface">
-                <p className="font-bold text-primary text-sm mb-1">محتاج مساعدة؟ 💬</p>
-                <p className="text-xs text-gray-500 mb-3">فريق خدمة العملاء موجود عشانك</p>
+                <p className="font-bold text-primary text-sm mb-1">محتاج حد يساعدك؟ 💬</p>
+                <p className="text-xs text-gray-500 mb-3">فريقنا موجود علشانك في أي وقت</p>
                 <Link
                   href="/contact"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -566,3 +566,4 @@ export function Header() {
     </header>
   )
 }
+

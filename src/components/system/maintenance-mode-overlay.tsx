@@ -54,12 +54,12 @@ export function MaintenanceModeOverlay() {
   }
 
   const driverView = isDriverPath(pathname);
-  const title = driverView ? 'إحنا بنظبط الشغل شوية' : 'إحنا بنعمل شوية تحسينات';
+  const title = driverView ? 'إحنا بنظبط الشغل شوية' : 'إحنا بنظبط الدنيا شوية';
   const body = driverView
-    ? 'استنى علينا شوية يا بطل. بنحل شوية حاجات ونحسن الأداء علشان الطلبات ترجعلك مظبوطة وسريعة.'
-    : 'استنى علينا شوية. بنحسن الأداء ونظبط شوية حاجات علشان تجربتك تبقى أهدى وأسرع وأحسن.';
+    ? 'استنى علينا شوية يا بطل. بنظبط كام حاجة ونحسن الأداء علشان الطلبات ترجعلك مظبوطة وسريعة.'
+    : 'استنى علينا شوية. بنظبط كام حاجة ونحسن الأداء علشان تجربتك تبقى أسرع وأريح.';
   const hint = driverView
-    ? 'أول ما نخلص هنرجعلك الشغل تمام من غير ما تعمل حاجة.'
+    ? 'أول ما نخلص الشغل هيرجع معاك عادي من غير ما تعمل حاجة.'
     : 'أول ما نخلص هتلاقي الموقع رجع لوحده، فخليك مطمن.';
 
   return (
@@ -77,7 +77,7 @@ export function MaintenanceModeOverlay() {
             <div className="mt-5 rounded-3xl border border-primary/10 bg-primary/5 px-4 py-4">
               <div className="flex items-center justify-center gap-2 text-primary">
                 <Sparkles className="h-4 w-4" />
-                <p className="text-sm font-black">بنحسن الأداء ونظبط المشاكل اللي محتاجة لمسة سريعة</p>
+                <p className="text-sm font-black">بنحسن الأداء ونظبط الحاجات اللي كانت عاوزة رتوشة سريعة</p>
               </div>
               <p className="mt-2 text-xs leading-6 text-gray-500">{hint}</p>
             </div>
@@ -87,3 +87,4 @@ export function MaintenanceModeOverlay() {
     </div>
   );
 }
+

@@ -333,15 +333,15 @@ export default function AdminPage() {
         <div className="space-y-6">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <h1 className="text-2xl font-heading font-black text-foreground">غرفة قيادة الإدارة</h1>
-                    <p className="text-sm text-gray-500 mt-1">ملخص فوري للحالة التشغيلية، مع فصل واضح بين الطلبات العادية وطلبات المنتجات اللي لسه بندور عليها</p>
+                    <h1 className="text-2xl font-heading font-black text-foreground">لوحة متابعة الشغل</h1>
+                    <p className="text-sm text-gray-500 mt-1">كل اللي محتاجه قدامك بسرعة، من الطلبات العادية لحد الطلبات اللي لسه بندور عليها</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <Link href="/admin/staff" className="rounded-2xl border border-violet-500/20 bg-violet-500/10 px-4 py-2.5 text-sm font-bold text-violet-400 transition-colors hover:bg-violet-500/15">
                         إدارة الطاقم
                     </Link>
                     <Link href="/admin/drivers" className="rounded-2xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary/15">
-                        متابعة المندوبين
+                        شوف المندوبين
                     </Link>
                 </div>
             </div>
@@ -482,7 +482,7 @@ export default function AdminPage() {
                                 ))}
                             </div>
                         ) : recentOrders.length === 0 ? (
-                            <div className="p-10 text-center text-gray-500 text-sm">لا توجد طلبات بعد</div>
+                            <div className="p-10 text-center text-gray-500 text-sm">لسه مفيش طلبات ظاهرة</div>
                         ) : (
                             <div className="divide-y divide-surface-hover">
                                 {recentOrders.map((order: any) => {
@@ -520,7 +520,7 @@ export default function AdminPage() {
                     <div className="bg-surface border border-surface-hover rounded-2xl p-5 shadow-sm">
                         <div className="flex items-center gap-2 mb-4">
                             <ShieldAlert className="w-4 h-4 text-violet-400" />
-                            <h2 className="font-bold text-foreground text-sm">صحة الفريق</h2>
+                            <h2 className="font-bold text-foreground text-sm">حالة الفريق</h2>
                         </div>
 
                         <div className="space-y-3">
@@ -558,7 +558,7 @@ export default function AdminPage() {
                                 <h2 className="font-bold text-foreground text-sm">نبض الطاقم</h2>
                             </div>
                             <Link href="/admin/staff" className="text-xs text-primary hover:text-primary/80 transition-colors">
-                                فتح إدارة الطاقم
+                                افتح إدارة الطاقم
                             </Link>
                         </div>
 
@@ -600,7 +600,7 @@ export default function AdminPage() {
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                                 <Warehouse className="w-4 h-4 text-sky-400" />
-                                <h2 className="font-bold text-foreground text-sm">مراقبة المخزون</h2>
+                                <h2 className="font-bold text-foreground text-sm">تابع المخزون</h2>
                             </div>
                             <Link href="/admin/products" className="text-xs text-primary hover:text-primary/80 transition-colors">
                                 فتح المنتجات
@@ -670,10 +670,10 @@ export default function AdminPage() {
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                                 <Users className="w-4 h-4 text-primary" />
-                                <h2 className="font-bold text-foreground text-sm">آخر المنضمين</h2>
+                                <h2 className="font-bold text-foreground text-sm">أحدث المنضمين</h2>
                             </div>
                             <Link href="/admin/users" className="text-xs text-primary hover:text-primary/80 transition-colors">
-                                فتح السجلات
+                                افتح السجلات
                             </Link>
                         </div>
 
@@ -702,10 +702,10 @@ export default function AdminPage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                    { label: 'إدارة الطاقم والصلاحيات', href: '/admin/staff', icon: ShieldAlert, tone: 'from-violet-500/10 to-transparent border-violet-500/20 text-violet-400' },
-                    { label: 'توزيع المندوبين', href: '/admin/drivers', icon: Truck, tone: 'from-primary/10 to-transparent border-primary/20 text-primary' },
+                    { label: 'الطاقم والصلاحيات', href: '/admin/staff', icon: ShieldAlert, tone: 'from-violet-500/10 to-transparent border-violet-500/20 text-violet-400' },
+                    { label: 'وزّع المندوبين', href: '/admin/drivers', icon: Truck, tone: 'from-primary/10 to-transparent border-primary/20 text-primary' },
                     { label: 'إدارة المستخدمين', href: '/admin/users', icon: Users, tone: 'from-sky-500/10 to-transparent border-sky-500/20 text-sky-400' },
-                    { label: 'إرسال إشعار عروض', href: '#', icon: BellRing, tone: 'from-rose-500/10 to-transparent border-rose-500/20 text-rose-400', action: handleBroadcastOffers },
+                    { label: 'ابعت إشعار بالعروض', href: '#', icon: BellRing, tone: 'from-rose-500/10 to-transparent border-rose-500/20 text-rose-400', action: handleBroadcastOffers },
                 ].map((item) => {
                     const Icon = item.icon;
                     const content = (
@@ -715,7 +715,7 @@ export default function AdminPage() {
                             {item.action && isBroadcasting && (
                                 <div className="mt-3 flex items-center gap-2 text-xs">
                                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                    جاري الإرسال...
+                                    بنبعت دلوقتي...
                                 </div>
                             )}
                         </>
@@ -748,3 +748,4 @@ export default function AdminPage() {
         </div>
     );
 }
+

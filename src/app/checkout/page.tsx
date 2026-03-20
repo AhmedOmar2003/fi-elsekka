@@ -154,7 +154,7 @@ function CheckoutContent() {
       if (!user) return
       if (!isTextRequestCheckout && displayItems.length === 0) return
       if (isTextRequestCheckout && !canSubmitTextRequest) {
-         setErrorMsg("أكمل طلبك أولًا بالنص أو بالصور ثم ارجع لإتمام الطلب.")
+         setErrorMsg("كمّل طلبك الأول بالنص أو الصور وبعدين ابعته.")
          return
       }
       setIsSubmitting(true)
@@ -181,7 +181,7 @@ function CheckoutContent() {
       setIsSubmitting(false)
 
       if (error) {
-         setErrorMsg((error as any).message || (isTextRequestCheckout ? "حصل خطأ أثناء إرسال طلب التسعير، حاول مرة أخرى!" : "حصل خطأ أثناء تأكيد الطلب، حاول مرة أخرى!"))
+         setErrorMsg((error as any).message || (isTextRequestCheckout ? "في حاجة عطلتنا وإحنا بنبعت طلبك، جرّب تاني." : "في حاجة عطلت التأكيد، جرّب مرة كمان."))
          return
       }
 
@@ -217,7 +217,7 @@ function CheckoutContent() {
       e.preventDefault()
       if (isSearchRequestCheckout) {
          if (!canSubmitTextRequest) {
-            setErrorMsg("اكتب طلبك الأول بشكل واضح قبل ما نبعت ندوّر عليه.")
+            setErrorMsg("اكتب طلبك بشكل أوضح شوية قبل ما نبعت ندور عليه.")
             return
          }
          setShowSearchConfirmPopup(true)
@@ -248,8 +248,8 @@ function CheckoutContent() {
                <div className="w-24 h-24 bg-surface rounded-full flex items-center justify-center mb-6 border border-surface-hover shadow-lg">
                   <AlertCircle className="w-10 h-10 text-rose-500" />
                </div>
-               <h2 className="text-2xl font-black text-foreground mb-3">لازم تسجل دخول الأول!</h2>
-               <p className="text-gray-400 max-w-sm mb-8">عشان تقدر تكمل طلبك وتحفظ عناوينك، سجل دخول دلوقتي.</p>
+               <h2 className="text-2xl font-black text-foreground mb-3">لازم تدخل الأول 👋</h2>
+               <p className="text-gray-400 max-w-sm mb-8">علشان تكمّل طلبك وتحفظ عناوينك، ادخل بحسابك الأول.</p>
                <div className="flex flex-col sm:flex-row gap-3">
                   <Button size="lg" className="rounded-xl px-10 font-bold text-lg shadow-primary/20 shadow-lg" asChild>
                      <Link href="/login?redirect=/checkout">تسجيل الدخول</Link>
@@ -274,15 +274,15 @@ function CheckoutContent() {
                      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                         <Search className="h-7 w-7" />
                      </div>
-                     <h2 className="text-center text-2xl font-black text-foreground">إحنا هندورلك عليه</h2>
+                     <h2 className="text-center text-2xl font-black text-foreground">إحنا هندورلك عليه 👀</h2>
                      <p className="mt-3 text-center text-sm leading-7 text-gray-500">
-                        استنى شوية وإحنا هندورلك على طلبك. ولو لقيناه هنبعتلك إشعار ونقولك سعره كام، وتتابعه من صفحة حسابك في قسم
+                        استنى علينا شوية وإحنا هندورلك على طلبك. ولو لقيناه هنبعتلك إشعار ونقولك سعره كام، وتتابعه من صفحة حسابك في قسم
                         <span className="font-black text-foreground"> حاجات بندور عليها</span>.
                      </p>
                      <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-right">
                         <p className="text-xs font-black text-amber-500">مهم</p>
                         <p className="mt-2 text-sm leading-7 text-gray-500">
-                           طول ما إحنا لسه بندور على الطلب، تقدر تلغيه من حسابك في أي وقت. لكن لو لقيناه ورجعنالك بالسعر، ساعتها أنت اللي هتقرر نكمل أو لا.
+                           طول ما إحنا لسه بندور على الطلب، تقدر تلغيه من حسابك في أي وقت. إنما لو لقيناه ورجعنالك بالسعر، ساعتها القرار هيبقى عندك نكمّل ولا لأ.
                         </p>
                      </div>
                      <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -314,7 +314,7 @@ function CheckoutContent() {
 
             <div className="bg-surface border-b border-surface-hover py-4 md:py-6">
                <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-                  <h1 className="text-xl md:text-2xl font-black text-foreground">إتمام الطلب</h1>
+                  <h1 className="text-xl md:text-2xl font-black text-foreground">كمّل طلبك</h1>
                </div>
             </div>
 
@@ -330,7 +330,7 @@ function CheckoutContent() {
                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                               <User className="w-5 h-5" />
                            </span>
-                           المعلومات الشخصية
+                           بياناتك
                         </h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -343,9 +343,9 @@ function CheckoutContent() {
                               <Input id="lastName" value={lastName} onChange={e => setLastName(e.target.value)} required placeholder="مثال: محمد" />
                            </div>
                            <div className="space-y-2 md:col-span-2">
-                              <Label htmlFor="phone">رقم الموبايل</Label>
+                              <Label htmlFor="phone">رقم موبايلك</Label>
                               <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} type="tel" required placeholder="01xxxxxxxxx" dir="ltr" className="text-right" />
-                              <p className="text-xs text-gray-400">هنتواصل معاك على الرقم ده لتأكيد الطلب</p>
+                              <p className="text-xs text-gray-400">ده الرقم اللي هنتواصل معاك عليه بخصوص الطلب</p>
                            </div>
                         </div>
                      </div>
@@ -383,7 +383,7 @@ function CheckoutContent() {
                               <Input id="address" value={address} onChange={e => setAddress(e.target.value)} required placeholder="اسم الشارع، رقم العمارة، رقم الشقة" />
                            </div>
                            <div className="space-y-2 md:col-span-2">
-                              <Label htmlFor="notes">علامة مميزة (اختياري)</Label>
+                              <Label htmlFor="notes">علامة مميزة لو تحب</Label>
                               <Input id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="بجوار صيدلية، أمام مدرسة..." />
                            </div>
                         </div>
@@ -395,7 +395,7 @@ function CheckoutContent() {
                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
                               <CreditCard className="w-5 h-5" />
                            </span>
-                           طريقة الدفع
+                           هتدفع إزاي
                         </h2>
 
                         <label className="relative flex cursor-pointer rounded-2xl border-2 border-primary bg-primary/5 p-5 focus:outline-none shadow-sm transition-all hover:bg-primary/10">
@@ -407,7 +407,7 @@ function CheckoutContent() {
                                  </span>
                                  <div className="text-sm">
                                     <p className="font-heading font-bold text-base text-foreground mb-1">الدفع عند الاستلام (كاش)</p>
-                                    <p className="text-gray-400">ادفع براحتك لما المندوب يوصلك وتستلم طلبك وتقييمه.</p>
+                                    <p className="text-gray-400">ادفع براحتك لما المندوب يوصلك وتطمن على طلبك.</p>
                                  </div>
                               </div>
                            </div>
@@ -429,7 +429,7 @@ function CheckoutContent() {
                                     <p className="mt-1 text-base font-black text-foreground">{textRequestDraft.categoryName}</p>
                                  </div>
                                  <div className="rounded-2xl border border-surface-hover bg-background/60 p-4">
-                                    <p className="text-xs font-black text-gray-500">النص الذي سيراه الأدمن والمندوب</p>
+                                    <p className="text-xs font-black text-gray-500">النص اللي هيشوفه الأدمن والمندوب</p>
                                     <p className="mt-2 text-sm leading-7 text-foreground whitespace-pre-wrap">
                                        {textRequestDraft.requestText?.trim() || 'لم يكتب العميل نصًا، وسيعتمد الطلب على الصور المرفقة.'}
                                     </p>
@@ -451,7 +451,7 @@ function CheckoutContent() {
                                  </div>
                               </div>
                            ) : displayItems.length === 0 ? (
-                              <p className="text-sm text-gray-500 text-center py-4">السلة فارغة</p>
+                              <p className="text-sm text-gray-500 text-center py-4">السلة فاضية</p>
                            ) : displayItems.map(item => (
                               <div key={item.id} className="flex justify-between py-3 text-sm">
                                  <div className="flex gap-3 items-center">
@@ -537,7 +537,7 @@ function CheckoutContent() {
                               {isSubmitting ? (
                                  <div className="flex items-center gap-2">
                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    {isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'جاري إرسال طلب التسعير...' : 'جاري إرسال طلب البحث...') : 'جاري التأكيد...'}
+                                    {isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'بنبعت طلب التسعير...' : 'بنبعت طلب البحث...') : 'بنكمل التأكيد...'}
                                  </div>
                               ) : (isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'إرسال طلب التسعير' : 'ابعت طلب بحث') : 'تأكيد الطلب')}
                            </Button>
@@ -545,9 +545,9 @@ function CheckoutContent() {
                            <p className="mt-4 text-xs text-center text-gray-500">
                               {isTextRequestCheckout
                                  ? (isPharmacyTextRequestCheckout
-                                    ? 'بالضغط على إرسال طلب التسعير، سنراجع الطلب أولًا ثم نرسل لك السعر لتؤكده بنفسك لاحقًا.'
-                                    : 'بالضغط على ابعت طلب بحث، إحنا هنبدأ ندوّر عليه ونبلغك من صفحة حسابك أول ما نلاقيه.')
-                                 : 'بالضغط على تأكيد الطلب، أنت توافق على الشروط والأحكام وسياسة الخصوصية الخاصة بنا.'}
+                                    ? 'بمجرد ما تبعت طلب الصيدلية، هنراجعه ونبعتلك السعر وبعدها أنت اللي تقرر.'
+                                    : 'بمجرد ما تبعت طلب البحث، هنبدأ ندور عليه ونبلغك من صفحة حسابك أول ما نلاقيه.')
+                                 : 'بمجرد ما تضغط تأكيد الطلب، إحنا هنبدأ نجهزهولك على طول.'}
                            </p>
                         </div>
                      </div>
@@ -571,7 +571,7 @@ function CheckoutContent() {
                   <p className="text-[11px] leading-5 text-gray-500 text-right max-w-[11rem]">
                      {isTextRequestCheckout
                         ? (isPharmacyTextRequestCheckout
-                           ? 'سنراجع الطلب أولًا، وبعد وصول التسعيرة سيتحول داخل طلباتك إلى زر تأكيد الطلب.'
+                           ? 'هنراجع الطلب الأول، ولما السعر يوصل هتلاقي زر التأكيد جوه طلباتك.'
                            : 'طلبك هيتسجل في حسابك تحت حاجات بندور عليها لحد ما نلاقيه.')
                         : 'رسوم التوصيل مضافة بالفعل داخل الإجمالي.'}
                   </p>
@@ -587,7 +587,7 @@ function CheckoutContent() {
                   {isSubmitting ? (
                      <div className="flex items-center gap-2">
                         <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
-                        {isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'جاري إرسال طلب التسعير...' : 'جاري إرسال طلب البحث...') : 'جاري التأكيد...'}
+                        {isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'بنبعت طلب التسعير...' : 'بنبعت طلب البحث...') : 'بنكمل التأكيد...'}
                      </div>
                   ) : (isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'إرسال طلب التسعير' : 'ابعت طلب بحث') : 'تأكيد الطلب')}
                </Button>
@@ -609,3 +609,4 @@ export default function CheckoutPage() {
       </Suspense>
    )
 }
+

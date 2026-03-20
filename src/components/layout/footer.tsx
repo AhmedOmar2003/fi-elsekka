@@ -37,7 +37,7 @@ export function Footer() {
               </div>
             </Link>
             <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
-              صاحبك الجدع في التسوق. كل اللي تحتاجه، من البيت لحد البيت بأسهل طريقة وبأحسن سعر.
+              صاحبك الجدع في الطلبات. كل اللي محتاجه، من البيت لحد باب البيت، وبأسهل طريقة وأروق تجربة.
             </p>
           </div>
 
@@ -52,9 +52,9 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-4 font-semibold text-foreground">خلينا نساعدك</h4>
+            <h4 className="mb-4 font-semibold text-foreground">خلينا في ظهرك</h4>
             <ul className="font-heading space-y-2 text-sm text-gray-500">
-              <li><Link href="/about" className="hover:text-primary transition-colors">اعرف عنا</Link></li>
+              <li><Link href="/about" className="hover:text-primary transition-colors">احنا مين</Link></li>
               <li><Link href="/faq" className="hover:text-primary transition-colors">الأسئلة الشائعة</Link></li>
               <li><Link href="/account" className="hover:text-primary transition-colors">حسابي</Link></li>
               <li><Link href="/orders" className="hover:text-primary transition-colors">طلباتي</Link></li>
@@ -69,15 +69,15 @@ export function Footer() {
                  <Banknote className="h-6 w-6" />
                </div>
                <div>
-                  <p className="font-heading text-sm font-semibold text-foreground">ادفع وانت مطمن</p>
-                  <p className="text-xs text-gray-500">كل طلباتنا الدفع فيها كاش لما تستلم</p>
+                  <p className="font-heading text-sm font-semibold text-foreground">ادفع وإنت مطمن</p>
+                  <p className="text-xs text-gray-500">كل طلباتنا بتدفعها كاش وقت الاستلام</p>
                </div>
              </div>
           </div>
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between border-t border-surface-hover pt-8 pb-4 text-center sm:flex-row text-xs text-gray-500">
-          <p>حقوق النشر &copy; {new Date().getFullYear()} في السكة. كل الحقوق محفوظة.</p>
+          <p>© {new Date().getFullYear()} في السكة. كل الحقوق محفوظة.</p>
           <div className="mt-4 flex gap-4 sm:mt-0">
              <Link href="/terms" className="hover:text-foreground transition-colors">الشروط والأحكام</Link>
              <Link href="/privacy" className="hover:text-foreground transition-colors">سياسة الخصوصية</Link>
@@ -87,3 +87,4 @@ export function Footer() {
     </footer>
   )
 }
+

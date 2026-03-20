@@ -93,7 +93,7 @@ export default function NotificationsPage() {
             previous.forEach((notification) => {
                 emitNotificationsSync({ type: "upsert", userId: user.id, notification })
             })
-            toast.error("تعذر تعليم الإشعارات كمقروءة")
+            toast.error("ماعرفناش نعلّم الإشعارات كمقروءة دلوقتي")
         }
     }
 
@@ -112,7 +112,7 @@ export default function NotificationsPage() {
             if (deletedNotification) {
                 emitNotificationsSync({ type: "upsert", userId: user.id, notification: deletedNotification })
             }
-            toast.error("تعذر حذف الإشعار")
+            toast.error("ماعرفناش نمسح الإشعار دلوقتي")
         }
 
         setDeletingId(null)
@@ -132,7 +132,7 @@ export default function NotificationsPage() {
             previous.forEach((notification) => {
                 emitNotificationsSync({ type: "upsert", userId: user.id, notification })
             })
-            toast.error("تعذر حذف كل الإشعارات")
+            toast.error("ماعرفناش نمسح كل الإشعارات دلوقتي")
         }
 
         setIsDeletingAll(false)
@@ -181,9 +181,9 @@ export default function NotificationsPage() {
                                     <Bell className="h-7 w-7" />
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-black text-foreground">الإشعارات</h1>
+                                    <h1 className="text-2xl font-black text-foreground">إشعاراتك</h1>
                                     <p className="mt-1 text-sm text-gray-500">
-                                        هنا هتلاقي كل الإشعارات اللي وصلتك بترتيبها من الأحدث للأقدم.
+                                        هنا هتلاقي كل الإشعارات اللي وصلتك، من أول الجديد لحد الأقدم.
                                     </p>
                                 </div>
                             </div>
@@ -192,7 +192,7 @@ export default function NotificationsPage() {
                                 {unreadCount > 0 && (
                                     <Button onClick={() => void handleMarkAllRead()} className="rounded-2xl gap-2">
                                         <CheckCheck className="h-4 w-4" />
-                                        تعليم الكل كمقروء
+                                        علّم الكل كمقروء
                                     </Button>
                                 )}
                                 <Button
@@ -202,7 +202,7 @@ export default function NotificationsPage() {
                                     className="rounded-2xl gap-2 border-rose-500/20 text-rose-500 hover:bg-rose-500/10 hover:text-rose-500"
                                 >
                                     <Trash2 className="h-4 w-4" />
-                                    {isDeletingAll ? "جاري الحذف..." : "حذف كل الإشعارات"}
+                                    {isDeletingAll ? "بنمّسح..." : "امسح كل الإشعارات"}
                                 </Button>
                             </div>
                         </div>
@@ -220,21 +220,21 @@ export default function NotificationsPage() {
                     {loadingNotifications ? (
                         <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <p className="text-sm font-bold text-gray-500">جاري تحميل الإشعارات...</p>
+                            <p className="text-sm font-bold text-gray-500">ثانية واحدة بنجهز إشعاراتك...</p>
                         </div>
                     ) : notifications.length === 0 ? (
                         <div className="rounded-[2rem] border border-surface-hover bg-surface p-10 text-center">
                             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-surface-hover">
                                 <Bell className="h-7 w-7 text-gray-400" />
                             </div>
-                            <p className="text-lg font-black text-foreground">لا توجد إشعارات حتى الآن</p>
-                            <p className="mt-2 text-sm text-gray-500">عندما يصلك تحديث جديد بخصوص طلباتك أو حسابك سيظهر هنا.</p>
+                            <p className="text-lg font-black text-foreground">مفيش إشعارات لحد دلوقتي</p>
+                            <p className="mt-2 text-sm text-gray-500">أول ما يوصلك أي جديد بخصوص طلباتك أو حسابك هتلاقيه هنا.</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
                             <div>
                                 <h2 className="text-lg font-black text-foreground">كل الإشعارات</h2>
-                                <p className="mt-1 text-xs text-gray-500">كل التنبيهات موجودة هنا مع إمكانية فتحها أو حذفها.</p>
+                                <p className="mt-1 text-xs text-gray-500">كل التنبيهات موجودة هنا، وتقدر تفتحها أو تمسحها براحتك.</p>
                             </div>
                             <div className="grid gap-4">
                                 {notifications.map(renderNotificationCard)}
@@ -245,7 +245,7 @@ export default function NotificationsPage() {
                     <div className="mt-8">
                         <Link href="/account" className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-primary/80 transition-colors">
                             <ChevronLeft className="h-4 w-4" />
-                            العودة إلى الحساب
+                            ارجع للحساب
                         </Link>
                     </div>
                 </div>
@@ -254,3 +254,4 @@ export default function NotificationsPage() {
         </>
     )
 }
+

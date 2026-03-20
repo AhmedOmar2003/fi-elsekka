@@ -243,7 +243,7 @@ export default function AccountPage() {
         }
 
         setIsSaving(false)
-        setSaveMsg(hasError ? exactErrorStr : "تم الدفع بطلب تعديل بياناتك بنجاح ✓")
+        setSaveMsg(hasError ? exactErrorStr : "تمام، عدلنا بياناتك بنجاح ✨")
     }
 
     const handleAddAddress = async () => {
@@ -289,7 +289,7 @@ export default function AccountPage() {
 
     if (!user) return null
 
-    const displayName = profile?.full_name || user.email || "المستخدم"
+    const displayName = profile?.full_name || user.email || "أنت"
     const initials = displayName.slice(0, 2).toUpperCase()
     const searchRequests = orders.filter(order => {
         const shipping = order.shipping_address || {}
@@ -650,13 +650,13 @@ export default function AccountPage() {
                                                 <input value={addrPhone} onChange={e => setAddrPhone(e.target.value)} placeholder="رقم الموبايل" dir="ltr" className="col-span-2 bg-background border border-surface-hover rounded-xl px-4 py-2.5 text-sm text-foreground focus:border-primary outline-none text-right" />
                                             </div>
                                             <div className="flex gap-3">
-                                                <Button onClick={handleAddAddress} className="rounded-xl px-6" disabled={savingAddr}>{savingAddr ? 'جاري الحفظ...' : 'حفظ العنوان'}</Button>
+                                                <Button onClick={handleAddAddress} className="rounded-xl px-6" disabled={savingAddr}>{savingAddr ? 'بنحفظ...' : 'احفظ العنوان'}</Button>
                                                 <Button variant="outline" className="rounded-xl px-6" onClick={() => setShowAddForm(false)}>إلغاء</Button>
                                             </div>
                                         </div>
                                     ) : (
                                         <button onClick={() => setShowAddForm(true)} className="w-full border-2 border-dashed border-surface-hover rounded-3xl p-6 text-gray-400 hover:text-primary hover:border-primary/40 transition-colors flex items-center justify-center gap-2 text-sm font-bold">
-                                            <Plus className="w-5 h-5" /> إضافة عنوان جديد
+                                            <Plus className="w-5 h-5" /> ضيف عنوان جديد
                                         </button>
                                     )}
                                 </>
@@ -670,7 +670,7 @@ export default function AccountPage() {
                             <div className="bg-surface border border-surface-hover rounded-3xl p-6 md:p-8">
                                 <h2 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2 pb-4 border-b border-surface-hover">
                                     <User className="w-5 h-5 text-primary" />
-                                    المعلومات الشخصية
+                                    بياناتك الشخصية
                                 </h2>
                                 <div className="space-y-2 md:col-span-2">
                                     <Label>الاسم بالكامل</Label>
@@ -681,13 +681,13 @@ export default function AccountPage() {
                                     <Input value={phone} onChange={e => setPhone(e.target.value)} type="tel" placeholder="01xxxxxxxxx" dir="ltr" className="text-right" />
                                 </div>
                                 <div className="space-y-2 md:col-span-2 border-t border-surface-hover pt-4 mt-2">
-                                    <Label>البريد الإلكتروني (لتسجيل الدخول)</Label>
+                                    <Label>الإيميل بتاع الدخول</Label>
                                     <Input value={emailInput} onChange={e => setEmailInput(e.target.value)} type="email" dir="ltr" className="text-right" />
-                                    <p className="text-[11px] text-gray-500">إذا قمت بتغييره، سيتم إرسال رسالة تأكيد لمعظم الحسابات.</p>
+                                    <p className="text-[11px] text-gray-500">لو غيرته، غالبًا هيوصلك إيميل تأكيد.</p>
                                 </div>
                                 <div className="space-y-2 md:col-span-2">
                                     <Label>كلمة المرور الجديدة</Label>
-                                    <Input value={passwordInput} onChange={e => setPasswordInput(e.target.value)} type="password" placeholder="اتركه فارغاً إذا لا تريد تغييره" dir="ltr" className="text-right" />
+                                    <Input value={passwordInput} onChange={e => setPasswordInput(e.target.value)} type="password" placeholder="سيبه فاضي لو مش عاوز تغيّره" dir="ltr" className="text-right" />
                                 </div>
                             </div>
 
@@ -699,9 +699,9 @@ export default function AccountPage() {
                                 {isSaving ? (
                                     <div className="flex items-center gap-2">
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        جاري الحفظ...
+                                        بنحفظ...
                                     </div>
-                                ) : "حفظ التعديلات"}
+                                ) : "احفظ التعديلات"}
                             </Button>
                         </div>
                     )}
@@ -718,3 +718,4 @@ export default function AccountPage() {
         </>
     )
 }
+

@@ -105,8 +105,8 @@ export default function CartPage() {
                      <ShoppingBag className="w-8 h-8" />
                   </div>
                   <div>
-                     <h1 className="text-3xl font-heading font-black text-foreground">سلة المشتريات</h1>
-                     <p className="text-gray-400 text-sm mt-1">{items.length} منتجات في السلة</p>
+                     <h1 className="text-3xl font-heading font-black text-foreground">سلة طلباتك</h1>
+                     <p className="text-gray-400 text-sm mt-1">{items.length} منتج في السلة</p>
                   </div>
                </div>
 
@@ -116,11 +116,11 @@ export default function CartPage() {
                      <div className="w-24 h-24 bg-surface-hover rounded-full flex items-center justify-center mb-6 text-gray-400">
                         <ShoppingBag className="w-12 h-12" />
                      </div>
-                     <h2 className="text-2xl font-bold text-foreground mb-3">سلتك فارغة تماماً!</h2>
-                     <p className="text-gray-400 mb-8 max-w-md">يبدو أنك لم تقم بإضافة أي منتجات إلى سلتك حتى الآن. تصفح أقسامنا واكتشف أفضل العروض.</p>
+                     <h2 className="text-2xl font-bold text-foreground mb-3">السلة فاضية خالص 🛒</h2>
+                     <p className="text-gray-400 mb-8 max-w-md">لسه ماحطّتش أي منتجات. لف شوية في الأقسام وهتلاقي اللي يعجبك.</p>
                      <Button size="lg" className="rounded-xl px-10 h-14 font-bold text-lg shadow-primary/20 shadow-lg" asChild>
                         <Link href="/category/all">
-                           تصفح المنتجات الآن
+                           يلا نشوف المنتجات
                            <ArrowRight className="w-5 h-5 mr-2" />
                         </Link>
                      </Button>
@@ -195,7 +195,7 @@ export default function CartPage() {
                                           onClick={() => handleRemoveItem(item.id)}
                                           disabled={updatingItems[item.id]}
                                           className="hidden sm:flex text-gray-400 hover:text-rose-500 hover:bg-rose-500/10 p-2.5 rounded-xl transition-colors disabled:opacity-50"
-                                          title="حذف من السلة"
+                                          title="شيل من السلة"
                                        >
                                           <Trash2 className="w-5 h-5" />
                                        </button>
@@ -253,7 +253,7 @@ export default function CartPage() {
 
                            <div className="space-y-4 mb-6">
                               <div className="flex justify-between text-gray-400">
-                                 <span>المجموع الأصلي ({items.reduce((t, i) => t + i.quantity, 0)} منتجات)</span>
+                                 <span>المجموع الأصلي ({items.reduce((t, i) => t + i.quantity, 0)} منتج)</span>
                                  <span className="font-bold text-foreground">{cartOriginalTotal.toLocaleString()} ج.م</span>
                               </div>
                               {cartDiscountTotal > 0 && (
@@ -297,7 +297,7 @@ export default function CartPage() {
 
                            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
                               <ShoppingBag className="w-4 h-4" />
-                              تسوق إلكتروني آمن 100%
+                              طلبك معانا مضمون 100%
                            </div>
                         </div>
                      </div>
@@ -310,3 +310,4 @@ export default function CartPage() {
       </>
    );
 }
+

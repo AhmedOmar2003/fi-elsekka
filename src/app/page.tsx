@@ -131,21 +131,21 @@ export default async function Home() {
             <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
               <div className="z-10 max-w-2xl">
                 <Badge variant="success" className="mb-4 inline-flex">
-                  🔥 عروض الدخول للمدارس رجعت!
+                  🔥 عروض المدارس رجعت تاني!
                 </Badge>
                 <h1 className="mb-4 text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-foreground leading-tight">
-                  طلباتك كلها، <br className="hidden sm:block" />
+                  كل طلباتك، <br className="hidden sm:block" />
                   <span className="text-primary">في السكة</span> لحد عندك.
                 </h1>
                 <p className="mb-8 text-lg text-gray-500 max-w-xl mx-auto sm:mx-0">
-                  من السوبر ماركت للصيدلية، ومن اللبس للإلكترونيات. اختار اللي يعجبك وادفع كاش وانت بتستلم. أسهل، أسرع، وأوفر!
+                  من السوبر ماركت للصيدلية، ومن اللبس للإلكترونيات. اختار اللي نفسك فيه وادفع كاش وإنت بتستلم. أسرع، أسهل، وأروق! ✨
                 </p>
                 <div className="flex flex-col sm:flex-row items-center gap-4 justify-center sm:justify-start">
                   <Button size="lg" className="w-full sm:w-auto text-lg rounded-full font-bold px-8 shadow-primary/30 shadow-lg" asChild>
-                    <Link href="/category/all">يلا بينا نتسوق</Link>
+                    <Link href="/category/all">يلا بينا نطلب</Link>
                   </Button>
                   <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg rounded-full font-bold px-8" asChild>
-                    <Link href="/offers">شوف العروض</Link>
+                    <Link href="/offers">شوف الحاجات الحلوة</Link>
                   </Button>
                 </div>
 
@@ -157,7 +157,7 @@ export default async function Home() {
                   </div>
                   <div className="flex items-center gap-1.5 bg-surface/50 px-3 py-1.5 rounded-full border border-surface-hover">
                     <Zap className="w-5 h-5 text-amber-500" />
-                    <span>سريع ومضمون</span>
+                    <span>سريع ومريح</span>
                   </div>
                 </div>
               </div>
@@ -195,11 +195,11 @@ export default async function Home() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-8 flex items-end justify-between">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground">بتدور في إيه؟</h2>
-                <p className="mt-2 text-sm text-gray-500">أقسامنا كلها تحت أمرك</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground">نجيبلك إيه النهارده؟</h2>
+                <p className="mt-2 text-sm text-gray-500">كل أقسامنا موجودة علشان تلاقي اللي على بالك بسرعة</p>
               </div>
               <Link href="/categories" className="font-heading hidden sm:flex text-sm font-semibold text-primary hover:text-primary-hover">
-                عرض كل الأقسام &larr;
+                شوف كل الأقسام &larr;
               </Link>
             </div>
 
@@ -217,12 +217,12 @@ export default async function Home() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-secondary"></span>
                   </span>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-foreground">عروض جامدة متتفوتش</h2>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-foreground">عروض جامدة ما تتفوتش</h2>
                 </div>
-                <p className="text-sm text-gray-500">وفر فلوسك واشتري بأسعار زمان</p>
+                <p className="text-sm text-gray-500">وفّر أكتر وخد أحسن سعر من غير وجع دماغ</p>
               </div>
               <Link href="/offers" className="font-heading text-sm font-semibold text-secondary hover:underline">
-                شوف أكتر
+                شوف الباقي
               </Link>
             </div>
 
@@ -230,7 +230,7 @@ export default async function Home() {
               {displayOffers.length > 0 ? displayOffers.map((product) => (
                 <ProductCard key={product.id} {...product} />
               )) : (
-                <div className="col-span-4 text-center py-10 text-gray-500">لا توجد عروض متاحة حالياً</div>
+                <div className="col-span-4 text-center py-10 text-gray-500">مفيش عروض ظاهرة دلوقتي، بس راجعنا تاني وهتلاقي الجديد 👀</div>
               )}
             </div>
           </div>
@@ -244,8 +244,8 @@ export default async function Home() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-8 flex items-end justify-between">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground">الأكثر مبيعاً</h2>
-                <p className="mt-2 text-sm text-gray-500">الناس كلها بتطلب الحاجات دي</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground">الأكتر طلبًا</h2>
+                <p className="mt-2 text-sm text-gray-500">دي الحاجات اللي الناس بتحبها وبتطلبها كتير</p>
               </div>
             </div>
 
@@ -269,23 +269,23 @@ export default async function Home() {
                   <Banknote className="w-10 h-10" />
                 </div>
                 <h3 className="text-xl font-heading font-bold mb-3 text-foreground drop-shadow-sm">الدفع وقت الاستلام</h3>
-                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">تأكد من طلبك الأول، وبعدين ادفع بطريقتك كاش بأمان تام وطمأنينة.</p>
+                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">استلم طلبك الأول، واتطمن عليه، وبعدها ادفع كاش وإنت مرتاح.</p>
               </div>
 
               <div className="flex flex-col items-center pt-8 md:pt-0 group">
                 <div className="h-20 w-20 bg-gradient-to-br from-amber-500/20 to-amber-500/5 border border-amber-500/20 text-amber-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-amber-500/5 group-hover:scale-110 transition-transform duration-500">
                   <Clock className="w-10 h-10" />
                 </div>
-                <h3 className="text-xl font-heading font-bold mb-3 text-foreground drop-shadow-sm">توصيل في الانجاز</h3>
-                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">طلباتك هتوصلك في أسرع وقت ممكن، لأن وقتك يهمنا جداً.</p>
+                <h3 className="text-xl font-heading font-bold mb-3 text-foreground drop-shadow-sm">توصيل سريع</h3>
+                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">طلباتك بتوصلك بسرعة ومن غير لف كتير، عشان وقتك مهم عندنا.</p>
               </div>
 
               <div className="flex flex-col items-center pt-8 md:pt-0 group">
                 <div className="h-20 w-20 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/20 text-blue-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-500/5 group-hover:scale-110 transition-transform duration-500">
                   <ShieldCheck className="w-10 h-10" />
                 </div>
-                <h3 className="text-xl font-heading font-bold mb-3 text-foreground drop-shadow-sm">جودة مضمونة 100%</h3>
-                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">بنختار منتجاتنا بعناية عشان نضمنلك أفضل جودة بأحسن سعر ممكن.</p>
+                <h3 className="text-xl font-heading font-bold mb-3 text-foreground drop-shadow-sm">جودة تفرّح</h3>
+                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">بنختار منتجاتنا بعناية علشان اللي يوصلك يبقى نضيف ويستاهل فلوسه فعلًا.</p>
               </div>
 
             </div>
@@ -298,3 +298,4 @@ export default async function Home() {
     </>
   )
 }
+

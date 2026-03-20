@@ -197,7 +197,7 @@ function buildUserNotification(userRow: any): Omit<Notification, 'id' | 'time' |
 
     return {
         type: 'new_user',
-        title: 'مستخدم جديد!',
+        title: 'عميل جديد معانا!',
         body: `انضم ${displayName} إلى المنصة كعميل جديد`,
         link: '/admin/users',
     };
@@ -478,7 +478,7 @@ function NotificationBell() {
                                 <div className="py-10 flex flex-col items-center gap-2 text-gray-600">
                                     <Bell className="w-8 h-8 opacity-30" />
                                     <p className="text-xs">لا توجد إشعارات بعد</p>
-                                    <p className="text-[10px] text-gray-700">ستظهر هنا طلبات جديدة أو أعضاء جدد من العملاء والمندوبين والطاقم</p>
+                                    <p className="text-[10px] text-gray-700">هتلاقي هنا الطلبات الجديدة وكل جديد يخص العملاء والمندوبين والطاقم</p>
                                 </div>
                             ) : (
                                 notifications.map(n => (
@@ -543,9 +543,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className="w-16 h-16 rounded-full bg-rose-500/20 flex items-center justify-center mb-4">
                     <span className="text-rose-500 text-2xl">⛔</span>
                 </div>
-                <h1 className="text-2xl font-black text-foreground mb-2">تم تعطيل هذا الحساب</h1>
+                <h1 className="text-2xl font-black text-foreground mb-2">الحساب ده متوقف حاليًا</h1>
                 <p className="text-gray-500 text-sm mb-6 text-center max-w-sm">
-                    تواصل مع مشرف النظام لإعادة التفعيل أو الحصول على صلاحية جديدة.
+                    كلم مشرف النظام علشان يرجع يفعّله أو يديك الصلاحية المناسبة.
                 </p>
             </div>
         );
@@ -558,9 +558,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className="w-16 h-16 rounded-full bg-rose-500/20 flex items-center justify-center mb-4">
                     <span className="text-rose-500 text-2xl">🔒</span>
                 </div>
-                <h1 className="text-2xl font-black text-foreground mb-2">غير مصرح لك بالدخول</h1>
+                <h1 className="text-2xl font-black text-foreground mb-2">معندكش صلاحية تدخل هنا</h1>
                 <p className="text-gray-500 text-sm mb-6 text-center max-w-sm">
-                    هذا الحساب لا يمتلك صلاحيات إدارة النظام. تأكد من تشغيل كود SQL لتحويل هذا الحساب إلى مدير.
+                    الحساب ده مش واخد صلاحيات الإدارة لسه. تأكد إن إعدادات الصلاحيات متظبطة للحساب ده.
                 </p>
                 <div className="bg-surface-hover p-4 rounded-xl border border-surface-hover text-xs text-left w-full max-w-md overflow-x-auto" dir="ltr">
                     <pre className="text-gray-400 font-mono">
@@ -606,13 +606,13 @@ WHERE email = '${user.email}';`}
                         <Menu className="w-5 h-5" />
                     </button>
                     <div className="hidden lg:block text-xs text-gray-500">
-                        لوحة الإدارة — في السكة
+                        لوحة الإدارة - في السكة
                     </div>
                     <div className="flex items-center gap-2 mr-auto lg:mr-0">
                         {canAccessControlCenter && (
                             <Link href="/admin/search" className="hidden md:flex items-center gap-2 rounded-xl border border-surface-hover bg-surface px-3 py-2 text-xs text-gray-500 transition-colors hover:text-foreground hover:border-primary/20">
                                 <Search className="w-4 h-4" />
-                                بحث شامل
+                                دوّر في كل حاجة
                             </Link>
                         )}
                         {/* Realtime Notification Bell */}
@@ -636,3 +636,4 @@ WHERE email = '${user.email}';`}
         </div>
     );
 }
+

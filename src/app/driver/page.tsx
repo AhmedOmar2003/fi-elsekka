@@ -181,7 +181,7 @@ function OrderCard({ order, onMarkDelivered, isUpdating }: {
                     )}
 
                     <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-1">
-                        <p className="text-xs font-bold text-primary/80">مهلة التوصيل المطلوبة منك</p>
+                        <p className="text-xs font-bold text-primary/80">تعليمات الإدارة ليك</p>
                         {driverInstruction ? (
                             <p className="text-sm font-black leading-7 text-foreground">{driverInstruction}</p>
                         ) : (
@@ -197,7 +197,7 @@ function OrderCard({ order, onMarkDelivered, isUpdating }: {
                         >
                             {isUpdating
                                 ? <Loader2 className="w-5 h-5 animate-spin" />
-                                : <><CheckCircle2 className="w-5 h-5" /> تم التوصيل بنجاح</>
+                                : <><CheckCircle2 className="w-5 h-5" /> تم التوصيل خلاص</>
                             }
                         </button>
                     )}
@@ -420,7 +420,7 @@ export default function DriverDashboard() {
         } catch (err: any) {
             console.error('Push error:', err)
             if (err.message !== 'تم رفض تصريح الإشعارات') {
-                toast.error(err.message || 'حدث خطأ أثناء تفعيل الإشعارات')
+                toast.error(err.message || 'في حاجة عطلت تفعيل الإشعارات')
             }
         } finally {
             setIsSubscribing(false)
@@ -444,9 +444,9 @@ export default function DriverDashboard() {
                 ? { ...o, shipping_address: { ...o.shipping_address, driver: { ...o.shipping_address.driver, acceptance_status: 'accepted' } } } 
                 : o
             ))
-            toast.success('تم استلام الطلب! 🛵')
+            toast.success('تمام، استلمت الطلب 🛵')
         } catch (err: any) {
-            toast.error('حدث خطأ أثناء قبول الطلب')
+            toast.error('في حاجة عطلت قبول الطلب')
         } finally {
             setActionLoadingOrder(null)
         }
@@ -468,7 +468,7 @@ export default function DriverDashboard() {
             setActiveOrders(prev => prev.filter(o => o.id !== orderId))
             toast.success('تم رفض الطلب بنجاح.')
         } catch (err: any) {
-            toast.error('حدث خطأ أثناء رفض الطلب')
+            toast.error('في حاجة عطلت رفض الطلب')
         } finally {
             setActionLoadingOrder(null)
         }
@@ -504,7 +504,7 @@ export default function DriverDashboard() {
                 setDeliveredOrders(prev => [{ ...order, status: 'delivered' }, ...prev])
             }
         } catch (err: any) {
-            toast.error(err.message || "حدث خطأ أثناء التحديث")
+            toast.error(err.message || "في حاجة عطلت التحديث")
         } finally {
             setUpdatingId(null)
         }
@@ -519,7 +519,7 @@ export default function DriverDashboard() {
         return (
             <div className="flex flex-col items-center justify-center p-12 space-y-4 min-h-[60vh]">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <p className="text-gray-500 font-bold">جاري تحميل طلباتك...</p>
+                <p className="text-gray-500 font-bold">ثانية واحدة بنجهز طلباتك...</p>
             </div>
         )
     }
@@ -548,7 +548,7 @@ export default function DriverDashboard() {
                 toast('ارتاح شوية يا وحش، متنساش ترجع تاني 😴', { icon: '☕' })
             }
         } catch (err) {
-            toast.error('حدث خطأ أثناء تحديث حالتك')
+            toast.error('في حاجة عطلت تحديث حالتك')
         } finally {
             setIsSettingAvailability(false)
         }
@@ -599,8 +599,8 @@ export default function DriverDashboard() {
                         <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
                             <Bell className="w-8 h-8 text-primary" />
                         </div>
-                        <h2 className="text-xl font-black text-center text-foreground mb-2">طلب جديد بانتظارك!</h2>
-                        <p className="text-center text-gray-400 mb-6 text-sm">الإدارة أرسلت لك طلباً لتوصيله، هل أنت متاح الآن؟</p>
+                        <h2 className="text-xl font-black text-center text-foreground mb-2">فيه طلب جديد ليك! 🔔</h2>
+                        <p className="text-center text-gray-400 mb-6 text-sm">الإدارة بعتالك طلب جديد، إنت جاهز تمسكه دلوقتي؟</p>
                         
                         <div className="space-y-3 mb-6 bg-background rounded-2xl p-4 border border-surface-hover">
                             <div className="flex justify-between items-center text-sm">
@@ -726,8 +726,8 @@ export default function DriverDashboard() {
                 {acceptedActiveOrders.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-surface border border-surface-hover rounded-2xl">
                         <CheckCircle2 className="w-10 h-10 text-emerald-500 mb-3" />
-                        <p className="font-black text-foreground">لا توجد طلبات نشطة حالياً</p>
-                        <p className="text-xs text-gray-500 mt-1">ستظهر طلباتك هنا فور الموافقة عليها</p>
+                        <p className="font-black text-foreground">مفيش طلبات شغالة دلوقتي</p>
+                        <p className="text-xs text-gray-500 mt-1">أول ما يوصلك طلب ويتوافق عليه هتلاقيه هنا</p>
                     </div>
                 ) : (
                     acceptedActiveOrders.map(order => (
@@ -762,3 +762,4 @@ export default function DriverDashboard() {
         </div>
     )
 }
+
