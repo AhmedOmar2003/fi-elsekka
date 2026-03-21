@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
@@ -68,8 +69,10 @@ export default function ContactPage() {
                  <div className="bg-surface border border-surface-hover rounded-3xl p-6">
                     <h3 className="font-bold text-foreground mb-2">عندك سؤال سريع؟</h3>
                     <p className="text-sm text-gray-500 mb-4">ممكن تلاقي إجابة سؤالك جاهزة في صفحة الأسئلة الشائعة، من غير ما تستنى.</p>
-                    <Button variant="outline" className="w-full">
-                       شوف الأسئلة الشائعة
+                    <Button variant="outline" className="w-full" asChild>
+                       <Link href="/faq">
+                          شوف الأسئلة الشائعة
+                       </Link>
                     </Button>
                  </div>
               </div>
