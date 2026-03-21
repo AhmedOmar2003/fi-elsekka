@@ -1,3 +1,5 @@
+create extension if not exists pg_trgm;
+
 create index if not exists idx_products_category_created_at
 on public.products (category_id, created_at desc);
 
@@ -9,6 +11,9 @@ on public.products (show_in_offers, created_at desc);
 
 create index if not exists idx_products_created_at
 on public.products (created_at desc);
+
+create index if not exists idx_products_name_trgm
+on public.products using gin (name gin_trgm_ops);
 
 create index if not exists idx_product_specifications_product_id
 on public.product_specifications (product_id);
@@ -42,3 +47,6 @@ on public.users (last_login_at desc);
 
 create index if not exists idx_categories_parent_name
 on public.categories (parent_id, name);
+
+create index if not exists idx_categories_name_trgm
+on public.categories using gin (name gin_trgm_ops);

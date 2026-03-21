@@ -1,32 +1,19 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
-
-const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false }
-});
+import { driverSupabaseAdmin, requireDriverApi } from '@/lib/driver-guard';
 
 export async function GET(request: Request) {
     try {
-        // 1. Verify driver auth via bearer token
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader?.startsWith('Bearer ')) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!driverSupabaseAdmin) {
+            return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
         }
-        const token = authHeader.split(' ')[1];
-        
-        // Use Supabase to safely validate the token and get the user
-        const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-        if (authError || !user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const auth = await requireDriverApi(request);
+        if (!auth.ok) {
+            return auth.response;
         }
-        
-        const driverId = user.id;
+        const driverId = auth.profile.user.id;
 
         // 2. Fetch ALL orders (bypass RLS with service role), filter by driver in shipping_address
-        const { data: allOrders, error: ordersError } = await supabaseAdmin
+        const { data: allOrders, error: ordersError } = await driverSupabaseAdmin
             .from('orders')
             .select('id, total_amount, created_at, status, shipping_address')
             .eq('status', 'delivered')
@@ -47,7 +34,7 @@ export async function GET(request: Request) {
 
         // 3. Fetch reviews for these orders
         const orderIds = deliveredOrders.map((o: any) => o.id);
-        const { data: reviews } = await supabaseAdmin
+        const { data: reviews } = await driverSupabaseAdmin
             .from('driver_reviews')
             .select('order_id, rating, comment')
             .in('order_id', orderIds);

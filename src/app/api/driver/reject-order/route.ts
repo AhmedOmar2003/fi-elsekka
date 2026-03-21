@@ -1,24 +1,16 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
-
-const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false }
-});
+import { driverSupabaseAdmin, requireDriverApi } from '@/lib/driver-guard';
 
 export async function POST(request: Request) {
     try {
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader?.startsWith('Bearer ')) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!driverSupabaseAdmin) {
+            return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
         }
-        const token = authHeader.split(' ')[1];
-        const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-        if (authError || !user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const auth = await requireDriverApi(request);
+        if (!auth.ok) {
+            return auth.response;
         }
+        const user = auth.profile.user;
 
         const { orderId } = await request.json();
         if (!orderId) {
@@ -26,7 +18,7 @@ export async function POST(request: Request) {
         }
 
         // 1. Fetch current order to get existing shipping_address
-        const { data: order, error: fetchErr } = await supabaseAdmin
+        const { data: order, error: fetchErr } = await driverSupabaseAdmin
             .from('orders')
             .select('shipping_address')
             .eq('id', orderId)
@@ -59,7 +51,7 @@ export async function POST(request: Request) {
         // Clear the driver assignment payload completely
         delete updatedShipping.driver;
 
-        const { error: updateErr } = await supabaseAdmin
+        const { error: updateErr } = await driverSupabaseAdmin
             .from('orders')
             .update({ shipping_address: updatedShipping })
             .eq('id', orderId);
@@ -67,13 +59,13 @@ export async function POST(request: Request) {
         if (updateErr) throw updateErr;
 
         // Notify Admin Dashboard
-        await supabaseAdmin.channel('admin-notifications').send({
+        await driverSupabaseAdmin.channel('admin-notifications').send({
             type: 'broadcast',
             event: 'driver-response',
             payload: { 
                 orderId, 
                 status: 'rejected', 
-                driverName: user.user_metadata?.full_name || 'مندوب' 
+                driverName: auth.profile.fullName || 'مندوب' 
             }
         });
 

@@ -70,31 +70,77 @@ const DRAWER_ITEMS = [
 ]
 
 // ── Search Results Component ────────────────────────────────────────────
+type SearchResultProduct = {
+  id: string
+  name: string
+  price: number
+  image_url?: string | null
+  discount_percentage?: number | null
+  specifications?: Record<string, unknown> | null
+  categories?: { name?: string | null } | { name?: string | null }[] | null
+}
+
+type SearchResultCategory = {
+  id: string
+  name: string
+}
+
 function SearchResults({ query, onSelect }: { query: string; onSelect: () => void }) {
   const router = useRouter()
-  const { products, categories, isLoadingProducts } = useProducts()
-  
-  const trimmed = query.trim().toLowerCase()
-  
-  const matchedProducts = React.useMemo(() => {
-    if (!trimmed || trimmed.length < 2) return []
-    return products
-      .filter(p => p.name.toLowerCase().includes(trimmed))
-      .slice(0, 6)
-  }, [products, trimmed])
+  const [matchedProducts, setMatchedProducts] = React.useState<SearchResultProduct[]>([])
+  const [matchedCategories, setMatchedCategories] = React.useState<SearchResultCategory[]>([])
+  const [isLoadingResults, setIsLoadingResults] = React.useState(false)
 
-  const matchedCategories = React.useMemo(() => {
-    if (!trimmed || trimmed.length < 2) return []
-    return categories.filter(c => c.name.toLowerCase().includes(trimmed)).slice(0, 3)
-  }, [categories, trimmed])
+  const trimmed = query.trim().toLowerCase()
 
   if (!trimmed || trimmed.length < 2) return null
+
+  React.useEffect(() => {
+    const controller = new AbortController()
+    let cancelled = false
+
+    const runSearch = async () => {
+      try {
+        setIsLoadingResults(true)
+        const response = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`, {
+          signal: controller.signal,
+          cache: 'no-store',
+        })
+        const payload = await response.json()
+
+        if (!response.ok) {
+          throw new Error(payload.error || 'Search failed')
+        }
+
+        if (!cancelled) {
+          setMatchedProducts(payload.products || [])
+          setMatchedCategories(payload.categories || [])
+        }
+      } catch {
+        if (!cancelled) {
+          setMatchedProducts([])
+          setMatchedCategories([])
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingResults(false)
+        }
+      }
+    }
+
+    void runSearch()
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [trimmed])
 
   const hasResults = matchedProducts.length > 0 || matchedCategories.length > 0
 
   return (
     <div className="absolute top-full left-0 right-0 mt-2 bg-surface border border-surface-hover rounded-2xl shadow-premium overflow-hidden z-50 max-h-[70vh] overflow-y-auto">
-      {isLoadingProducts ? (
+      {isLoadingResults ? (
         <div className="p-6 text-center">
           <Search className="w-8 h-8 text-primary/60 mx-auto mb-2 animate-pulse" />
           <p className="text-gray-500 text-sm font-bold">بندورلك على المنتج...</p>
@@ -155,7 +201,7 @@ function SearchResults({ query, onSelect }: { query: string; onSelect: () => voi
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">{product.name}</p>
-                      <p className="text-xs text-gray-500">{(product.categories as any)?.name || ''}</p>
+                      <p className="text-xs text-gray-500">{Array.isArray(product.categories) ? product.categories[0]?.name || '' : product.categories?.name || ''}</p>
                     </div>
                     <span className="text-sm font-black text-primary shrink-0">{displayPrice} ج.م</span>
                   </Link>
@@ -188,7 +234,7 @@ export function Header() {
   const router = useRouter()
   const { cartCount } = useCart()
   const { user, profile } = useAuth()
-  const { categories, ensureProductsLoaded, ensureCategoriesLoaded } = useProducts()
+  const { categories, ensureCategoriesLoaded } = useProducts()
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
   const [isSearchOpen, setIsSearchOpen] = React.useState(false)
@@ -239,12 +285,6 @@ export function Header() {
   React.useEffect(() => {
     void ensureCategoriesLoaded()
   }, [ensureCategoriesLoaded])
-
-  React.useEffect(() => {
-    if (deferredDesktopQuery.trim().length >= 2 || deferredMobileQuery.trim().length >= 2 || isSearchOpen) {
-      void ensureProductsLoaded()
-    }
-  }, [deferredDesktopQuery, deferredMobileQuery, ensureProductsLoaded, isSearchOpen])
 
   const handleDesktopSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && desktopQuery.trim()) {

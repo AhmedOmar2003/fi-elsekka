@@ -1,26 +1,16 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
-
-const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false }
-});
+import { driverSupabaseAdmin, requireDriverApi } from '@/lib/driver-guard';
 
 export async function POST(request: Request) {
     try {
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader?.startsWith('Bearer ')) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!driverSupabaseAdmin) {
+            return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
         }
-        
-        const token = authHeader.split(' ')[1];
-        const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-        
-        if (authError || !user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const auth = await requireDriverApi(request);
+        if (!auth.ok) {
+            return auth.response;
         }
+        const user = auth.profile.user;
 
         const { isAvailable } = await request.json();
         
@@ -29,7 +19,7 @@ export async function POST(request: Request) {
         }
 
         // Update the driver's availability in the users table
-        const { error: updateErr } = await supabaseAdmin
+        const { error: updateErr } = await driverSupabaseAdmin
             .from('users')
             .update({ is_available: isAvailable })
             .eq('id', user.id)
@@ -38,13 +28,13 @@ export async function POST(request: Request) {
         if (updateErr) throw updateErr;
 
         // Broadcast the availability change to the admin dashboard instantly
-        await supabaseAdmin.channel('admin-notifications').send({
+        await driverSupabaseAdmin.channel('admin-notifications').send({
             type: 'broadcast',
             event: 'driver-availability-changed',
             payload: { 
                 driverId: user.id, 
                 isAvailable,
-                driverName: user.user_metadata?.full_name || 'مندوب'
+                driverName: auth.profile.fullName || 'مندوب'
             }
         });
 

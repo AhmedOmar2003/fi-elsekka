@@ -1,39 +1,20 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
+import { driverSupabaseAdmin, requireDriverApi } from '@/lib/driver-guard';
 
 export async function GET(request: Request) {
-    const { searchParams } = new URL(request.url);
-    const driverId = searchParams.get('driverId');
-
-    if (!driverId || !serviceRoleKey || !supabaseUrl) {
-        return NextResponse.json({ error: 'Missing driverId or service configuration' }, { status: 400 });
+    if (!driverSupabaseAdmin) {
+        return NextResponse.json({ error: 'Missing service configuration' }, { status: 500 });
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
-
-    // Verify Authorization header to prevent abuse
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader) {
-        return NextResponse.json({ error: 'Missing Authorization header' }, { status: 401 });
+    const auth = await requireDriverApi(request);
+    if (!auth.ok) {
+        return auth.response;
     }
-    const token = authHeader.replace('Bearer ', '');
 
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (authError || !user || user.id !== driverId || user.user_metadata?.role !== 'driver') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const driverId = auth.profile.user.id;
     
     try {
-        const { data: orders, error } = await supabaseAdmin
+        const { data: orders, error } = await driverSupabaseAdmin
             .from('orders')
             .select('*, users!user_id(full_name, phone, email)')
             .contains('shipping_address', { driver: { id: driverId } })

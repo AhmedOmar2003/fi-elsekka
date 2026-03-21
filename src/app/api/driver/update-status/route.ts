@@ -1,23 +1,19 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { createUserNotificationWithPush } from '@/lib/user-push-server';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
+import { driverSupabaseAdmin, requireDriverApi } from '@/lib/driver-guard';
 
 export async function POST(request: Request) {
-    if (!serviceRoleKey || !supabaseUrl) {
+    if (!driverSupabaseAdmin) {
         return NextResponse.json({ error: 'Missing service configuration' }, { status: 500 });
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
-
     try {
+        const auth = await requireDriverApi(request);
+        if (!auth.ok) {
+            return auth.response;
+        }
+        const user = auth.profile.user;
+
         const body = await request.json();
         const { orderId, status } = body;
 
@@ -25,21 +21,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing orderId or status' }, { status: 400 });
         }
 
-        // Verify Authorization header
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-            return NextResponse.json({ error: 'Missing Authorization header' }, { status: 401 });
-        }
-        const token = authHeader.replace('Bearer ', '');
-
-        const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-        
-        if (authError || !user || user.user_metadata?.role !== 'driver') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
         // Verify the order actually belongs to this driver
-        const { data: order, error: orderError } = await supabaseAdmin
+        const { data: order, error: orderError } = await driverSupabaseAdmin
             .from('orders')
       .select('user_id, shipping_address, status')
             .eq('id', orderId)
@@ -55,7 +38,7 @@ export async function POST(request: Request) {
         }
         
         // Update order status securely
-        const { error: updateError } = await supabaseAdmin
+        const { error: updateError } = await driverSupabaseAdmin
             .from('orders')
       .update({
         status,
@@ -77,17 +60,17 @@ export async function POST(request: Request) {
 
         // Notify Admin Dashboard immediately so they see the status change live
     if (status === 'shipped') {
-      await supabaseAdmin.channel('admin-notifications').send({
+      await driverSupabaseAdmin.channel('admin-notifications').send({
         type: 'broadcast',
         event: 'order-shipped',
         payload: {
           orderId,
-          driverName: user.email || 'المندوب'
+          driverName: auth.profile.fullName || user.email || 'المندوب'
         }
       })
 
       if (order.user_id) {
-        await createUserNotificationWithPush(supabaseAdmin, order.user_id, {
+        await createUserNotificationWithPush(driverSupabaseAdmin, order.user_id, {
           title: 'طلبك بقى في الطريق 🛵',
           message: 'المندوب استلم طلبك من المكان وخرج بالفعل علشان يوصلهولك. تابع الطلب وشوف هو وصل لفين.',
           link: '/orders'
@@ -96,18 +79,18 @@ export async function POST(request: Request) {
     }
 
     if (status === 'delivered') {
-            await supabaseAdmin.channel('admin-notifications').send({
+            await driverSupabaseAdmin.channel('admin-notifications').send({
                 type: 'broadcast',
                 event: 'order-delivered',
                 payload: { 
                     orderId, 
-                    driverName: user.user_metadata?.full_name || 'مندوب' 
+                    driverName: auth.profile.fullName || 'مندوب' 
                 }
             });
 
             // CREATE IN-APP NOTIFICATION FOR THE CUSTOMER
             if (order.user_id) {
-                await createUserNotificationWithPush(supabaseAdmin, order.user_id, {
+                await createUserNotificationWithPush(driverSupabaseAdmin, order.user_id, {
                     title: 'تم توصيل طلبك! 📦',
                     message: `تم تسليم طلبك رقم #${orderId.substring(0,6)} بنجاح. نتمنى لك تجربة سعيدة!`,
                     link: '/orders',

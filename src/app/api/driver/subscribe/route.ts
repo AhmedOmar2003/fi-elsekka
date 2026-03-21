@@ -1,24 +1,16 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
-
-const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false }
-});
+import { driverSupabaseAdmin, requireDriverApi } from '@/lib/driver-guard';
 
 export async function POST(request: Request) {
     try {
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader?.startsWith('Bearer ')) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!driverSupabaseAdmin) {
+            return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
         }
-        const token = authHeader.split(' ')[1];
-        const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-        if (authError || !user || user.user_metadata?.role !== 'driver') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const auth = await requireDriverApi(request);
+        if (!auth.ok) {
+            return auth.response;
         }
+        const user = auth.profile.user;
 
         const { subscription } = await request.json();
         const endpoint = subscription?.endpoint;
@@ -32,7 +24,7 @@ export async function POST(request: Request) {
         // `onConflict: driver_id, subscription`, which causes the exact
         // "no unique or exclusion constraint" error the driver sees.
         // We update by subscription endpoint first, then insert if needed.
-        const { data: updatedRows, error: updateError } = await supabaseAdmin
+        const { data: updatedRows, error: updateError } = await driverSupabaseAdmin
             .from('driver_subscriptions')
             .update({ driver_id: user.id, subscription })
             .eq('subscription->>endpoint', endpoint)
@@ -44,7 +36,7 @@ export async function POST(request: Request) {
         }
 
         if (!updatedRows || updatedRows.length === 0) {
-            const { error: insertError } = await supabaseAdmin
+            const { error: insertError } = await driverSupabaseAdmin
                 .from('driver_subscriptions')
                 .insert({ driver_id: user.id, subscription });
 

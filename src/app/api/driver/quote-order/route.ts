@@ -1,24 +1,20 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { attachOrderEconomics, CURRENT_DELIVERY_FEE } from '@/lib/order-economics';
 import { createUserNotificationWithPush } from '@/lib/user-push-server';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
+import { driverSupabaseAdmin, requireDriverApi } from '@/lib/driver-guard';
 
 export async function POST(request: Request) {
-    if (!serviceRoleKey || !supabaseUrl) {
+    if (!driverSupabaseAdmin) {
         return NextResponse.json({ error: 'Missing service configuration' }, { status: 500 });
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false
-        }
-    });
-
     try {
+        const auth = await requireDriverApi(request);
+        if (!auth.ok) {
+            return auth.response;
+        }
+        const user = auth.profile.user;
+
         const body = await request.json();
         const { orderId, productsSubtotal } = body;
 
@@ -31,28 +27,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid productsSubtotal' }, { status: 400 });
         }
 
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-            return NextResponse.json({ error: 'Missing Authorization header' }, { status: 401 });
-        }
-        const token = authHeader.replace('Bearer ', '');
-
-        const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-        if (authError || !user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const { data: driverProfile } = await supabaseAdmin
-            .from('users')
-            .select('role, full_name')
-            .eq('id', user.id)
-            .single();
-
-        if (driverProfile?.role !== 'driver') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const { data: order, error: orderError } = await supabaseAdmin
+        const { data: order, error: orderError } = await driverSupabaseAdmin
             .from('orders')
             .select('id, user_id, shipping_address, status')
             .eq('id', orderId)
@@ -82,13 +57,13 @@ export async function POST(request: Request) {
                 quoted_final_total: quotedFinalTotal,
                 pricing_updated_at: now,
                 pricing_updated_by_driver_id: user.id,
-                pricing_updated_by_driver_name: driverProfile?.full_name || user.user_metadata?.full_name || shipping?.driver?.name || 'مندوب',
+                pricing_updated_by_driver_name: auth.profile.fullName || shipping?.driver?.name || 'مندوب',
             },
             quotedFinalTotal,
             Number(shipping?.merchant_discount_amount || 0)
         );
 
-        const { error: updateError } = await supabaseAdmin
+        const { error: updateError } = await driverSupabaseAdmin
             .from('orders')
             .update({
                 total_amount: quotedFinalTotal,
@@ -101,19 +76,19 @@ export async function POST(request: Request) {
         }
 
         if (order.user_id) {
-            await createUserNotificationWithPush(supabaseAdmin, order.user_id, {
+            await createUserNotificationWithPush(driverSupabaseAdmin, order.user_id, {
                 title: 'تم تحديد سعر طلبك النصي',
                 message: `تم تسعير طلبك بمبلغ ${quotedFinalTotal.toLocaleString()} ج.م شامل التوصيل. افتح تتبع الطلب لمراجعة التفاصيل.`,
                 link: '/orders',
             });
         }
 
-        await supabaseAdmin.channel('admin-notifications').send({
+        await driverSupabaseAdmin.channel('admin-notifications').send({
             type: 'broadcast',
             event: 'driver-priced-order',
             payload: {
                 orderId,
-                driverName: driverProfile?.full_name || user.user_metadata?.full_name || 'مندوب',
+                driverName: auth.profile.fullName || 'مندوب',
                 quotedFinalTotal,
                 categoryName: shipping?.custom_request_category_name || 'طلب نصي',
             }
