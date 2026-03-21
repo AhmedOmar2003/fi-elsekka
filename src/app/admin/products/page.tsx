@@ -8,6 +8,7 @@ import {
 } from '@/services/adminService';
 import { Plus, Pencil, Trash2, Search, X, Upload, Loader2, ImageOff, Tag } from 'lucide-react';
 import { toast } from 'sonner';
+import { BundleItem, getBundleItems, getProductMode, getBundleSummary, ProductMode } from '@/lib/product-presentation';
 
 type Product = {
     id: string;
@@ -36,7 +37,9 @@ const EMPTY_FORM = {
     images_files: [null, null, null, null] as (File | null)[],
     is_best_seller: false,
     show_in_offers: false,
-    specs: [] as { id?: string, label: string, description: string }[]
+    specs: [] as { id?: string, label: string, description: string }[],
+    product_mode: 'single' as ProductMode,
+    bundle_items: [] as BundleItem[],
 };
 
 function normalizeSpecs(
@@ -78,6 +81,14 @@ export default function AdminProductsPage() {
 
     useEffect(() => { load(); }, []);
 
+    const updateBundleItem = (index: number, key: keyof BundleItem, value: string) => {
+        setForm(prev => {
+            const nextItems = [...prev.bundle_items];
+            nextItems[index] = { ...nextItems[index], [key]: value };
+            return { ...prev, bundle_items: nextItems };
+        });
+    };
+
     const openNew = () => {
         setEditingId(null);
         setForm({ ...EMPTY_FORM });
@@ -104,6 +115,8 @@ export default function AdminProductsPage() {
             is_best_seller: !!p.is_best_seller,
             show_in_offers: !!p.show_in_offers,
             specs: normalizeSpecs(p.product_specifications, p.specifications),
+            product_mode: getProductMode(p.specifications),
+            bundle_items: getBundleItems(p.specifications),
         });
         setIsModalOpen(true);
     };
@@ -135,6 +148,10 @@ export default function AdminProductsPage() {
 
     const handleSave = async () => {
         if (!form.name.trim() || !form.price) return;
+        if (form.product_mode === 'bundle' && form.bundle_items.filter(item => item.name.trim()).length === 0) {
+            toast.error('ضيف محتويات الباكج الأول علشان تظهر للعميل بشكل واضح');
+            return;
+        }
         setSaveError(null);
         setSaveSuccess(false);
         setIsSaving(true);
@@ -169,6 +186,14 @@ export default function AdminProductsPage() {
                 await Promise.all(uploadPromises);
             }
 
+            const cleanedBundleItems = form.bundle_items
+                .map(item => ({
+                    name: item.name.trim(),
+                    quantity: item.quantity?.trim() || '',
+                    note: item.note?.trim() || '',
+                }))
+                .filter(item => item.name);
+
             const payload: Record<string, unknown> = {
                 name: form.name.trim(),
                 description: form.description.trim() || null,
@@ -181,6 +206,8 @@ export default function AdminProductsPage() {
                 is_best_seller: form.is_best_seller,
                 show_in_offers: form.show_in_offers,
                 specifications: {
+                    product_mode: form.product_mode,
+                    bundle_items: form.product_mode === 'bundle' ? cleanedBundleItems : [],
                     custom_specs: form.specs
                         .filter(spec => spec.label.trim() && spec.description.trim())
                         .map(spec => ({
@@ -321,6 +348,22 @@ export default function AdminProductsPage() {
                                                         </div>
                                                     )}
                                                     <span className="font-bold text-foreground line-clamp-1">{p.name}</span>
+                                                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                                        {getProductMode(p.specifications) === 'bundle' ? (
+                                                            <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-black text-primary">
+                                                                باكج
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center rounded-full bg-surface-hover px-2 py-0.5 text-[10px] font-bold text-gray-400">
+                                                                منتج عادي
+                                                            </span>
+                                                        )}
+                                                        {getProductMode(p.specifications) === 'bundle' && getBundleItems(p.specifications).length > 0 ? (
+                                                            <span className="text-[10px] text-gray-500 line-clamp-1">
+                                                                {getBundleSummary(getBundleItems(p.specifications))}
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 hidden sm:table-cell">
@@ -482,6 +525,100 @@ export default function AdminProductsPage() {
                                     )}
                                 </div>
                             ))}
+
+                            <div className="rounded-2xl border border-surface-hover bg-surface-hover/50 p-4">
+                                <div className="flex items-center justify-between gap-3 mb-3">
+                                    <div>
+                                        <label className="block text-xs font-black text-gray-400 mb-1">نوع المنتج</label>
+                                        <p className="text-[11px] text-gray-500">اختار لو ده منتج لوحده ولا باكج فيها كذا حاجة بتتباع مع بعض.</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm(f => ({ ...f, product_mode: 'single', bundle_items: [] }))}
+                                        className={`rounded-2xl border px-4 py-3 text-start transition-all ${form.product_mode === 'single'
+                                            ? 'border-primary bg-primary/10 text-white shadow-lg shadow-primary/10'
+                                            : 'border-surface-hover bg-surface text-gray-300 hover:bg-surface-hover'
+                                            }`}
+                                    >
+                                        <p className="font-black text-sm mb-1">منتج عادي</p>
+                                        <p className="text-[11px] text-gray-400">العميل يشتريه كقطعة واحدة عادي.</p>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm(f => ({ ...f, product_mode: 'bundle', bundle_items: f.bundle_items.length > 0 ? f.bundle_items : [{ name: '', quantity: '', note: '' }] }))}
+                                        className={`rounded-2xl border px-4 py-3 text-start transition-all ${form.product_mode === 'bundle'
+                                            ? 'border-primary bg-primary/10 text-white shadow-lg shadow-primary/10'
+                                            : 'border-surface-hover bg-surface text-gray-300 hover:bg-surface-hover'
+                                            }`}
+                                    >
+                                        <p className="font-black text-sm mb-1">باكج / مجموعة</p>
+                                        <p className="text-[11px] text-gray-400">مثال: زبادي + دقيق + سكر كأنهم منتج واحد.</p>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {form.product_mode === 'bundle' && (
+                                <div className="pt-4 border-t border-surface-hover">
+                                    <div className="flex items-center justify-between mb-3 gap-3">
+                                        <div>
+                                            <label className="block text-sm font-bold text-foreground">محتويات الباكج</label>
+                                            <p className="text-[11px] text-gray-500 mt-1">اكتب الحاجات اللي جوا الباكج علشان العميل يفهم هو بياخد إيه بالظبط.</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setForm(f => ({ ...f, bundle_items: [...f.bundle_items, { name: '', quantity: '', note: '' }] }))}
+                                            className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1 bg-primary/10 px-2 py-1 rounded-lg"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" /> إضافة عنصر
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        {form.bundle_items.map((item, idx) => (
+                                            <div key={idx} className="rounded-2xl border border-surface-hover bg-surface-hover p-3 space-y-2">
+                                                <div className="flex items-start gap-2">
+                                                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                        <input
+                                                            value={item.name || ''}
+                                                            onChange={e => updateBundleItem(idx, 'name', e.target.value)}
+                                                            placeholder="اسم المنتج جوه الباكج"
+                                                            className="w-full bg-surface border border-surface-hover rounded-lg px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+                                                        />
+                                                        <input
+                                                            value={item.quantity || ''}
+                                                            onChange={e => updateBundleItem(idx, 'quantity', e.target.value)}
+                                                            placeholder="الكمية أو الحجم (مثال: 2 علبة / 1 كيلو)"
+                                                            className="w-full bg-surface border border-surface-hover rounded-lg px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setForm(f => ({ ...f, bundle_items: f.bundle_items.filter((_, i) => i !== idx) }))}
+                                                        className="p-2 bg-rose-500/10 text-rose-400 rounded-lg hover:bg-rose-500/20 shrink-0 transition-colors"
+                                                        title="حذف"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                                <input
+                                                    value={item.note || ''}
+                                                    onChange={e => updateBundleItem(idx, 'note', e.target.value)}
+                                                    placeholder="ملاحظة اختيارية (مثال: النكهات حسب المتوفر)"
+                                                    className="w-full bg-surface border border-surface-hover rounded-lg px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+                                                />
+                                            </div>
+                                        ))}
+
+                                        {form.bundle_items.length === 0 && (
+                                            <p className="text-xs text-gray-500 text-center py-4 bg-surface-hover rounded-xl border border-dashed border-gray-400/30">
+                                                لسه مفيش منتجات جوه الباكج. ضيفهم من الزر اللي فوق.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Best Seller */}
                             <label className="flex items-center gap-3 mt-2 cursor-pointer p-3 rounded-xl bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors">

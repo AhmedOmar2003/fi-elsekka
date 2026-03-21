@@ -3,6 +3,7 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { ProductCard } from "@/components/ui/product-card"
 import { fetchOffers } from "@/services/productsService"
+import { toProductCardProps } from "@/lib/product-presentation"
 
 // The offers page must be fully dynamic to guarantee admin updates 
 // appear instantly and bypass stubborn Next.js router cache.
@@ -12,28 +13,10 @@ export const revalidate = 0;
 export default async function OffersPage() {
   const dbProducts = await fetchOffers();
 
-  const displayProducts = dbProducts.map(p => {
-    let price = p.price;
-    let oldPrice: number | undefined = undefined;
-    let discountBadge: string | undefined = undefined;
-
-    if (p.discount_percentage && p.discount_percentage > 0) {
-      price = Math.round(p.price * (1 - p.discount_percentage / 100));
-      oldPrice = p.price;
-      discountBadge = `خصم ${p.discount_percentage}%`;
-    }
-
-    return {
-      id: p.id,
-      title: p.name,
-      price,
-      oldPrice,
-      discountBadge,
-      rating: p.specifications?.rating,
-      reviewsCount: p.specifications?.reviews_count,
-      imageUrl: p.image_url || "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn"
-    };
-  });
+  const displayProducts = dbProducts.map((product) => ({
+    ...toProductCardProps(product),
+    imageUrl: product.image_url || "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn",
+  }));
 
   return (
     <>

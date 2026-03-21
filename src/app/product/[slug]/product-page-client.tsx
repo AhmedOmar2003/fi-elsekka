@@ -14,6 +14,7 @@ import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { DiscountCodeInput } from "@/components/ui/discount-code-input"
 import { toast } from "sonner"
+import { getBundleItems, getBundleSummary, getProductMode } from "@/lib/product-presentation"
 
 function WhatsAppIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -278,6 +279,9 @@ export default function ProductPage() {
       discountAmount = `وفر ${dbProduct.price - price} ج.م`;
     }
 
+    const bundleItems = getBundleItems(dbProduct.specifications)
+    const productMode = getProductMode(dbProduct.specifications)
+
     return {
       title: dbProduct.name,
       price,
@@ -299,6 +303,9 @@ export default function ProductPage() {
         "توصيل سريع",
         "دفع عند الاستلام",
       ],
+      productMode,
+      bundleItems,
+      bundleSummary: getBundleSummary(bundleItems),
       images: [
         dbProduct.image_url,
         ...(dbProduct.images || [])
@@ -328,6 +335,9 @@ export default function ProductPage() {
       "تحكم باللمس",
       "مقاومة لرذاذ الماء والتعرق",
     ],
+    productMode: "single",
+    bundleItems: [],
+    bundleSummary: "",
     images: [
       "https://th.bing.com/th/id/OIG3.C_W_T_P_j_B_k_O_d_J_?pid=ImgGn",
       "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn",
@@ -540,6 +550,11 @@ export default function ProductPage() {
                     {product.discountAmount}
                   </Badge>
                 )}
+                {product.productMode === "bundle" && (
+                  <Badge className="bg-primary hover:bg-primary-hover text-white font-bold px-3 py-1 shadow-md shadow-primary/20">
+                    باكج جاهزة
+                  </Badge>
+                )}
                 
                 {/* Dynamic Rating Badge -> Scrolls to reviews */}
                 <a 
@@ -558,6 +573,17 @@ export default function ProductPage() {
               <h1 className="text-3xl md:text-4xl font-heading font-black text-foreground mb-6 leading-[1.3]">
                 {product.title}
               </h1>
+
+              {product.productMode === "bundle" && (
+                <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                  <p className="text-sm font-black text-primary mb-1">الباكج دي متجهزة علشان تاخد كذا حاجة مرة واحدة</p>
+                  <p className="text-xs text-gray-400">
+                    {product.bundleSummary
+                      ? `جواها: ${product.bundleSummary}`
+                      : `الباكج فيها ${product.bundleItems.length} منتجات متجمعة لك في منتج واحد`}
+                  </p>
+                </div>
+              )}
 
               {/* Price block */}
               <div className="flex items-end gap-3 mb-6 p-5 rounded-2xl bg-surface-light border border-surface-hover shadow-sm">
@@ -752,6 +778,25 @@ export default function ProductPage() {
                     ))}
                   </ul>
                 </section>
+
+                {product.productMode === "bundle" && product.bundleItems.length > 0 && (
+                  <section>
+                    <h3 className="text-xl font-bold mb-3 pb-2 border-b border-surface-hover">جوه الباكج إيه؟</h3>
+                    <div className="rounded-2xl border border-primary/15 bg-surface/70 p-4 space-y-3">
+                      {product.bundleItems.map((item: any, idx: number) => (
+                        <div key={`${item.name}-${idx}`} className="flex items-start justify-between gap-3 rounded-xl bg-surface px-4 py-3 border border-surface-hover">
+                          <div className="space-y-1">
+                            <p className="text-sm font-bold text-white">{item.name}</p>
+                            {item.note ? <p className="text-xs text-gray-400">{item.note}</p> : null}
+                          </div>
+                          <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-black text-primary">
+                            {item.quantity || "ضمن الباكج"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
 
                 <section>
                   <h3 className="text-xl font-bold mb-3 pb-2 border-b border-surface-hover">المواصفات</h3>

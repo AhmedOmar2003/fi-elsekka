@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { LogoutModal } from "@/components/ui/logout-modal"
 import { toast } from "sonner"
+import { toProductCardProps } from "@/lib/product-presentation"
 
 type Tab = "orders" | "search_requests" | "favorites" | "addresses" | "settings"
 
@@ -569,27 +570,13 @@ export default function AccountPage() {
                                     </div>
                                     <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
                                         {favProducts.map(product => {
-                                            let price = product.price;
-                                            let oldPrice: number | undefined = (product.specifications as any)?.old_price;
-                                            let discountBadge = (product.specifications as any)?.discount_badge;
-
-                                            if (product.discount_percentage && product.discount_percentage > 0) {
-                                                price = Math.round(product.price * (1 - product.discount_percentage / 100));
-                                                oldPrice = product.price;
-                                                discountBadge = `خصم ${product.discount_percentage}%`;
-                                            }
+                                            const productCard = toProductCardProps(product as any)
 
                                             return (
                                                 <div key={product.id} className="relative group/fav">
                                                     <ProductCard
-                                                        id={product.id}
-                                                        title={product.name}
-                                                        price={price}
-                                                        oldPrice={oldPrice}
-                                                        discountBadge={discountBadge}
+                                                        {...productCard}
                                                         imageUrl={product.image_url || (product.specifications as any)?.image_url || ''}
-                                                        rating={(product.specifications as any)?.rating}
-                                                        reviewsCount={(product.specifications as any)?.reviews_count}
                                                     />
                                                     {/* Remove from favorites button */}
                                                     <button

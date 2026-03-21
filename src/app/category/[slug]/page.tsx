@@ -16,6 +16,7 @@ import { Product, fetchProductsByCategory, fetchPaginatedProducts } from "@/serv
 import { useProducts } from "@/contexts/ProductsContext"
 import { isRequestOnlyTextCategory } from "@/lib/text-category-orders"
 import { CategoryRequestPanel } from "@/components/categories/category-request-panel"
+import { toProductCardProps } from "@/lib/product-presentation"
 
 const PAGE_SIZE = 20
 
@@ -176,26 +177,7 @@ export default function CategoryPage() {
     return filtered
   }, [allProducts, searchQuery, categoryFilters, priceFilters, sortBy])
 
-  const productCards = displayProducts.map((p) => {
-    let price = p.price
-    let oldPrice: number | undefined = p.specifications?.old_price
-    let discountBadge = p.specifications?.discount_badge
-    if (p.discount_percentage && p.discount_percentage > 0) {
-      price = Math.round(p.price * (1 - p.discount_percentage / 100))
-      oldPrice = p.price
-      discountBadge = `خصم ${p.discount_percentage}%`
-    }
-    return {
-      id: p.id,
-      title: p.name,
-      price,
-      oldPrice,
-      discountBadge,
-      rating: p.specifications?.rating,
-      reviewsCount: p.specifications?.reviews_count,
-      imageUrl: p.image_url || p.specifications?.image_url || "",
-    }
-  })
+  const productCards = displayProducts.map(toProductCardProps)
 
   return (
     <>

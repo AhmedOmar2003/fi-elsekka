@@ -9,6 +9,7 @@ import { ShieldCheck, Zap, Banknote, Clock } from "lucide-react"
 import { fetchHomeProducts, fetchOffers, fetchBestSellers } from "@/services/productsService"
 import { HomeCategoriesList } from "@/components/ui/home-categories"
 import { PromoBanner } from "@/components/ui/promo-banner"
+import { toProductCardProps } from "@/lib/product-presentation"
 
 // Cache the home page for 5 minutes using Next.js ISR
 // The home page must be fully dynamic to guarantee admin updates 
@@ -33,88 +34,28 @@ export default async function Home() {
     fetchOffers(),
   ]);
 
-  const displayProducts = dbProducts.length > 0 ? dbProducts.slice(0, 4).map(p => {
-    let price = p.price;
-    let oldPrice: number | undefined = p.specifications?.old_price;
-    let discountBadge = p.specifications?.discount_badge;
-
-    if (p.discount_percentage && p.discount_percentage > 0) {
-      price = Math.round(p.price * (1 - p.discount_percentage / 100));
-      oldPrice = p.price;
-      discountBadge = `خصم ${p.discount_percentage}%`;
-    }
-
-    return {
-      id: p.id,
-      title: p.name,
-      price,
-      oldPrice,
-      discountBadge,
-      rating: p.specifications?.rating,
-      reviewsCount: p.specifications?.reviews_count,
-      imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn"
-    };
-  }) : MOCK_FEATURED_PRODUCTS;
+  const displayProducts = dbProducts.length > 0 ? dbProducts.slice(0, 4).map(p => ({
+    ...toProductCardProps(p),
+    imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn"
+  })) : MOCK_FEATURED_PRODUCTS;
 
   // Only admin-curated offer products
-  const displayOffers = offerProducts.slice(0, 4).map(p => {
-    let price = p.price;
-    let oldPrice: number | undefined = undefined;
-    let discountBadge: string | undefined = undefined;
-
-    if (p.discount_percentage && p.discount_percentage > 0) {
-      price = Math.round(p.price * (1 - p.discount_percentage / 100));
-      oldPrice = p.price;
-      discountBadge = `خصم ${p.discount_percentage}%`;
-    }
-
-    return {
-      id: p.id,
-      title: p.name,
-      price,
-      oldPrice,
-      discountBadge,
-      rating: p.specifications?.rating,
-      reviewsCount: p.specifications?.reviews_count,
-      imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn"
-    };
-  });
+  const displayOffers = offerProducts.slice(0, 4).map(p => ({
+    ...toProductCardProps(p),
+    imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn"
+  }));
 
   // ── Best Sellers ────────────────────────────────────────────────────────
   // FIX: use the dedicated DB query result — NOT dbProducts.filter()
   // The old approach filtered from 8 items; best sellers added earlier were invisible.
   const displayBestSellers = bestSellerProducts.length > 0
-    ? bestSellerProducts.slice(0, 4).map(p => {
-        let price = p.price;
-        let oldPrice: number | undefined = p.specifications?.old_price;
-        let discountBadge = p.specifications?.discount_badge;
-
-        if (p.discount_percentage && p.discount_percentage > 0) {
-          price = Math.round(p.price * (1 - p.discount_percentage / 100));
-          oldPrice = p.price;
-          discountBadge = `خصم ${p.discount_percentage}%`;
-        }
-
-        return {
-          id: p.id,
-          title: p.name,
-          price,
-          oldPrice,
-          discountBadge,
-          rating: p.specifications?.rating,
-          reviewsCount: p.specifications?.reviews_count,
-          imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
-        };
-      })
+    ? bestSellerProducts.slice(0, 4).map(p => ({
+        ...toProductCardProps(p),
+        imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
+      }))
     // Fallback: show products 4-7 from the featured list if no best sellers are marked
     : dbProducts.slice(4, 9).map(p => ({
-        id: p.id,
-        title: p.name,
-        price: p.price,
-        oldPrice: p.specifications?.old_price,
-        discountBadge: p.specifications?.discount_badge,
-        rating: p.specifications?.rating,
-        reviewsCount: p.specifications?.reviews_count,
+        ...toProductCardProps(p),
         imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
       }));
 

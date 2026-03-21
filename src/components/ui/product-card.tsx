@@ -17,6 +17,8 @@ export interface ProductCardProps {
   imageUrl: string;
   rating?: number;
   reviewsCount?: number;
+  productMode?: "single" | "bundle";
+  bundleItems?: { name: string; quantity?: string; note?: string }[];
   className?: string;
 }
 
@@ -29,6 +31,8 @@ export function ProductCard({
   imageUrl,
   rating,
   reviewsCount,
+  productMode = "single",
+  bundleItems = [],
   className,
 }: ProductCardProps) {
   const { addItem } = useCart()
@@ -49,6 +53,13 @@ export function ProductCard({
     await toggleFavorite(id)
   }
 
+  const isBundle = productMode === "bundle"
+  const bundleSummary = bundleItems
+    .slice(0, 2)
+    .map((item) => item.name)
+    .filter(Boolean)
+    .join(" + ")
+
   return (
     <div className={cn("group flex flex-col overflow-hidden rounded-3xl bg-surface border border-surface-hover transition-all duration-300 hover:border-primary/30 hover:shadow-premium hover:-translate-y-1 touch-manipulation", className)}>
       <Link href={`/product/${id}`} className="relative aspect-[4/3] sm:aspect-[3/2] w-full overflow-hidden bg-surface-lighter">
@@ -65,6 +76,11 @@ export function ProductCard({
 
         {/* Discount Badge */}
         <div className="absolute top-3 right-3 flex flex-col gap-1 z-10">
+          {isBundle && (
+            <span className="inline-flex items-center rounded-full bg-primary text-white font-bold px-2.5 py-1 shadow-lg shadow-primary/20 text-xs">
+              باكج
+            </span>
+          )}
           {discountBadge && (
             <span className="inline-flex items-center rounded-full bg-secondary text-white font-bold px-2.5 py-1 shadow-lg shadow-secondary/20 text-xs">
               {discountBadge}
@@ -103,6 +119,11 @@ export function ProductCard({
           <h3 className="text-sm sm:text-base font-heading font-semibold line-clamp-2 leading-tight group-hover:text-primary transition-colors text-foreground">
             {title}
           </h3>
+          {isBundle && (
+            <p className="mt-2 text-[11px] sm:text-xs text-gray-400 line-clamp-2 leading-relaxed">
+              {bundleSummary ? `جواها: ${bundleSummary}` : `باكج فيها ${bundleItems.length} منتجات`}
+            </p>
+          )}
         </Link>
 
         <div className="mt-auto flex items-end justify-between gap-2 pt-2 border-t border-surface-hover divide-surface-hover">
