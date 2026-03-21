@@ -1,6 +1,9 @@
+"use client"
+
 import * as React from "react"
 import Link from "next/link"
 import { Banknote } from "lucide-react"
+import { useProducts } from "@/contexts/ProductsContext"
 
 // Same motorcycle icon as the header
 function MotorcycleIcon({ className }: { className?: string }) {
@@ -19,6 +22,17 @@ function MotorcycleIcon({ className }: { className?: string }) {
 }
 
 export function Footer() {
+  const { categories } = useProducts()
+
+  const footerCategoryNames = React.useMemo(
+    () => ["ملابس وأزياء", "سوبر ماركت", "صيدلية", "أدوات منزلية"],
+    []
+  )
+
+  const footerCategories = footerCategoryNames
+    .map((name) => categories.find((category) => category.name === name))
+    .filter((category): category is (typeof categories)[number] => !!category)
+
   return (
     <footer className="mt-auto w-full border-t border-surface-hover bg-background pt-10 pb-20 md:pb-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -44,10 +58,13 @@ export function Footer() {
           <div>
             <h4 className="mb-4 font-semibold text-foreground">الأقسام</h4>
             <ul className="font-heading space-y-2 text-sm text-gray-500">
-              <li><Link href="/category/groceries" className="hover:text-primary transition-colors">سوبر ماركت</Link></li>
-              <li><Link href="/category/electronics" className="hover:text-primary transition-colors">إلكترونيات</Link></li>
-              <li><Link href="/category/pharmacy" className="hover:text-primary transition-colors">صيدلية</Link></li>
-              <li><Link href="/category/fashion" className="hover:text-primary transition-colors">ملابس الموضة</Link></li>
+              {footerCategories.map((category) => (
+                <li key={category.id}>
+                  <Link href={`/category/${category.id}`} className="hover:text-primary transition-colors">
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
