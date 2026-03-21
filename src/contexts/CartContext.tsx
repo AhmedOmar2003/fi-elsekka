@@ -194,10 +194,17 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             }
         });
 
+        const optimisticSnapshot = items;
         toast.success(`تم إضافة "${product.name}" بنجاح!`);
 
         // Write to DB, let realtime/loadCart update state
-        await addToCart(user.id, productId, quantity, appliedPrice);
+        const { error } = await addToCart(user.id, productId, quantity, appliedPrice);
+        if (error) {
+            console.error('Failed to add item to cart:', error);
+            setItems(optimisticSnapshot);
+            toast.error('محصلش حفظ للمنتج في السلة، جرّب تاني.');
+            return;
+        }
     };
 
     // ── Remove item ───────────────────────────────────────────────────────

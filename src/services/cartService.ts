@@ -23,7 +23,6 @@ export const fetchUserCart = async (userId: string): Promise<CartItem[]> => {
                 name,
                 price,
                 image_url,
-                slug,
                 discount_percentage,
                 specifications
             )
