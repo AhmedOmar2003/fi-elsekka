@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { DiscountCodeInput } from "@/components/ui/discount-code-input"
 import { toast } from "sonner"
 import { getBundleItems, getBundleSummary, getProductMode } from "@/lib/product-presentation"
+import { getTaxonomyLabel, getTaxonomySelection } from "@/lib/category-taxonomy"
 
 function WhatsAppIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -281,6 +282,8 @@ export default function ProductPage() {
 
     const bundleItems = getBundleItems(dbProduct.specifications)
     const productMode = getProductMode(dbProduct.specifications)
+    const taxonomySelection = getTaxonomySelection(dbProduct.specifications)
+    const taxonomyLabel = getTaxonomyLabel(dbProduct.categories?.name, taxonomySelection.primary, taxonomySelection.secondary)
 
     return {
       title: dbProduct.name,
@@ -306,6 +309,7 @@ export default function ProductPage() {
       productMode,
       bundleItems,
       bundleSummary: getBundleSummary(bundleItems),
+      taxonomyLabel,
       images: [
         dbProduct.image_url,
         ...(dbProduct.images || [])
@@ -338,6 +342,7 @@ export default function ProductPage() {
     productMode: "single",
     bundleItems: [],
     bundleSummary: "",
+    taxonomyLabel: { primary: "", secondary: "" },
     images: [
       "https://th.bing.com/th/id/OIG3.C_W_T_P_j_B_k_O_d_J_?pid=ImgGn",
       "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn",
@@ -582,6 +587,19 @@ export default function ProductPage() {
                       ? `جواها: ${product.bundleSummary}`
                       : `الباكج فيها ${product.bundleItems.length} منتجات متجمعة لك في منتج واحد`}
                   </p>
+                </div>
+              )}
+
+              {product.taxonomyLabel.primary && (
+                <div className="mb-6 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-surface-hover px-3 py-1 text-xs font-black text-gray-300">
+                    {product.taxonomyLabel.primary}
+                  </span>
+                  {product.taxonomyLabel.secondary && (
+                    <span className="inline-flex items-center rounded-full bg-surface-hover px-3 py-1 text-xs font-black text-gray-400">
+                      {product.taxonomyLabel.secondary}
+                    </span>
+                  )}
                 </div>
               )}
 

@@ -9,6 +9,13 @@ import {
 import { Plus, Pencil, Trash2, Search, X, Upload, Loader2, ImageOff, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { BundleItem, getBundleItems, getProductMode, getBundleSummary, ProductMode } from '@/lib/product-presentation';
+import {
+    getCategoryTaxonomyConfig,
+    getTaxonomyLabel,
+    getTaxonomyPrimaryOptions,
+    getTaxonomySecondaryOptions,
+    getTaxonomySelection,
+} from '@/lib/category-taxonomy';
 
 type Product = {
     id: string;
@@ -40,6 +47,9 @@ const EMPTY_FORM = {
     specs: [] as { id?: string, label: string, description: string }[],
     product_mode: 'single' as ProductMode,
     bundle_items: [] as BundleItem[],
+    taxonomy_primary: '',
+    taxonomy_secondary: '',
+    specifications_base: {} as Record<string, any>,
 };
 
 function normalizeSpecs(
@@ -73,6 +83,11 @@ export default function AdminProductsPage() {
     const [isUploading, setIsUploading] = useState(false);
     const fileInput = useRef<HTMLInputElement>(null);
 
+    const selectedCategoryName = categories.find(category => category.id === form.category_id)?.name || '';
+    const taxonomyConfig = getCategoryTaxonomyConfig(selectedCategoryName);
+    const taxonomyPrimaryOptions = getTaxonomyPrimaryOptions(selectedCategoryName);
+    const taxonomySecondaryOptions = getTaxonomySecondaryOptions(selectedCategoryName, form.taxonomy_primary);
+
     const load = async () => {
         setIsLoading(true);
         const [p, c] = await Promise.all([fetchAdminProducts(), fetchAdminCategories()]);
@@ -100,6 +115,12 @@ export default function AdminProductsPage() {
     const openEdit = (p: Product) => {
         setEditingId(p.id);
         const pImages = p.images || [];
+        const taxonomySelection = getTaxonomySelection(p.specifications);
+        const baseSpecifications = { ...(p.specifications || {}) };
+        delete baseSpecifications.custom_specs;
+        delete baseSpecifications.product_mode;
+        delete baseSpecifications.bundle_items;
+        delete baseSpecifications.category_taxonomy;
         setForm({
             name: p.name, description: p.description || '',
             price: String(p.price), stock_quantity: String(p.stock_quantity || 0),
@@ -119,6 +140,9 @@ export default function AdminProductsPage() {
             specs: normalizeSpecs(p.product_specifications, p.specifications),
             product_mode: getProductMode(p.specifications),
             bundle_items: getBundleItems(p.specifications),
+            taxonomy_primary: taxonomySelection.primary,
+            taxonomy_secondary: taxonomySelection.secondary,
+            specifications_base: baseSpecifications,
         });
         setIsModalOpen(true);
     };
@@ -152,6 +176,14 @@ export default function AdminProductsPage() {
         if (!form.name.trim() || !form.price) return;
         if (form.product_mode === 'bundle' && form.bundle_items.filter(item => item.name.trim()).length === 0) {
             toast.error('ضيف محتويات الباكج الأول علشان تظهر للعميل بشكل واضح');
+            return;
+        }
+        if (taxonomyConfig && !form.taxonomy_primary) {
+            toast.error(`اختار ${taxonomyConfig.primaryLabel} الأول علشان المنتج يظهر في المكان الصح`);
+            return;
+        }
+        if (taxonomyConfig && taxonomySecondaryOptions.length > 0 && !form.taxonomy_secondary) {
+            toast.error(`اختار ${taxonomyConfig.secondaryLabel} كمان علشان الفلترة تبقى دقيقة`);
             return;
         }
         setSaveError(null);
@@ -208,8 +240,15 @@ export default function AdminProductsPage() {
                 is_best_seller: form.is_best_seller,
                 show_in_offers: form.show_in_offers,
                 specifications: {
+                    ...form.specifications_base,
                     product_mode: form.product_mode,
                     bundle_items: form.product_mode === 'bundle' ? cleanedBundleItems : [],
+                    category_taxonomy: taxonomyConfig ? {
+                        primary: form.taxonomy_primary,
+                        secondary: form.taxonomy_secondary,
+                        primary_label: getTaxonomyLabel(selectedCategoryName, form.taxonomy_primary, form.taxonomy_secondary).primary,
+                        secondary_label: getTaxonomyLabel(selectedCategoryName, form.taxonomy_primary, form.taxonomy_secondary).secondary,
+                    } : null,
                     custom_specs: form.specs
                         .filter(spec => spec.label.trim() && spec.description.trim())
                         .map(spec => ({
@@ -410,8 +449,9 @@ export default function AdminProductsPage() {
                                                             <ImageOff className="w-4 h-4 text-gray-500" />
                                                         </div>
                                                     )}
-                                                    <span className="font-bold text-foreground line-clamp-1">{p.name}</span>
-                                                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                                    <div className="min-w-0">
+                                                        <span className="font-bold text-foreground line-clamp-1 block">{p.name}</span>
+                                                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                                         {getProductMode(p.specifications) === 'bundle' ? (
                                                             <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-black text-primary">
                                                                 باكج
@@ -426,6 +466,21 @@ export default function AdminProductsPage() {
                                                                 {getBundleSummary(getBundleItems(p.specifications))}
                                                             </span>
                                                         ) : null}
+                                                        {(() => {
+                                                            const categoryName = p.categories?.name || '';
+                                                            const labels = getTaxonomyLabel(
+                                                                categoryName,
+                                                                getTaxonomySelection(p.specifications).primary,
+                                                                getTaxonomySelection(p.specifications).secondary
+                                                            );
+                                                            if (!labels.primary) return null;
+                                                            return (
+                                                                <span className="text-[10px] text-gray-500 line-clamp-1">
+                                                                    {labels.primary}{labels.secondary ? ` / ${labels.secondary}` : ''}
+                                                                </span>
+                                                            );
+                                                        })()}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -712,7 +767,17 @@ export default function AdminProductsPage() {
                                     <Tag className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                     <select
                                         value={form.category_id}
-                                        onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}
+                                        onChange={e => {
+                                            const nextCategoryId = e.target.value;
+                                            const nextCategoryName = categories.find(category => category.id === nextCategoryId)?.name || '';
+                                            const nextTaxonomyConfig = getCategoryTaxonomyConfig(nextCategoryName);
+                                            setForm(f => ({
+                                                ...f,
+                                                category_id: nextCategoryId,
+                                                taxonomy_primary: nextTaxonomyConfig ? f.taxonomy_primary : '',
+                                                taxonomy_secondary: nextTaxonomyConfig ? f.taxonomy_secondary : '',
+                                            }));
+                                        }}
                                         className="w-full bg-surface border border-surface-hover rounded-xl pr-9 pl-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 appearance-none"
                                     >
                                         <option value="">— بدون قسم —</option>
@@ -720,6 +785,44 @@ export default function AdminProductsPage() {
                                     </select>
                                 </div>
                             </div>
+
+                            {taxonomyConfig && (
+                                <div className="rounded-2xl border border-surface-hover bg-surface-hover/50 p-4 space-y-3">
+                                    <div>
+                                        <label className="block text-xs font-black text-gray-400 mb-1">تصنيفات {selectedCategoryName}</label>
+                                        <p className="text-[11px] text-gray-500">اختار التصنيف الرئيسي والفرعي علشان المنتج يظهر للعميل في المكان الصح.</p>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-[11px] font-bold text-gray-500 mb-1.5">{taxonomyConfig.primaryLabel}</label>
+                                            <select
+                                                value={form.taxonomy_primary}
+                                                onChange={e => setForm(f => ({ ...f, taxonomy_primary: e.target.value, taxonomy_secondary: '' }))}
+                                                className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                            >
+                                                <option value="">اختار التصنيف الرئيسي</option>
+                                                {taxonomyPrimaryOptions.map(option => (
+                                                    <option key={option.value} value={option.value}>{option.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-bold text-gray-500 mb-1.5">{taxonomyConfig.secondaryLabel}</label>
+                                            <select
+                                                value={form.taxonomy_secondary}
+                                                onChange={e => setForm(f => ({ ...f, taxonomy_secondary: e.target.value }))}
+                                                disabled={!form.taxonomy_primary}
+                                                className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 disabled:opacity-50"
+                                            >
+                                                <option value="">اختار التصنيف الفرعي</option>
+                                                {taxonomySecondaryOptions.map(option => (
+                                                    <option key={option.value} value={option.value}>{option.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Specifications */}
                             <div className="pt-4 border-t border-surface-hover">

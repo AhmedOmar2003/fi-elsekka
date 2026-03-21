@@ -17,6 +17,13 @@ import { useProducts } from "@/contexts/ProductsContext"
 import { isRequestOnlyTextCategory } from "@/lib/text-category-orders"
 import { CategoryRequestPanel } from "@/components/categories/category-request-panel"
 import { toProductCardProps } from "@/lib/product-presentation"
+import {
+  getCategoryTaxonomyConfig,
+  getTaxonomyLabel,
+  getTaxonomyPrimaryOptions,
+  getTaxonomySecondaryOptions,
+  matchesProductTaxonomy,
+} from "@/lib/category-taxonomy"
 
 const PAGE_SIZE = 20
 
@@ -91,6 +98,8 @@ export default function CategoryPage() {
   const [sortBy, setSortBy] = React.useState("popular")
   const [priceFilters, setPriceFilters] = React.useState<Set<string>>(new Set())
   const [categoryFilters, setCategoryFilters] = React.useState<Set<string>>(new Set())
+  const [taxonomyPrimaryFilter, setTaxonomyPrimaryFilter] = React.useState("")
+  const [taxonomySecondaryFilter, setTaxonomySecondaryFilter] = React.useState("")
 
   const currentCategory = React.useMemo(() => {
     if (isAllPage) return null
@@ -100,6 +109,9 @@ export default function CategoryPage() {
   const categoryName = currentCategory?.name || (isAllPage ? "كل المنتجات" : "قسم المنتجات")
   const isRequestOnlyCategoryPage = !!currentCategory && isRequestOnlyTextCategory(currentCategory.name)
   const canShowRequestPageLink = !!currentCategory && !isAllPage
+  const taxonomyConfig = getCategoryTaxonomyConfig(currentCategory?.name)
+  const taxonomyPrimaryOptions = getTaxonomyPrimaryOptions(currentCategory?.name)
+  const taxonomySecondaryOptions = getTaxonomySecondaryOptions(currentCategory?.name, taxonomyPrimaryFilter)
 
   const togglePriceFilter = (range: string) => {
     setPriceFilters(prev => {
@@ -121,9 +133,16 @@ export default function CategoryPage() {
     setSortBy("popular")
     setPriceFilters(new Set())
     setCategoryFilters(new Set())
+    setTaxonomyPrimaryFilter("")
+    setTaxonomySecondaryFilter("")
   }
 
-  const hasActiveFilters = priceFilters.size > 0 || categoryFilters.size > 0 || sortBy !== "popular"
+  const hasActiveFilters =
+    priceFilters.size > 0 ||
+    categoryFilters.size > 0 ||
+    sortBy !== "popular" ||
+    !!taxonomyPrimaryFilter ||
+    !!taxonomySecondaryFilter
 
   const displayProducts = React.useMemo(() => {
     let filtered = [...allProducts]
@@ -135,6 +154,15 @@ export default function CategoryPage() {
 
     if (categoryFilters.size > 0) {
       filtered = filtered.filter(p => p.category_id && categoryFilters.has(p.category_id))
+    }
+
+    if (taxonomyConfig) {
+      filtered = filtered.filter((p) =>
+        matchesProductTaxonomy(p.specifications, {
+          primary: taxonomyPrimaryFilter,
+          secondary: taxonomySecondaryFilter,
+        })
+      )
     }
 
     if (priceFilters.size > 0) {
@@ -226,11 +254,48 @@ export default function CategoryPage() {
                 </button>
               </div>
 
-              <aside className={`md:w-64 shrink-0 flex-col gap-8 ${isFilterOpen ? "flex" : "hidden md:flex"}`}>
-                {hasActiveFilters && (
+                <aside className={`md:w-64 shrink-0 flex-col gap-8 ${isFilterOpen ? "flex" : "hidden md:flex"}`}>
+                  {hasActiveFilters && (
                   <button onClick={clearAllFilters} className="flex items-center gap-1.5 text-xs font-bold text-rose-500 hover:text-rose-400 mb-2 transition-colors">
                     <X className="w-3.5 h-3.5" />مسح كل الفلاتر
                   </button>
+                  )}
+                {taxonomyConfig && (
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">التصنيف</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="mb-2 block text-sm text-gray-400">{taxonomyConfig.primaryLabel}</Label>
+                        <Select
+                          value={taxonomyPrimaryFilter}
+                          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                            setTaxonomyPrimaryFilter(e.target.value)
+                            setTaxonomySecondaryFilter("")
+                          }}
+                          className="w-full"
+                        >
+                          <option value="">كل التصنيفات الرئيسية</option>
+                          {taxonomyPrimaryOptions.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="mb-2 block text-sm text-gray-400">{taxonomyConfig.secondaryLabel}</Label>
+                        <Select
+                          value={taxonomySecondaryFilter}
+                          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTaxonomySecondaryFilter(e.target.value)}
+                          className="w-full"
+                          disabled={!taxonomyPrimaryFilter}
+                        >
+                          <option value="">كل التصنيفات الفرعية</option>
+                          {taxonomySecondaryOptions.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
                 )}
                 <div className="space-y-4">
                   <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">الترتيب</h3>
@@ -285,11 +350,26 @@ export default function CategoryPage() {
                       <svg className="w-9 h-9 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     </div>
                     <h3 className="text-xl font-bold text-foreground mb-2">مفيش منتجات بالمواصفات دي</h3>
-                    <p className="text-gray-500 mb-6">جرب تغير الفلاتر أو اطلب المنتج من زر "ملقتش المنتج؟"</p>
+                    <p className="text-gray-500 mb-6">جرب تغير الفلاتر أو اختار تصنيف تاني أو اطلب المنتج من زر "ملقتش المنتج؟"</p>
                     {hasActiveFilters && <Button variant="outline" onClick={clearAllFilters} className="rounded-xl">مسح كل الفلاتر</Button>}
                   </div>
                 ) : (
                   <>
+                    {taxonomyConfig && (taxonomyPrimaryFilter || taxonomySecondaryFilter) && (
+                      <div className="mb-4 flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-black text-gray-500">التصنيف الحالي:</span>
+                        {taxonomyPrimaryFilter ? (
+                          <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">
+                            {getTaxonomyLabel(currentCategory?.name, taxonomyPrimaryFilter, taxonomySecondaryFilter).primary}
+                          </span>
+                        ) : null}
+                        {taxonomySecondaryFilter ? (
+                          <span className="inline-flex items-center rounded-full bg-surface-hover px-3 py-1 text-xs font-black text-gray-300">
+                            {getTaxonomyLabel(currentCategory?.name, taxonomyPrimaryFilter, taxonomySecondaryFilter).secondary}
+                          </span>
+                        ) : null}
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
                       {productCards.map(product => <ProductCard key={product.id} {...product} />)}
                     </div>
