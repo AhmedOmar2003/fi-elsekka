@@ -11,11 +11,8 @@ import { HomeCategoriesList } from "@/components/ui/home-categories"
 import { PromoBanner } from "@/components/ui/promo-banner"
 import { toProductCardProps } from "@/lib/product-presentation"
 
-// Cache the home page for 5 minutes using Next.js ISR
-// The home page must be fully dynamic to guarantee admin updates 
-// appear instantly and bypass stubborn Next.js router cache.
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Public home page: cache with ISR for strong performance while still refreshing often.
+export const revalidate = 300;
 
 const MOCK_FEATURED_PRODUCTS = [
   { id: "1", title: "مكرونة الملكة 400 جم حجم عائلي", price: 15, oldPrice: 20, discountBadge: "25% خصم", imageUrl: "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn" },

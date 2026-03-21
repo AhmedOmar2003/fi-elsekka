@@ -5,10 +5,8 @@ import { ProductCard } from "@/components/ui/product-card"
 import { fetchOffers } from "@/services/productsService"
 import { toProductCardProps } from "@/lib/product-presentation"
 
-// The offers page must be fully dynamic to guarantee admin updates 
-// appear instantly and bypass stubborn Next.js router cache.
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Public offers page: cache with ISR for stronger speed and lower database pressure.
+export const revalidate = 300;
 
 export default async function OffersPage() {
   const dbProducts = await fetchOffers();

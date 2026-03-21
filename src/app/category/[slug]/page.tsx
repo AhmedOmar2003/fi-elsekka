@@ -203,7 +203,16 @@ export default function CategoryPage() {
     }
 
     return filtered
-  }, [allProducts, searchQuery, categoryFilters, priceFilters, sortBy])
+  }, [
+    allProducts,
+    searchQuery,
+    categoryFilters,
+    priceFilters,
+    sortBy,
+    taxonomyConfig,
+    taxonomyPrimaryFilter,
+    taxonomySecondaryFilter,
+  ])
 
   const productCards = displayProducts.map(toProductCardProps)
 

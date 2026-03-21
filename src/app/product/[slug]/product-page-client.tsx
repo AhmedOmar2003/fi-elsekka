@@ -65,7 +65,7 @@ function TikTokIcon(props: React.SVGProps<SVGSVGElement>) {
   )
 }
 
-export default function ProductPage() {
+export default function ProductPage({ initialProduct = null }: { initialProduct?: Product | null }) {
   const params = useParams()
   const router = useRouter()
   const { addItem } = useCart()
@@ -132,8 +132,8 @@ export default function ProductPage() {
 
   const slugOrId = typeof params.slug === 'string' ? params.slug : ''
 
-  const [dbProduct, setDbProduct] = React.useState<Product | null>(null)
-  const [isLoading, setIsLoading] = React.useState(true)
+  const [dbProduct, setDbProduct] = React.useState<Product | null>(initialProduct)
+  const [isLoading, setIsLoading] = React.useState(!initialProduct)
 
   const normalizedSpecs = React.useMemo(() => {
     if (!dbProduct) return []
@@ -166,11 +166,16 @@ export default function ProductPage() {
     }
 
     if (slugOrId) {
-      loadProduct()
+      if (initialProduct?.id === slugOrId) {
+        setDbProduct(initialProduct)
+        setIsLoading(false)
+      } else {
+        loadProduct()
+      }
     } else {
       setIsLoading(false)
     }
-  }, [slugOrId])
+  }, [slugOrId, initialProduct])
 
   // ── Reviews state ─────────────────────────────────────────
   const [reviews, setReviews] = React.useState<Review[]>([])

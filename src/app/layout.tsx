@@ -7,6 +7,8 @@ import { InstallPrompt } from "@/components/ui/install-prompt";
 import { MaintenanceModeOverlay } from "@/components/system/maintenance-mode-overlay";
 import "./globals.css";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://fi-elsekka.vercel.app";
+
 const ibmPlex = IBM_Plex_Sans_Arabic({
   subsets: ["arabic"],
   weight: ["100", "200", "300", "400", "500", "600", "700"],
@@ -22,9 +24,23 @@ const lalezar = Lalezar({
 });
 
 export const metadata: Metadata = {
-  title: "في السكة - Fi El Sekka",
-  description: "Your smart local marketplace companion in Egypt. Fast, friendly, and reliable.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "في السكة | اطلب اللي محتاجه ويوصلك لحد عندك",
+    template: "%s | في السكة",
+  },
+  description: "في السكة سوق محلي ذكي في مصر. اطلب من السوبر ماركت والصيدلية والملابس وأكتر، والدفع عند الاستلام والتوصيل لحد باب البيت.",
+  keywords: [
+    "في السكة",
+    "توصيل في مصر",
+    "سوبر ماركت اونلاين",
+    "صيدلية اونلاين",
+    "ملابس اونلاين",
+    "الدفع عند الاستلام",
+  ],
   manifest: "/manifest.json",
+  applicationName: "في السكة",
+  category: "shopping",
   icons: {
     icon: [
       { url: "/notification-icon-192.png", sizes: "192x192", type: "image/png" },
@@ -35,10 +51,46 @@ export const metadata: Metadata = {
     ],
     shortcut: ["/notification-icon-192.png"],
   },
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "ar_EG",
+    url: SITE_URL,
+    siteName: "في السكة",
+    title: "في السكة | اطلب اللي محتاجه ويوصلك لحد عندك",
+    description: "سوبر ماركت وصيدلية وملابس وأكتر، بطلب سهل وتوصيل سريع والدفع عند الاستلام.",
+    images: [
+      {
+        url: "/notification-icon-512.png",
+        width: 512,
+        height: 512,
+        alt: "في السكة",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "في السكة | اطلب اللي محتاجه ويوصلك لحد عندك",
+    description: "سوبر ماركت وصيدلية وملابس وأكتر، بطلب سهل وتوصيل سريع والدفع عند الاستلام.",
+    images: ["/notification-icon-512.png"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "في السكة",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
   formatDetection: {
     telephone: false,

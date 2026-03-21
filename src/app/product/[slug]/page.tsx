@@ -1,8 +1,12 @@
 import type { Metadata } from "next"
 import ProductPageClient from "./product-page-client"
 import { fetchProductDetails } from "@/services/productsService"
+import { cache } from "react"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://fi-elsekka.vercel.app"
+const getProductForPage = cache((slug: string) => fetchProductDetails(slug))
+
+export const revalidate = 300;
 
 const toAbsoluteUrl = (value?: string | null) => {
   if (!value) return `${SITE_URL}/icon.svg`
@@ -16,7 +20,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const product = await fetchProductDetails(slug)
+  const product = await getProductForPage(slug)
 
   if (!product) {
     return {
@@ -61,6 +65,13 @@ export async function generateMetadata({
   }
 }
 
-export default async function ProductPage() {
-  return <ProductPageClient />
+export default async function ProductPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const product = await getProductForPage(slug)
+
+  return <ProductPageClient initialProduct={product} />
 }

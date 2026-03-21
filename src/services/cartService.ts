@@ -18,7 +18,15 @@ export const fetchUserCart = async (userId: string): Promise<CartItem[]> => {
             product_id,
             quantity,
             applied_price,
-            product:products (*)
+            product:products (
+                id,
+                name,
+                price,
+                image_url,
+                slug,
+                discount_percentage,
+                specifications
+            )
         `)
         .eq('user_id', userId)
         .order('created_at', { ascending: true });

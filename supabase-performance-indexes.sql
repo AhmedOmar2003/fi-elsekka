@@ -1,40 +1,44 @@
--- ============================================================
--- Performance Indexes for في السكة E-Commerce Store
--- Run this in Supabase SQL Editor
--- ============================================================
+create index if not exists idx_products_category_created_at
+on public.products (category_id, created_at desc);
 
--- PRODUCTS TABLE
-CREATE INDEX IF NOT EXISTS idx_products_category_id
-    ON public.products (category_id);
+create index if not exists idx_products_best_seller_created_at
+on public.products (is_best_seller, created_at desc);
 
-CREATE INDEX IF NOT EXISTS idx_products_created_at
-    ON public.products (created_at DESC);
+create index if not exists idx_products_offers_created_at
+on public.products (show_in_offers, created_at desc);
 
-CREATE INDEX IF NOT EXISTS idx_products_is_best_seller
-    ON public.products (is_best_seller)
-    WHERE is_best_seller = true;
+create index if not exists idx_products_created_at
+on public.products (created_at desc);
 
-CREATE INDEX IF NOT EXISTS idx_products_show_in_offers
-    ON public.products (show_in_offers)
-    WHERE show_in_offers = true;
+create index if not exists idx_product_specifications_product_id
+on public.product_specifications (product_id);
 
-CREATE INDEX IF NOT EXISTS idx_products_category_created
-    ON public.products (category_id, created_at DESC);
+create index if not exists idx_cart_items_user_created_at
+on public.cart_items (user_id, created_at asc);
 
--- CART_ITEMS TABLE
-CREATE INDEX IF NOT EXISTS idx_cart_items_user_id
-    ON public.cart_items (user_id);
+create index if not exists idx_favorites_user_product
+on public.favorites (user_id, product_id);
 
--- ORDERS TABLE
-CREATE INDEX IF NOT EXISTS idx_orders_user_id
-    ON public.orders (user_id);
+create index if not exists idx_orders_status_created_at
+on public.orders (status, created_at desc);
 
-CREATE INDEX IF NOT EXISTS idx_orders_status
-    ON public.orders (status);
+create index if not exists idx_orders_user_created_at
+on public.orders (user_id, created_at desc);
 
-CREATE INDEX IF NOT EXISTS idx_orders_created_at
-    ON public.orders (created_at DESC);
+create index if not exists idx_order_items_product_id
+on public.order_items (product_id);
 
--- USERS TABLE
-CREATE INDEX IF NOT EXISTS idx_users_role
-    ON public.users (role);
+create index if not exists idx_order_items_order_id
+on public.order_items (order_id);
+
+create index if not exists idx_notifications_user_created_at
+on public.notifications (user_id, created_at desc);
+
+create index if not exists idx_users_role_disabled_created_at
+on public.users (role, disabled, created_at desc);
+
+create index if not exists idx_users_last_login_at
+on public.users (last_login_at desc);
+
+create index if not exists idx_categories_parent_name
+on public.categories (parent_id, name);
