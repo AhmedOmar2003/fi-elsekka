@@ -26,7 +26,7 @@ import {
    type TextCategoryOrderDraft,
 } from "@/lib/text-category-orders"
 import { RequestAttachmentsGallery } from "@/components/orders/request-attachments-gallery"
-import { getBundleItemCount } from "@/lib/product-presentation"
+import { getBundleItemCount, getBundleItems } from "@/lib/product-presentation"
 
 function CheckoutContent() {
    const router = useRouter()
@@ -460,13 +460,30 @@ function CheckoutContent() {
                                     <div>
                                        <span className="text-foreground line-clamp-1 font-medium">{item.product?.name || "منتج"}</span>
                                        {getBundleItemCount(item.product?.specifications) > 0 && (
-                                          <div className="mt-1 flex flex-wrap items-center gap-2">
-                                             <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary">
-                                                باكج
-                                             </span>
-                                             <span className="text-[11px] text-gray-500">
-                                                فيها {getBundleItemCount(item.product?.specifications)} منتجات
-                                             </span>
+                                          <div className="mt-1 space-y-1.5">
+                                             <div className="flex flex-wrap items-center gap-2">
+                                                <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary">
+                                                   باكج
+                                                </span>
+                                                <span className="text-[11px] text-gray-500">
+                                                   فيها {getBundleItemCount(item.product?.specifications)} منتجات
+                                                </span>
+                                             </div>
+                                             <div className="flex flex-wrap gap-1.5">
+                                                {getBundleItems(item.product?.specifications).slice(0, 4).map((bundleItem, index) => (
+                                                   <span
+                                                      key={`${bundleItem.name}-${index}`}
+                                                      className="inline-flex items-center rounded-full bg-background px-2 py-0.5 text-[10px] font-bold text-gray-400 border border-surface-hover"
+                                                   >
+                                                      {bundleItem.quantity ? `${bundleItem.name} - ${bundleItem.quantity}` : bundleItem.name}
+                                                   </span>
+                                                ))}
+                                                {getBundleItems(item.product?.specifications).length > 4 && (
+                                                   <span className="inline-flex items-center rounded-full bg-surface-hover px-2 py-0.5 text-[10px] font-bold text-gray-500">
+                                                      +{getBundleItems(item.product?.specifications).length - 4}
+                                                   </span>
+                                                )}
+                                             </div>
                                           </div>
                                        )}
                                     </div>

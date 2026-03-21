@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { CURRENT_DELIVERY_FEE } from '@/lib/order-economics';
 import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getBundleItemCount } from '@/lib/product-presentation';
+import { getBundleItemCount, getBundleItems } from '@/lib/product-presentation';
 
 export default function CartPage() {
    const { items, cartTotal, cartOriginalTotal, cartDiscountTotal, isLoading, updateQuantity, removeItem } = useCart();
@@ -168,13 +168,30 @@ export default function CartPage() {
                                              </h3>
                                           </Link>
                                           {getBundleItemCount(item.product?.specifications) > 0 && (
-                                             <div className="mt-2 flex flex-wrap items-center gap-2">
-                                                <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-black text-primary">
-                                                   باكج
-                                                </span>
-                                                <span className="text-xs text-gray-400">
-                                                   فيها {getBundleItemCount(item.product?.specifications)} منتجات
-                                                </span>
+                                             <div className="mt-2 space-y-2">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                   <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-black text-primary">
+                                                      باكج
+                                                   </span>
+                                                   <span className="text-xs text-gray-400">
+                                                      فيها {getBundleItemCount(item.product?.specifications)} منتجات
+                                                   </span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                   {getBundleItems(item.product?.specifications).slice(0, 4).map((bundleItem, index) => (
+                                                      <span
+                                                         key={`${bundleItem.name}-${index}`}
+                                                         className="inline-flex items-center rounded-full bg-surface px-2.5 py-1 text-[10px] font-bold text-gray-300 border border-surface-hover"
+                                                      >
+                                                         {bundleItem.quantity ? `${bundleItem.name} - ${bundleItem.quantity}` : bundleItem.name}
+                                                      </span>
+                                                   ))}
+                                                   {getBundleItems(item.product?.specifications).length > 4 && (
+                                                      <span className="inline-flex items-center rounded-full bg-surface-hover px-2.5 py-1 text-[10px] font-bold text-gray-500">
+                                                         +{getBundleItems(item.product?.specifications).length - 4}
+                                                      </span>
+                                                   )}
+                                                </div>
                                              </div>
                                           )}
                                           <div className="mt-2 flex flex-col sm:flex-row sm:items-baseline gap-2">

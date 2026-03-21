@@ -64,6 +64,7 @@ export default function AdminProductsPage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [search, setSearch] = useState('');
     const [productTypeFilter, setProductTypeFilter] = useState<'all' | 'single' | 'bundle'>('all');
+    const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -282,6 +283,7 @@ export default function AdminProductsPage() {
     const filtered = products.filter(p => {
         const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
         if (!matchesSearch) return false;
+        if (categoryFilter !== 'all' && p.category_id !== categoryFilter) return false;
         if (productTypeFilter === 'all') return true;
         return getProductMode(p.specifications) === productTypeFilter;
     });
@@ -302,35 +304,70 @@ export default function AdminProductsPage() {
             </div>
 
             {/* Search + Filter */}
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div className="relative w-full max-w-sm">
-                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                    <input
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        placeholder="بحث عن منتج..."
-                        className="w-full bg-surface border border-surface-hover rounded-xl pr-9 pl-4 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
-                    />
+            <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div className="relative w-full max-w-sm">
+                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                        <input
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            placeholder="بحث عن منتج..."
+                            className="w-full bg-surface border border-surface-hover rounded-xl pr-9 pl-4 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                        />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        {[
+                            { key: 'all', label: 'الكل' },
+                            { key: 'single', label: 'منتجات عادية' },
+                            { key: 'bundle', label: 'الباكجات' },
+                        ].map(option => (
+                            <button
+                                key={option.key}
+                                type="button"
+                                onClick={() => setProductTypeFilter(option.key as 'all' | 'single' | 'bundle')}
+                                className={`rounded-xl px-4 py-2 text-xs font-black transition-all ${productTypeFilter === option.key
+                                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                                    : 'border border-surface-hover bg-surface text-gray-400 hover:bg-surface-hover'
+                                    }`}
+                            >
+                                {option.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                    {[
-                        { key: 'all', label: 'الكل' },
-                        { key: 'single', label: 'منتجات عادية' },
-                        { key: 'bundle', label: 'الباكجات' },
-                    ].map(option => (
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                        <span className="shrink-0 text-xs font-black text-gray-500">القسم:</span>
                         <button
-                            key={option.key}
                             type="button"
-                            onClick={() => setProductTypeFilter(option.key as 'all' | 'single' | 'bundle')}
-                            className={`rounded-xl px-4 py-2 text-xs font-black transition-all ${productTypeFilter === option.key
-                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                            onClick={() => setCategoryFilter('all')}
+                            className={`rounded-xl px-4 py-2 text-xs font-black transition-all ${categoryFilter === 'all'
+                                ? 'bg-white text-background shadow-lg'
                                 : 'border border-surface-hover bg-surface text-gray-400 hover:bg-surface-hover'
                                 }`}
                         >
-                            {option.label}
+                            كل الأقسام
                         </button>
-                    ))}
+                        {categories.map(category => (
+                            <button
+                                key={category.id}
+                                type="button"
+                                onClick={() => setCategoryFilter(category.id)}
+                                className={`shrink-0 rounded-xl px-4 py-2 text-xs font-black transition-all ${categoryFilter === category.id
+                                    ? 'bg-white text-background shadow-lg'
+                                    : 'border border-surface-hover bg-surface text-gray-400 hover:bg-surface-hover'
+                                    }`}
+                            >
+                                {category.name}
+                            </button>
+                        ))}
+                    </div>
+
+                    <p className="text-xs text-gray-500">
+                        ظاهر لك دلوقتي {filtered.length} منتج
+                    </p>
                 </div>
             </div>
 
