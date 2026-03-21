@@ -20,6 +20,7 @@ export interface GuestCartItem {
         image_url?: string;
         slug?: string;
         discount_percentage?: number;
+        specifications?: Record<string, any>;
     };
 }
 
@@ -152,6 +153,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
                         image_url: product.image_url,
                         slug: product.slug,
                         discount_percentage: product.discount_percentage,
+                        specifications: product.specifications,
                     }
                 };
                 const updated = [...guestItems, newItem];
@@ -185,6 +187,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
                         image_url: product.image_url,
                         slug: product.slug,
                         discount_percentage: product.discount_percentage,
+                        specifications: product.specifications,
                     }
                 };
                 return [...prev, newItem as unknown as CartItem];

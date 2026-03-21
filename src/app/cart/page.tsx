@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { CURRENT_DELIVERY_FEE } from '@/lib/order-economics';
 import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getBundleItemCount } from '@/lib/product-presentation';
 
 export default function CartPage() {
    const { items, cartTotal, cartOriginalTotal, cartDiscountTotal, isLoading, updateQuantity, removeItem } = useCart();
@@ -166,6 +167,16 @@ export default function CartPage() {
                                                 {item.product?.name}
                                              </h3>
                                           </Link>
+                                          {getBundleItemCount(item.product?.specifications) > 0 && (
+                                             <div className="mt-2 flex flex-wrap items-center gap-2">
+                                                <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-black text-primary">
+                                                   باكج
+                                                </span>
+                                                <span className="text-xs text-gray-400">
+                                                   فيها {getBundleItemCount(item.product?.specifications)} منتجات
+                                                </span>
+                                             </div>
+                                          )}
                                           <div className="mt-2 flex flex-col sm:flex-row sm:items-baseline gap-2">
                                              <p className="text-secondary font-black text-lg">
                                                 {(() => {

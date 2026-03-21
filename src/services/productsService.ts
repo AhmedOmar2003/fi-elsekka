@@ -265,7 +265,7 @@ export const fetchProductById = async (productId: string): Promise<Product | nul
 
     const { data, error } = await supabase
         .from('products')
-        .select('id, name, price, image_url, discount_percentage, stock_quantity')
+        .select('id, name, price, image_url, discount_percentage, stock_quantity, specifications')
         .eq('id', productId)
         .single();
 

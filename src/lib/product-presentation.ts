@@ -44,6 +44,10 @@ export function getBundleSummary(bundleItems: BundleItem[]) {
   return `${bundleItems[0].name} + ${bundleItems.length - 1} منتجات تانية`;
 }
 
+export function getBundleItemCount(specifications?: Record<string, any> | null) {
+  return getBundleItems(specifications).length;
+}
+
 export function toProductCardProps(product: Product): ProductCardLike {
   let price = product.price;
   let oldPrice: number | undefined = product.specifications?.old_price;
