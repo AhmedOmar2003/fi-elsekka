@@ -251,7 +251,7 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
       setReviewComment("")
       setReviewImages([])
       setReviewRating(5)
-      toast.success("شكراً على تقييمك! 🎉", { description: "رأيك مهم ليا وهيساعد ناس تاني" })
+      toast.success("شكراً على تقييمك! 🎉", { description: "رأيك مهم لينا وهيساعدنا نحسن التجربة لكل الناس" })
     }
     setIsSubmitting(false)
   }
@@ -946,7 +946,7 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
                             value={reviewComment}
                             onChange={(e) => setReviewComment(e.target.value)}
                             placeholder="شاركنا رأيك في المنتج بصراحة (اختياري بس بيفرق معانا جداً)..."
-                            className="w-full bg-[#0a0d14] border border-surface-hover rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-h-[120px] resize-y mb-4"
+                            className="w-full min-h-[120px] resize-y rounded-2xl border border-surface-hover bg-[#0a0d14] p-4 text-sm text-white placeholder:text-gray-400 caret-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent mb-4"
                           />
 
                           {/* Image uploads */}
