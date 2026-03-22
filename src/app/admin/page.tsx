@@ -371,7 +371,11 @@ export default function AdminPage() {
             );
 
             if (res.error) throw new Error(res.error.message);
-            toast.success(`تم إرسال الإشعار بنجاح لـ ${res.count} مستخدم! 🔔`);
+            if (res.pushDevicesCount > 0) {
+                toast.success(`الإشعار اتبعت داخل الموقع لـ ${res.count} عميل، ووصل إشعار هاتف لـ ${res.pushDevicesCount} جهاز 🔔`);
+            } else {
+                toast.success(`الإشعار اتسجل داخل الموقع لـ ${res.count} عميل، لكن مفيش أجهزة مفعلة لإشعارات الهاتف حاليًا.`);
+            }
         } catch (error: any) {
             toast.error('حدث خطأ أثناء إرسال الإشعارات: ' + error.message);
         } finally {

@@ -13,6 +13,7 @@ type PushNotificationPayload = {
   message: string;
   link?: string;
   requireInteraction?: boolean;
+  topic?: string;
 };
 
 function buildPushPayload(payload: PushNotificationPayload) {
@@ -47,7 +48,7 @@ export async function sendPushToUserDevices(
   payload: PushNotificationPayload
 ) {
   if (!supabaseAdmin || !userId || !publicVapidKey || !privateVapidKey) {
-    return { success: false, skipped: true, devicesNotified: 0 };
+    return { success: false, skipped: true, devicesNotified: 0, failedDevices: 0 };
   }
 
   const { data: subscriptions, error } = await supabaseAdmin
@@ -57,11 +58,11 @@ export async function sendPushToUserDevices(
 
   if (error) {
     console.error('Failed to fetch user push subscriptions:', error);
-    return { success: false, skipped: false, devicesNotified: 0 };
+    return { success: false, skipped: false, devicesNotified: 0, failedDevices: 0 };
   }
 
   if (!subscriptions || subscriptions.length === 0) {
-    return { success: true, skipped: true, devicesNotified: 0 };
+    return { success: true, skipped: true, devicesNotified: 0, failedDevices: 0 };
   }
 
   const uniqueSubscriptions = subscriptions.filter((record: any, index: number, all: any[]) => {
@@ -70,12 +71,20 @@ export async function sendPushToUserDevices(
   });
 
   const pushPayload = buildPushPayload(payload);
+  let devicesNotified = 0;
+  let failedDevices = 0;
 
   await Promise.all(
     uniqueSubscriptions.map(async (subscriptionRecord: any) => {
       try {
-        await webpush.sendNotification(subscriptionRecord.subscription, pushPayload);
+        await webpush.sendNotification(subscriptionRecord.subscription, pushPayload, {
+          TTL: 60,
+          urgency: 'high',
+          topic: payload.topic || 'customer-notification',
+        });
+        devicesNotified += 1;
       } catch (pushError: any) {
+        failedDevices += 1;
         if (pushError?.statusCode === 404 || pushError?.statusCode === 410) {
           await supabaseAdmin
             .from('user_subscriptions')
@@ -88,7 +97,12 @@ export async function sendPushToUserDevices(
     })
   );
 
-  return { success: true, skipped: false, devicesNotified: uniqueSubscriptions.length };
+  return {
+    success: devicesNotified > 0,
+    skipped: devicesNotified === 0 && failedDevices === 0,
+    devicesNotified,
+    failedDevices,
+  };
 }
 
 export async function createUserNotificationWithPush(
@@ -108,9 +122,14 @@ export async function createUserNotificationWithPush(
 
   if (error) {
     console.error('Failed to create in-app notification:', error);
-    return { success: false, error };
+    return { success: false, error, notificationCreated: false, push: null };
   }
 
-  await sendPushToUserDevices(supabaseAdmin, userId, payload);
-  return { success: true };
+  const pushResult = await sendPushToUserDevices(supabaseAdmin, userId, payload);
+
+  return {
+    success: true,
+    notificationCreated: true,
+    push: pushResult,
+  };
 }

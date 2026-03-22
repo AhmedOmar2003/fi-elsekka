@@ -42,16 +42,25 @@ export async function POST(request: NextRequest) {
           message,
           link,
           requireInteraction: false,
+          topic: 'offers-broadcast',
         })
       )
     );
 
-    const successCount = results.filter((result: any) => result?.success).length;
+    const inAppCount = results.filter((result: any) => result?.notificationCreated).length;
+    const pushUsersCount = results.filter((result: any) => (result as any)?.push?.devicesNotified > 0).length;
+    const pushDevicesCount = results.reduce((sum: number, result: any) => sum + ((result?.push?.devicesNotified as number) || 0), 0);
+    const skippedPushCount = results.filter((result: any) => result?.push?.skipped).length;
+    const failedPushCount = results.reduce((sum: number, result: any) => sum + ((result?.push?.failedDevices as number) || 0), 0);
 
     return NextResponse.json({
       success: true,
-      count: successCount,
+      count: inAppCount,
       requested: recipientIds.length,
+      pushUsersCount,
+      pushDevicesCount,
+      skippedPushCount,
+      failedPushCount,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Unexpected error' }, { status: 500 });

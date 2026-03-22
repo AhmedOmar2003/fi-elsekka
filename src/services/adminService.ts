@@ -1652,8 +1652,23 @@ export async function broadcastOfferNotification(title: string, message: string,
         action: 'promotion.broadcast_notification',
         entityType: 'notification',
         entityLabel: title,
-        details: { recipients: payload?.count || 0, link },
+        details: {
+            recipients: payload?.count || 0,
+            push_users: payload?.pushUsersCount || 0,
+            push_devices: payload?.pushDevicesCount || 0,
+            skipped_push: payload?.skippedPushCount || 0,
+            failed_push: payload?.failedPushCount || 0,
+            link
+        },
     });
     
-    return { success: true, count: payload?.count || 0 };
+    return {
+        success: true,
+        count: payload?.count || 0,
+        requested: payload?.requested || 0,
+        pushUsersCount: payload?.pushUsersCount || 0,
+        pushDevicesCount: payload?.pushDevicesCount || 0,
+        skippedPushCount: payload?.skippedPushCount || 0,
+        failedPushCount: payload?.failedPushCount || 0,
+    };
 }
