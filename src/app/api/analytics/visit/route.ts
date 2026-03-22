@@ -12,6 +12,12 @@ const supabaseAdmin = supabaseUrl && serviceRoleKey
 
 const EXCLUDED_PREFIXES = ['/admin', '/driver', '/system-access', '/api', '/_next'];
 
+function startOfTodayIso() {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    return date.toISOString();
+}
+
 export async function POST(request: Request) {
     if (!supabaseAdmin) {
         return NextResponse.json({ error: 'Missing service configuration' }, { status: 500 });
@@ -28,6 +34,21 @@ export async function POST(request: Request) {
 
         if (EXCLUDED_PREFIXES.some((prefix) => path.startsWith(prefix))) {
             return NextResponse.json({ ok: true, skipped: true });
+        }
+
+        const todayStart = startOfTodayIso();
+        const { count: existingCount, error: existingError } = await supabaseAdmin
+            .from('site_visits')
+            .select('id', { count: 'exact', head: true })
+            .eq('visitor_id', visitorId.slice(0, 120))
+            .gte('created_at', todayStart);
+
+        if (existingError) {
+            return NextResponse.json({ error: existingError.message }, { status: 500 });
+        }
+
+        if ((existingCount || 0) > 0) {
+            return NextResponse.json({ ok: true, skipped: true, reason: 'already-counted-today' });
         }
 
         const { error } = await supabaseAdmin.from('site_visits').insert({

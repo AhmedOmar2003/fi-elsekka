@@ -4,9 +4,11 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
 const VISITOR_ID_KEY = 'fi-elsekka-visitor-id';
-const LAST_VISIT_KEY = 'fi-elsekka-last-visit-at';
-const VISIT_COOLDOWN_MS = 30 * 60 * 1000;
 const EXCLUDED_PREFIXES = ['/admin', '/driver', '/system-access', '/api', '/_next'];
+
+function todayKey() {
+    return new Date().toISOString().slice(0, 10);
+}
 
 function getVisitorId() {
     const existing = window.localStorage.getItem(VISITOR_ID_KEY);
@@ -28,14 +30,13 @@ export function SiteVisitTracker() {
             return;
         }
 
-        const lastVisitAt = Number(window.localStorage.getItem(LAST_VISIT_KEY) || 0);
-        const now = Date.now();
-        if (now - lastVisitAt < VISIT_COOLDOWN_MS) {
+        const visitKey = `fi-elsekka-site-visit:${todayKey()}`;
+        if (window.localStorage.getItem(visitKey) === '1') {
             return;
         }
 
         const visitorId = getVisitorId();
-        window.localStorage.setItem(LAST_VISIT_KEY, String(now));
+        window.localStorage.setItem(visitKey, '1');
 
         fetch('/api/analytics/visit', {
             method: 'POST',
