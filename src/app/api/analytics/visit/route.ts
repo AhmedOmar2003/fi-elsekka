@@ -12,6 +12,11 @@ const supabaseAdmin = supabaseUrl && serviceRoleKey
 
 const EXCLUDED_PREFIXES = ['/admin', '/driver', '/system-access', '/api', '/_next'];
 
+function isMissingRelationError(message?: string) {
+    const text = String(message || '').toLowerCase();
+    return text.includes('does not exist') || text.includes('relation') || text.includes('schema cache');
+}
+
 function startOfTodayIso() {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
@@ -45,7 +50,7 @@ export async function POST(request: Request) {
             previous_path: previousPath?.startsWith('/') ? previousPath.slice(0, 240) : null,
         });
 
-        if (pageViewError) {
+        if (pageViewError && !isMissingRelationError(pageViewError.message)) {
             return NextResponse.json({ error: pageViewError.message }, { status: 500 });
         }
 
@@ -61,7 +66,12 @@ export async function POST(request: Request) {
         }
 
         if ((existingCount || 0) > 0) {
-            return NextResponse.json({ ok: true, visitorSkipped: true, pageViewTracked: true, reason: 'already-counted-today' });
+            return NextResponse.json({
+                ok: true,
+                visitorSkipped: true,
+                pageViewTracked: !pageViewError,
+                reason: 'already-counted-today',
+            });
         }
 
         const { error } = await supabaseAdmin.from('site_visits').insert({
@@ -73,7 +83,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        return NextResponse.json({ ok: true });
+        return NextResponse.json({
+            ok: true,
+            pageViewTracked: !pageViewError,
+        });
     } catch (error: any) {
         return NextResponse.json({ error: error?.message || 'Unexpected error' }, { status: 500 });
     }

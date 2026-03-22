@@ -51,6 +51,11 @@ function clampRange(input: string | null) {
     return parsed === 7 || parsed === 90 ? parsed : 30;
 }
 
+function isMissingRelationError(message?: string) {
+    const text = String(message || '').toLowerCase();
+    return text.includes('does not exist') || text.includes('relation') || text.includes('schema cache');
+}
+
 export async function GET(request: Request) {
     if (!supabaseAdmin) {
         return NextResponse.json({ error: 'Missing service configuration' }, { status: 500 });
@@ -98,7 +103,7 @@ export async function GET(request: Request) {
         supabaseAdmin.from('site_page_views').select('path, session_id, previous_path, created_at').gte('created_at', rangeStart),
     ]);
 
-    const error =
+    const visitError =
         totalRes.error ||
         todayRes.error ||
         yesterdayRes.error ||
@@ -106,7 +111,13 @@ export async function GET(request: Request) {
         previousWeekRes.error ||
         monthRes.error ||
         previousMonthRes.error ||
-        yearRes.error ||
+        yearRes.error;
+
+    if (visitError) {
+        return NextResponse.json({ error: visitError.message || 'Failed to load visit analytics' }, { status: 500 });
+    }
+
+    const pageViewError =
         totalPageViewsRes.error ||
         todayPageViewsRes.error ||
         yesterdayPageViewsRes.error ||
@@ -117,8 +128,9 @@ export async function GET(request: Request) {
         yearPageViewsRes.error ||
         pageRowsRes.error;
 
-    if (error) {
-        return NextResponse.json({ error: error.message || 'Failed to load visit analytics' }, { status: 500 });
+    const canUsePageViews = !pageViewError || !isMissingRelationError(pageViewError.message);
+    if (pageViewError && canUsePageViews) {
+        return NextResponse.json({ error: pageViewError.message || 'Failed to load page view analytics' }, { status: 500 });
     }
 
     const pageRows = pageRowsRes.data || [];
@@ -126,7 +138,7 @@ export async function GET(request: Request) {
     const checkoutSourceCounts = new Map<string, number>();
     const sessionGroups = new Map<string, Array<{ path: string; created_at: string }>>();
 
-    for (const row of pageRows) {
+    for (const row of canUsePageViews ? pageRows : []) {
         const path = row.path || '/';
         pageViewCounts.set(path, (pageViewCounts.get(path) || 0) + 1);
 
@@ -186,16 +198,17 @@ export async function GET(request: Request) {
         monthVisits: monthRes.count || 0,
         previousMonthVisits: previousMonthRes.count || 0,
         yearVisits: yearRes.count || 0,
-        totalPageViews: totalPageViewsRes.count || 0,
-        todayPageViews: todayPageViewsRes.count || 0,
-        yesterdayPageViews: yesterdayPageViewsRes.count || 0,
-        weekPageViews: weekPageViewsRes.count || 0,
-        previousWeekPageViews: previousWeekPageViewsRes.count || 0,
-        monthPageViews: monthPageViewsRes.count || 0,
-        previousMonthPageViews: previousMonthPageViewsRes.count || 0,
-        yearPageViews: yearPageViewsRes.count || 0,
-        topPages,
-        exitPages,
-        checkoutSources,
+        totalPageViews: canUsePageViews ? (totalPageViewsRes.count || 0) : 0,
+        todayPageViews: canUsePageViews ? (todayPageViewsRes.count || 0) : 0,
+        yesterdayPageViews: canUsePageViews ? (yesterdayPageViewsRes.count || 0) : 0,
+        weekPageViews: canUsePageViews ? (weekPageViewsRes.count || 0) : 0,
+        previousWeekPageViews: canUsePageViews ? (previousWeekPageViewsRes.count || 0) : 0,
+        monthPageViews: canUsePageViews ? (monthPageViewsRes.count || 0) : 0,
+        previousMonthPageViews: canUsePageViews ? (previousMonthPageViewsRes.count || 0) : 0,
+        yearPageViews: canUsePageViews ? (yearPageViewsRes.count || 0) : 0,
+        topPages: canUsePageViews ? topPages : [],
+        exitPages: canUsePageViews ? exitPages : [],
+        checkoutSources: canUsePageViews ? checkoutSources : [],
+        pageViewsReady: canUsePageViews,
     });
 }
