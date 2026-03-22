@@ -2,12 +2,13 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     fetchAdminAnalytics,
     fetchAdminOverview,
+    type AdminAnalyticsRange,
     type AdminAnalyticsData,
     type AdminOverview,
 } from '@/services/adminService';
@@ -17,6 +18,7 @@ import {
     ArrowLeft,
     BarChart3,
     Clock3,
+    Download,
     Eye,
     Loader2,
     Package,
@@ -27,6 +29,7 @@ import {
 } from 'lucide-react';
 
 const EMPTY_ANALYTICS: AdminAnalyticsData = {
+    windowDays: 30,
     revenue: {
         today: 0,
         week: 0,
@@ -147,6 +150,9 @@ function maxValue(items: Array<{ value: number }>) {
 export default function AdminAnalyticsPage() {
     const { user, profile, isLoading: isAuthLoading } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const initialRange = Number(searchParams.get('range') || 30);
+    const [windowDays, setWindowDays] = useState<AdminAnalyticsRange>(initialRange === 7 || initialRange === 90 ? initialRange : 30);
     const [isLoading, setIsLoading] = useState(true);
     const [analytics, setAnalytics] = useState<AdminAnalyticsData>(EMPTY_ANALYTICS);
     const [overview, setOverview] = useState<AdminOverview>(EMPTY_OVERVIEW);
@@ -169,7 +175,7 @@ export default function AdminAnalyticsPage() {
             setIsLoading(true);
             try {
                 const [analyticsData, overviewData] = await Promise.all([
-                    fetchAdminAnalytics(),
+                    fetchAdminAnalytics(windowDays),
                     fetchAdminOverview(),
                 ]);
 
@@ -191,7 +197,16 @@ export default function AdminAnalyticsPage() {
         return () => {
             cancelled = true;
         };
-    }, [user, profile, isAuthLoading, router]);
+    }, [user, profile, isAuthLoading, router, windowDays]);
+
+    useEffect(() => {
+        const current = searchParams.get('range');
+        const wanted = String(windowDays);
+        if (current === wanted) return;
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('range', wanted);
+        router.replace(`/admin/analytics?${params.toString()}`);
+    }, [windowDays, router, searchParams]);
 
     const fixes = useMemo(() => {
         const items: Array<{ title: string; body: string; href: string; tone: string }> = [];
@@ -307,6 +322,49 @@ export default function AdminAnalyticsPage() {
     const revenueChartMax = maxValue(analytics.trends.dailyRevenue);
     const ordersChartMax = maxValue(analytics.trends.dailyOrders);
 
+    const exportAnalyticsCsv = () => {
+        const rows: string[][] = [
+            ['نوع التقرير', `تحليلات ${windowDays} يوم`],
+            ['دخل اليوم', String(analytics.revenue.today)],
+            ['دخل الأسبوع', String(analytics.revenue.week)],
+            ['دخل الشهر', String(analytics.revenue.month)],
+            ['دخل السنة', String(analytics.revenue.year)],
+            ['زيارات اليوم', String(analytics.visits.todayVisits)],
+            ['زيارات الأسبوع', String(analytics.visits.weekVisits)],
+            ['زيارات الشهر', String(analytics.visits.monthVisits)],
+            ['إجمالي الزيارات', String(analytics.visits.totalVisits)],
+            [],
+            ['أكثر المنتجات طلبًا'],
+            ['المنتج', 'الكمية'],
+            ...analytics.productInsights.topProducts.map((product) => [product.name, String(product.quantity)]),
+            [],
+            ['أداء الأقسام'],
+            ['القسم', 'الكمية', 'عدد الطلبات', 'نسبة المساهمة', 'الدخل التقريبي'],
+            ...analytics.categoryInsights.rows.map((category) => [
+                category.name,
+                String(category.quantity),
+                String(category.ordersCount),
+                `${category.share}%`,
+                String(category.revenue),
+            ]),
+        ];
+
+        const csv = '\uFEFF' + rows
+            .map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `fi-elsekka-analytics-${windowDays}d.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast.success('نزّلنا ملف التحليلات CSV، وتقدر تفتحه في Excel بسهولة.');
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -315,6 +373,30 @@ export default function AdminAnalyticsPage() {
                     <p className="mt-1 text-sm text-gray-500">هنا هتشوف أكتر منتج بيتطلب، أداء الأقسام، دخل المنصة، وزيارات الموقع بشكل مرتب وواضح.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2 rounded-2xl border border-surface-hover bg-surface p-1">
+                        {[7, 30, 90].map((days) => (
+                            <button
+                                key={days}
+                                type="button"
+                                onClick={() => setWindowDays(days as AdminAnalyticsRange)}
+                                className={`rounded-xl px-3 py-2 text-xs font-bold transition-colors ${
+                                    windowDays === days
+                                        ? 'bg-primary text-white'
+                                        : 'text-gray-400 hover:text-foreground'
+                                }`}
+                            >
+                                {days} يوم
+                            </button>
+                        ))}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={exportAnalyticsCsv}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-sm font-bold text-emerald-400 transition-colors hover:bg-emerald-500/15"
+                    >
+                        <Download className="w-4 h-4" />
+                        نزّل CSV
+                    </button>
                     <Link href="/admin" className="rounded-2xl border border-surface-hover bg-surface px-4 py-2.5 text-sm font-bold text-gray-300 transition-colors hover:border-primary/20 hover:text-foreground">
                         ارجع للوحة التحكم
                     </Link>
@@ -514,7 +596,12 @@ export default function AdminAnalyticsPage() {
                                     <div key={category.id} className="rounded-xl bg-background p-4">
                                         <div className="mb-3 flex items-center justify-between gap-3">
                                             <div className="min-w-0">
-                                                <p className="truncate text-sm font-bold text-foreground">{category.name}</p>
+                                                <Link
+                                                    href={`/admin/analytics/categories/${category.id}?range=${windowDays}`}
+                                                    className="truncate text-sm font-bold text-foreground transition-colors hover:text-primary"
+                                                >
+                                                    {category.name}
+                                                </Link>
                                                 <p className="text-xs text-gray-500">{category.quantity} قطعة في {category.ordersCount} طلب</p>
                                             </div>
                                             <div className="flex items-center gap-2">
@@ -537,6 +624,14 @@ export default function AdminAnalyticsPage() {
                                         <div className="mt-3 flex items-center justify-between text-[11px] text-gray-500">
                                             <span>دخل تقريبي من منتجات القسم</span>
                                             <span className="font-bold text-foreground">{currency(category.revenue)}</span>
+                                        </div>
+                                        <div className="mt-3">
+                                            <Link
+                                                href={`/admin/analytics/categories/${category.id}?range=${windowDays}`}
+                                                className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:text-primary/80"
+                                            >
+                                                افتح تفاصيل القسم <ArrowLeft className="w-3.5 h-3.5" />
+                                            </Link>
                                         </div>
                                     </div>
                                 ))

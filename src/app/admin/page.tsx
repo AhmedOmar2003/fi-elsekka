@@ -90,6 +90,7 @@ const EMPTY_OVERVIEW: AdminOverview = {
 };
 
 const EMPTY_ANALYTICS: AdminAnalyticsData = {
+    windowDays: 30,
     revenue: {
         today: 0,
         week: 0,
