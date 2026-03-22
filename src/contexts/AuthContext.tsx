@@ -21,6 +21,8 @@ const AuthContext = createContext<AuthContextType>({
     refreshProfile: async () => { },
 });
 
+const PERSISTED_SESSION_KEY = 'fi-elsekka-auth-session';
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
@@ -76,9 +78,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const setAuthCookie = (accessToken?: string | null) => {
         if (typeof document === 'undefined') return;
         if (accessToken) {
-            document.cookie = `sb-access-token=${accessToken}; path=/; max-age=3600; SameSite=Lax;${window.location.protocol === 'https:' ? ' Secure' : ''}`;
+            document.cookie = `sb-access-token=${accessToken}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax;${window.location.protocol === 'https:' ? ' Secure' : ''}`;
         } else {
             document.cookie = `sb-access-token=; path=/; max-age=0; SameSite=Lax;${window.location.protocol === 'https:' ? ' Secure' : ''}`;
+        }
+    };
+
+    const persistSessionSnapshot = (nextSession?: Session | null) => {
+        if (typeof window === 'undefined') return;
+        if (nextSession) {
+            localStorage.setItem(PERSISTED_SESSION_KEY, JSON.stringify(nextSession));
+        } else {
+            localStorage.removeItem(PERSISTED_SESSION_KEY);
+        }
+    };
+
+    const getPersistedSessionSnapshot = (): Session | null => {
+        if (typeof window === 'undefined') return null;
+        try {
+            const raw = localStorage.getItem(PERSISTED_SESSION_KEY);
+            return raw ? JSON.parse(raw) as Session : null;
+        } catch {
+            return null;
         }
     };
 
@@ -87,8 +108,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         const initializeAuth = async () => {
             try {
+                const persistedSession = getPersistedSessionSnapshot();
+                if (persistedSession?.user && mounted) {
+                    setSession(persistedSession);
+                    setUser(persistedSession.user);
+                }
+
                 // 1. Explicitly fetch the session on mount to guarantee we resolve `isLoading`
-                const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+                let { data: { session: initialSession }, error } = await supabase.auth.getSession();
                 
                 if (!mounted) return;
 
@@ -96,9 +123,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     console.error("AuthContext: getSession error", error);
                 }
 
+                if (!initialSession && persistedSession) {
+                    const refreshed = await supabase.auth.refreshSession().catch(() => null);
+                    if (refreshed?.data?.session) {
+                        initialSession = refreshed.data.session;
+                    }
+                }
+
                 setSession(initialSession);
                 setUser(initialSession?.user ?? null);
                 setAuthCookie(initialSession?.access_token);
+                persistSessionSnapshot(initialSession);
 
                 if (initialSession?.user) {
                     await loadProfile(initialSession.user);
@@ -142,6 +177,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     setUser(null);
                     setProfile(null);
                     setAuthCookie(null);
+                    persistSessionSnapshot(null);
                     setIsLoading(false);
                     return;
                 }
@@ -150,6 +186,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setSession(newSession);
                 setUser(newSession?.user ?? null);
                 setAuthCookie(newSession?.access_token);
+                persistSessionSnapshot(newSession);
 
                 if (newSession?.user) {
                      // Don't block UI for profile updates on subsequent events
@@ -189,6 +226,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setSession(freshSession);
                 setUser(freshSession?.user ?? null);
                 setAuthCookie(freshSession?.access_token);
+                persistSessionSnapshot(freshSession);
 
                 if (freshSession?.user) {
                     await loadProfile(freshSession.user);

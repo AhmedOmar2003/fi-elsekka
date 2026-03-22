@@ -77,13 +77,17 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     const [isLoading, setIsLoading] = useState(true);
 
     // ── Load cart ─────────────────────────────────────────────────────────
-    const loadCart = useCallback(async () => {
-        setIsLoading(true);
+    const loadCart = useCallback(async (options?: { silent?: boolean }) => {
+        if (!options?.silent) {
+            setIsLoading(true);
+        }
 
         if (!user) {
             // Guest: load from localStorage
             setItems(readGuestCart());
-            setIsLoading(false);
+            if (!options?.silent) {
+                setIsLoading(false);
+            }
             return;
         }
 
@@ -100,7 +104,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         // 2. Load full cart from DB (with product details via join)
         const data = await fetchUserCart(user.id);
         setItems(data);
-        setIsLoading(false);
+        if (!options?.silent) {
+            setIsLoading(false);
+        }
     }, [user]);
 
     // ── Subscribe to supabase realtime (auth users only) ──────────────────
@@ -114,7 +120,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'cart_items', filter: `user_id=eq.${user.id}` },
-                () => loadCart()
+                () => loadCart({ silent: true })
             )
             .subscribe();
 
@@ -233,8 +239,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         // Optimistic update, then write to DB
+        const previousItems = items;
         setItems(prev => prev.map(i => i.id === cartItemId ? { ...i, quantity } : i));
-        await updateCartItemQuantity(cartItemId, quantity);
+        const { error } = await updateCartItemQuantity(cartItemId, quantity);
+        if (error) {
+            console.error('Failed to update cart quantity:', error);
+            setItems(previousItems);
+            toast.error('ماعرفناش نحدّث الكمية دلوقتي، جرّب تاني.');
+        }
     };
 
     // ── Clear cart ────────────────────────────────────────────────────────

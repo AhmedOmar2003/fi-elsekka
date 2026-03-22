@@ -38,6 +38,7 @@ export const signIn = async (email: string, password: string) => {
 export const signOut = async () => {
     if (typeof window !== 'undefined') {
         localStorage.removeItem('guestCart');
+        localStorage.removeItem('fi-elsekka-auth-session');
     }
     if (typeof document !== 'undefined') {
         document.cookie = `sb-access-token=; path=/; max-age=0; SameSite=Lax;${window.location.protocol === 'https:' ? ' Secure' : ''}`;
