@@ -10,9 +10,14 @@ create table if not exists public.site_visits (
 create table if not exists public.site_page_views (
   id uuid primary key default gen_random_uuid(),
   visitor_id text not null,
+  session_id text,
   path text not null,
+  previous_path text,
   created_at timestamptz not null default now()
 );
+
+alter table public.site_page_views add column if not exists session_id text;
+alter table public.site_page_views add column if not exists previous_path text;
 
 create index if not exists idx_site_visits_created_at on public.site_visits(created_at desc);
 create index if not exists idx_site_visits_path on public.site_visits(path);

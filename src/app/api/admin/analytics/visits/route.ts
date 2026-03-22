@@ -46,6 +46,11 @@ function startOfYear() {
     return date.toISOString();
 }
 
+function clampRange(input: string | null) {
+    const parsed = Number(input || 30);
+    return parsed === 7 || parsed === 90 ? parsed : 30;
+}
+
 export async function GET(request: Request) {
     if (!supabaseAdmin) {
         return NextResponse.json({ error: 'Missing service configuration' }, { status: 500 });
@@ -53,6 +58,9 @@ export async function GET(request: Request) {
 
     const auth = await requireAdminApi(request, 'view_reports');
     if (!auth.ok) return auth.response;
+
+    const { searchParams } = new URL(request.url);
+    const rangeDays = clampRange(searchParams.get('range'));
 
     const today = startOfToday();
     const yesterday = startOfYesterday();
@@ -65,8 +73,12 @@ export async function GET(request: Request) {
     const previousMonthDate = new Date(month);
     previousMonthDate.setMonth(previousMonthDate.getMonth() - 1);
     const previousMonth = previousMonthDate.toISOString();
+    const rangeStartDate = new Date();
+    rangeStartDate.setHours(0, 0, 0, 0);
+    rangeStartDate.setDate(rangeStartDate.getDate() - (rangeDays - 1));
+    const rangeStart = rangeStartDate.toISOString();
 
-    const [totalRes, todayRes, yesterdayRes, weekRes, previousWeekRes, monthRes, previousMonthRes, yearRes, totalPageViewsRes, todayPageViewsRes, yesterdayPageViewsRes, weekPageViewsRes, previousWeekPageViewsRes, monthPageViewsRes, previousMonthPageViewsRes, yearPageViewsRes] = await Promise.all([
+    const [totalRes, todayRes, yesterdayRes, weekRes, previousWeekRes, monthRes, previousMonthRes, yearRes, totalPageViewsRes, todayPageViewsRes, yesterdayPageViewsRes, weekPageViewsRes, previousWeekPageViewsRes, monthPageViewsRes, previousMonthPageViewsRes, yearPageViewsRes, pageRowsRes] = await Promise.all([
         supabaseAdmin.from('site_visits').select('id', { count: 'exact', head: true }),
         supabaseAdmin.from('site_visits').select('id', { count: 'exact', head: true }).gte('created_at', today),
         supabaseAdmin.from('site_visits').select('id', { count: 'exact', head: true }).gte('created_at', yesterday).lt('created_at', today),
@@ -83,6 +95,7 @@ export async function GET(request: Request) {
         supabaseAdmin.from('site_page_views').select('id', { count: 'exact', head: true }).gte('created_at', month),
         supabaseAdmin.from('site_page_views').select('id', { count: 'exact', head: true }).gte('created_at', previousMonth).lt('created_at', month),
         supabaseAdmin.from('site_page_views').select('id', { count: 'exact', head: true }).gte('created_at', year),
+        supabaseAdmin.from('site_page_views').select('path, session_id, previous_path, created_at').gte('created_at', rangeStart),
     ]);
 
     const error =
@@ -101,11 +114,68 @@ export async function GET(request: Request) {
         previousWeekPageViewsRes.error ||
         monthPageViewsRes.error ||
         previousMonthPageViewsRes.error ||
-        yearPageViewsRes.error;
+        yearPageViewsRes.error ||
+        pageRowsRes.error;
 
     if (error) {
         return NextResponse.json({ error: error.message || 'Failed to load visit analytics' }, { status: 500 });
     }
+
+    const pageRows = pageRowsRes.data || [];
+    const pageViewCounts = new Map<string, number>();
+    const checkoutSourceCounts = new Map<string, number>();
+    const sessionGroups = new Map<string, Array<{ path: string; created_at: string }>>();
+
+    for (const row of pageRows) {
+        const path = row.path || '/';
+        pageViewCounts.set(path, (pageViewCounts.get(path) || 0) + 1);
+
+        if (path.startsWith('/checkout') || path.startsWith('/cart')) {
+            const source = row.previous_path || 'دخول مباشر';
+            checkoutSourceCounts.set(source, (checkoutSourceCounts.get(source) || 0) + 1);
+        }
+
+        if (row.session_id) {
+            const sessionRows = sessionGroups.get(row.session_id) || [];
+            sessionRows.push({ path, created_at: row.created_at });
+            sessionGroups.set(row.session_id, sessionRows);
+        }
+    }
+
+    const exitCounts = new Map<string, number>();
+    for (const rows of sessionGroups.values()) {
+        const last = [...rows].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).pop();
+        if (last?.path) {
+            exitCounts.set(last.path, (exitCounts.get(last.path) || 0) + 1);
+        }
+    }
+
+    const topPages = [...pageViewCounts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(([path, views]) => ({ path, views }));
+
+    const exitPages = [...pageViewCounts.entries()]
+        .map(([path, views]) => {
+            const exits = exitCounts.get(path) || 0;
+            return {
+                path,
+                views,
+                exits,
+                exitRate: views > 0 ? Math.round((exits / views) * 100) : 0,
+            };
+        })
+        .filter((item) => item.views >= 2)
+        .sort((a, b) => {
+            if (b.exitRate !== a.exitRate) return b.exitRate - a.exitRate;
+            return b.exits - a.exits;
+        })
+        .slice(0, 8);
+
+    const checkoutSources = [...checkoutSourceCounts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(([path, count]) => ({ path, count }));
 
     return NextResponse.json({
         totalVisits: totalRes.count || 0,
@@ -124,5 +194,8 @@ export async function GET(request: Request) {
         monthPageViews: monthPageViewsRes.count || 0,
         previousMonthPageViews: previousMonthPageViewsRes.count || 0,
         yearPageViews: yearPageViewsRes.count || 0,
+        topPages,
+        exitPages,
+        checkoutSources,
     });
 }

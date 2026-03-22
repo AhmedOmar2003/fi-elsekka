@@ -248,6 +248,20 @@ export type AdminVisitAnalytics = {
     monthPageViews: number;
     previousMonthPageViews: number;
     yearPageViews: number;
+    topPages: Array<{
+        path: string;
+        views: number;
+    }>;
+    exitPages: Array<{
+        path: string;
+        views: number;
+        exits: number;
+        exitRate: number;
+    }>;
+    checkoutSources: Array<{
+        path: string;
+        count: number;
+    }>;
 };
 
 export type AdminAnalyticsRange = 7 | 30 | 90;
@@ -653,9 +667,10 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
     };
 }
 
-export async function fetchAdminVisitAnalytics(): Promise<AdminVisitAnalytics> {
+export async function fetchAdminVisitAnalytics(windowDaysInput?: number): Promise<AdminVisitAnalytics> {
+    const windowDays = clampAnalyticsRange(windowDaysInput);
     try {
-        const res = await fetch('/api/admin/analytics/visits', {
+        const res = await fetch(`/api/admin/analytics/visits?range=${windowDays}`, {
             method: 'GET',
             credentials: 'include',
             cache: 'no-store',
@@ -683,6 +698,9 @@ export async function fetchAdminVisitAnalytics(): Promise<AdminVisitAnalytics> {
             monthPageViews: Number(payload.monthPageViews || 0),
             previousMonthPageViews: Number(payload.previousMonthPageViews || 0),
             yearPageViews: Number(payload.yearPageViews || 0),
+            topPages: Array.isArray(payload.topPages) ? payload.topPages : [],
+            exitPages: Array.isArray(payload.exitPages) ? payload.exitPages : [],
+            checkoutSources: Array.isArray(payload.checkoutSources) ? payload.checkoutSources : [],
         };
     } catch (error) {
         logError('fetchAdminVisitAnalytics', error);
@@ -703,6 +721,9 @@ export async function fetchAdminVisitAnalytics(): Promise<AdminVisitAnalytics> {
             monthPageViews: 0,
             previousMonthPageViews: 0,
             yearPageViews: 0,
+            topPages: [],
+            exitPages: [],
+            checkoutSources: [],
         };
     }
 }
@@ -714,7 +735,7 @@ export async function fetchAdminAnalytics(windowDaysInput?: number): Promise<Adm
         supabase.from('order_items').select('order_id, product_id, quantity, price_at_purchase'),
         supabase.from('products').select('id, name, image_url, category_id'),
         supabase.from('categories').select('id, name'),
-        fetchAdminVisitAnalytics(),
+        fetchAdminVisitAnalytics(windowDays),
     ]);
 
     if (ordersRes.error) logError('fetchAdminAnalytics.orders', ordersRes.error);

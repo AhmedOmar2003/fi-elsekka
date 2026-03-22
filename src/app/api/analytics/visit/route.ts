@@ -27,8 +27,10 @@ export async function POST(request: Request) {
         const body = await request.json().catch(() => ({}));
         const path = typeof body?.path === 'string' ? body.path.trim() : '';
         const visitorId = typeof body?.visitorId === 'string' ? body.visitorId.trim() : '';
+        const sessionId = typeof body?.sessionId === 'string' ? body.sessionId.trim() : '';
+        const previousPath = typeof body?.previousPath === 'string' ? body.previousPath.trim() : null;
 
-        if (!path.startsWith('/') || !visitorId) {
+        if (!path.startsWith('/') || !visitorId || !sessionId) {
             return NextResponse.json({ error: 'Invalid visit payload' }, { status: 400 });
         }
 
@@ -38,7 +40,9 @@ export async function POST(request: Request) {
 
         const { error: pageViewError } = await supabaseAdmin.from('site_page_views').insert({
             visitor_id: visitorId.slice(0, 120),
+            session_id: sessionId.slice(0, 120),
             path: path.slice(0, 240),
+            previous_path: previousPath?.startsWith('/') ? previousPath.slice(0, 240) : null,
         });
 
         if (pageViewError) {

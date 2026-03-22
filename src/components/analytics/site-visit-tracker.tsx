@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
 const VISITOR_ID_KEY = 'fi-elsekka-visitor-id';
+const SESSION_ID_KEY = 'fi-elsekka-session-id';
+const LAST_PATH_KEY = 'fi-elsekka-last-path';
 const EXCLUDED_PREFIXES = ['/admin', '/driver', '/system-access', '/api', '/_next'];
 const PAGE_VIEW_DEBOUNCE_MS = 5000;
 
@@ -23,6 +25,18 @@ function getVisitorId() {
     return next;
 }
 
+function getSessionId() {
+    const existing = window.sessionStorage.getItem(SESSION_ID_KEY);
+    if (existing) return existing;
+
+    const next = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    window.sessionStorage.setItem(SESSION_ID_KEY, next);
+    return next;
+}
+
 export function SiteVisitTracker() {
     const pathname = usePathname();
 
@@ -33,6 +47,8 @@ export function SiteVisitTracker() {
 
         const visitKey = `fi-elsekka-site-visit:${todayKey()}`;
         const visitorId = getVisitorId();
+        const sessionId = getSessionId();
+        const previousPath = window.sessionStorage.getItem(LAST_PATH_KEY) || null;
         const pageViewKey = `fi-elsekka-page-view:${pathname}`;
         const lastPageViewAt = Number(window.sessionStorage.getItem(pageViewKey) || 0);
         const now = Date.now();
@@ -41,6 +57,7 @@ export function SiteVisitTracker() {
         }
 
         window.sessionStorage.setItem(pageViewKey, String(now));
+        window.sessionStorage.setItem(LAST_PATH_KEY, pathname);
         const shouldCountVisitor = window.localStorage.getItem(visitKey) !== '1';
         if (shouldCountVisitor) {
             window.localStorage.setItem(visitKey, '1');
@@ -52,6 +69,8 @@ export function SiteVisitTracker() {
             body: JSON.stringify({
                 path: pathname,
                 visitorId,
+                sessionId,
+                previousPath,
             }),
             keepalive: true,
         }).then(async (res) => {

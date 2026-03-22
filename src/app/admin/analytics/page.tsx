@@ -53,6 +53,9 @@ const EMPTY_ANALYTICS: AdminAnalyticsData = {
         monthPageViews: 0,
         previousMonthPageViews: 0,
         yearPageViews: 0,
+        topPages: [],
+        exitPages: [],
+        checkoutSources: [],
     },
     comparisons: {
         revenue: {
@@ -156,6 +159,22 @@ function compareTone(value: number) {
 
 function maxValue(items: Array<{ value: number }>) {
     return items.reduce((max, item) => Math.max(max, item.value), 0);
+}
+
+function formatPathLabel(path: string) {
+    if (!path || path === 'دخول مباشر') return 'دخول مباشر';
+    const clean = path.split('?')[0];
+    if (clean === '/') return 'الصفحة الرئيسية';
+    if (clean === '/offers') return 'صفحة العروض';
+    if (clean === '/cart') return 'السلة';
+    if (clean.startsWith('/checkout')) return 'صفحة إتمام الطلب';
+    if (clean === '/orders') return 'طلباتي';
+    if (clean === '/account') return 'حسابي';
+    if (clean === '/categories') return 'كل الأقسام';
+    if (clean.startsWith('/category/')) return `قسم ${clean.split('/')[2] || ''}`;
+    if (clean.startsWith('/product/')) return `منتج ${clean.split('/')[2] || ''}`;
+    if (clean === '/contact') return 'تواصل معنا';
+    return clean;
 }
 
 export default function AdminAnalyticsPage() {
@@ -676,6 +695,85 @@ export default function AdminAnalyticsPage() {
                             )}
                         </div>
                     </div>
+
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <div className="rounded-2xl border border-surface-hover bg-surface shadow-sm overflow-hidden">
+                            <div className="flex items-center justify-between border-b border-surface-hover p-5">
+                                <div className="flex items-center gap-2">
+                                    <Eye className="w-4 h-4 text-primary" />
+                                    <h2 className="text-sm font-bold text-foreground">أكثر الصفحات زيارة</h2>
+                                </div>
+                                <div className="text-xs text-gray-500">في آخر {windowDays} يوم</div>
+                            </div>
+
+                            <div className="divide-y divide-surface-hover">
+                                {isLoading ? (
+                                    <div className="p-5 space-y-3">
+                                        {[...Array(5)].map((_, index) => (
+                                            <div key={index} className="h-14 rounded-xl bg-surface-hover animate-pulse" />
+                                        ))}
+                                    </div>
+                                ) : analytics.visits.topPages.length === 0 ? (
+                                    <div className="p-8 text-center text-sm text-gray-500">لسه مفيش بيانات صفحات كفاية.</div>
+                                ) : (
+                                    analytics.visits.topPages.map((page, index) => (
+                                        <div key={`${page.path}-${index}`} className="flex items-center gap-4 px-5 py-4">
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">
+                                                {index + 1}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-bold text-foreground">{formatPathLabel(page.path)}</p>
+                                                <p className="truncate text-[11px] text-gray-500">{page.path}</p>
+                                            </div>
+                                            <div className="text-left text-sm font-black text-foreground">
+                                                {page.views.toLocaleString()}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-surface-hover bg-surface shadow-sm overflow-hidden">
+                            <div className="flex items-center justify-between border-b border-surface-hover p-5">
+                                <div className="flex items-center gap-2">
+                                    <TrendingDown className="w-4 h-4 text-rose-400" />
+                                    <h2 className="text-sm font-bold text-foreground">صفحات الناس بتقف عندها</h2>
+                                </div>
+                                <div className="text-xs text-gray-500">خروج أعلى من الطبيعي</div>
+                            </div>
+
+                            <div className="divide-y divide-surface-hover">
+                                {isLoading ? (
+                                    <div className="p-5 space-y-3">
+                                        {[...Array(5)].map((_, index) => (
+                                            <div key={index} className="h-14 rounded-xl bg-surface-hover animate-pulse" />
+                                        ))}
+                                    </div>
+                                ) : analytics.visits.exitPages.length === 0 ? (
+                                    <div className="p-8 text-center text-sm text-gray-500">لسه مفيش بيانات خروج واضحة في الفترة دي.</div>
+                                ) : (
+                                    analytics.visits.exitPages.map((page, index) => (
+                                        <div key={`${page.path}-${index}`} className="px-5 py-4">
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="truncate text-sm font-bold text-foreground">{formatPathLabel(page.path)}</p>
+                                                    <p className="truncate text-[11px] text-gray-500">{page.path}</p>
+                                                </div>
+                                                <div className="rounded-full bg-rose-400/10 px-2.5 py-1 text-[11px] font-bold text-rose-400">
+                                                    {page.exitRate}% خروج
+                                                </div>
+                                            </div>
+                                            <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500">
+                                                <span>{page.views.toLocaleString()} مشاهدة</span>
+                                                <span>{page.exits.toLocaleString()} خروج</span>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="space-y-6">
@@ -736,6 +834,39 @@ export default function AdminAnalyticsPage() {
                             <Link href="/admin/orders/search-requests" className="inline-flex items-center gap-2 rounded-xl bg-background px-3 py-2 text-xs font-bold text-foreground transition-colors hover:text-primary">
                                 الطلبات اللي بندور عليها <ArrowLeft className="w-3.5 h-3.5" />
                             </Link>
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-surface-hover bg-surface p-5 shadow-sm">
+                        <div className="flex items-center gap-2 mb-4">
+                            <ShoppingCart className="w-4 h-4 text-primary" />
+                            <h2 className="text-sm font-bold text-foreground">منين الناس بتدخل على الطلب؟</h2>
+                        </div>
+
+                        <div className="space-y-3">
+                            {isLoading ? (
+                                [...Array(4)].map((_, index) => (
+                                    <div key={index} className="h-14 rounded-xl bg-surface-hover animate-pulse" />
+                                ))
+                            ) : analytics.visits.checkoutSources.length === 0 ? (
+                                <div className="rounded-xl bg-background p-4 text-center text-sm text-gray-500">
+                                    لسه مفيش مصادر واضحة وصلت الناس للطلب في الفترة دي.
+                                </div>
+                            ) : (
+                                analytics.visits.checkoutSources.map((source, index) => (
+                                    <div key={`${source.path}-${index}`} className="rounded-xl bg-background px-4 py-3">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-bold text-foreground">{formatPathLabel(source.path)}</p>
+                                                <p className="truncate text-[11px] text-gray-500">{source.path}</p>
+                                            </div>
+                                            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
+                                                {source.count} مرة
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>

@@ -114,6 +114,9 @@ const EMPTY_ANALYTICS: AdminAnalyticsData = {
         monthPageViews: 0,
         previousMonthPageViews: 0,
         yearPageViews: 0,
+        topPages: [],
+        exitPages: [],
+        checkoutSources: [],
     },
     comparisons: {
         revenue: {
