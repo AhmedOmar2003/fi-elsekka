@@ -115,9 +115,17 @@ export default function RootLayout({
       <body
         className={`${ibmPlex.variable} ${lalezar.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col transition-colors duration-300`}
       >
+        <a 
+          href="#main-content" 
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:right-4 focus:z-50 focus:bg-primary focus:text-white focus:px-4 focus:py-2 focus:rounded-xl focus:shadow-xl font-bold font-sans"
+        >
+          القفز إلى المحتوى الرئيسي
+        </a>
         <Providers>
           <MaintenanceModeOverlay />
-          {children}
+          <div id="main-content" className="flex-1 flex flex-col w-full outline-none" tabIndex={-1}>
+            {children}
+          </div>
           <MobileNav />
           <InstallPrompt />
           <Toaster className="font-sans" position="top-center" richColors />

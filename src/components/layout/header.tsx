@@ -375,7 +375,7 @@ export function Header() {
             <div className="flex items-center gap-2 px-3">
               <span className="text-sm font-bold text-foreground">{profile?.full_name || user.email?.split('@')[0]}</span>
               <NotificationBell />
-              <Button variant="ghost" size="icon" onClick={handleLogoutClick} className="text-gray-500 hover:text-rose-500 hover:bg-rose-500/10" title="تسجيل الخروج">
+              <Button variant="ghost" size="icon" onClick={handleLogoutClick} className="text-gray-500 hover:text-rose-500 hover:bg-rose-500/10" aria-label="تسجيل الخروج" title="تسجيل الخروج">
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -390,7 +390,9 @@ export function Header() {
 
           <ThemeToggle />
 
-          <Link href="/cart" className="relative text-gray-500 hover:text-foreground bg-surface-hover/50 hover:bg-surface-hover w-10 h-10 flex items-center justify-center rounded-full transition-all">
+          <ThemeToggle />
+
+          <Link href="/cart" aria-label="سلة المشتريات" className="relative text-gray-500 hover:text-foreground bg-surface-hover/50 hover:bg-surface-hover w-10 h-10 flex items-center justify-center rounded-full transition-all">
             <ShoppingBag className="h-5 w-5" />
             {cartCount > 0 && <span className="absolute -top-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white ring-2 ring-background">{cartCount}</span>}
           </Link>
@@ -512,6 +514,7 @@ export function Header() {
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex items-center justify-center w-9 h-9 rounded-xl text-gray-500 hover:text-foreground hover:bg-surface-hover active:scale-95 transition-all"
+                aria-label="إغلاق القائمة"
               >
                 <X className="h-5 w-5" />
               </button>

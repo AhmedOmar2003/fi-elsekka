@@ -24,6 +24,18 @@
     --brand-surface-border: #e2e8f0;
   }
 
+  /* Global Keyboard Focus (a11y) */
+  a:focus-visible, 
+  button:focus-visible, 
+  [role="button"]:focus-visible, 
+  input:focus-visible, 
+  select:focus-visible, 
+  textarea:focus-visible {
+    outline: 3px solid var(--brand-primary);
+    outline-offset: 2px;
+  }
+
+
   .dark {
     /* Dark Mode (Original Deep, rich styling) */
     --background: #05070a; 
