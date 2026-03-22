@@ -402,12 +402,30 @@ function OrderCard({
           )}
 
           {order.status === 'cancelled' && customerCancelReason && (
-            <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-4 space-y-3">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-amber-500">هل ما زلت تريد هذا الطلب؟</p>
-                <p className="mt-1 text-sm leading-7 text-gray-500">
-                  لو كنت ما زلت تحتاج الطلب اضغط على التأكيد وسنبلغ الإدارة فورًا. ولو لم تعد تحتاجه سنثبت الإلغاء النهائي.
-                </p>
+            <div className="rounded-2xl border border-amber-400/20 bg-gradient-to-br from-amber-400/10 via-background to-background p-4 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-amber-500">هل ما زلت محتاج الطلب ده؟</p>
+                  <p className="mt-1 text-sm leading-7 text-gray-500">
+                    لو ما زلت محتاجه، بلغنا وإحنا هنرجع نراجع الطلب مع الإدارة. ولو خلاص مش محتاجه هنثبت الإلغاء النهائي.
+                  </p>
+                </div>
+                <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[11px] font-black text-amber-500">
+                  قرارك مهم
+                </span>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-surface-hover bg-background px-4 py-3">
+                  <p className="text-[11px] font-bold text-gray-500">لو ضغطت أيوه</p>
+                  <p className="mt-2 text-sm font-black text-foreground">هنبلغ الإدارة فورًا</p>
+                  <p className="mt-1 text-xs leading-6 text-gray-500">ولو فيه فرصة نرجع نجهزه، هيكملوا معاك من نفس الطلب.</p>
+                </div>
+                <div className="rounded-xl border border-surface-hover bg-background px-4 py-3">
+                  <p className="text-[11px] font-bold text-gray-500">لو ضغطت لا خلاص</p>
+                  <p className="mt-2 text-sm font-black text-foreground">هيتثبت الإلغاء النهائي</p>
+                  <p className="mt-1 text-xs leading-6 text-gray-500">وساعتها هنعتبر إنك مش محتاج الطلب ده تاني.</p>
+                </div>
               </div>
 
               {!cancellationDecision ? (
@@ -415,10 +433,10 @@ function OrderCard({
                   <button
                     onClick={() => handleCancelledOrderDecision('insist')}
                     disabled={!!isSubmittingCancelResponse}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-bold text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-60"
+                    className="flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-bold text-primary shadow-lg shadow-primary/10 transition-colors hover:bg-primary hover:text-white disabled:opacity-60"
                   >
                     {isSubmittingCancelResponse === 'insist' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    أيوه، مصر على الطلب
+                    أيوه، لسه محتاجه
                   </button>
                   <button
                     onClick={() => handleCancelledOrderDecision('confirm_cancel')}
@@ -517,10 +535,30 @@ function OrderCard({
           )}
 
           {isTextRequestOrder && !pricingPending && quotedFinalTotal > 0 && (
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 space-y-2">
-              <p className="text-xs font-black uppercase tracking-wide text-emerald-600">تم تحديد السعر</p>
-              <p className="text-sm text-gray-500">قيمة المنتجات من المحل: <span className="font-black text-foreground">{quotedProductsTotal.toLocaleString()} ج.م</span></p>
-              <p className="text-base font-black text-emerald-600">السعر النهائي الحالي: {quotedFinalTotal.toLocaleString()} ج.م شامل التوصيل</p>
+            <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-background to-background p-4 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-emerald-600">لقينالك طلبك وحددنا سعره</p>
+                  <p className="mt-1 text-sm leading-7 text-gray-500">
+                    راجع السعر براحتك، ولو مناسبك كمّل الطلب من هنا. ولو ما كنتش فتحت الإشعار، هتلاقي نفس القرار ظاهر لك هنا عادي.
+                  </p>
+                </div>
+                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-black text-emerald-600">
+                  جاهز لقرارك
+                </span>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-surface-hover bg-background px-4 py-3">
+                  <p className="text-[11px] font-bold text-gray-500">قيمة المنتجات</p>
+                  <p className="mt-1 text-lg font-black text-foreground">{quotedProductsTotal.toLocaleString()} ج.م</p>
+                </div>
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+                  <p className="text-[11px] font-bold text-gray-500">الإجمالي شامل التوصيل</p>
+                  <p className="mt-1 text-lg font-black text-emerald-600">{quotedFinalTotal.toLocaleString()} ج.م</p>
+                </div>
+              </div>
+
               {pricingUpdatedAt && (
                 <p className="text-xs text-gray-500">آخر تحديث: {new Date(pricingUpdatedAt).toLocaleString('ar-EG')}</p>
               )}
@@ -530,10 +568,10 @@ function OrderCard({
                   <button
                     onClick={() => handleQuotedOrderDecision('approve')}
                     disabled={!!isSubmittingQuoteResponse}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-bold text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-60"
+                    className="flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-bold text-primary shadow-lg shadow-primary/10 transition-colors hover:bg-primary hover:text-white disabled:opacity-60"
                   >
                     {isSubmittingQuoteResponse === 'approve' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    تأكيد الطلب بالسعر المحدد
+                    تمام، كمّلوا الطلب
                   </button>
                   <button
                     onClick={() => handleQuotedOrderDecision('reject')}
@@ -541,7 +579,7 @@ function OrderCard({
                     className="flex items-center justify-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-400 transition-colors hover:bg-rose-500 hover:text-white disabled:opacity-60"
                   >
                     {isSubmittingQuoteResponse === 'reject' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    لا، مش هكمل
+                    لا، مش مناسب ليا
                   </button>
                 </div>
               )}

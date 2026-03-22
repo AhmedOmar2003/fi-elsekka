@@ -327,14 +327,35 @@ export default function AdminSearchRequestsPage() {
                                 </div>
 
                                 {isSearchingRequestOrder(order) ? (
-                                    <div className="mt-4 rounded-2xl border border-violet-500/20 bg-violet-500/10 p-4">
-                                        <div className="flex items-center gap-2 text-violet-400">
-                                            <Clock className="h-4 w-4" />
-                                            <p className="text-sm font-black">لسه بندور على الطلب ده</p>
+                                    <div className="mt-4 rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-background to-background p-4">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <div className="flex items-center gap-2 text-violet-400">
+                                                    <Clock className="h-4 w-4" />
+                                                    <p className="text-sm font-black">لسه بندور على الطلب ده</p>
+                                                </div>
+                                                <p className="mt-2 text-sm leading-7 text-gray-500">
+                                                    أول ما تلاقيه، ابعت للعميل إشعار لطيف إننا لقينا طلبه وسعرناه. ولو ما فتحش الإشعار، هيلاقي نفس القرار ظاهر له في تتبع الطلب.
+                                                </p>
+                                            </div>
+                                            <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-[11px] font-black text-violet-400">
+                                                خطوة البحث
+                                            </span>
                                         </div>
-                                        <p className="mt-2 text-sm leading-7 text-gray-500">
-                                            أول ما تلاقي المنتج وتحدد سعره، ابعت التسعيرة من تفاصيل الطلب. العميل هيوصله إشعار، وبعدها يا إما يوافق أو يرفض.
-                                        </p>
+
+                                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                            <div className="rounded-2xl border border-surface-hover bg-background px-4 py-3">
+                                                <p className="text-[11px] font-bold text-gray-500">اللي هيوصل للعميل</p>
+                                                <p className="mt-2 text-sm font-black text-foreground">لقينالك طلبك وسعره جاهز</p>
+                                                <p className="mt-1 text-xs leading-6 text-gray-500">بعدها هو يرد عليك يا إما نكمل، يا إما خلاص مش محتاجه.</p>
+                                            </div>
+                                            <div className="rounded-2xl border border-surface-hover bg-background px-4 py-3">
+                                                <p className="text-[11px] font-bold text-gray-500">لو ما لقيناهوش</p>
+                                                <p className="mt-2 text-sm font-black text-foreground">هيتصله إشعار اعتذار واضح</p>
+                                                <p className="mt-1 text-xs leading-6 text-gray-500">ونقوله لو لقيناه بعد كده هنرجع نبعتله على طول.</p>
+                                            </div>
+                                        </div>
+
                                         <div className="mt-4 space-y-3">
                                             <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
                                                 <div className="rounded-2xl bg-background px-4 py-3">
@@ -365,9 +386,9 @@ export default function AdminSearchRequestsPage() {
                                                 <button
                                                     onClick={() => handleSendPrice(order.id)}
                                                     disabled={busyOrderId === order.id}
-                                                    className="rounded-2xl bg-primary px-4 py-2.5 text-sm font-black text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
+                                                    className="rounded-2xl bg-primary px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-primary/20 transition-colors hover:bg-primary/90 disabled:opacity-50"
                                                 >
-                                                    {busyOrderId === order.id ? 'جاري الإرسال...' : 'ابعت إشعار: لقينالك طلبك وسعره كذا'}
+                                                    {busyOrderId === order.id ? 'جاري الإرسال...' : 'لقيناه — ابعت السعر للعميل'}
                                                 </button>
                                                 <button
                                                     onClick={() => handleMarkUnavailable(order.id)}
@@ -383,10 +404,15 @@ export default function AdminSearchRequestsPage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="mt-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4">
-                                        <div className="flex items-center gap-2 text-sky-500">
-                                            <CheckCircle2 className="h-4 w-4" />
-                                            <p className="text-sm font-black">لقيناه وبعتنا السعر للعميل</p>
+                                    <div className="mt-4 rounded-3xl border border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-background to-background p-4">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex items-center gap-2 text-sky-500">
+                                                <CheckCircle2 className="h-4 w-4" />
+                                                <p className="text-sm font-black">لقيناه وبعتنا السعر للعميل</p>
+                                            </div>
+                                            <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-[11px] font-black text-sky-500">
+                                                مستنيين الرد
+                                            </span>
                                         </div>
                                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
                                             <div className="rounded-2xl bg-background px-4 py-3">
@@ -399,7 +425,7 @@ export default function AdminSearchRequestsPage() {
                                             </div>
                                         </div>
                                         <p className="mt-3 text-sm leading-7 text-gray-500">
-                                            العميل وصله الإشعار إننا لقينا طلبه وسعرناه. أول ما يوافق أو يرفض هيوصلك إشعار فوق في جرس الإدارة ويتحدث الطلب هنا تلقائيًا.
+                                            العميل وصله الإشعار إننا لقينا طلبه وسعرناه، ولو ما فتحش الإشعار هيلاقي القرار ظاهر له جوه تتبع الطلب. أول ما يوافق أو يرفض هيوصلك إشعار فوق في جرس الإدارة ويتحدث الطلب هنا تلقائيًا.
                                         </p>
                                         <div className="mt-4 flex flex-wrap gap-2">
                                             <Link href={`/admin/orders?id=${order.id}`} className="rounded-2xl border border-sky-500/20 bg-white px-4 py-2.5 text-sm font-black text-sky-500 transition-colors hover:bg-sky-500 hover:text-white">

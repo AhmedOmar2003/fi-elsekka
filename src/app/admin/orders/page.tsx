@@ -945,11 +945,11 @@ export default function AdminOrdersPage() {
                                     </div>
                                 )}
                                 {selectedOrderIsTextRequest && (
-                                    <div className="mb-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-4">
+                                    <div className="mb-3 rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-background to-background p-4 space-y-4">
                                         <div>
                                             <p className="text-xs font-black text-emerald-600">تسعير الطلب من الإدارة</p>
                                             <p className="mt-1 text-[11px] leading-6 text-gray-500">
-                                                حدّد قيمة المنتجات من المحل، والنظام سيضيف 20 ج.م توصيل تلقائيًا ثم يرسل التسعيرة للعميل للموافقة أو الرفض.
+                                                حدّد قيمة المنتجات من المحل، والنظام سيضيف 20 ج.م توصيل تلقائيًا ثم يرسل للعميل إشعارًا شيكًا، ولو ما فتحش الإشعار هيلاقي نفس القرار ظاهر له في تتبع الطلب.
                                             </p>
                                         </div>
 
@@ -992,7 +992,7 @@ export default function AdminOrdersPage() {
                                                 <p className="pt-1">
                                                     حالة العميل:
                                                     <span className="mr-1 font-bold text-foreground">
-                                                        {selectedOrderQuoteResponse === 'approved'
+                                                        {selectedOrderQuoteResponse === 'approve'
                                                             ? 'وافق على التسعيرة'
                                                             : selectedOrderQuoteResponse === 'reject'
                                                                 ? 'رفض التسعيرة'
@@ -1005,8 +1005,28 @@ export default function AdminOrdersPage() {
                                     </div>
                                 )}
                                 {selectedOrderIsTextRequest && !selectedOrderPricingPending && selectedOrderQuotedFinalTotal > 0 && (
-                                    <div className="mb-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-                                        <p className="text-xs font-black text-emerald-600">آخر تسعيرة معتمدة لهذا الطلب</p>
+                                    <div className="mb-3 rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-background to-background p-4">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p className="text-xs font-black text-emerald-600">آخر تسعيرة معتمدة لهذا الطلب</p>
+                                                <p className="mt-1 text-[11px] leading-6 text-gray-500">
+                                                    من هنا تشوف آخر سعر اتبعت، وهل العميل وافق أو رفض، من غير ما تحتاج تفتش في الإشعارات.
+                                                </p>
+                                            </div>
+                                            <span className={`rounded-full border px-3 py-1 text-[11px] font-black ${
+                                                selectedOrderQuoteResponse === 'approve'
+                                                    ? 'border-primary/20 bg-primary/10 text-primary'
+                                                    : selectedOrderQuoteResponse === 'reject'
+                                                        ? 'border-rose-500/20 bg-rose-500/10 text-rose-400'
+                                                        : 'border-sky-500/20 bg-sky-500/10 text-sky-500'
+                                            }`}>
+                                                {selectedOrderQuoteResponse === 'approve'
+                                                    ? 'العميل وافق'
+                                                    : selectedOrderQuoteResponse === 'reject'
+                                                        ? 'العميل رفض'
+                                                        : 'مستنيين الرد'}
+                                            </span>
+                                        </div>
                                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
                                             <div className="rounded-xl bg-background px-3 py-3">
                                                 <p className="text-[11px] text-gray-500">قيمة المنتجات</p>
