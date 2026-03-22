@@ -99,9 +99,25 @@ const EMPTY_ANALYTICS: AdminAnalyticsData = {
     visits: {
         totalVisits: 0,
         todayVisits: 0,
+        yesterdayVisits: 0,
         weekVisits: 0,
+        previousWeekVisits: 0,
         monthVisits: 0,
+        previousMonthVisits: 0,
         yearVisits: 0,
+    },
+    comparisons: {
+        revenue: {
+            todayVsYesterday: 0,
+            weekVsPreviousWeek: 0,
+            monthVsPreviousMonth: 0,
+            yearVsPreviousYear: 0,
+        },
+        visits: {
+            todayVsYesterday: 0,
+            weekVsPreviousWeek: 0,
+            monthVsPreviousMonth: 0,
+        },
     },
     summary: {
         totalTrackedOrders: 0,
@@ -109,6 +125,10 @@ const EMPTY_ANALYTICS: AdminAnalyticsData = {
         totalOrderedUnits: 0,
         conversionRate: 0,
         averageOrderValue: 0,
+    },
+    trends: {
+        dailyRevenue: [],
+        dailyOrders: [],
     },
     productInsights: {
         mostOrdered: null,

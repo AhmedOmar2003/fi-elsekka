@@ -228,8 +228,11 @@ export type OperationsCenterData = {
 export type AdminVisitAnalytics = {
     totalVisits: number;
     todayVisits: number;
+    yesterdayVisits: number;
     weekVisits: number;
+    previousWeekVisits: number;
     monthVisits: number;
+    previousMonthVisits: number;
     yearVisits: number;
 };
 
@@ -240,6 +243,19 @@ export type AdminAnalyticsData = {
         month: number;
         year: number;
     };
+    comparisons: {
+        revenue: {
+            todayVsYesterday: number;
+            weekVsPreviousWeek: number;
+            monthVsPreviousMonth: number;
+            yearVsPreviousYear: number;
+        };
+        visits: {
+            todayVsYesterday: number;
+            weekVsPreviousWeek: number;
+            monthVsPreviousMonth: number;
+        };
+    };
     visits: AdminVisitAnalytics;
     summary: {
         totalTrackedOrders: number;
@@ -247,6 +263,16 @@ export type AdminAnalyticsData = {
         totalOrderedUnits: number;
         conversionRate: number;
         averageOrderValue: number;
+    };
+    trends: {
+        dailyRevenue: Array<{
+            label: string;
+            value: number;
+        }>;
+        dailyOrders: Array<{
+            label: string;
+            value: number;
+        }>;
     };
     productInsights: {
         mostOrdered: {
@@ -278,6 +304,8 @@ export type AdminAnalyticsData = {
             name: string;
             quantity: number;
             share: number;
+            ordersCount: number;
+            revenue: number;
         }>;
     };
 };
@@ -307,6 +335,24 @@ function startOfYear() {
     const date = startOfToday();
     date.setMonth(0, 1);
     return date;
+}
+
+function startOfYesterday() {
+    const date = startOfToday();
+    date.setDate(date.getDate() - 1);
+    return date;
+}
+
+function addDays(date: Date, days: number) {
+    const next = new Date(date);
+    next.setDate(next.getDate() + days);
+    return next;
+}
+
+function percentChange(current: number, previous: number) {
+    if (previous <= 0 && current <= 0) return 0;
+    if (previous <= 0) return 100;
+    return Number((((current - previous) / previous) * 100).toFixed(1));
 }
 
 function isStaffRole(role?: string | null) {
@@ -562,8 +608,11 @@ export async function fetchAdminVisitAnalytics(): Promise<AdminVisitAnalytics> {
         return {
             totalVisits: Number(payload.totalVisits || 0),
             todayVisits: Number(payload.todayVisits || 0),
+            yesterdayVisits: Number(payload.yesterdayVisits || 0),
             weekVisits: Number(payload.weekVisits || 0),
+            previousWeekVisits: Number(payload.previousWeekVisits || 0),
             monthVisits: Number(payload.monthVisits || 0),
+            previousMonthVisits: Number(payload.previousMonthVisits || 0),
             yearVisits: Number(payload.yearVisits || 0),
         };
     } catch (error) {
@@ -571,8 +620,11 @@ export async function fetchAdminVisitAnalytics(): Promise<AdminVisitAnalytics> {
         return {
             totalVisits: 0,
             todayVisits: 0,
+            yesterdayVisits: 0,
             weekVisits: 0,
+            previousWeekVisits: 0,
             monthVisits: 0,
+            previousMonthVisits: 0,
             yearVisits: 0,
         };
     }
@@ -581,7 +633,7 @@ export async function fetchAdminVisitAnalytics(): Promise<AdminVisitAnalytics> {
 export async function fetchAdminAnalytics(): Promise<AdminAnalyticsData> {
     const [ordersRes, orderItemsRes, productsRes, categoriesRes, visits] = await Promise.all([
         supabase.from('orders').select('id, status, created_at, total_amount, shipping_address'),
-        supabase.from('order_items').select('order_id, product_id, quantity'),
+        supabase.from('order_items').select('order_id, product_id, quantity, price_at_purchase'),
         supabase.from('products').select('id, name, image_url, category_id'),
         supabase.from('categories').select('id, name'),
         fetchAdminVisitAnalytics(),
@@ -593,9 +645,17 @@ export async function fetchAdminAnalytics(): Promise<AdminAnalyticsData> {
     if (categoriesRes.error) logError('fetchAdminAnalytics.categories', categoriesRes.error);
 
     const todayStart = startOfToday().getTime();
+    const yesterdayStart = startOfYesterday().getTime();
     const weekStart = startOfWeek().getTime();
     const monthStart = startOfMonth().getTime();
     const yearStart = startOfYear().getTime();
+    const previousWeekStart = addDays(startOfWeek(), -7).getTime();
+    const previousMonthStartDate = startOfMonth();
+    previousMonthStartDate.setMonth(previousMonthStartDate.getMonth() - 1);
+    const previousMonthStart = previousMonthStartDate.getTime();
+    const previousYearStartDate = startOfYear();
+    previousYearStartDate.setFullYear(previousYearStartDate.getFullYear() - 1);
+    const previousYearStart = previousYearStartDate.getTime();
 
     const visibleOrders = (ordersRes.data || []).filter((order) => !isCustomerSelfCancelledGraceOrder(order));
     const activeOrders = visibleOrders.filter((order) => order.status !== 'cancelled');
@@ -608,15 +668,54 @@ export async function fetchAdminAnalytics(): Promise<AdminAnalyticsData> {
         month: 0,
         year: 0,
     };
+    const previousRevenue = {
+        yesterday: 0,
+        previousWeek: 0,
+        previousMonth: 0,
+        previousYear: 0,
+    };
+
+    const dailyRevenueBuckets = Array.from({ length: 7 }, (_, index) => {
+        const bucketDate = addDays(startOfToday(), -(6 - index));
+        return {
+            key: bucketDate.toISOString().slice(0, 10),
+            label: bucketDate.toLocaleDateString('ar-EG', { weekday: 'short' }),
+            value: 0,
+        };
+    });
+
+    const dailyOrderBuckets = Array.from({ length: 7 }, (_, index) => {
+        const bucketDate = addDays(startOfToday(), -(6 - index));
+        return {
+            key: bucketDate.toISOString().slice(0, 10),
+            label: bucketDate.toLocaleDateString('ar-EG', { weekday: 'short' }),
+            value: 0,
+        };
+    });
 
     for (const order of deliveredOrders) {
         const orderTime = new Date(order.created_at || '').getTime();
         const platformRevenue = getOrderEconomics(order).platformRevenue;
+        const orderDayKey = new Date(order.created_at || '').toISOString().slice(0, 10);
 
         if (orderTime >= todayStart) deliveredRevenue.today += platformRevenue;
         if (orderTime >= weekStart) deliveredRevenue.week += platformRevenue;
         if (orderTime >= monthStart) deliveredRevenue.month += platformRevenue;
         if (orderTime >= yearStart) deliveredRevenue.year += platformRevenue;
+
+        if (orderTime >= yesterdayStart && orderTime < todayStart) previousRevenue.yesterday += platformRevenue;
+        if (orderTime >= previousWeekStart && orderTime < weekStart) previousRevenue.previousWeek += platformRevenue;
+        if (orderTime >= previousMonthStart && orderTime < monthStart) previousRevenue.previousMonth += platformRevenue;
+        if (orderTime >= previousYearStart && orderTime < yearStart) previousRevenue.previousYear += platformRevenue;
+
+        const revenueBucket = dailyRevenueBuckets.find((bucket) => bucket.key === orderDayKey);
+        if (revenueBucket) revenueBucket.value += platformRevenue;
+    }
+
+    for (const order of activeOrders) {
+        const orderDayKey = new Date(order.created_at || '').toISOString().slice(0, 10);
+        const bucket = dailyOrderBuckets.find((entry) => entry.key === orderDayKey);
+        if (bucket) bucket.value += 1;
     }
 
     const productLookup = new Map(
@@ -631,10 +730,10 @@ export async function fetchAdminAnalytics(): Promise<AdminAnalyticsData> {
         ])
     );
 
-    const categoryTotals = new Map(
+    const categoryTotals = new Map<string, { id: string; name: string; quantity: number; orders: Set<string>; revenue: number }>(
         (categoriesRes.data || []).map((category) => [
             category.id,
-            { id: category.id, name: category.name, quantity: 0 },
+            { id: category.id, name: category.name, quantity: 0, orders: new Set<string>(), revenue: 0 },
         ])
     );
 
@@ -663,7 +762,10 @@ export async function fetchAdminAnalytics(): Promise<AdminAnalyticsData> {
         }
 
         if (product.category_id && categoryTotals.has(product.category_id)) {
-            categoryTotals.get(product.category_id)!.quantity += quantity;
+            const row = categoryTotals.get(product.category_id)!;
+            row.quantity += quantity;
+            row.orders.add(item.order_id);
+            row.revenue += (Number(item.price_at_purchase || 0) || 0) * quantity;
         }
     }
 
@@ -677,8 +779,12 @@ export async function fetchAdminAnalytics(): Promise<AdminAnalyticsData> {
             return a.name.localeCompare(b.name, 'ar');
         })
         .map((category) => ({
-            ...category,
+            id: category.id,
+            name: category.name,
+            quantity: category.quantity,
             share: totalOrderedUnits > 0 ? Math.round((category.quantity / totalOrderedUnits) * 100) : 0,
+            ordersCount: category.orders.size,
+            revenue: category.revenue,
         }));
 
     const leastOrdered = [...categoryRows]
@@ -689,6 +795,19 @@ export async function fetchAdminAnalytics(): Promise<AdminAnalyticsData> {
 
     return {
         revenue: deliveredRevenue,
+        comparisons: {
+            revenue: {
+                todayVsYesterday: percentChange(deliveredRevenue.today, previousRevenue.yesterday),
+                weekVsPreviousWeek: percentChange(deliveredRevenue.week, previousRevenue.previousWeek),
+                monthVsPreviousMonth: percentChange(deliveredRevenue.month, previousRevenue.previousMonth),
+                yearVsPreviousYear: percentChange(deliveredRevenue.year, previousRevenue.previousYear),
+            },
+            visits: {
+                todayVsYesterday: percentChange(visits.todayVisits, visits.yesterdayVisits),
+                weekVsPreviousWeek: percentChange(visits.weekVisits, visits.previousWeekVisits),
+                monthVsPreviousMonth: percentChange(visits.monthVisits, visits.previousMonthVisits),
+            },
+        },
         visits,
         summary: {
             totalTrackedOrders: activeOrders.length,
@@ -700,6 +819,10 @@ export async function fetchAdminAnalytics(): Promise<AdminAnalyticsData> {
             averageOrderValue: deliveredOrders.length > 0
                 ? Math.round(deliveredOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) / deliveredOrders.length)
                 : 0,
+        },
+        trends: {
+            dailyRevenue: dailyRevenueBuckets.map(({ label, value }) => ({ label, value })),
+            dailyOrders: dailyOrderBuckets.map(({ label, value }) => ({ label, value })),
         },
         productInsights: {
             mostOrdered: topProducts[0] || null,
