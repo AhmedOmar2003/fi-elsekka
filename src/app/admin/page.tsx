@@ -106,6 +106,14 @@ const EMPTY_ANALYTICS: AdminAnalyticsData = {
         monthVisits: 0,
         previousMonthVisits: 0,
         yearVisits: 0,
+        totalPageViews: 0,
+        todayPageViews: 0,
+        yesterdayPageViews: 0,
+        weekPageViews: 0,
+        previousWeekPageViews: 0,
+        monthPageViews: 0,
+        previousMonthPageViews: 0,
+        yearPageViews: 0,
     },
     comparisons: {
         revenue: {
@@ -118,6 +126,9 @@ const EMPTY_ANALYTICS: AdminAnalyticsData = {
             todayVsYesterday: 0,
             weekVsPreviousWeek: 0,
             monthVsPreviousMonth: 0,
+            pageViewsTodayVsYesterday: 0,
+            pageViewsWeekVsPreviousWeek: 0,
+            pageViewsMonthVsPreviousMonth: 0,
         },
     },
     summary: {

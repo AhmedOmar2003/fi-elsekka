@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 
 const VISITOR_ID_KEY = 'fi-elsekka-visitor-id';
 const EXCLUDED_PREFIXES = ['/admin', '/driver', '/system-access', '/api', '/_next'];
+const PAGE_VIEW_DEBOUNCE_MS = 5000;
 
 function todayKey() {
     return new Date().toISOString().slice(0, 10);
@@ -31,12 +32,19 @@ export function SiteVisitTracker() {
         }
 
         const visitKey = `fi-elsekka-site-visit:${todayKey()}`;
-        if (window.localStorage.getItem(visitKey) === '1') {
+        const visitorId = getVisitorId();
+        const pageViewKey = `fi-elsekka-page-view:${pathname}`;
+        const lastPageViewAt = Number(window.sessionStorage.getItem(pageViewKey) || 0);
+        const now = Date.now();
+        if (now - lastPageViewAt < PAGE_VIEW_DEBOUNCE_MS) {
             return;
         }
 
-        const visitorId = getVisitorId();
-        window.localStorage.setItem(visitKey, '1');
+        window.sessionStorage.setItem(pageViewKey, String(now));
+        const shouldCountVisitor = window.localStorage.getItem(visitKey) !== '1';
+        if (shouldCountVisitor) {
+            window.localStorage.setItem(visitKey, '1');
+        }
 
         fetch('/api/analytics/visit', {
             method: 'POST',
@@ -46,7 +54,14 @@ export function SiteVisitTracker() {
                 visitorId,
             }),
             keepalive: true,
+        }).then(async (res) => {
+            if (!res.ok && shouldCountVisitor) {
+                window.localStorage.removeItem(visitKey);
+            }
         }).catch(() => {
+            if (shouldCountVisitor) {
+                window.localStorage.removeItem(visitKey);
+            }
             // Ignore transient visit tracking failures so navigation stays smooth.
         });
     }, [pathname]);

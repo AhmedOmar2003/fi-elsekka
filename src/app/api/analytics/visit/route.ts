@@ -36,6 +36,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ ok: true, skipped: true });
         }
 
+        const { error: pageViewError } = await supabaseAdmin.from('site_page_views').insert({
+            visitor_id: visitorId.slice(0, 120),
+            path: path.slice(0, 240),
+        });
+
+        if (pageViewError) {
+            return NextResponse.json({ error: pageViewError.message }, { status: 500 });
+        }
+
         const todayStart = startOfTodayIso();
         const { count: existingCount, error: existingError } = await supabaseAdmin
             .from('site_visits')
@@ -48,7 +57,7 @@ export async function POST(request: Request) {
         }
 
         if ((existingCount || 0) > 0) {
-            return NextResponse.json({ ok: true, skipped: true, reason: 'already-counted-today' });
+            return NextResponse.json({ ok: true, visitorSkipped: true, pageViewTracked: true, reason: 'already-counted-today' });
         }
 
         const { error } = await supabaseAdmin.from('site_visits').insert({

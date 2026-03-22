@@ -45,6 +45,14 @@ const EMPTY_ANALYTICS: AdminAnalyticsData = {
         monthVisits: 0,
         previousMonthVisits: 0,
         yearVisits: 0,
+        totalPageViews: 0,
+        todayPageViews: 0,
+        yesterdayPageViews: 0,
+        weekPageViews: 0,
+        previousWeekPageViews: 0,
+        monthPageViews: 0,
+        previousMonthPageViews: 0,
+        yearPageViews: 0,
     },
     comparisons: {
         revenue: {
@@ -57,6 +65,9 @@ const EMPTY_ANALYTICS: AdminAnalyticsData = {
             todayVsYesterday: 0,
             weekVsPreviousWeek: 0,
             monthVsPreviousMonth: 0,
+            pageViewsTodayVsYesterday: 0,
+            pageViewsWeekVsPreviousWeek: 0,
+            pageViewsMonthVsPreviousMonth: 0,
         },
     },
     summary: {
@@ -282,6 +293,13 @@ export default function AdminAnalyticsPage() {
         { label: 'إجمالي الزيارات', value: analytics.visits.totalVisits, compare: null as number | null, icon: Eye, tone: 'text-amber-400 bg-amber-400/10' },
     ];
 
+    const pageViewCards = [
+        { label: 'فتح الصفحات اليوم', value: analytics.visits.todayPageViews, compare: analytics.comparisons.visits.pageViewsTodayVsYesterday, icon: Eye, tone: 'text-emerald-400 bg-emerald-400/10' },
+        { label: 'فتح الصفحات الأسبوع ده', value: analytics.visits.weekPageViews, compare: analytics.comparisons.visits.pageViewsWeekVsPreviousWeek, icon: Clock3, tone: 'text-primary bg-primary/10' },
+        { label: 'فتح الصفحات الشهر ده', value: analytics.visits.monthPageViews, compare: analytics.comparisons.visits.pageViewsMonthVsPreviousMonth, icon: BarChart3, tone: 'text-sky-400 bg-sky-400/10' },
+        { label: 'إجمالي فتح الصفحات', value: analytics.visits.totalPageViews, compare: null as number | null, icon: Eye, tone: 'text-violet-400 bg-violet-400/10' },
+    ];
+
     const insightCards = [
         {
             label: 'أكثر منتج بيتطلب',
@@ -426,6 +444,26 @@ export default function AdminAnalyticsPage() {
 
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                 {visitCards.map((card) => {
+                    const Icon = card.icon;
+                    return (
+                        <div key={card.label} className="rounded-2xl border border-surface-hover bg-surface p-5 shadow-sm">
+                            <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-2xl ${card.tone}`}>
+                                <Icon className="h-5 w-5" />
+                            </div>
+                            <p className="text-xs font-bold text-gray-500">{card.label}</p>
+                            <p className="mt-2 text-2xl font-black text-foreground">{isLoading ? '...' : card.value.toLocaleString()}</p>
+                            {card.compare !== null && (
+                                <p className={`mt-2 text-xs font-bold ${compareTone(card.compare)}`}>
+                                    {isLoading ? '...' : compareLabel(card.compare)}
+                                </p>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                {pageViewCards.map((card) => {
                     const Icon = card.icon;
                     return (
                         <div key={card.label} className="rounded-2xl border border-surface-hover bg-surface p-5 shadow-sm">

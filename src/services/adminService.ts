@@ -240,6 +240,14 @@ export type AdminVisitAnalytics = {
     monthVisits: number;
     previousMonthVisits: number;
     yearVisits: number;
+    totalPageViews: number;
+    todayPageViews: number;
+    yesterdayPageViews: number;
+    weekPageViews: number;
+    previousWeekPageViews: number;
+    monthPageViews: number;
+    previousMonthPageViews: number;
+    yearPageViews: number;
 };
 
 export type AdminAnalyticsRange = 7 | 30 | 90;
@@ -263,6 +271,9 @@ export type AdminAnalyticsData = {
             todayVsYesterday: number;
             weekVsPreviousWeek: number;
             monthVsPreviousMonth: number;
+            pageViewsTodayVsYesterday: number;
+            pageViewsWeekVsPreviousWeek: number;
+            pageViewsMonthVsPreviousMonth: number;
         };
     };
     visits: AdminVisitAnalytics;
@@ -664,6 +675,14 @@ export async function fetchAdminVisitAnalytics(): Promise<AdminVisitAnalytics> {
             monthVisits: Number(payload.monthVisits || 0),
             previousMonthVisits: Number(payload.previousMonthVisits || 0),
             yearVisits: Number(payload.yearVisits || 0),
+            totalPageViews: Number(payload.totalPageViews || 0),
+            todayPageViews: Number(payload.todayPageViews || 0),
+            yesterdayPageViews: Number(payload.yesterdayPageViews || 0),
+            weekPageViews: Number(payload.weekPageViews || 0),
+            previousWeekPageViews: Number(payload.previousWeekPageViews || 0),
+            monthPageViews: Number(payload.monthPageViews || 0),
+            previousMonthPageViews: Number(payload.previousMonthPageViews || 0),
+            yearPageViews: Number(payload.yearPageViews || 0),
         };
     } catch (error) {
         logError('fetchAdminVisitAnalytics', error);
@@ -676,6 +695,14 @@ export async function fetchAdminVisitAnalytics(): Promise<AdminVisitAnalytics> {
             monthVisits: 0,
             previousMonthVisits: 0,
             yearVisits: 0,
+            totalPageViews: 0,
+            todayPageViews: 0,
+            yesterdayPageViews: 0,
+            weekPageViews: 0,
+            previousWeekPageViews: 0,
+            monthPageViews: 0,
+            previousMonthPageViews: 0,
+            yearPageViews: 0,
         };
     }
 }
@@ -846,6 +873,9 @@ export async function fetchAdminAnalytics(windowDaysInput?: number): Promise<Adm
                 todayVsYesterday: percentChange(visits.todayVisits, visits.yesterdayVisits),
                 weekVsPreviousWeek: percentChange(visits.weekVisits, visits.previousWeekVisits),
                 monthVsPreviousMonth: percentChange(visits.monthVisits, visits.previousMonthVisits),
+                pageViewsTodayVsYesterday: percentChange(visits.todayPageViews, visits.yesterdayPageViews),
+                pageViewsWeekVsPreviousWeek: percentChange(visits.weekPageViews, visits.previousWeekPageViews),
+                pageViewsMonthVsPreviousMonth: percentChange(visits.monthPageViews, visits.previousMonthPageViews),
             },
         },
         visits,

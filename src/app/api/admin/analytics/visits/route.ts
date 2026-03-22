@@ -66,7 +66,7 @@ export async function GET(request: Request) {
     previousMonthDate.setMonth(previousMonthDate.getMonth() - 1);
     const previousMonth = previousMonthDate.toISOString();
 
-    const [totalRes, todayRes, yesterdayRes, weekRes, previousWeekRes, monthRes, previousMonthRes, yearRes] = await Promise.all([
+    const [totalRes, todayRes, yesterdayRes, weekRes, previousWeekRes, monthRes, previousMonthRes, yearRes, totalPageViewsRes, todayPageViewsRes, yesterdayPageViewsRes, weekPageViewsRes, previousWeekPageViewsRes, monthPageViewsRes, previousMonthPageViewsRes, yearPageViewsRes] = await Promise.all([
         supabaseAdmin.from('site_visits').select('id', { count: 'exact', head: true }),
         supabaseAdmin.from('site_visits').select('id', { count: 'exact', head: true }).gte('created_at', today),
         supabaseAdmin.from('site_visits').select('id', { count: 'exact', head: true }).gte('created_at', yesterday).lt('created_at', today),
@@ -75,6 +75,14 @@ export async function GET(request: Request) {
         supabaseAdmin.from('site_visits').select('id', { count: 'exact', head: true }).gte('created_at', month),
         supabaseAdmin.from('site_visits').select('id', { count: 'exact', head: true }).gte('created_at', previousMonth).lt('created_at', month),
         supabaseAdmin.from('site_visits').select('id', { count: 'exact', head: true }).gte('created_at', year),
+        supabaseAdmin.from('site_page_views').select('id', { count: 'exact', head: true }),
+        supabaseAdmin.from('site_page_views').select('id', { count: 'exact', head: true }).gte('created_at', today),
+        supabaseAdmin.from('site_page_views').select('id', { count: 'exact', head: true }).gte('created_at', yesterday).lt('created_at', today),
+        supabaseAdmin.from('site_page_views').select('id', { count: 'exact', head: true }).gte('created_at', week),
+        supabaseAdmin.from('site_page_views').select('id', { count: 'exact', head: true }).gte('created_at', previousWeek).lt('created_at', week),
+        supabaseAdmin.from('site_page_views').select('id', { count: 'exact', head: true }).gte('created_at', month),
+        supabaseAdmin.from('site_page_views').select('id', { count: 'exact', head: true }).gte('created_at', previousMonth).lt('created_at', month),
+        supabaseAdmin.from('site_page_views').select('id', { count: 'exact', head: true }).gte('created_at', year),
     ]);
 
     const error =
@@ -85,7 +93,15 @@ export async function GET(request: Request) {
         previousWeekRes.error ||
         monthRes.error ||
         previousMonthRes.error ||
-        yearRes.error;
+        yearRes.error ||
+        totalPageViewsRes.error ||
+        todayPageViewsRes.error ||
+        yesterdayPageViewsRes.error ||
+        weekPageViewsRes.error ||
+        previousWeekPageViewsRes.error ||
+        monthPageViewsRes.error ||
+        previousMonthPageViewsRes.error ||
+        yearPageViewsRes.error;
 
     if (error) {
         return NextResponse.json({ error: error.message || 'Failed to load visit analytics' }, { status: 500 });
@@ -100,5 +116,13 @@ export async function GET(request: Request) {
         monthVisits: monthRes.count || 0,
         previousMonthVisits: previousMonthRes.count || 0,
         yearVisits: yearRes.count || 0,
+        totalPageViews: totalPageViewsRes.count || 0,
+        todayPageViews: todayPageViewsRes.count || 0,
+        yesterdayPageViews: yesterdayPageViewsRes.count || 0,
+        weekPageViews: weekPageViewsRes.count || 0,
+        previousWeekPageViews: previousWeekPageViewsRes.count || 0,
+        monthPageViews: monthPageViewsRes.count || 0,
+        previousMonthPageViews: previousMonthPageViewsRes.count || 0,
+        yearPageViews: yearPageViewsRes.count || 0,
     });
 }
