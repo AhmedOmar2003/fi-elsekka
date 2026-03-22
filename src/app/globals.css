@@ -3,25 +3,26 @@
 
 @layer base {
   :root {
-    /* Light Mode (Clean, soft whites and light grays) */
-    --background: #f8fafc; /* slate-50 */
-    --foreground: #0f172a; /* slate-900 */
+    /* Light Mode (Premium Eye-Comfort & Luxurious) */
+    /* Warm alabaster backgrounds reduce screen glare/blue light while maintaining high contrast */
+    --background: #fcfbf9; 
+    --foreground: #292524; /* stone-800 - softer than pure black to reduce eye strain */
     
     /* Brand colors (Unchanged for identity) */
     --brand-primary: #10b981; 
     --brand-primary-hover: #059669; 
-    --brand-primary-glow: rgba(16, 185, 129, 0.2);
+    --brand-primary-glow: rgba(16, 185, 129, 0.15);
     
     --brand-secondary: #f43f5e; 
     --brand-secondary-hover: #e11d48;
     
     /* Surfaces */
-    --brand-surface: #ffffff; /* pure white cards */
-    --brand-surface-light: #f1f5f9; /* slate-100 for hover */
-    --brand-surface-lighter: #e2e8f0; /* slate-200 */
+    --brand-surface: #ffffff; /* Crisp white cards to pop against the off-white background */
+    --brand-surface-light: #f5f5f4; /* stone-100 for hover elements */
+    --brand-surface-lighter: #e7e5e4; /* stone-200 for deeper contrast */
     
     /* Borders */
-    --brand-surface-border: #e2e8f0;
+    --brand-surface-border: rgba(41, 37, 36, 0.08); /* Transparent soft stone for elegant lines */
   }
 
   /* Global Keyboard Focus (a11y) */
