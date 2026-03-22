@@ -390,8 +390,6 @@ export function Header() {
 
           <ThemeToggle />
 
-          <ThemeToggle />
-
           <Link href="/cart" aria-label="سلة المشتريات" className="relative text-gray-500 hover:text-foreground bg-surface-hover/50 hover:bg-surface-hover w-10 h-10 flex items-center justify-center rounded-full transition-all">
             <ShoppingBag className="h-5 w-5" />
             {cartCount > 0 && <span className="absolute -top-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white ring-2 ring-background">{cartCount}</span>}
