@@ -30,28 +30,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Ref to prevent concurrent profile fetches
     const fetchingProfile = useRef(false);
 
-    const loadProfile = async (userId: string) => {
+    const loadProfile = async (currentUser: User) => {
         // Guard: skip if already in-flight
         if (fetchingProfile.current) return;
         fetchingProfile.current = true;
         try {
-            // Fast path: if auth metadata already contains admin role, avoid hitting RLS
-            if (user?.user_metadata?.role) {
-                setProfile({
-                    id: user.id,
-                    email: user.email || '',
-                    full_name: user.user_metadata?.username || user.email || 'Admin',
-                    role: user.user_metadata?.role,
-                    permissions: user.user_metadata?.permissions || [],
-                    disabled: user.user_metadata?.disabled || false,
-                });
+            let fastProfile = null;
+            // Fast path: if auth metadata already contains admin role, avoid hitting RLS immediately
+            if (currentUser?.user_metadata?.role) {
+                fastProfile = {
+                    id: currentUser.id,
+                    email: currentUser.email || '',
+                    full_name: currentUser.user_metadata?.username || currentUser.email || 'Admin',
+                    role: currentUser.user_metadata?.role,
+                    permissions: currentUser.user_metadata?.permissions || [],
+                    disabled: currentUser.user_metadata?.disabled || false,
+                };
+                setProfile(fastProfile);
             }
-            const userProfile = await getUserProfile(userId);
+            
+            const userProfile = await getUserProfile(currentUser.id);
             if (userProfile) {
                 setProfile({
                     ...userProfile,
-                    permissions: userProfile.permissions || user?.user_metadata?.permissions || [],
-                    disabled: userProfile.disabled,
+                    role: userProfile.role || fastProfile?.role || currentUser?.user_metadata?.role || null,
+                    permissions: userProfile.permissions || fastProfile?.permissions || currentUser?.user_metadata?.permissions || [],
+                    disabled: userProfile.disabled ?? fastProfile?.disabled ?? false,
                 });
             }
         } catch (err: unknown) {
@@ -66,7 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const refreshProfile = async () => {
-        if (user?.id) await loadProfile(user.id);
+        if (user) await loadProfile(user);
     };
 
     const setAuthCookie = (accessToken?: string | null) => {
@@ -97,7 +101,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setAuthCookie(initialSession?.access_token);
 
                 if (initialSession?.user) {
-                    await loadProfile(initialSession.user.id);
+                    await loadProfile(initialSession.user);
                 } else {
                     setProfile(null);
                 }
@@ -149,7 +153,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
                 if (newSession?.user) {
                      // Don't block UI for profile updates on subsequent events
-                    loadProfile(newSession.user.id);
+                    loadProfile(newSession.user);
                 } else {
                     setProfile(null);
                 }
@@ -187,7 +191,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setAuthCookie(freshSession?.access_token);
 
                 if (freshSession?.user) {
-                    await loadProfile(freshSession.user.id);
+                    await loadProfile(freshSession.user);
                 } else {
                     setProfile(null);
                 }
