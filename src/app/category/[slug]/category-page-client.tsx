@@ -213,8 +213,6 @@ export default function CategoryPageClient({
         break
       default:
         filtered.sort((a, b) => {
-          if (a.is_best_seller && !b.is_best_seller) return -1
-          if (!a.is_best_seller && b.is_best_seller) return 1
           return ((b.specifications as any)?.rating || 0) - ((a.specifications as any)?.rating || 0)
         })
     }

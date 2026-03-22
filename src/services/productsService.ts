@@ -67,11 +67,12 @@ export const fetchProducts = async (categoryId?: string): Promise<Product[]> => 
 };
 
 /**
- * Fetches best-seller products using actual sales data.
+ * Fetches the most requested products using actual order volume only.
  * Logic:
- * 1. Calculate actual sales from `order_items` (total quantity per product).
- * 2. Fallback to manually tagged `is_best_seller` = true.
- * 3. Final fallback: newest 3 products.
+ * 1. Calculate total ordered quantity per product from `order_items`.
+ * 2. Ignore cancelled orders completely.
+ * 3. Return the top 4 in exact ranking order.
+ * 4. If there are no real orders yet, fallback to newest 4 products.
  */
 export const fetchBestSellers = async (): Promise<Product[]> => {
     try {
@@ -114,19 +115,7 @@ export const fetchBestSellers = async (): Promise<Product[]> => {
             }
         }
 
-        // 2. Fallback to manually tagged is_best_seller
-        const { data: manualBest } = await supabase
-            .from('products')
-            .select(PRODUCT_CARD_FIELDS)
-            .eq('is_best_seller', true)
-            .order('created_at', { ascending: false })
-            .limit(4);
-
-        if (manualBest && manualBest.length > 0) {
-            return manualBest as Product[];
-        }
-
-        // 3. Last fallback: Newest products
+        // 2. Final fallback: newest products if there are no real orders yet
         const { data: newest } = await supabase
             .from('products')
             .select(PRODUCT_CARD_FIELDS)

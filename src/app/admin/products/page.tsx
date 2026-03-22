@@ -27,7 +27,6 @@ type Product = {
     image_url: string | null;
     images?: string[];
     description: string | null;
-    is_best_seller?: boolean;
     show_in_offers?: boolean;
     specifications?: Record<string, any> | null;
     product_specifications?: { id?: string, label: string, description: string }[];
@@ -42,7 +41,6 @@ const EMPTY_FORM = {
     images: ['', '', '', ''],
     image_file: null as File | null,
     images_files: [null, null, null, null] as (File | null)[],
-    is_best_seller: false,
     show_in_offers: false,
     specs: [] as { id?: string, label: string, description: string }[],
     product_mode: 'single' as ProductMode,
@@ -135,7 +133,6 @@ export default function AdminProductsPage() {
             ],
             image_file: null,
             images_files: [null, null, null, null],
-            is_best_seller: !!p.is_best_seller,
             show_in_offers: !!p.show_in_offers,
             specs: normalizeSpecs(p.product_specifications, p.specifications),
             product_mode: getProductMode(p.specifications),
@@ -237,7 +234,6 @@ export default function AdminProductsPage() {
                 category_id: form.category_id || null,
                 image_url: finalImageUrl && !finalImageUrl.startsWith('blob:') ? finalImageUrl : null,
                 images: finalImages.filter(url => url && url.trim() !== '' && !url.startsWith('blob:')),
-                is_best_seller: form.is_best_seller,
                 show_in_offers: form.show_in_offers,
                 specifications: {
                     ...form.specifications_base,
@@ -737,17 +733,6 @@ export default function AdminProductsPage() {
                                     </div>
                                 </div>
                             )}
-
-                            {/* Best Seller */}
-                            <label className="flex items-center gap-3 mt-2 cursor-pointer p-3 rounded-xl bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors">
-                                <input
-                                    type="checkbox"
-                                    checked={form.is_best_seller}
-                                    onChange={e => setForm(f => ({ ...f, is_best_seller: e.target.checked }))}
-                                    className="w-4 h-4 rounded text-primary bg-surface border-surface-hover accent-primary"
-                                />
-                                <span className="text-sm font-bold text-foreground">⭐ تمييز كمنتج الأكثر مبيعاً (Best Seller)</span>
-                            </label>
 
                             {/* Show in Offers */}
                             <label className="flex items-center gap-3 mt-2 cursor-pointer p-3 rounded-xl bg-rose-500/5 border border-rose-500/20 hover:bg-rose-500/10 transition-colors">

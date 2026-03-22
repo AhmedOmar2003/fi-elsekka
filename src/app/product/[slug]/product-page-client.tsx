@@ -295,7 +295,7 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
       price,
       oldPrice,
       discountAmount,
-      isBestSeller: dbProduct.is_best_seller,
+      isBestSeller: false,
       rating: dbProduct.specifications?.rating || 4.9,
       reviewsCount: dbProduct.specifications?.reviews_count || 120,
       stock: dbProduct.stock_quantity ? `متوفر ${dbProduct.stock_quantity} قطعة` : (dbProduct.specifications?.stock || "متوفر"),
@@ -550,11 +550,6 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
 
               {/* Badges */}
               <div className="flex flex-wrap items-center gap-2 mb-4">
-                {product.isBestSeller && (
-                  <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1 shadow-md shadow-amber-500/20">
-                    ⭐ الأكثر مبيعاً
-                  </Badge>
-                )}
                 {product.discountAmount && (
                   <Badge className="bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-1 shadow-md shadow-rose-500/20 border-rose-500">
                     {product.discountAmount}

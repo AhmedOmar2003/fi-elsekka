@@ -23,7 +23,7 @@ const MOCK_FEATURED_PRODUCTS = [
 export default async function Home() {
   // 3 separate lightweight queries — each fetches only relevant items:
   // - fetchHomeProducts: 8 newest products for the featured section
-  // - fetchBestSellers: DB-filtered is_best_seller=true (fixes regression)
+  // - fetchBestSellers: top requested products from real orders
   // - fetchOffers: DB-filtered show_in_offers=true
   const [dbProducts, bestSellerProducts, offerProducts] = await Promise.all([
     fetchHomeProducts(),
@@ -42,15 +42,13 @@ export default async function Home() {
     imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn"
   }));
 
-  // ── Best Sellers ────────────────────────────────────────────────────────
-  // FIX: use the dedicated DB query result — NOT dbProducts.filter()
-  // The old approach filtered from 8 items; best sellers added earlier were invisible.
+  // ── Most Requested Products ─────────────────────────────────────────────
   const displayBestSellers = bestSellerProducts.length > 0
     ? bestSellerProducts.slice(0, 4).map(p => ({
         ...toProductCardProps(p),
         imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
       }))
-    // Fallback: show products 4-7 from the featured list if no best sellers are marked
+    // Fallback: show newer products if there are still no real orders
     : dbProducts.slice(4, 9).map(p => ({
         ...toProductCardProps(p),
         imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
