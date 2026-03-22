@@ -87,6 +87,7 @@ export function SearchRequestProgress({
   if (stage === "closed") {
     return (
       <div className={`rounded-2xl border p-4 ${meta.tone}`}>
+        <p className="mb-3 text-xs font-black uppercase tracking-wider opacity-80">رحلة الطلب</p>
         <div className="flex items-center gap-2">
           <XCircle className="h-4 w-4" />
           <p className="text-sm font-black">الطلب اتقفل حاليًا</p>
@@ -104,7 +105,22 @@ export function SearchRequestProgress({
   ]
 
   return (
-    <div className={`rounded-2xl border p-4 ${meta.tone}`}>
+    <div className={`rounded-2xl border p-4 shadow-sm ${meta.tone}`}>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-wider opacity-80">رحلة الطلب</p>
+          <p className="mt-1 text-sm font-black">
+            {audience === "admin" ? "الطلب ماشي لحد فين دلوقتي؟" : "طلبك وصل لحد فين دلوقتي؟"}
+          </p>
+        </div>
+        <span className="rounded-full border border-current/20 bg-current/10 px-3 py-1 text-[11px] font-black">
+          {stage === "searching"
+            ? "جاري البحث"
+            : stage === "awaiting_response"
+              ? "بانتظار الرد"
+              : "تمت الموافقة"}
+        </span>
+      </div>
       <div className="flex items-start justify-between gap-3">
         {steps.map((step, index) => {
           const Icon = step.icon
