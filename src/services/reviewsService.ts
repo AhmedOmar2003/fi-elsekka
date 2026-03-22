@@ -84,6 +84,25 @@ export const checkUserReviewed = async (userId: string, productId: string): Prom
     return (data?.length ?? 0) > 0;
 };
 
+/** Fetch the current user's review for a product */
+export const fetchUserProductReview = async (userId: string, productId: string): Promise<Review | null> => {
+    const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('product_id', productId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (error) {
+        console.error('fetchUserProductReview error:', error);
+        return null;
+    }
+
+    return (data as Review | null) ?? null;
+};
+
 /** Create a new review */
 export const createReview = async (
     userId: string,
@@ -103,6 +122,27 @@ export const createReview = async (
             images,
             user_name: userName,
         })
+        .select()
+        .single();
+
+    return { data: data as Review | null, error };
+};
+
+/** Update an existing review */
+export const updateReview = async (
+    reviewId: string,
+    rating: number,
+    comment: string,
+    images: string[]
+): Promise<{ data: Review | null; error: any }> => {
+    const { data, error } = await supabase
+        .from('reviews')
+        .update({
+            rating,
+            comment: comment || null,
+            images,
+        })
+        .eq('id', reviewId)
         .select()
         .single();
 

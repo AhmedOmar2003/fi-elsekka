@@ -9,7 +9,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Tag, Camera, Send, MessageSquare, X, Share2, Copy } from "lucide-react"
 import { fetchProductDetails, Product } from "@/services/productsService"
-import { fetchProductReviews, calcReviewStats, createReview, checkUserPurchased, checkUserReviewed, uploadReviewImage, Review, ReviewStats } from "@/services/reviewsService"
+import { fetchProductReviews, calcReviewStats, createReview, updateReview, fetchUserProductReview, checkUserPurchased, checkUserReviewed, uploadReviewImage, Review, ReviewStats } from "@/services/reviewsService"
 import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { DiscountCodeInput } from "@/components/ui/discount-code-input"
@@ -183,6 +183,7 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
   const [reviewsLoading, setReviewsLoading] = React.useState(true)
   const [canReview, setCanReview] = React.useState(false)
   const [alreadyReviewed, setAlreadyReviewed] = React.useState(false)
+  const [existingReview, setExistingReview] = React.useState<Review | null>(null)
   const [showReviewForm, setShowReviewForm] = React.useState(false)
 
   // Review form state
@@ -203,12 +204,18 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
     setReviewsLoading(false)
 
     if (user) {
-      const [purchased, reviewed] = await Promise.all([
+      const [purchased, reviewed, currentReview] = await Promise.all([
         checkUserPurchased(user.id, slugOrId),
         checkUserReviewed(user.id, slugOrId),
+        fetchUserProductReview(user.id, slugOrId),
       ])
-      setCanReview(purchased && !reviewed)
+      setCanReview(purchased)
       setAlreadyReviewed(reviewed)
+      setExistingReview(currentReview)
+    } else {
+      setCanReview(false)
+      setAlreadyReviewed(false)
+      setExistingReview(null)
     }
   }, [slugOrId, user])
 
@@ -227,31 +234,61 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
     return () => window.removeEventListener('focus', handleFocus)
   }, [loadReviews])
 
+  const openReviewForm = React.useCallback(() => {
+    if (existingReview) {
+      setReviewRating(existingReview.rating)
+      setReviewComment(existingReview.comment || "")
+      setReviewImages(existingReview.images || [])
+    } else {
+      setReviewRating(5)
+      setReviewComment("")
+      setReviewImages([])
+    }
+
+    setShowReviewForm(true)
+  }, [existingReview])
+
   const handleSubmitReview = async () => {
     if (!user || !dbProduct) return
     setIsSubmitting(true)
 
-    const { data, error } = await createReview(
-      user.id,
-      dbProduct.id,
-      reviewRating,
-      reviewComment,
-      reviewImages,
-      (user as any).user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم'
-    )
+    const reviewerName = (user as any).user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم'
+    const { data, error } = existingReview
+      ? await updateReview(
+          existingReview.id,
+          reviewRating,
+          reviewComment,
+          reviewImages,
+        )
+      : await createReview(
+          user.id,
+          dbProduct.id,
+          reviewRating,
+          reviewComment,
+          reviewImages,
+          reviewerName
+        )
 
     if (error) {
       toast.error("حصلت مشكلة", { description: "جرب تاني بعد شوية" })
     } else if (data) {
-      setReviews(prev => [data, ...prev])
-      setReviewStats(calcReviewStats([data, ...reviews]))
+      const nextReviews = existingReview
+        ? reviews.map((review) => review.id === data.id ? data : review)
+        : [data, ...reviews]
+
+      setReviews(nextReviews)
+      setReviewStats(calcReviewStats(nextReviews))
       setShowReviewForm(false)
-      setCanReview(false)
+      setCanReview(true)
       setAlreadyReviewed(true)
-      setReviewComment("")
-      setReviewImages([])
-      setReviewRating(5)
-      toast.success("شكراً على تقييمك! 🎉", { description: "رأيك مهم لينا وهيساعدنا نحسن التجربة لكل الناس" })
+      setExistingReview(data)
+      setReviewComment(data.comment || "")
+      setReviewImages(data.images || [])
+      setReviewRating(data.rating)
+      toast.success(
+        existingReview ? "عدّلنا تقييمك بنجاح ✨" : "شكراً على تقييمك! 🎉",
+        { description: existingReview ? "تعديلك وصل وبيساعدنا نفضل نطور التجربة للأحسن." : "رأيك مهم لينا وهيساعدنا نحسن التجربة لكل الناس" }
+      )
     }
     setIsSubmitting(false)
   }
@@ -880,25 +917,31 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
                     </div>
 
                     {canReview && !showReviewForm && (
-                      <div className="bg-[#11161d] rounded-[2rem] p-6 border border-surface-hover flex flex-col gap-4 items-center">
+                      <div className={`rounded-[2rem] p-6 border flex flex-col gap-4 items-center ${alreadyReviewed ? 'bg-[#0a2318] border-[#10b981]/20' : 'bg-[#11161d] border-surface-hover'}`}>
+                        {alreadyReviewed ? (
+                          <div className="w-full flex items-center gap-4 rounded-2xl bg-[#10b981]/5 border border-[#10b981]/10 px-4 py-4">
+                            <div className="w-12 h-12 rounded-full bg-[#10b981]/10 flex items-center justify-center text-[#10b981] shrink-0">
+                              <Check className="w-6 h-6" />
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-[#10b981] text-base mb-1">أنت قيّمت المنتج قبل كده</p>
+                              <p className="text-sm text-[#10b981]/80">
+                                لو حابب تغيّر رأيك أو تزود صور جديدة، عدّل تقييمك من هنا.
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="w-full text-sm text-gray-400 text-center leading-relaxed">
+                            جرّبت المنتج؟ شاركنا رأيك الحقيقي وساعد الناس تاخد قرار أريح.
+                          </p>
+                        )}
+
                         <Button
-                          onClick={() => setShowReviewForm(true)}
+                          onClick={openReviewForm}
                           className="w-full h-14 rounded-2xl font-bold bg-[#10b981] text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 text-base"
                         >
-                          اكتب تقييمك للمنتج
+                          {alreadyReviewed ? "تعديل تقييمك" : "اكتب تقييمك للمنتج"}
                         </Button>
-                      </div>
-                    )}
-
-                    {alreadyReviewed && (
-                      <div className="bg-[#0a2318] border border-[#10b981]/20 rounded-[2rem] p-8 text-center flex flex-col items-center justify-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-[#10b981]/10 flex flex-col items-center justify-center text-[#10b981]">
-                          <Check className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#10b981] text-lg mb-1">شكراً!</p>
-                          <p className="text-sm text-[#10b981]/80">إنت قيمت المنتج ده قبل كده.</p>
-                        </div>
                       </div>
                     )}
 
@@ -919,13 +962,16 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
                       {showReviewForm && (
                         <div className="bg-[#11161d] rounded-3xl p-6 border border-primary/30 shadow-[0_0_20px_rgba(16,185,129,0.1)] relative origin-top animate-in fade-in zoom-in-95 duration-200">
                           <button 
+                            type="button"
                             onClick={() => setShowReviewForm(false)}
                             className="absolute top-4 end-4 text-gray-400 hover:text-gray-600 p-1 bg-surface-hover rounded-full"
                           >
                             <X className="w-4 h-4" />
                           </button>
                           
-                          <h4 className="font-bold text-lg mb-4 text-foreground">تقييمك للمنتج</h4>
+                          <h4 className="font-bold text-lg mb-4 text-foreground">
+                            {alreadyReviewed ? "عدّل تقييمك للمنتج" : "تقييمك للمنتج"}
+                          </h4>
                           
                           {/* Star picker */}
                           <div className="flex gap-2 mb-6">
@@ -991,7 +1037,7 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
                             ) : (
                               <>
                                 <Send className="w-4 h-4 rtl:-scale-x-100" />
-                                <span>نشر التقييم</span>
+                                <span>{alreadyReviewed ? "حفظ التعديل" : "نشر التقييم"}</span>
                               </>
                             )}
                           </Button>
