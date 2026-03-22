@@ -10,6 +10,7 @@ import {
     LayoutDashboard, Package, Tag, ShoppingCart, Users,
     Menu, X, LogOut, ChevronRight, Bell, Settings, Bike, Megaphone, Ticket,
     UserPlus, ShoppingBag, CheckCircle2, Clock, Truck, XCircle, Loader2, ShieldAlert, MessageSquare, Star, Search, History, AlertTriangle
+    , BarChart3
 } from 'lucide-react';
 import { signOut } from '@/services/authService';
 import { supabase } from '@/lib/supabase';
@@ -30,6 +31,7 @@ interface Notification {
 // ── Nav Items ────────────────────────────────────────────────
 const NAV_ITEMS = [
     { label: 'لوحة التحكم', href: '/admin', icon: LayoutDashboard, perm: null },
+    { label: 'التحليلات', href: '/admin/analytics', icon: BarChart3, perm: 'view_reports' },
     { label: 'الطلبات', href: '/admin/orders', icon: ShoppingCart, perm: 'view_orders' },
     { label: 'طلبات بندور عليها', href: '/admin/orders/search-requests', icon: Clock, perm: 'view_orders' },
     { label: 'مركز العمليات', href: '/admin/operations', icon: AlertTriangle, fullAdmin: true },

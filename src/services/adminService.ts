@@ -225,7 +225,89 @@ export type OperationsCenterData = {
     gracePeriodOrders: any[];
 };
 
+export type AdminVisitAnalytics = {
+    totalVisits: number;
+    todayVisits: number;
+    weekVisits: number;
+    monthVisits: number;
+    yearVisits: number;
+};
+
+export type AdminAnalyticsData = {
+    revenue: {
+        today: number;
+        week: number;
+        month: number;
+        year: number;
+    };
+    visits: AdminVisitAnalytics;
+    summary: {
+        totalTrackedOrders: number;
+        deliveredOrders: number;
+        totalOrderedUnits: number;
+        conversionRate: number;
+        averageOrderValue: number;
+    };
+    productInsights: {
+        mostOrdered: {
+            id: string;
+            name: string;
+            image_url?: string | null;
+            quantity: number;
+        } | null;
+        topProducts: Array<{
+            id: string;
+            name: string;
+            image_url?: string | null;
+            quantity: number;
+        }>;
+    };
+    categoryInsights: {
+        mostOrdered: {
+            id: string;
+            name: string;
+            quantity: number;
+        } | null;
+        leastOrdered: {
+            id: string;
+            name: string;
+            quantity: number;
+        } | null;
+        rows: Array<{
+            id: string;
+            name: string;
+            quantity: number;
+            share: number;
+        }>;
+    };
+};
+
 const ORDER_LATE_BUFFER_MS = 5 * 60 * 1000;
+
+function startOfToday() {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    return date;
+}
+
+function startOfWeek() {
+    const date = startOfToday();
+    const diff = (date.getDay() + 6) % 7;
+    date.setDate(date.getDate() - diff);
+    return date;
+}
+
+function startOfMonth() {
+    const date = startOfToday();
+    date.setDate(1);
+    return date;
+}
+
+function startOfYear() {
+    const date = startOfToday();
+    date.setMonth(0, 1);
+    return date;
+}
 
 function isStaffRole(role?: string | null) {
     return ['super_admin', 'admin', 'operations_manager', 'catalog_manager', 'support_agent'].includes(role || '');
@@ -461,6 +543,173 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
         },
         staffActivity,
         latestJoins,
+    };
+}
+
+export async function fetchAdminVisitAnalytics(): Promise<AdminVisitAnalytics> {
+    try {
+        const res = await fetch('/api/admin/analytics/visits', {
+            method: 'GET',
+            credentials: 'include',
+            cache: 'no-store',
+        });
+
+        const payload = await res.json().catch(() => null);
+        if (!res.ok || !payload) {
+            throw new Error(payload?.error || 'تعذر تحميل زيارات الموقع');
+        }
+
+        return {
+            totalVisits: Number(payload.totalVisits || 0),
+            todayVisits: Number(payload.todayVisits || 0),
+            weekVisits: Number(payload.weekVisits || 0),
+            monthVisits: Number(payload.monthVisits || 0),
+            yearVisits: Number(payload.yearVisits || 0),
+        };
+    } catch (error) {
+        logError('fetchAdminVisitAnalytics', error);
+        return {
+            totalVisits: 0,
+            todayVisits: 0,
+            weekVisits: 0,
+            monthVisits: 0,
+            yearVisits: 0,
+        };
+    }
+}
+
+export async function fetchAdminAnalytics(): Promise<AdminAnalyticsData> {
+    const [ordersRes, orderItemsRes, productsRes, categoriesRes, visits] = await Promise.all([
+        supabase.from('orders').select('id, status, created_at, total_amount, shipping_address'),
+        supabase.from('order_items').select('order_id, product_id, quantity'),
+        supabase.from('products').select('id, name, image_url, category_id'),
+        supabase.from('categories').select('id, name'),
+        fetchAdminVisitAnalytics(),
+    ]);
+
+    if (ordersRes.error) logError('fetchAdminAnalytics.orders', ordersRes.error);
+    if (orderItemsRes.error) logError('fetchAdminAnalytics.order_items', orderItemsRes.error);
+    if (productsRes.error) logError('fetchAdminAnalytics.products', productsRes.error);
+    if (categoriesRes.error) logError('fetchAdminAnalytics.categories', categoriesRes.error);
+
+    const todayStart = startOfToday().getTime();
+    const weekStart = startOfWeek().getTime();
+    const monthStart = startOfMonth().getTime();
+    const yearStart = startOfYear().getTime();
+
+    const visibleOrders = (ordersRes.data || []).filter((order) => !isCustomerSelfCancelledGraceOrder(order));
+    const activeOrders = visibleOrders.filter((order) => order.status !== 'cancelled');
+    const deliveredOrders = activeOrders.filter((order) => order.status === 'delivered');
+    const activeOrderIds = new Set(activeOrders.map((order) => order.id));
+
+    const deliveredRevenue = {
+        today: 0,
+        week: 0,
+        month: 0,
+        year: 0,
+    };
+
+    for (const order of deliveredOrders) {
+        const orderTime = new Date(order.created_at || '').getTime();
+        const platformRevenue = getOrderEconomics(order).platformRevenue;
+
+        if (orderTime >= todayStart) deliveredRevenue.today += platformRevenue;
+        if (orderTime >= weekStart) deliveredRevenue.week += platformRevenue;
+        if (orderTime >= monthStart) deliveredRevenue.month += platformRevenue;
+        if (orderTime >= yearStart) deliveredRevenue.year += platformRevenue;
+    }
+
+    const productLookup = new Map(
+        (productsRes.data || []).map((product) => [
+            product.id,
+            {
+                id: product.id,
+                name: product.name,
+                image_url: product.image_url,
+                category_id: product.category_id,
+            },
+        ])
+    );
+
+    const categoryTotals = new Map(
+        (categoriesRes.data || []).map((category) => [
+            category.id,
+            { id: category.id, name: category.name, quantity: 0 },
+        ])
+    );
+
+    const productTotals = new Map<string, { id: string; name: string; image_url?: string | null; quantity: number }>();
+    let totalOrderedUnits = 0;
+
+    for (const item of orderItemsRes.data || []) {
+        if (!item.order_id || !activeOrderIds.has(item.order_id) || !item.product_id) continue;
+
+        const quantity = Number(item.quantity || 0) || 1;
+        const product = productLookup.get(item.product_id);
+        if (!product) continue;
+
+        totalOrderedUnits += quantity;
+
+        const existingProduct = productTotals.get(item.product_id);
+        if (existingProduct) {
+            existingProduct.quantity += quantity;
+        } else {
+            productTotals.set(item.product_id, {
+                id: product.id,
+                name: product.name,
+                image_url: product.image_url,
+                quantity,
+            });
+        }
+
+        if (product.category_id && categoryTotals.has(product.category_id)) {
+            categoryTotals.get(product.category_id)!.quantity += quantity;
+        }
+    }
+
+    const topProducts = [...productTotals.values()]
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 6);
+
+    const categoryRows = [...categoryTotals.values()]
+        .sort((a, b) => {
+            if (b.quantity !== a.quantity) return b.quantity - a.quantity;
+            return a.name.localeCompare(b.name, 'ar');
+        })
+        .map((category) => ({
+            ...category,
+            share: totalOrderedUnits > 0 ? Math.round((category.quantity / totalOrderedUnits) * 100) : 0,
+        }));
+
+    const leastOrdered = [...categoryRows]
+        .sort((a, b) => {
+            if (a.quantity !== b.quantity) return a.quantity - b.quantity;
+            return a.name.localeCompare(b.name, 'ar');
+        })[0] || null;
+
+    return {
+        revenue: deliveredRevenue,
+        visits,
+        summary: {
+            totalTrackedOrders: activeOrders.length,
+            deliveredOrders: deliveredOrders.length,
+            totalOrderedUnits,
+            conversionRate: visits.totalVisits > 0
+                ? Number(((activeOrders.length / visits.totalVisits) * 100).toFixed(1))
+                : 0,
+            averageOrderValue: deliveredOrders.length > 0
+                ? Math.round(deliveredOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) / deliveredOrders.length)
+                : 0,
+        },
+        productInsights: {
+            mostOrdered: topProducts[0] || null,
+            topProducts,
+        },
+        categoryInsights: {
+            mostOrdered: categoryRows[0] || null,
+            leastOrdered,
+            rows: categoryRows,
+        },
     };
 }
 

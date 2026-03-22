@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
+    fetchAdminAnalytics,
     fetchAdminOverview,
     fetchAdminStats,
     fetchRecentOrders,
     broadcastOfferNotification,
     getAdminOrderKind,
+    type AdminAnalyticsData,
     type AdminOverview,
 } from '@/services/adminService';
 import {
@@ -28,6 +30,8 @@ import {
     UserCog,
     Users,
     Warehouse,
+    BarChart3,
+    TrendingDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { hasPermission } from '@/lib/permissions';
@@ -85,6 +89,38 @@ const EMPTY_OVERVIEW: AdminOverview = {
     latestJoins: [],
 };
 
+const EMPTY_ANALYTICS: AdminAnalyticsData = {
+    revenue: {
+        today: 0,
+        week: 0,
+        month: 0,
+        year: 0,
+    },
+    visits: {
+        totalVisits: 0,
+        todayVisits: 0,
+        weekVisits: 0,
+        monthVisits: 0,
+        yearVisits: 0,
+    },
+    summary: {
+        totalTrackedOrders: 0,
+        deliveredOrders: 0,
+        totalOrderedUnits: 0,
+        conversionRate: 0,
+        averageOrderValue: 0,
+    },
+    productInsights: {
+        mostOrdered: null,
+        topProducts: [],
+    },
+    categoryInsights: {
+        mostOrdered: null,
+        leastOrdered: null,
+        rows: [],
+    },
+};
+
 function roleLabel(role: string) {
     switch (role) {
         case 'super_admin':
@@ -139,6 +175,7 @@ export default function AdminPage() {
     });
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
     const [overview, setOverview] = useState<AdminOverview>(EMPTY_OVERVIEW);
+    const [analytics, setAnalytics] = useState<AdminAnalyticsData>(EMPTY_ANALYTICS);
     const { user, profile, isLoading: isAuthLoading } = useAuth();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
@@ -171,16 +208,18 @@ export default function AdminPage() {
         const loadDashboard = async () => {
             setIsLoading(true);
             try {
-                const [statsData, recentOrdersData, overviewData] = await Promise.all([
+                const [statsData, recentOrdersData, overviewData, analyticsData] = await Promise.all([
                     fetchAdminStats(),
                     fetchRecentOrders(6),
                     fetchAdminOverview(),
+                    fetchAdminAnalytics(),
                 ]);
 
                 if (cancelled) return;
                 setStats(statsData);
                 setRecentOrders(recentOrdersData);
                 setOverview(overviewData);
+                setAnalytics(analyticsData);
             } catch (error) {
                 console.error('Failed to load admin dashboard', error);
                 if (!cancelled) {
@@ -197,6 +236,47 @@ export default function AdminPage() {
             cancelled = true;
         };
     }, [user, profile, isAuthLoading, router]);
+
+    const analyticsHighlights = [
+        {
+            label: 'أكثر منتج بيتطلب',
+            value: analytics.productInsights.mostOrdered?.name || 'لسه مفيش',
+            helper: analytics.productInsights.mostOrdered
+                ? `${analytics.productInsights.mostOrdered.quantity} قطعة`
+                : 'أول ما الطلبات تزيد هيبان هنا',
+            href: '/admin/analytics',
+            icon: Package,
+            tone: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+        },
+        {
+            label: 'أكثر قسم بيتطلب',
+            value: analytics.categoryInsights.mostOrdered?.name || 'لسه مفيش',
+            helper: analytics.categoryInsights.mostOrdered
+                ? `${analytics.categoryInsights.mostOrdered.quantity} قطعة`
+                : 'محتاج شوية طلبات كمان',
+            href: '/admin/analytics',
+            icon: TrendingUp,
+            tone: 'text-primary bg-primary/10 border-primary/20',
+        },
+        {
+            label: 'أقل قسم بيتطلب',
+            value: analytics.categoryInsights.leastOrdered?.name || 'لسه مفيش',
+            helper: analytics.categoryInsights.leastOrdered
+                ? `${analytics.categoryInsights.leastOrdered.quantity} قطعة`
+                : 'لسه مفيش بيانات كفاية',
+            href: '/admin/analytics',
+            icon: TrendingDown,
+            tone: 'text-rose-400 bg-rose-400/10 border-rose-400/20',
+        },
+        {
+            label: 'زيارات اليوم',
+            value: analytics.visits.todayVisits.toLocaleString(),
+            helper: `إجمالي الزيارات ${analytics.visits.totalVisits.toLocaleString()}`,
+            href: '/admin/analytics',
+            icon: BarChart3,
+            tone: 'text-sky-400 bg-sky-400/10 border-sky-400/20',
+        },
+    ];
 
     const metricCards = [
         { label: 'المستخدمون', value: stats.totalUsers, icon: Users, color: 'text-violet-400', bg: 'bg-violet-400/10', href: '/admin/users' },
@@ -402,6 +482,38 @@ export default function AdminPage() {
                         </Link>
                     );
                 })}
+            </div>
+
+            <div className="rounded-2xl border border-surface-hover bg-surface p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-primary" />
+                        <h2 className="text-sm font-bold text-foreground">لمحة تحليلية سريعة</h2>
+                    </div>
+                    <Link href="/admin/analytics" className="text-xs text-primary flex items-center gap-1 hover:text-primary/80 transition-colors">
+                        افتح صفحة التحليلات <ArrowLeft className="w-3.5 h-3.5" />
+                    </Link>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    {analyticsHighlights.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                            <Link key={item.label} href={item.href} className={`rounded-2xl border p-4 transition-all hover:-translate-y-0.5 ${item.tone}`}>
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-bold opacity-80">{item.label}</p>
+                                        <p className="mt-2 truncate text-lg font-black">{isLoading ? '...' : item.value}</p>
+                                        <p className="mt-2 text-xs opacity-80">{item.helper}</p>
+                                    </div>
+                                    <div className="rounded-xl bg-black/10 p-2">
+                                        <Icon className="w-5 h-5" />
+                                    </div>
+                                </div>
+                            </Link>
+                        );
+                    })}
+                </div>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
