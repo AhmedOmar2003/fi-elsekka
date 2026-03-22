@@ -11,6 +11,7 @@ import { hasPermission } from '@/lib/permissions';
 import { toast } from 'sonner';
 import { getOrderEconomics } from '@/lib/order-economics';
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery';
+import { SearchRequestProgress } from '@/components/orders/search-request-progress';
 
 const STATUS_FILTERS = [
     { value: 'pending', label: 'في الانتظار', color: 'text-amber-400  bg-amber-400/10  border-amber-400/20' },
@@ -942,6 +943,11 @@ export default function AdminOrdersPage() {
                                                 hint="ستصل هذه الصور للمندوب كما هي، فراجع وضوحها قبل المتابعة."
                                             />
                                         </div>
+                                    </div>
+                                )}
+                                {selectedOrderIsTextRequest && (
+                                    <div className="mb-3">
+                                        <SearchRequestProgress order={selectedOrder} audience="admin" />
                                     </div>
                                 )}
                                 {selectedOrderIsTextRequest && (

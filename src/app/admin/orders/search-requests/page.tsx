@@ -7,6 +7,7 @@ import { CheckCircle2, Clock, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery';
+import { SearchRequestProgress } from '@/components/orders/search-request-progress';
 import { supabase } from '@/lib/supabase';
 import { hasPermission } from '@/lib/permissions';
 import {
@@ -325,6 +326,8 @@ export default function AdminSearchRequestsPage() {
                                         </div>
                                     )}
                                 </div>
+
+                                <SearchRequestProgress order={order} audience="admin" />
 
                                 {isSearchingRequestOrder(order) ? (
                                     <div className="mt-4 rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-background to-background p-4">

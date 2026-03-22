@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase"
 import { Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, ChevronDown, ChevronUp, Wifi, Phone, Star, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { RequestAttachmentsGallery } from "@/components/orders/request-attachments-gallery"
+import { SearchRequestProgress } from "@/components/orders/search-request-progress"
 
 function isAwaitingTextOrderConfirmation(order: Order) {
   const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
@@ -523,6 +524,10 @@ function OrderCard({
                 hint="لو رفعت روشتة أو صورة دواء فستظل مرتبطة بالطلب هنا."
               />
             </div>
+          )}
+
+          {isTextRequestOrder && (
+            <SearchRequestProgress order={order} audience="customer" />
           )}
 
           {isTextRequestOrder && pricingPending && (
