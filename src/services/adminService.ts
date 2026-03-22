@@ -56,12 +56,18 @@ async function logAdminAction(payload: AuditPayload) {
 // ─── Analytics ────────────────────────────────────────────────────────────────
 export async function fetchAdminStats() {
     const [usersRes, productsRes, ordersRes, revenueRes] = await Promise.all([
-        supabase.from('users').select('id', { count: 'exact', head: true }),
+        supabase.from('users').select('id, role'),
         supabase.from('products').select('id', { count: 'exact', head: true }),
         supabase.from('orders').select('id, status, shipping_address'),
         supabase.from('orders').select('total_amount, shipping_address, status').eq('status', 'delivered'),
     ]);
 
+    if (usersRes.error) logError('fetchAdminStats.users', usersRes.error);
+    if (productsRes.error) logError('fetchAdminStats.products', productsRes.error);
+    if (ordersRes.error) logError('fetchAdminStats.orders', ordersRes.error);
+    if (revenueRes.error) logError('fetchAdminStats.revenue', revenueRes.error);
+
+    const regularUsers = (usersRes.data || []).filter((user) => !user.role || user.role === 'user');
     const visibleOrders = (ordersRes.data || []).filter((order) => !isCustomerSelfCancelledGraceOrder(order));
     const standardOrders = visibleOrders.filter((order) => !isSearchRequestOrder(order));
     const searchRequests = visibleOrders.filter((order) => isSearchRequestOrder(order));
@@ -70,7 +76,7 @@ export async function fetchAdminStats() {
         .reduce((sum, order) => sum + getOrderEconomics(order).platformRevenue, 0);
 
     return {
-        totalUsers: usersRes.count || 0,
+        totalUsers: regularUsers.length,
         totalProducts: productsRes.count || 0,
         totalOrders: standardOrders.length,
         totalTrackedOrders: visibleOrders.length,
