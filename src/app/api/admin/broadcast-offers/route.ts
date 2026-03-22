@@ -23,16 +23,19 @@ export async function POST(request: NextRequest) {
 
     const { data: users, error: fetchError } = await supabaseAdmin
       .from('users')
-      .select('id')
-      .is('role', null);
+      .select('id, role, disabled')
+      .or('role.is.null,role.eq.user');
 
     if (fetchError) {
       return NextResponse.json({ error: fetchError.message }, { status: 500 });
     }
 
-    const recipientIds = (users || []).map((user: any) => user.id).filter(Boolean);
+    const recipientIds = (users || [])
+      .filter((user: any) => user?.disabled !== true)
+      .map((user: any) => user.id)
+      .filter(Boolean);
 
-    await Promise.all(
+    const results = await Promise.all(
       recipientIds.map((userId) =>
         createUserNotificationWithPush(supabaseAdmin, userId, {
           title,
@@ -43,7 +46,13 @@ export async function POST(request: NextRequest) {
       )
     );
 
-    return NextResponse.json({ success: true, count: recipientIds.length });
+    const successCount = results.filter((result: any) => result?.success).length;
+
+    return NextResponse.json({
+      success: true,
+      count: successCount,
+      requested: recipientIds.length,
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Unexpected error' }, { status: 500 });
   }
