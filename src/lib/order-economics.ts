@@ -7,6 +7,10 @@ export const ORDER_ECONOMICS_VERSION = 2;
 type OrderLike = {
   total_amount?: number | null;
   shipping_address?: Record<string, any> | null;
+  order_items?: Array<{
+    quantity?: number | null;
+    price_at_purchase?: number | null;
+  }> | null;
 };
 
 function safeNumber(value: unknown, fallback = 0) {
@@ -58,12 +62,42 @@ export function getOrderEconomics(order: OrderLike): OrderEconomics {
   const shipping = order?.shipping_address || {};
   const deliveryFee = safeNumber(
     shipping.delivery_fee,
-    shipping.economics_version === ORDER_ECONOMICS_VERSION ? CURRENT_DELIVERY_FEE : LEGACY_DELIVERY_FEE
+    (() => {
+      const orderItemsSubtotal = (order?.order_items || []).reduce((sum, item) => {
+        const quantity = Math.max(0, safeNumber(item?.quantity, 0));
+        const priceAtPurchase = Math.max(0, safeNumber(item?.price_at_purchase, 0));
+        return sum + (quantity * priceAtPurchase);
+      }, 0);
+
+      if (orderItemsSubtotal > 0) {
+        const inferredDeliveryFee = Math.max(0, safeNumber(order?.total_amount, 0) - orderItemsSubtotal);
+        if (Number.isFinite(inferredDeliveryFee) && inferredDeliveryFee >= 0) {
+          return inferredDeliveryFee;
+        }
+      }
+
+      return shipping.economics_version === ORDER_ECONOMICS_VERSION ? CURRENT_DELIVERY_FEE : LEGACY_DELIVERY_FEE;
+    })()
   );
   const grossCollected = Math.max(0, safeNumber(order?.total_amount, 0));
   const subtotalAmount = Math.max(
     0,
-    safeNumber(shipping.subtotal_amount, grossCollected - deliveryFee)
+    safeNumber(
+      shipping.subtotal_amount,
+      (() => {
+        const orderItemsSubtotal = (order?.order_items || []).reduce((sum, item) => {
+          const quantity = Math.max(0, safeNumber(item?.quantity, 0));
+          const priceAtPurchase = Math.max(0, safeNumber(item?.price_at_purchase, 0));
+          return sum + (quantity * priceAtPurchase);
+        }, 0);
+
+        if (orderItemsSubtotal > 0) {
+          return orderItemsSubtotal;
+        }
+
+        return grossCollected - deliveryFee;
+      })()
+    )
   );
   const merchantDiscountAmount = clamp(
     Math.max(0, safeNumber(shipping.merchant_discount_amount, 0)),

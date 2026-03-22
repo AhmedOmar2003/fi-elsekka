@@ -53,7 +53,11 @@ export const createOrder = async (
             pricing_pending: true,
         }
         : attachOrderEconomics(
-            shippingDetails,
+            {
+                ...(shippingDetails || {}),
+                delivery_fee: CURRENT_DELIVERY_FEE,
+                economics_version: ORDER_ECONOMICS_VERSION,
+            },
             subtotalAmount + CURRENT_DELIVERY_FEE,
             0
         );
