@@ -535,7 +535,7 @@ export function Header() {
       ), document.body)}
 
       {/* ── MOBILE NAVIGATION DRAWER ───────────────────────────────────────── */}
-      {isMobileMenuOpen && (
+      {isMobileMenuOpen && isClient && createPortal((
         <div className="fixed inset-0 z-[100] flex">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -544,9 +544,13 @@ export function Header() {
           <div className="relative ms-auto flex h-full w-[86%] max-w-sm flex-col border-s border-white/8 bg-[#101816] text-white shadow-[var(--shadow-material-3)]">
             <div className="flex items-center justify-between border-b border-surface-hover p-4">
               <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center w-9 h-9 rounded-2xl bg-primary text-white shadow-[var(--shadow-material-2)]">
-                  <MotorcycleIcon className="w-5 h-5" />
-                </div>
+                <Image
+                  src="/icon-192x192.svg"
+                  alt="في السكة"
+                  width={36}
+                  height={36}
+                  className="rounded-2xl shadow-[var(--shadow-material-2)] ring-1 ring-primary/10"
+                />
                 <div>
                   <span className="font-heading font-black text-lg text-white">في السكة</span>
                   <p className="text-[10px] font-bold text-white/45">اختصارات سريعة للمكان اللي محتاجه</p>
@@ -661,7 +665,7 @@ export function Header() {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
 
       <LogoutModal 
         isOpen={isLogoutModalOpen}
