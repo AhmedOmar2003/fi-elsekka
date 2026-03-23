@@ -139,7 +139,9 @@ function SearchResults({ query, onSelect, mobile = false }: { query: string; onS
     <div
       className={cn(
         "max-h-[70vh] overflow-y-auto overflow-hidden rounded-[24px] border border-surface-border bg-surface shadow-[var(--shadow-material-2)]",
-        mobile ? "relative z-[140] mt-3" : "absolute left-0 right-0 top-full z-50 mt-3"
+        mobile
+          ? "fixed inset-x-0 bottom-0 top-[81px] z-[160] max-h-none rounded-none border-0 border-t border-surface-border bg-background shadow-none"
+          : "absolute left-0 right-0 top-full z-50 mt-3"
       )}
     >
       {isLoadingResults ? (
@@ -499,7 +501,7 @@ export function Header() {
               />
             ) : (
               /* Default: category suggestions */
-              <div className="relative z-[141] p-4 pt-5">
+              <div className="fixed inset-x-0 bottom-0 top-[81px] z-[160] overflow-y-auto bg-background p-4 pt-5">
                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">لف في الأقسام</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {categories.map(cat => (
