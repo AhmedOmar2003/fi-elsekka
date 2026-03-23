@@ -57,14 +57,20 @@ function MotorcycleIcon({ className }: { className?: string }) {
   )
 }
 
-const DRAWER_ITEMS = [
+const PRIMARY_DRAWER_ITEMS = [
   { label: "الرئيسية", href: "/", icon: <Home className="w-5 h-5" /> },
   { label: "الأقسام", href: "/categories", icon: <LayoutGrid className="w-5 h-5" /> },
   { label: "حسابي", href: "/account", icon: <User className="w-5 h-5" /> },
   { label: "طلباتي", href: "/orders", icon: <Package className="w-5 h-5" /> },
+]
+
+const SECONDARY_DRAWER_ITEMS = [
+  { label: "عروض جامدة", href: "/offers", icon: <BadgePercent className="w-5 h-5" /> },
   { label: "احنا مين", href: "/about", icon: <Info className="w-5 h-5" /> },
   { label: "الأسئلة الشائعة", href: "/faq", icon: <MessageCircleQuestion className="w-5 h-5" /> },
   { label: "تواصل معنا", href: "/contact", icon: <Phone className="w-5 h-5" /> },
+  { label: "الشروط والأحكام", href: "/terms", icon: <Info className="w-5 h-5" /> },
+  { label: "سياسة الخصوصية", href: "/privacy", icon: <Info className="w-5 h-5" /> },
 ]
 
 // ── Search Results Component ────────────────────────────────────────────
@@ -535,25 +541,61 @@ export function Header() {
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="relative ms-auto flex h-full w-4/5 max-w-xs flex-col border-s border-surface-hover bg-[linear-gradient(180deg,var(--surface-container-low),var(--surface-container))] shadow-[var(--shadow-material-3)]">
+          <div className="relative ms-auto flex h-full w-[86%] max-w-sm flex-col border-s border-white/8 bg-[#101816] text-white shadow-[var(--shadow-material-3)]">
             <div className="flex items-center justify-between border-b border-surface-hover p-4">
               <div className="flex items-center gap-2">
                 <div className="flex items-center justify-center w-9 h-9 rounded-2xl bg-primary text-white shadow-[var(--shadow-material-2)]">
                   <MotorcycleIcon className="w-5 h-5" />
                 </div>
-                <span className="font-heading font-black text-lg text-foreground">في السكة</span>
+                <div>
+                  <span className="font-heading font-black text-lg text-white">في السكة</span>
+                  <p className="text-[10px] font-bold text-white/45">اختصارات سريعة للمكان اللي محتاجه</p>
+                </div>
               </div>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-center w-9 h-9 rounded-xl text-gray-500 hover:text-foreground hover:bg-surface-hover active:scale-95 transition-all"
+                className="flex items-center justify-center w-9 h-9 rounded-xl text-white/60 hover:text-white hover:bg-white/6 active:scale-95 transition-all"
                 aria-label="إغلاق القائمة"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto py-2">
-              {DRAWER_ITEMS.map((item) => {
+            <nav className="flex-1 overflow-y-auto px-3 py-3">
+              <div className="mb-5 rounded-[28px] border border-primary/14 bg-primary/10 p-4 shadow-[var(--shadow-material-2)]">
+                <p className="text-sm font-black text-white">لف براحتك</p>
+                <p className="mt-1 text-xs leading-6 text-white/58">
+                  من هنا تقدر توصل بسرعة للعروض، الأقسام، حسابك، أو أي صفحة تعريفية مهمة.
+                </p>
+              </div>
+
+              <div>
+                <p className="mb-2 px-2 text-[11px] font-black tracking-[0.18em] text-white/38">روابط أساسية</p>
+                {PRIMARY_DRAWER_ITEMS.map((item) => {
+                  const isActive = pathname === item.href
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={cn(
+                        "my-1 flex items-center justify-between rounded-2xl px-4 py-3.5 transition-colors",
+                        isActive ? "bg-primary/12 text-primary" : "text-white hover:bg-white/6"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={isActive ? "text-primary" : "text-white/62"}>{item.icon}</span>
+                        <span className="font-bold text-sm">{item.label}</span>
+                      </div>
+                      <ChevronLeft className="w-4 h-4 text-white/35" />
+                    </Link>
+                  )
+                })}
+              </div>
+
+              <div className="mt-5">
+                <p className="mb-2 px-2 text-[11px] font-black tracking-[0.18em] text-white/38">معلومات ومساعدة</p>
+                {SECONDARY_DRAWER_ITEMS.map((item) => {
                 const isActive = pathname === item.href
                 return (
                   <Link
@@ -561,30 +603,31 @@ export function Header() {
                     href={item.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={cn(
-                      "mx-2 my-1 flex items-center justify-between rounded-2xl px-4 py-3.5 hover:bg-surface-container transition-colors",
-                      isActive ? "text-primary bg-primary/5" : "text-foreground"
+                      "my-1 flex items-center justify-between rounded-2xl px-4 py-3.5 transition-colors",
+                      isActive ? "bg-primary/12 text-primary" : "text-white hover:bg-white/6"
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <span className={isActive ? "text-primary" : "text-gray-500"}>{item.icon}</span>
+                      <span className={isActive ? "text-primary" : "text-white/62"}>{item.icon}</span>
                       <span className="font-bold text-sm">{item.label}</span>
                     </div>
-                    <ChevronLeft className="w-4 h-4 text-gray-600" />
+                    <ChevronLeft className="w-4 h-4 text-white/35" />
                   </Link>
                 )
-              })}
+                })}
+              </div>
 
               {!user ? (
                 <Link
                   href="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="mx-2 my-1 flex items-center justify-between rounded-2xl px-4 py-3.5 hover:bg-primary/10 transition-colors text-primary"
+                  className="mt-5 flex items-center justify-between rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3.5 text-primary transition-colors hover:bg-primary/14"
                 >
                   <div className="flex items-center gap-3">
                     <LogIn className="w-5 h-5" />
                     <span className="font-bold text-sm">ادخل أو اعمل حساب</span>
                   </div>
-                  <ChevronLeft className="w-4 h-4 text-gray-600" />
+                  <ChevronLeft className="w-4 h-4 text-primary/70" />
                 </Link>
               ) : (
                 <button
@@ -592,38 +635,25 @@ export function Header() {
                     setIsMobileMenuOpen(false)
                     handleLogoutClick()
                   }}
-                  className="mx-2 my-1 flex w-[calc(100%-1rem)] items-center justify-between rounded-2xl px-4 py-3.5 hover:bg-rose-500/10 transition-colors text-rose-500"
+                  className="mt-5 flex w-full items-center justify-between rounded-2xl border border-rose-400/14 bg-rose-500/8 px-4 py-3.5 text-rose-300 transition-colors hover:bg-rose-500/12"
                 >
                   <div className="flex items-center gap-3">
                     <LogOut className="w-5 h-5" />
                     <span className="font-bold text-sm">تسجيل الخروج</span>
                   </div>
-                  <ChevronLeft className="w-4 h-4 text-gray-600" />
+                  <ChevronLeft className="w-4 h-4 text-rose-200/70" />
                 </button>
               )}
-
-              <Link
-                href="/offers"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="mx-2 my-1 flex items-center justify-between rounded-2xl px-4 py-3.5 hover:bg-rose-500/5 transition-colors text-secondary"
-              >
-                <div className="flex items-center gap-3">
-                  <BadgePercent className="w-5 h-5" />
-                  <span className="font-bold text-sm">أحلى العروض</span>
-                  <span className="text-[10px] bg-secondary/20 text-secondary px-2 py-0.5 rounded-full font-bold">جديد</span>
-                </div>
-                <ChevronLeft className="w-4 h-4 text-gray-600" />
-              </Link>
             </nav>
 
-            <div className="p-4 border-t border-surface-hover">
-              <div className="bg-gradient-to-br from-primary/15 to-transparent p-4 rounded-[24px] border border-primary/20 bg-surface">
-                <p className="font-bold text-primary text-sm mb-1">محتاج حد يساعدك؟ 💬</p>
-                <p className="text-xs text-gray-500 mb-3">فريقنا موجود علشانك في أي وقت</p>
+            <div className="border-t border-white/8 p-4">
+              <div className="rounded-[24px] border border-white/8 bg-white/5 p-4">
+                <p className="mb-1 text-sm font-bold text-white">محتاج حد يساعدك؟ 💬</p>
+                <p className="mb-3 text-xs text-white/58">فريقنا موجود علشانك في أي وقت لو محتاج تسأل أو تستفسر.</p>
                 <Link
                   href="/contact"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block w-full text-center text-sm font-bold bg-primary text-white py-2.5 rounded-xl hover:bg-primary-hover active:scale-95 transition-all"
+                  className="block w-full rounded-xl bg-primary py-2.5 text-center text-sm font-bold text-white transition-all hover:bg-primary-hover active:scale-95"
                 >
                   تواصل معنا
                 </Link>
