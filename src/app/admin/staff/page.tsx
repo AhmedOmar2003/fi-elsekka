@@ -266,6 +266,9 @@ export default function StaffPage() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-black text-foreground">{member.full_name || member.username}</p>
+                    <span className="inline-flex items-center rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-black text-white border border-white/10">
+                      Super Admin
+                    </span>
                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
                       {roleLabel(member.role)}
                     </span>
