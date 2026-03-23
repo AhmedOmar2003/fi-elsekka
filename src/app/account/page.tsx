@@ -123,7 +123,12 @@ export default function AccountPage() {
                 setFavLoading(false)
             })
         }
-    }, [user, activeTab, favoriteIds])
+    }, [user, activeTab])
+
+    React.useEffect(() => {
+        if (activeTab !== 'favorites') return
+        setFavProducts(prev => prev.filter(product => favoriteIds.has(product.id)))
+    }, [activeTab, favoriteIds])
 
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
 
