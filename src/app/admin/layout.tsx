@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
 import {
     LayoutDashboard, Package, Tag, ShoppingCart, Users,
     Menu, X, LogOut, ChevronRight, Bell, Settings, Bike, Megaphone, Ticket,
@@ -620,7 +619,6 @@ WHERE email = '${user.email}';`}
                         )}
                         {/* Realtime Notification Bell */}
                         <NotificationBell />
-                        <ThemeToggle />
                         {canManageSettings && (
                             <Link href="/admin/settings">
                                 <button className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">

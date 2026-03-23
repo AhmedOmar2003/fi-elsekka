@@ -17,7 +17,6 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useProducts } from "@/contexts/ProductsContext"
 import { signOut } from "@/services/authService"
 import { LogoutModal } from "@/components/ui/logout-modal"
-import { ThemeToggle } from "../ui/theme-toggle"
 import { NotificationBell } from "../ui/notification-bell"
 import { toast } from "sonner"
 
@@ -410,8 +409,6 @@ export function Header() {
               </Button>
             </Link>
           )}
-
-          <ThemeToggle />
 
           <Link href="/cart" aria-label="سلة المشتريات" className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-white/6 text-white/72 shadow-[var(--shadow-material-1)] transition-all hover:-translate-y-0.5 hover:text-white hover:shadow-[var(--shadow-material-2)]">
             <ShoppingBag className="h-5 w-5" />

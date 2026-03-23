@@ -7,7 +7,6 @@ import { cn } from "../ui/button"
 import { Home, LayoutGrid, ShoppingBag, User } from "lucide-react"
 import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
-import { ThemeToggle } from "../ui/theme-toggle"
 
 export function MobileNav() {
   const pathname = usePathname()
@@ -53,9 +52,6 @@ export function MobileNav() {
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 block border-t border-white/8 bg-[#101816] shadow-[0_-10px_30px_rgba(0,0,0,0.24)] md:hidden">
       <nav className="mx-auto flex h-[74px] w-full max-w-none items-center justify-around px-2">
-        <div className="mb-1 flex shrink-0 flex-col items-center justify-center">
-          <ThemeToggle />
-        </div>
         {navItems.map((item) => {
           const isActive = pathname === item.href
           return (

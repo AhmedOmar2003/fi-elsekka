@@ -6,7 +6,6 @@ import { Bike, History, Package, LogOut } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { signOut } from '@/services/authService';
 
 export default function DriverLayout({ children }: { children: React.ReactNode }) {
@@ -41,7 +40,6 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <ThemeToggle />
                         <button type="button" onClick={handleLogout} className="p-2 text-gray-400 hover:bg-surface-hover rounded-xl transition-colors">
                             <LogOut className="w-5 h-5" />
                         </button>
