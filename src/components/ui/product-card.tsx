@@ -55,7 +55,7 @@ export function ProductCard({
 
   const isBundle = productMode === "bundle"
   return (
-    <div className={cn("group relative flex h-full min-h-[284px] flex-col overflow-hidden rounded-[26px] border border-surface-border bg-surface-container-low shadow-sm transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-premium hover:border-surface-border touch-manipulation sm:min-h-[320px] sm:rounded-3xl", className)}>
+    <div className={cn("group relative flex h-full flex-col overflow-hidden rounded-[26px] border border-surface-border bg-surface-container-low shadow-sm transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-premium hover:border-surface-border touch-manipulation sm:min-h-[320px] sm:rounded-3xl", className)}>
       <Link href={`/product/${id}`} className="relative aspect-[4/3] sm:aspect-[3/2] w-full overflow-hidden bg-surface-container">
 
         <div className="absolute inset-0 flex items-center justify-center">
@@ -115,7 +115,7 @@ export function ProductCard({
           </h3>
         </Link>
 
-        <div className="mt-auto flex items-end justify-between gap-2 border-t material-divider pt-1">
+        <div className="mt-1 flex items-end justify-between gap-2 border-t material-divider pt-1">
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-1.5">
               <span className="text-[17px] font-heading font-black tracking-tight text-primary sm:text-xl">{price} <span className="text-[11px] sm:text-sm">ج.م</span></span>
