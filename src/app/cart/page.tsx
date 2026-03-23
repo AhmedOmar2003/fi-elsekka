@@ -314,16 +314,7 @@ export default function CartPage() {
                               </div>
                            </div>
 
-                           <Button
-                              size="lg"
-                              className="hidden w-full rounded-2xl h-14 font-bold text-lg shadow-primary/20 shadow-lg group md:inline-flex"
-                              onClick={() => router.push('/checkout')}
-                           >
-                              متابعة الدفع
-                           <ArrowLeft className="w-5 h-5 mr-2 group-hover:translate-x-1 transition-transform" />
-                           </Button>
-
-                           <div className="mt-4 hidden items-center justify-center gap-2 text-xs text-gray-400 md:flex">
+                           <div className="mt-2 flex items-center justify-center gap-2 text-xs text-gray-400">
                               <ShoppingBag className="w-4 h-4" />
                               طلبك معانا مضمون 100%
                            </div>
@@ -335,20 +326,25 @@ export default function CartPage() {
             </div>
 
             {items.length > 0 && (
-               <div className="fixed inset-x-0 bottom-[86px] z-40 border-t border-surface-border/70 bg-background/96 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-3 shadow-[0_-12px_30px_rgba(0,0,0,0.14)] backdrop-blur-xl md:hidden">
-                  <div className="mx-auto flex max-w-lg items-center gap-3">
-                     <div className="min-w-0 flex-1 rounded-2xl border border-surface-border/60 bg-surface px-4 py-3 shadow-[var(--shadow-material-1)]">
-                        <p className="text-[11px] font-bold text-gray-500">الإجمالي الكلي</p>
-                        <p className="mt-1 text-xl font-black text-primary">{grandTotal.toLocaleString()} ج.م</p>
+               <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+                  <div className="pointer-events-none h-6 bg-gradient-to-t from-background to-transparent" />
+                  <div className="border-t border-surface-hover bg-background px-4 pb-[calc(env(safe-area-inset-bottom,0px)+18px)] pt-3 shadow-[0_-12px_40px_rgba(0,0,0,0.24)] backdrop-blur-2xl">
+                     <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
+                        <div className="min-w-0 flex flex-col px-1">
+                           <span className="text-[11px] font-medium tracking-wide text-gray-500">الإجمالي الكلي</span>
+                           <span className="mt-1 font-heading text-2xl font-black leading-none text-primary">
+                              {grandTotal.toLocaleString()} <span className="text-sm font-bold">ج.م</span>
+                           </span>
+                        </div>
+                        <Button
+                           size="lg"
+                           className="h-14 min-w-[190px] rounded-2xl px-6 text-base font-black shadow-primary/20 shadow-lg"
+                           onClick={() => router.push('/checkout')}
+                        >
+                           متابعة الدفع
+                           <ArrowLeft className="mr-2 h-5 w-5" />
+                        </Button>
                      </div>
-                     <Button
-                        size="lg"
-                        className="h-14 min-w-[160px] rounded-2xl px-6 text-base font-black shadow-primary/20 shadow-lg"
-                        onClick={() => router.push('/checkout')}
-                     >
-                        متابعة الدفع
-                        <ArrowLeft className="mr-2 h-5 w-5" />
-                     </Button>
                   </div>
                </div>
             )}
