@@ -115,7 +115,7 @@ export function ProductCard({
           </h3>
         </Link>
 
-        <div className="mt-1.5 flex items-end justify-between gap-2.5 border-t material-divider pt-2">
+        <div className="mt-auto flex items-end justify-between gap-2.5 border-t material-divider pt-1.5">
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-1.5">
               <span className="text-lg font-heading font-black tracking-tight text-primary sm:text-xl">{price} <span className="text-xs sm:text-sm">ج.م</span></span>
@@ -123,7 +123,7 @@ export function ProductCard({
             {oldPrice && (
               <span className="text-[11px] font-heading text-gray-500 line-through sm:text-xs">{oldPrice} ج.م</span>
             )}
-            {!oldPrice && <span className="h-3.5 sm:h-4"></span>}
+            {!oldPrice && <span className="h-2 sm:h-2.5"></span>}
           </div>
 
           <Button
