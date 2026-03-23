@@ -82,7 +82,7 @@ type SearchResultCategory = {
   name: string
 }
 
-function SearchResults({ query, onSelect }: { query: string; onSelect: () => void }) {
+function SearchResults({ query, onSelect, mobile = false }: { query: string; onSelect: () => void; mobile?: boolean }) {
   const router = useRouter()
   const [matchedProducts, setMatchedProducts] = React.useState<SearchResultProduct[]>([])
   const [matchedCategories, setMatchedCategories] = React.useState<SearchResultCategory[]>([])
@@ -136,7 +136,12 @@ function SearchResults({ query, onSelect }: { query: string; onSelect: () => voi
   const hasResults = matchedProducts.length > 0 || matchedCategories.length > 0
 
   return (
-    <div className="absolute left-0 right-0 top-full z-50 mt-3 max-h-[70vh] overflow-y-auto overflow-hidden rounded-[24px] border border-surface-border bg-surface shadow-[var(--shadow-material-2)]">
+    <div
+      className={cn(
+        "max-h-[70vh] overflow-y-auto overflow-hidden rounded-[24px] border border-surface-border bg-surface shadow-[var(--shadow-material-2)]",
+        mobile ? "relative z-[140] mt-3" : "absolute left-0 right-0 top-full z-50 mt-3"
+      )}
+    >
       {isLoadingResults ? (
         <div className="p-6 text-center">
           <Search className="w-8 h-8 text-primary/60 mx-auto mb-2 animate-pulse" />
@@ -489,6 +494,7 @@ export function Header() {
               /* Live search results */
               <SearchResults
                 query={deferredMobileQuery}
+                mobile
                 onSelect={() => { setIsSearchOpen(false); setMobileQuery("") }}
               />
             ) : (
