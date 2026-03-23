@@ -51,8 +51,8 @@ export function MobileNav() {
   ]
 
   return (
-    <div className="fixed bottom-3 left-3 right-3 z-50 block md:hidden">
-      <nav className="material-shell flex h-[72px] items-center justify-around rounded-[28px] px-2 shadow-[var(--shadow-material-3)]">
+    <div className="fixed bottom-0 left-0 right-0 z-50 block border-t border-surface-hover bg-surface md:hidden">
+      <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-around px-2">
         <div className="flex flex-col items-center justify-center shrink-0 mb-1">
           <ThemeToggle />
         </div>

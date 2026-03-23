@@ -301,10 +301,10 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full px-2 pt-2 sm:px-4 sm:pt-4">
+    <header className="sticky top-0 z-50 w-full border-b border-surface-hover bg-background px-2 pt-2 sm:px-4 sm:pt-3">
 
       {/* ── Main header row ─────────────────────────────────────────────────── */}
-      <div className="material-shell mx-auto flex h-16 max-w-7xl items-center gap-3 rounded-2xl sm:rounded-full px-4 sm:px-6 shadow-sm border-white/20 transition-all duration-300">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 rounded-2xl bg-surface px-4 sm:rounded-full sm:px-6 shadow-[var(--shadow-material-1)] transition-all duration-300">
 
         {/* Mobile: Hamburger */}
         <button
@@ -429,7 +429,7 @@ export function Header() {
       <div className="md:hidden px-1.5 pb-3 pt-2">
         <button
           onClick={() => setIsSearchOpen(true)}
-          className="material-shell flex items-center gap-3 w-full h-11 rounded-[24px] px-4 text-sm text-gray-500 hover:bg-surface-container transition-colors text-start"
+          className="flex items-center gap-3 w-full h-11 rounded-[24px] border border-surface-hover bg-surface px-4 text-sm text-gray-500 hover:bg-surface-hover transition-colors text-start shadow-[var(--shadow-material-1)]"
           aria-label="ابحث عن منتج"
         >
           <Search className="h-4 w-4 shrink-0" />

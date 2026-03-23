@@ -15,29 +15,29 @@ export function CategoryCard({ slug, name, icon, imageUrl, className }: Category
     <Link 
       href={`/category/${slug}`}
       className={cn(
-        "group flex flex-col items-center gap-3 rounded-[28px] border border-surface-border/70 bg-surface-container-low px-3 py-4 shadow-[var(--shadow-material-1)] transition-all duration-500 ease-out hover:-translate-y-1.5 hover:border-primary/20 hover:bg-surface hover:shadow-[var(--shadow-material-3)]",
+        "group flex flex-col items-center gap-3 rounded-3xl px-2 py-3 transition-all duration-300 ease-out hover:-translate-y-1",
         className
       )}
     >
-      <div className="relative flex h-20 w-20 sm:h-24 sm:w-24 shrink-0 items-center justify-center overflow-hidden rounded-[28px] bg-surface-container border border-surface-border group-hover:border-primary/30 transition-all duration-500 shadow-[var(--shadow-material-1)] group-hover:shadow-[var(--shadow-material-2)]">
+      <div className="relative flex h-[72px] w-[72px] sm:h-[88px] sm:w-[88px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface border border-surface-hover transition-all duration-300 shadow-[var(--shadow-material-1)] group-hover:border-primary/25 group-hover:shadow-[var(--shadow-material-2)]">
         
         {/* Soft background glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-transparent to-transparent group-hover:from-primary/10 group-hover:to-primary/5 transition-colors duration-500"></div>
+        <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/8 transition-colors duration-300"></div>
 
         {icon ? (
-          <div className="relative z-10 text-gray-500 group-hover:text-primary transition-colors duration-300 transform group-hover:scale-110">
+          <div className="relative z-10 text-gray-500 group-hover:text-primary transition-colors duration-300 transform group-hover:scale-105">
             {icon}
           </div>
         ) : imageUrl ? (
           <img 
             src={imageUrl} 
             alt={name} 
-            className="relative z-10 h-8 w-8 sm:h-12 sm:w-12 object-contain transition-transform duration-500 group-hover:scale-110 drop-shadow-md" 
+            className="relative z-10 h-8 w-8 sm:h-11 sm:w-11 object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-md" 
             loading="lazy" 
           />
         ) : null}
       </div>
-      <span className="font-heading font-bold text-foreground text-[11px] sm:text-sm whitespace-nowrap overflow-hidden text-ellipsis w-full text-center group-hover:text-primary transition-colors">
+      <span className="font-heading font-semibold text-foreground text-[11px] sm:text-sm whitespace-nowrap overflow-hidden text-ellipsis w-full text-center group-hover:text-primary transition-colors">
         {name}
       </span>
     </Link>
