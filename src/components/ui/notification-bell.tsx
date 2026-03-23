@@ -445,7 +445,7 @@ export function NotificationBell() {
             </button>
 
             {isOpen && (
-                <div className="absolute top-full lg:-end-2 -end-24 mt-2 z-50 flex max-h-[78vh] w-80 flex-col overflow-hidden rounded-2xl border border-surface-hover bg-surface shadow-premium sm:w-96">
+                <div className="fixed left-3 right-3 top-[84px] z-50 flex max-h-[78vh] w-auto flex-col overflow-hidden rounded-2xl border border-surface-hover bg-surface shadow-premium sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96">
                     <div className="border-b border-surface-hover bg-surface-lighter/50 px-4 py-3">
                         <h3 className="font-heading font-black text-foreground">الإشعارات</h3>
                         <p className="mt-1 text-[11px] text-gray-500">أحدث 4 إشعارات فقط</p>

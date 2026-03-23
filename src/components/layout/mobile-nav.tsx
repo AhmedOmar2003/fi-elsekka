@@ -51,8 +51,8 @@ export function MobileNav() {
   ]
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 block bg-transparent px-3 pb-3 md:hidden">
-      <nav className="material-shell mx-auto flex h-[74px] max-w-xl items-center justify-around rounded-[28px] px-2">
+    <div className="fixed inset-x-0 bottom-0 z-50 block border-t border-white/8 bg-[#101816] shadow-[0_-10px_30px_rgba(0,0,0,0.24)] md:hidden">
+      <nav className="mx-auto flex h-[74px] w-full max-w-none items-center justify-around px-2">
         <div className="mb-1 flex shrink-0 flex-col items-center justify-center">
           <ThemeToggle />
         </div>
@@ -64,13 +64,13 @@ export function MobileNav() {
               href={item.href}
               className={cn(
                 "relative flex h-[58px] min-w-[64px] flex-col items-center justify-center gap-1 rounded-[22px] px-3 transition-all",
-                isActive ? "bg-primary/12 text-primary shadow-[var(--shadow-material-1)]" : "text-foreground/60 hover:bg-surface-container hover:text-foreground"
+                isActive ? "bg-primary/14 text-primary shadow-[var(--shadow-material-1)]" : "text-white/62 hover:bg-white/6 hover:text-white"
               )}
             >
               <div className="relative">
                 {item.icon}
                 {item.badge && (
-                  <span className="absolute -top-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-secondary text-[10px] font-bold text-white ring-2 ring-background">
+                  <span className="absolute -top-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-secondary text-[10px] font-bold text-white ring-2 ring-[#101816]">
                     {item.badge}
                   </span>
                 )}
