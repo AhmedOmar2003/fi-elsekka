@@ -4,13 +4,11 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "../ui/button"
-import { Home, LayoutGrid, ShoppingBag, User } from "lucide-react"
-import { useCart } from "@/contexts/CartContext"
+import { Home, LayoutGrid, Package, User } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 
 export function MobileNav() {
   const pathname = usePathname()
-  const { cartCount } = useCart()
   const { user } = useAuth()
 
   // Hide on detail-focused pages where full attention is needed
@@ -37,10 +35,9 @@ export function MobileNav() {
       icon: <LayoutGrid className="h-6 w-6" />,
     },
     {
-      name: "السلة",
-      href: "/cart",
-      badge: cartCount > 0 ? cartCount : undefined,
-      icon: <ShoppingBag className="h-6 w-6" />,
+      name: "طلباتي",
+      href: "/orders",
+      icon: <Package className="h-6 w-6" />,
     },
     {
       name: "حسابي",
@@ -65,11 +62,6 @@ export function MobileNav() {
             >
               <div className="relative">
                 {item.icon}
-                {item.badge && (
-                  <span className="absolute -top-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-secondary text-[10px] font-bold text-white ring-2 ring-[#101816]">
-                    {item.badge}
-                  </span>
-                )}
               </div>
               <span className="font-heading text-[10px] font-semibold">{item.name}</span>
             </Link>
