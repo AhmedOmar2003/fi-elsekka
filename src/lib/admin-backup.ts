@@ -69,6 +69,29 @@ export const BACKUP_TABLE_LABELS: Record<string, string> = {
   admin_audit_logs: 'سجل الإدارة',
 };
 
+export const BACKUP_RESTORE_ORDER = [
+  'app_settings',
+  'users',
+  'categories',
+  'products',
+  'product_specifications',
+  'promotions',
+  'discount_codes',
+  'orders',
+  'order_items',
+  'delivery_info',
+  'reviews',
+  'driver_reviews',
+  'notifications',
+  'favorites',
+  'cart_items',
+  'driver_subscriptions',
+  'user_subscriptions',
+  'site_visits',
+  'site_page_views',
+  'admin_audit_logs',
+] as const;
+
 export function isBackupScope(value: string | null | undefined): value is BackupScope {
   return !!value && value in BACKUP_SCOPES;
 }
