@@ -588,12 +588,12 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
               {/* Badges */}
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 {product.discountAmount && (
-                  <Badge className="bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-1 shadow-md shadow-rose-500/20 border-rose-500">
+                  <Badge className="border border-rose-700/20 bg-rose-600 text-white font-black px-3 py-1 shadow-[var(--shadow-material-2)] hover:bg-rose-700 dark:border-rose-500/30 dark:bg-rose-500">
                     {product.discountAmount}
                   </Badge>
                 )}
                 {product.productMode === "bundle" && (
-                  <Badge className="bg-primary hover:bg-primary-hover text-white font-bold px-3 py-1 shadow-md shadow-primary/20">
+                  <Badge className="border border-emerald-700/20 bg-emerald-600 text-white font-black px-3 py-1 shadow-[var(--shadow-material-2)] hover:bg-emerald-700 dark:border-primary/30 dark:bg-primary">
                     باكج جاهزة
                   </Badge>
                 )}

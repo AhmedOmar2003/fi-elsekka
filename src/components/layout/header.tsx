@@ -301,10 +301,10 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full px-2 pt-2 sm:px-4 sm:pt-3">
+    <header className="sticky top-0 z-50 w-full px-2 pt-2 sm:px-4 sm:pt-4">
 
       {/* ── Main header row ─────────────────────────────────────────────────── */}
-      <div className="material-shell mx-auto flex h-16 max-w-7xl items-center gap-3 rounded-[28px] px-4 sm:px-5 lg:px-6">
+      <div className="material-shell mx-auto flex h-16 max-w-7xl items-center gap-3 rounded-2xl sm:rounded-full px-4 sm:px-6 shadow-sm border-white/20 transition-all duration-300">
 
         {/* Mobile: Hamburger */}
         <button

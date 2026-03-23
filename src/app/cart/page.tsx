@@ -140,7 +140,7 @@ export default function CartPage() {
                                  animate={{ opacity: 1, y: 0 }}
                                  exit={{ opacity: 0, x: -50, scale: 0.95 }}
                                  layout
-                                 className="bg-surface border border-surface-hover rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row gap-5 items-center sm:items-stretch relative overflow-hidden group"
+                                 className="bg-surface-container-low/50 border border-surface-border/50 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row gap-5 items-center sm:items-stretch relative overflow-hidden group hover:shadow-sm transition-shadow"
                               >
                                  {/* Item Image */}
                                  <div className="w-full sm:w-32 h-40 sm:h-32 rounded-2xl flex-shrink-0 relative overflow-hidden border border-surface-hover/50">
@@ -276,8 +276,8 @@ export default function CartPage() {
 
                      {/* Right Column: Order Summary (4 cols) */}
                      <div className="lg:col-span-4 max-lg:order-first">
-                        <div className="bg-surface border border-surface-hover rounded-3xl p-6 md:p-8 lg:sticky lg:top-28 shadow-xl shadow-black/5">
-                           <h2 className="text-xl font-bold font-heading text-foreground mb-6 pb-4 border-b border-surface-hover">ملخص الطلب</h2>
+                        <div className="bg-surface-container-low/80 backdrop-blur-xl border border-surface-border/60 rounded-[2rem] p-6 md:p-8 lg:sticky lg:top-28 shadow-premium">
+                           <h2 className="text-xl font-bold font-heading text-foreground mb-6 pb-4 border-b border-surface-border/50">ملخص الطلب</h2>
 
                            <div className="space-y-4 mb-6">
                               <div className="flex justify-between text-gray-400">

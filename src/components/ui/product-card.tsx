@@ -61,7 +61,7 @@ export function ProductCard({
     .join(" + ")
 
   return (
-    <div className={cn("group flex flex-col overflow-hidden rounded-[28px] border border-surface-border bg-surface-container-low shadow-[var(--shadow-material-1)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-[var(--shadow-material-3)] touch-manipulation", className)}>
+    <div className={cn("group flex flex-col overflow-hidden rounded-3xl border border-surface-border bg-surface-container-low shadow-sm transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-premium hover:border-surface-border touch-manipulation relative", className)}>
       <Link href={`/product/${id}`} className="relative aspect-[4/3] sm:aspect-[3/2] w-full overflow-hidden bg-surface-container">
 
         <div className="absolute inset-0 flex items-center justify-center">
@@ -75,14 +75,14 @@ export function ProductCard({
         </div>
 
         {/* Discount Badge */}
-        <div className="absolute top-3 right-3 flex flex-col gap-1 z-10">
+        <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-10">
           {isBundle && (
-            <span className="inline-flex items-center rounded-full bg-primary px-2.5 py-1 text-xs font-black text-white shadow-[var(--shadow-material-2)]">
+            <span className="inline-flex items-center rounded-full border border-emerald-700/20 bg-emerald-600 px-3 py-1 text-[11px] font-black tracking-wide text-white shadow-[var(--shadow-material-2)] dark:border-white/10 dark:bg-primary">
               باكج
             </span>
           )}
           {discountBadge && (
-            <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-1 text-xs font-black text-white shadow-[var(--shadow-material-2)]">
+            <span className="inline-flex items-center rounded-full border border-rose-700/20 bg-rose-600 px-3 py-1 text-[11px] font-black tracking-wide text-white shadow-[var(--shadow-material-2)] dark:border-white/10 dark:bg-secondary">
               {discountBadge}
             </span>
           )}
@@ -93,10 +93,10 @@ export function ProductCard({
           onClick={handleToggleFav}
           aria-label={fav ? "إزالة من المفضلة" : "أضف للمفضلة"}
           className={cn(
-            "absolute top-3 left-3 z-10 rounded-full p-2 backdrop-blur-md shadow-[var(--shadow-material-1)] ring-1 ring-black/5 transition-all duration-200 active:scale-90",
+            "absolute top-3 left-3 z-10 rounded-full p-2 backdrop-blur-xl shadow-sm border border-white/20 transition-all duration-300 active:scale-90",
             fav
-              ? "bg-secondary/10 text-secondary opacity-100"
-              : "bg-background/85 text-gray-400 hover:text-secondary opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+              ? "bg-secondary/10 text-secondary border-secondary/20 opacity-100"
+              : "bg-background/60 text-foreground/60 hover:text-secondary hover:bg-background/90 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
           )}
         >
           <Heart className={cn("w-5 h-5 transition-transform", fav && "fill-current")} />
@@ -109,9 +109,9 @@ export function ProductCard({
       <div className="relative z-20 flex flex-1 flex-col bg-surface-container-low p-4 sm:p-5">
         {/* Rating */}
         {rating && (
-          <div className="mb-2 inline-flex w-fit items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-yellow-500">
-            <Star className="w-3.5 h-3.5 fill-current" />
-            <span className="text-foreground">{rating} <span className="mr-1 hidden sm:inline text-gray-500">({reviewsCount})</span></span>
+          <div className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-surface-container border border-surface-border px-2.5 py-1 text-[11px] font-medium transition-colors group-hover:bg-surface-container-high">
+            <Star className="w-3 h-3 fill-yellow-400 text-yellow-500" />
+            <span className="text-foreground tracking-wide">{rating} <span className="mr-1 hidden sm:inline opacity-60">({reviewsCount})</span></span>
           </div>
         )}
 
@@ -139,10 +139,11 @@ export function ProductCard({
 
           <Button
             size="icon"
-            className={`h-11 w-11 shrink-0 rounded-2xl transition-all active:scale-95 ${isAdded
-              ? "bg-emerald-500 hover:bg-emerald-600 shadow-[var(--shadow-material-2)]"
-              : "shadow-[var(--shadow-material-2)]"
-              }`}
+            variant="primary"
+            className={cn(
+              "h-11 w-11 shrink-0 rounded-xl bg-primary text-white shadow-[var(--shadow-material-2)] transition-all duration-300 active:scale-90 hover:bg-primary-hover",
+              isAdded ? "bg-emerald-500 hover:bg-emerald-600 border-transparent" : "border-primary/20"
+            )}
             aria-label="أضف للسلة"
             onClick={handleAddToCart}
           >

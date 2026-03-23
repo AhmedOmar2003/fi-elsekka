@@ -70,8 +70,8 @@ export default function FAQPage() {
                   key={index}
                   className={`border rounded-2xl overflow-hidden transition-all duration-300 ${
                     isOpen 
-                      ? "bg-surface-light border-primary/30 shadow-[0_4px_20px_rgba(16,185,129,0.08)]" 
-                      : "bg-surface border-surface-hover hover:border-gray-600 shadow-sm"
+                      ? "bg-surface-container/60 border-primary/30 shadow-premium backdrop-blur-lg" 
+                      : "bg-surface-container-low/50 border-surface-border/50 hover:border-surface-border shadow-sm backdrop-blur-md"
                   }`}
                 >
                   <button

@@ -44,10 +44,10 @@ export default function AboutUsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 sm:gap-16 items-center">
             
             {/* Story Image / Graphic */}
-            <div className="relative aspect-square sm:aspect-[4/3] rounded-[2rem] sm:rounded-[3rem] bg-gradient-to-br from-surface to-surface-light border border-surface-hover overflow-hidden shadow-2xl shadow-primary/5 flex items-center justify-center group">
+            <div className="relative aspect-square sm:aspect-[4/3] rounded-[2rem] sm:rounded-[3rem] bg-gradient-to-br from-surface-container-low to-surface border border-surface-border/50 overflow-hidden shadow-premium flex items-center justify-center group backdrop-blur-xl">
               <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors duration-700"></div>
               {/* Abstract structural shapes */}
-              <div className="relative w-3/4 h-3/4  opacity-80 flex flex-col items-center justify-center gap-4">
+              <div className="relative w-3/4 h-3/4 opacity-80 flex flex-col items-center justify-center gap-4">
                 <ShieldCheck className="w-24 h-24 sm:w-32 sm:h-32 text-slate-700 drop-shadow-lg transform transition-transform duration-700 group-hover:-rotate-12 group-hover:scale-110" />
                 <div className="w-full h-2 bg-gradient-to-r from-transparent via-primary/50 to-transparent rounded-full mt-4 blur-[1px]"></div>
               </div>
@@ -90,8 +90,8 @@ export default function AboutUsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             
             {/* Feature 1 */}
-            <div className="bg-surface border border-surface-hover p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] hover:-translate-y-2 hover:border-emerald-500/30 hover:shadow-[0_12px_40px_rgba(16,185,129,0.1)] transition-all duration-300">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-5 sm:mb-6 shadow-[0_4px_20px_rgba(16,185,129,0.2)]">
+            <div className="bg-surface-container-low/50 border border-surface-border/50 p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] hover:-translate-y-2 hover:shadow-premium transition-all duration-300">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-5 sm:mb-6 shadow-sm">
                 <Zap className="w-7 h-7 sm:w-8 sm:h-8" />
               </div>
               <h3 className="font-heading font-bold text-xl sm:text-2xl text-foreground mb-3">
@@ -103,8 +103,8 @@ export default function AboutUsPage() {
             </div>
 
             {/* Feature 2 */}
-            <div className="bg-surface border border-surface-hover p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] hover:-translate-y-2 hover:border-blue-500/30 hover:shadow-[0_12px_40px_rgba(59,130,246,0.1)] transition-all duration-300">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 mb-5 sm:mb-6 shadow-[0_4px_20px_rgba(59,130,246,0.2)]">
+            <div className="bg-surface-container-low/50 border border-surface-border/50 p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] hover:-translate-y-2 hover:shadow-premium transition-all duration-300">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 mb-5 sm:mb-6 shadow-sm">
                 <ShieldCheck className="w-7 h-7 sm:w-8 sm:h-8" />
               </div>
               <h3 className="font-heading font-bold text-xl sm:text-2xl text-foreground mb-3">
@@ -116,8 +116,8 @@ export default function AboutUsPage() {
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-surface border border-surface-hover p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] hover:-translate-y-2 hover:border-rose-500/30 hover:shadow-[0_12px_40px_rgba(244,63,94,0.1)] transition-all duration-300 sm:col-span-2 lg:col-span-1">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mb-5 sm:mb-6 shadow-[0_4px_20px_rgba(244,63,94,0.2)]">
+            <div className="bg-surface-container-low/50 border border-surface-border/50 p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] hover:-translate-y-2 hover:shadow-premium transition-all duration-300 sm:col-span-2 lg:col-span-1">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mb-5 sm:mb-6 shadow-sm">
                 <CheckCircle2 className="w-7 h-7 sm:w-8 sm:h-8" />
               </div>
               <h3 className="font-heading font-bold text-xl sm:text-2xl text-foreground mb-3">
@@ -133,8 +133,8 @@ export default function AboutUsPage() {
 
         {/* ── Call to Action Board ────────────────────────────────────── */}
         <section className="px-4 py-8 sm:py-16 max-w-5xl mx-auto">
-          <div className="relative rounded-[2rem] sm:rounded-[3rem] overflow-hidden p-[2px] bg-gradient-to-br from-primary/50 via-primary/10 to-transparent shadow-[0_8px_40px_rgba(16,185,129,0.2)]">
-            <div className="relative bg-surface p-8 sm:p-14 rounded-[calc(2rem-2px)] sm:rounded-[calc(3rem-2px)] text-center flex flex-col items-center overflow-hidden">
+          <div className="relative rounded-[2rem] sm:rounded-[3rem] overflow-hidden p-[2px] bg-gradient-to-br from-primary/50 via-primary/10 to-transparent shadow-premium">
+            <div className="relative bg-surface p-8 sm:p-14 rounded-[calc(2rem-2px)] sm:rounded-[calc(3rem-2px)] text-center flex flex-col items-center overflow-hidden backdrop-blur-xl">
               
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[80px] rounded-full mix-blend-screen pointer-events-none"></div>
               

@@ -326,8 +326,8 @@ function CheckoutContent() {
                   <div className="lg:col-span-7 space-y-8">
 
                      {/* Contact Details */}
-                     <div className="bg-surface rounded-3xl border border-surface-hover p-6 sm:p-8 shadow-sm hover:shadow-premium transition-shadow">
-                        <h2 className="text-xl font-heading font-bold mb-6 flex items-center gap-3 border-b border-surface-hover pb-4">
+                     <div className="bg-surface-container-low/40 border border-surface-border/50 rounded-[2rem] p-6 sm:p-8 shadow-sm hover:shadow-premium transition-shadow">
+                        <h2 className="text-xl font-heading font-bold mb-6 flex items-center gap-3 border-b border-surface-border/40 pb-4">
                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                               <User className="w-5 h-5" />
                            </span>
@@ -352,8 +352,8 @@ function CheckoutContent() {
                      </div>
 
                      {/* Delivery Details */}
-                     <div className="bg-surface rounded-3xl border border-surface-hover p-6 sm:p-8 shadow-sm hover:shadow-premium transition-shadow">
-                        <h2 className="text-xl font-heading font-bold mb-6 flex items-center gap-3 border-b border-surface-hover pb-4">
+                     <div className="bg-surface-container-low/40 border border-surface-border/50 rounded-[2rem] p-6 sm:p-8 shadow-sm hover:shadow-premium transition-shadow">
+                        <h2 className="text-xl font-heading font-bold mb-6 flex items-center gap-3 border-b border-surface-border/40 pb-4">
                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                               <MapPin className="w-5 h-5" />
                            </span>
@@ -391,8 +391,8 @@ function CheckoutContent() {
                      </div>
 
                      {/* Payment Method */}
-                     <div className="bg-surface rounded-3xl border border-surface-hover p-6 sm:p-8 shadow-sm hover:shadow-premium transition-shadow">
-                        <h2 className="text-xl font-heading font-bold mb-6 flex items-center gap-3 border-b border-surface-hover pb-4">
+                     <div className="bg-surface-container-low/40 border border-surface-border/50 rounded-[2rem] p-6 sm:p-8 shadow-sm hover:shadow-premium transition-shadow">
+                        <h2 className="text-xl font-heading font-bold mb-6 flex items-center gap-3 border-b border-surface-border/40 pb-4">
                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
                               <CreditCard className="w-5 h-5" />
                            </span>
@@ -419,8 +419,8 @@ function CheckoutContent() {
 
                   {/* Order Summary Sidebar */}
                   <div className="lg:col-span-5">
-                     <div className="rounded-3xl bg-surface border border-surface-hover p-6 sm:p-8 sticky top-24 shadow-premium">
-                        <h3 className="text-xl font-heading font-bold mb-6 text-foreground border-b border-surface-hover pb-4">ملخص طلبك</h3>
+                     <div className="rounded-[2rem] bg-surface-container-low/80 backdrop-blur-xl border border-surface-border/60 p-6 sm:p-8 sticky top-24 shadow-premium">
+                        <h3 className="text-xl font-heading font-bold mb-6 text-foreground border-b border-surface-border/40 pb-4">ملخص طلبك</h3>
 
                         <div className="divide-y divide-surface-hover border-b border-surface-hover mb-6 pb-6 max-h-48 overflow-y-auto custom-scrollbar">
                            {isTextRequestCheckout && textRequestDraft ? (

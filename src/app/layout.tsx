@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans_Arabic, Lalezar } from "next/font/google";
+import { IBM_Plex_Sans_Arabic, Lalezar, Inter, Cairo } from "next/font/google";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Providers } from "@/components/providers";
 import { Toaster } from "sonner";
@@ -20,6 +20,18 @@ const lalezar = Lalezar({
   subsets: ["arabic"],
   weight: ["400"],
   variable: "--font-lalezar",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const cairo = Cairo({
+  subsets: ["arabic"],
+  variable: "--font-cairo",
   display: "swap",
 });
 
@@ -113,7 +125,7 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body
-        className={`${ibmPlex.variable} ${lalezar.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col transition-colors duration-300`}
+        className={`${inter.variable} ${cairo.variable} ${ibmPlex.variable} ${lalezar.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col transition-colors duration-300`}
       >
         <a 
           href="#main-content" 
@@ -123,7 +135,7 @@ export default function RootLayout({
         </a>
         <Providers>
           <MaintenanceModeOverlay />
-          <div id="main-content" className="flex-1 flex flex-col w-full outline-none" tabIndex={-1}>
+          <div id="main-content" className="flex-1 flex flex-col w-full outline-none animate-fade-in" tabIndex={-1}>
             {children}
           </div>
           <MobileNav />

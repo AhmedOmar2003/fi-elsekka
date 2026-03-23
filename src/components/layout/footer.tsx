@@ -35,9 +35,9 @@ export function Footer() {
     .filter((category): category is (typeof categories)[number] => !!category)
 
   return (
-    <footer className="mt-auto w-full px-2 pb-20 pt-10 md:px-4 md:pb-10">
+    <footer className="mt-auto w-full px-2 pb-20 pt-16 md:px-4 md:pb-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="material-card-elevated grid grid-cols-1 gap-8 rounded-[32px] p-6 md:grid-cols-4 lg:gap-10 lg:p-8">
+        <div className="material-card-elevated grid grid-cols-1 gap-12 rounded-3xl p-8 md:grid-cols-4 lg:gap-16 lg:p-12 relative overflow-hidden">
           
           <div className="md:col-span-1">
             <Link href="/" className="mb-4 flex items-center gap-2 group">

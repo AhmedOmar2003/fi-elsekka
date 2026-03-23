@@ -67,21 +67,21 @@ export default async function Home() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center sm:text-start relative z-10">
             <div className="material-card-elevated grid grid-cols-1 items-center gap-12 overflow-hidden rounded-[36px] px-6 py-8 sm:px-8 sm:py-10 lg:grid-cols-2 lg:px-12 lg:py-12">
               <div className="z-10 max-w-2xl">
-                <Badge variant="success" className="mb-4 inline-flex rounded-full px-4 py-1.5 text-xs shadow-[var(--shadow-material-1)]">
+                <Badge variant="success" className="mb-5 inline-flex rounded-full px-4 py-1.5 text-xs shadow-sm shadow-emerald-500/10">
                   🔥 عروض المدارس رجعت تاني!
                 </Badge>
-                <h1 className="mb-4 text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-foreground leading-tight">
-                  كل طلباتك، <br className="hidden sm:block" />
-                  <span className="text-primary">في السكة</span> لحد عندك.
+                <h1 className="mb-5 text-4xl sm:text-5xl lg:text-7xl font-black tracking-tight text-foreground leading-[1.15]">
+                  كل طلباتك، <br className="hidden lg:block" />
+                  <span className="text-primary tracking-tighter">في السكة</span> لحد عندك.
                 </h1>
-                <p className="mb-8 text-lg text-gray-500 max-w-xl mx-auto sm:mx-0 leading-8">
+                <p className="mb-8 text-lg sm:text-xl text-foreground/60 max-w-xl mx-auto sm:mx-0 leading- relaxed font-medium">
                   من السوبر ماركت للصيدلية، ومن اللبس للإلكترونيات. اختار اللي نفسك فيه وادفع كاش وإنت بتستلم. أسرع، أسهل، وأروق! ✨
                 </p>
                 <div className="flex flex-col sm:flex-row items-center gap-4 justify-center sm:justify-start">
-                  <Button size="lg" className="w-full sm:w-auto text-lg rounded-full px-8 shadow-[var(--shadow-material-3)]" asChild>
+                  <Button size="lg" className="w-full sm:w-auto h-14 text-base rounded-full px-8 shadow-premium" asChild>
                     <Link href="/category/all">يلا بينا نطلب</Link>
                   </Button>
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg rounded-full px-8 bg-white/50 dark:bg-transparent" asChild>
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 text-base rounded-full px-8 backdrop-blur-md" asChild>
                     <Link href="/offers">شوف الحاجات الحلوة</Link>
                   </Button>
                 </div>
@@ -101,7 +101,7 @@ export default async function Home() {
 
               {/* Hero Image Mock */}
               <div className="relative mx-auto mt-8 w-full max-w-md lg:mt-0 lg:max-w-none perspective-1000">
-                <div className="aspect-[4/3] rounded-[32px] bg-surface-container border border-surface-border/70 p-4 shadow-[var(--shadow-material-3)] relative overflow-hidden group transform hover:-rotate-y-2 transition-transform duration-700">
+                <div className="aspect-[4/3] rounded-[32px] bg-surface-container border border-surface-border p-4 shadow-premium relative overflow-hidden group transform hover:-translate-y-2 hover:shadow-glow-primary transition-all duration-700">
                   <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-secondary/20 opacity-60 mix-blend-overlay"></div>
                   <Image
                     src="https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop"
@@ -201,9 +201,9 @@ export default async function Home() {
         {/* Delivery Trust Section */}
         <section className="mt-12 py-20 relative overflow-hidden">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-          <div className="absolute inset-0 bg-background/60"></div>
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px]"></div>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="material-card-elevated grid grid-cols-1 gap-12 rounded-[36px] p-8 text-center md:grid-cols-3 sm:gap-8 md:divide-x md:divide-x-reverse md:divide-y-0 divide-y divide-surface-hover">
+            <div className="material-card-elevated grid grid-cols-1 gap-12 rounded-[36px] p-10 lg:p-14 text-center md:grid-cols-3 sm:gap-8 md:divide-x md:divide-x-reverse md:divide-y-0 divide-y divide-surface-border/50">
 
               <div className="flex flex-col items-center pt-8 md:pt-0 group">
                 <div className="h-20 w-20 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 text-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/5 group-hover:scale-110 transition-transform duration-500">

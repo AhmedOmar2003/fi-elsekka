@@ -76,12 +76,14 @@ function RegisterContent() {
   }
 
   return (
-    <div className="w-full max-w-md bg-surface border border-surface-hover rounded-3xl p-6 sm:p-10 shadow-premium">
+    <div className="w-full max-w-md bg-surface-container-low/80 backdrop-blur-xl border border-surface-border/60 rounded-[2rem] p-8 sm:p-12 shadow-premium relative overflow-hidden">
+      {/* Subtle background glow inside the card */}
+      <div className="absolute -top-32 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none"></div>
       <h1 className="text-3xl font-black text-foreground mb-2 text-center">أهلاً بيك في السكة! ✨</h1>
       <p className="text-gray-500 text-center mb-8">إنشئ حساب جديد عشان تبدأ رحلة التسوق بتاعتك</p>
 
       {errorMsg && (
-        <div className="mb-6 bg-rose-500/10 border border-rose-500/20 text-rose-500 p-4 rounded-xl flex items-start gap-3 text-sm">
+        <div className="mb-6 bg-rose-500/10 border border-rose-500/20 text-rose-500 p-4 rounded-xl flex items-start gap-3 text-sm font-medium shadow-sm">
           <AlertCircle className="w-5 h-5 shrink-0" />
           <span>{errorMsg}</span>
         </div>
@@ -99,36 +101,35 @@ function RegisterContent() {
         <form onSubmit={handleRegister} className="space-y-5">
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-foreground px-1">الاسم بالكامل</label>
+            <label className="text-sm font-medium text-foreground px-1">الاسم بالكامل</label>
             <Input
               type="text"
               value={fullName}
               onChange={e => setFullName(e.target.value)}
               placeholder="أحمد محمد"
-              className="h-12 rounded-xl bg-background border-surface-hover focus-visible:border-primary px-4"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-foreground px-1">البريد الإلكتروني</label>
+            <label className="text-sm font-medium text-foreground px-1">البريد الإلكتروني</label>
             <Input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="example@mail.com"
-              className="h-12 rounded-xl bg-background border-surface-hover focus-visible:border-primary text-start direction-ltr px-4"
+              className="text-start direction-ltr"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-foreground px-1">كلمة المرور</label>
+            <label className="text-sm font-medium text-foreground px-1">كلمة المرور</label>
             <PasswordInput
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="h-12 rounded-xl bg-background border-surface-hover focus-visible:border-primary text-start direction-ltr px-4"
+              className="text-start direction-ltr"
               required
               minLength={6}
             />
@@ -138,7 +139,7 @@ function RegisterContent() {
             type="submit"
             size="lg"
             disabled={isLoading}
-            className="w-full h-12 rounded-xl font-bold text-lg shadow-primary/20 shadow-lg mt-4 flex items-center justify-center gap-2"
+            className="w-full h-12 rounded-xl text-base shadow-sm mt-6 flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

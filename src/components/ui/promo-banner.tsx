@@ -43,11 +43,15 @@ export function PromoBanner() {
     return (
         <section className="py-12 sm:py-16">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-emerald-600 to-primary text-white p-8 sm:p-14 shadow-premium shadow-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6 group">
+                <div className="relative overflow-hidden rounded-[2.25rem] border border-white/10 bg-[linear-gradient(135deg,#0f9d78_0%,#10b981_42%,#0b6b57_100%)] text-white p-8 sm:p-14 shadow-[var(--shadow-material-3)] flex flex-col sm:flex-row items-center justify-between gap-6 group">
 
                     {/* Text */}
                     <div className="z-10 text-center sm:text-start">
-                        <h3 className="text-3xl sm:text-4xl font-black mb-3 drop-shadow-sm">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-black tracking-[0.08em] backdrop-blur-md mb-4">
+                            <span className="h-2 w-2 rounded-full bg-white/80 animate-pulse"></span>
+                            عرض متاح دلوقتي
+                        </div>
+                        <h3 className="text-3xl sm:text-4xl font-black mb-3 drop-shadow-sm leading-tight">
                             {promo.title}
                         </h3>
                         {promo.description && (
@@ -59,7 +63,7 @@ export function PromoBanner() {
                             <button
                                 onClick={handleCopy}
                                 title="انقر لنسخ الكود"
-                                className="mt-3 inline-flex items-center gap-2 font-mono bg-black/20 hover:bg-black/30 active:scale-95 transition-all px-4 py-2 rounded-xl text-white border border-white/15 text-lg tracking-widest cursor-pointer select-none"
+                                className="mt-4 inline-flex items-center gap-2 font-mono bg-black/20 hover:bg-black/30 active:scale-95 transition-all px-4 py-2.5 rounded-2xl text-white border border-white/15 text-lg tracking-widest cursor-pointer select-none shadow-[var(--shadow-material-2)] backdrop-blur-sm"
                             >
                                 <span className="text-sm text-white/60 font-sans ml-1">استخدم كود:</span>
                                 {promo.discount_code}
@@ -73,14 +77,14 @@ export function PromoBanner() {
                         {user ? (
                             <Link
                                 href="/offers"
-                                className="flex items-center justify-center bg-white text-primary font-bold text-lg px-10 py-4 rounded-xl shadow-xl hover:scale-105 active:scale-95 transition-transform text-center"
+                                className="flex items-center justify-center bg-white text-primary font-black text-lg px-10 py-4 rounded-2xl shadow-[var(--shadow-material-3)] hover:scale-[1.02] active:scale-95 transition-transform text-center"
                             >
                                 {promo.button_text || 'شوف العروض'}
                             </Link>
                         ) : (
                             <Link
                                 href="/register"
-                                className="flex items-center justify-center bg-white text-primary font-bold text-lg px-10 py-4 rounded-xl shadow-xl hover:scale-105 active:scale-95 transition-transform text-center"
+                                className="flex items-center justify-center bg-white text-primary font-black text-lg px-10 py-4 rounded-2xl shadow-[var(--shadow-material-3)] hover:scale-[1.02] active:scale-95 transition-transform text-center"
                             >
                                 سجل حساب جديد
                             </Link>
@@ -88,7 +92,8 @@ export function PromoBanner() {
                     </div>
 
                     {/* Decorative bg blobs */}
-                    <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 opacity-10 blur-3xl rounded-full w-96 h-96 bg-white pointer-events-none" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(0,0,0,0.18),transparent_22%)] pointer-events-none" />
+                    <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 opacity-20 blur-3xl rounded-full w-96 h-96 bg-white pointer-events-none" />
                     <div className="absolute bottom-0 left-0 translate-y-12 -translate-x-12 opacity-20 blur-2xl rounded-full w-64 h-64 bg-black pointer-events-none" />
                 </div>
             </div>

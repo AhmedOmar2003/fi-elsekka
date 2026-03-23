@@ -51,8 +51,8 @@ export function MobileNav() {
   ]
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 block md:hidden border-t border-surface-hover bg-background/90 pb-safe pt-2 backdrop-blur-lg">
-      <nav className="flex h-16 items-center justify-around px-2">
+    <div className="fixed bottom-3 left-3 right-3 z-50 block md:hidden">
+      <nav className="material-shell flex h-[72px] items-center justify-around rounded-[28px] px-2 shadow-[var(--shadow-material-3)]">
         <div className="flex flex-col items-center justify-center shrink-0 mb-1">
           <ThemeToggle />
         </div>
@@ -63,8 +63,8 @@ export function MobileNav() {
               key={item.name}
               href={item.href}
               className={cn(
-                "relative flex h-full min-w-[64px] flex-col items-center justify-center gap-1 transition-colors",
-                isActive ? "text-primary" : "text-gray-400 hover:text-gray-200"
+                "relative flex h-full min-w-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-3 transition-all",
+                isActive ? "text-primary bg-primary/10" : "text-gray-400 hover:text-foreground hover:bg-surface-container"
               )}
             >
               <div className="relative">
