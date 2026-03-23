@@ -109,7 +109,7 @@ export function ProductCard({
           </div>
         )}
 
-        <Link href={`/product/${id}`} className="mb-1 block h-[35px] sm:h-[42px]">
+        <Link href={`/product/${id}`} className="mb-0.5 block h-[33px] sm:h-[42px]">
           <h3 className="line-clamp-2 text-[12.5px] font-heading font-semibold leading-[1.35] text-foreground transition-colors group-hover:text-primary sm:text-base">
             {title}
           </h3>
