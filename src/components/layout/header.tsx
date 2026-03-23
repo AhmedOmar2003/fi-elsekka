@@ -463,9 +463,9 @@ export function Header() {
 
       {/* ── SEARCH OVERLAY (full-screen mobile) ───────────────────────────────────── */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-background">
+        <div className="fixed inset-0 z-[140] flex flex-col bg-background">
           {/* Search header */}
-          <div className="flex items-center gap-3 border-b border-white/8 bg-[#101816] p-4">
+          <div className="sticky top-0 z-[141] flex items-center gap-3 border-b border-white/8 bg-[#101816] p-4">
             <div className="relative flex-1">
               <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-white/55">
                 <Search className="h-5 w-5" />
@@ -489,7 +489,7 @@ export function Header() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="relative z-[140] flex-1 overflow-y-auto">
             {deferredMobileQuery.trim().length >= 2 ? (
               /* Live search results */
               <SearchResults
@@ -499,7 +499,7 @@ export function Header() {
               />
             ) : (
               /* Default: category suggestions */
-              <div className="p-4">
+              <div className="relative z-[141] p-4 pt-5">
                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">لف في الأقسام</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {categories.map(cat => (
