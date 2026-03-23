@@ -131,6 +131,7 @@ export default function AccountPage() {
     }, [activeTab, favoriteIds])
 
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
+    const [isClearFavoritesModalOpen, setIsClearFavoritesModalOpen] = useState(false)
 
     const handleLogoutClick = () => {
         setIsLogoutModalOpen(true)
@@ -145,6 +146,13 @@ export default function AccountPage() {
         setTimeout(() => {
             router.push('/')
         }, 500)
+    }
+
+    const confirmClearFavorites = async () => {
+        await clearAllFavorites()
+        setFavProducts([])
+        setIsClearFavoritesModalOpen(false)
+        toast.success("تمام، فضّينا المفضلة")
     }
 
     const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -558,12 +566,7 @@ export default function AccountPage() {
                                     <div className="flex items-center justify-between mb-4">
                                         <p className="text-gray-500 text-sm">{favProducts.length} منتج في مفضلتك</p>
                                         <button
-                                            onClick={async () => {
-                                                if (confirm('متأكد إنك عاوز تمسح كل المفضلة؟')) {
-                                                    await clearAllFavorites()
-                                                    setFavProducts([])
-                                                }
-                                            }}
+                                            onClick={() => setIsClearFavoritesModalOpen(true)}
                                             className="flex items-center gap-1.5 text-xs font-bold text-rose-500 hover:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1.5 rounded-xl transition-all active:scale-95"
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />
@@ -704,6 +707,47 @@ export default function AccountPage() {
                 onClose={() => setIsLogoutModalOpen(false)}
                 onConfirm={confirmLogout}
             />
+
+            {isClearFavoritesModalOpen && (
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
+                    <div
+                        className="absolute inset-0 bg-background/70 backdrop-blur-md"
+                        onClick={() => setIsClearFavoritesModalOpen(false)}
+                    />
+
+                    <div className="relative w-full max-w-sm rounded-[32px] border border-surface-border bg-surface-container-low p-7 shadow-[var(--shadow-material-3)] animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex flex-col items-center gap-4 text-center">
+                            <div className="flex h-18 w-18 items-center justify-center rounded-[24px] border border-rose-500/15 bg-rose-500/10 shadow-[var(--shadow-material-1)]">
+                                <Heart className="h-8 w-8 text-rose-500" />
+                            </div>
+
+                            <h2 className="text-2xl font-black text-foreground leading-tight">
+                                متأكد إنك عاوز تمسحهم كلهم؟
+                            </h2>
+
+                            <p className="text-sm leading-relaxed text-gray-500">
+                                بصراحة حرام يروحوا كلهم مرة واحدة. سيب اللي عاجبك يمكن تحتاج ترجعلهم بعدين، ولو متأكد امسحهم عادي.
+                            </p>
+                        </div>
+
+                        <div className="mt-6 flex flex-col gap-3 border-t material-divider pt-6">
+                            <Button
+                                onClick={() => setIsClearFavoritesModalOpen(false)}
+                                className="h-12 w-full rounded-2xl bg-emerald-500 text-lg font-bold text-white shadow-[var(--shadow-material-2)] hover:bg-emerald-400"
+                            >
+                                لا، سيبهم زي ما هم
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={confirmClearFavorites}
+                                className="h-11 w-full rounded-2xl font-medium text-gray-500 hover:bg-rose-500/10 hover:text-rose-400"
+                            >
+                                أيوه، امسح الكل
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     )
 }
