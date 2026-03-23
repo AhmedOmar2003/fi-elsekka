@@ -147,8 +147,8 @@ export default async function Home() {
         {/* Featured Offers Section */}
         <section className="py-12">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="material-card p-6 sm:p-8">
-            <div className="mb-8 flex items-end justify-between">
+            <div className="material-card p-4 sm:p-8">
+            <div className="mb-6 flex items-end justify-between sm:mb-8">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="relative flex h-3 w-3">
@@ -164,7 +164,7 @@ export default async function Home() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
               {displayOffers.length > 0 ? displayOffers.map((product) => (
                 <ProductCard key={product.id} {...product} />
               )) : (
@@ -181,15 +181,15 @@ export default async function Home() {
         {/* Best Sellers Section */}
         <section className="py-12">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="material-card p-6 sm:p-8">
-            <div className="mb-8 flex items-end justify-between">
+            <div className="material-card p-4 sm:p-8">
+            <div className="mb-6 flex items-end justify-between sm:mb-8">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground">الأكتر طلبًا</h2>
                 <p className="mt-2 text-sm text-gray-500">دي الحاجات اللي الناس بتحبها وبتطلبها كتير</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
               {displayBestSellers.map((product) => (
                 <ProductCard key={product.id} {...product} />
               ))}
