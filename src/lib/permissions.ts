@@ -41,6 +41,7 @@ export function hasFullAdminAccess(profile: RolePermShape | null | undefined) {
 
 export function requiredPermissionForPath(pathname: string): Permission | null {
   if (pathname.startsWith('/admin/analytics')) return 'view_reports';
+  if (pathname.startsWith('/admin/backup')) return 'manage_settings';
   if (pathname.startsWith('/admin/staff')) return 'manage_admins';
   if (pathname.startsWith('/admin/users')) return 'manage_users';
   if (pathname.startsWith('/admin/products')) return 'manage_products';

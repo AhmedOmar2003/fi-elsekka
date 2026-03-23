@@ -10,7 +10,7 @@ import {
     LayoutDashboard, Package, Tag, ShoppingCart, Users,
     Menu, X, LogOut, ChevronRight, Bell, Settings, Bike, Megaphone, Ticket,
     UserPlus, ShoppingBag, CheckCircle2, Clock, Truck, XCircle, Loader2, ShieldAlert, MessageSquare, Star, Search, History, AlertTriangle
-    , BarChart3
+    , BarChart3, Database
 } from 'lucide-react';
 import { signOut } from '@/services/authService';
 import { supabase } from '@/lib/supabase';
@@ -45,6 +45,7 @@ const NAV_ITEMS = [
     { label: 'التقييمات', href: '/admin/reviews', icon: MessageSquare, perm: 'view_reports' },
     { label: 'العروض الترويجية', href: '/admin/promotions', icon: Megaphone, perm: 'manage_offers' },
     { label: 'أكواد الخصم', href: '/admin/discounts', icon: Ticket, perm: 'manage_discounts' },
+    { label: 'النسخ الاحتياطي', href: '/admin/backup', icon: Database, perm: 'manage_settings' },
 ];
 
 // ── Sidebar ──────────────────────────────────────────────────
