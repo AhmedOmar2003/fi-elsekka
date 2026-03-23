@@ -284,7 +284,8 @@ export function Header() {
     })
     
     setTimeout(() => {
-      window.location.reload();
+      router.replace("/");
+      router.refresh();
     }, 500)
   }
 
