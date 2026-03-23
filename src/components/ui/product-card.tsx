@@ -54,14 +54,8 @@ export function ProductCard({
   }
 
   const isBundle = productMode === "bundle"
-  const bundleSummary = bundleItems
-    .slice(0, 2)
-    .map((item) => item.name)
-    .filter(Boolean)
-    .join(" + ")
-
   return (
-    <div className={cn("group flex flex-col overflow-hidden rounded-3xl border border-surface-border bg-surface-container-low shadow-sm transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-premium hover:border-surface-border touch-manipulation relative", className)}>
+    <div className={cn("group relative flex h-full min-h-[320px] flex-col overflow-hidden rounded-3xl border border-surface-border bg-surface-container-low shadow-sm transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-premium hover:border-surface-border touch-manipulation", className)}>
       <Link href={`/product/${id}`} className="relative aspect-[4/3] sm:aspect-[3/2] w-full overflow-hidden bg-surface-container">
 
         <div className="absolute inset-0 flex items-center justify-center">
@@ -115,15 +109,10 @@ export function ProductCard({
           </div>
         )}
 
-        <Link href={`/product/${id}`} className="block flex-1 mb-3">
+        <Link href={`/product/${id}`} className="mb-3 block min-h-[52px] flex-1">
           <h3 className="text-sm sm:text-base font-heading font-semibold line-clamp-2 leading-tight group-hover:text-primary transition-colors text-foreground">
             {title}
           </h3>
-          {isBundle && (
-            <p className="mt-2 text-[11px] sm:text-xs text-gray-500 line-clamp-2 leading-relaxed">
-              {bundleSummary ? `جواها: ${bundleSummary}` : `باكج فيها ${bundleItems.length} منتجات`}
-            </p>
-          )}
         </Link>
 
         <div className="mt-auto flex items-end justify-between gap-3 border-t material-divider pt-3">
