@@ -55,7 +55,7 @@ export function ProductCard({
 
   const isBundle = productMode === "bundle"
   return (
-    <div className={cn("group relative flex h-full min-h-[296px] flex-col overflow-hidden rounded-[28px] border border-surface-border bg-surface-container-low shadow-sm transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-premium hover:border-surface-border touch-manipulation sm:min-h-[320px] sm:rounded-3xl", className)}>
+    <div className={cn("group relative flex h-full min-h-[284px] flex-col overflow-hidden rounded-[26px] border border-surface-border bg-surface-container-low shadow-sm transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-premium hover:border-surface-border touch-manipulation sm:min-h-[320px] sm:rounded-3xl", className)}>
       <Link href={`/product/${id}`} className="relative aspect-[4/3] sm:aspect-[3/2] w-full overflow-hidden bg-surface-container">
 
         <div className="absolute inset-0 flex items-center justify-center">
@@ -100,37 +100,37 @@ export function ProductCard({
         <div className="absolute inset-0 bg-gradient-to-t from-background/75 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
       </Link>
 
-      <div className="relative z-20 flex flex-1 flex-col bg-surface-container-low px-3.5 pb-3.5 pt-3 sm:p-5">
+      <div className="relative z-20 flex flex-1 flex-col bg-surface-container-low px-3 pb-2.5 pt-2.5 sm:p-5">
         {/* Rating */}
         {rating && (
-          <div className="mb-2 inline-flex w-fit items-center gap-1.5 rounded-full border border-surface-border bg-surface-container px-2.5 py-1 text-[11px] font-medium transition-colors group-hover:bg-surface-container-high">
-            <Star className="w-3 h-3 fill-yellow-400 text-yellow-500" />
+          <div className="mb-1.5 inline-flex w-fit items-center gap-1 rounded-full border border-surface-border bg-surface-container px-2 py-1 text-[10px] font-medium transition-colors group-hover:bg-surface-container-high sm:mb-2 sm:gap-1.5 sm:px-2.5 sm:text-[11px]">
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-500" />
             <span className="text-foreground tracking-wide">{rating} <span className="mr-1 hidden sm:inline opacity-60">({reviewsCount})</span></span>
           </div>
         )}
 
-        <Link href={`/product/${id}`} className="mb-1 block min-h-[34px] sm:min-h-[40px]">
-          <h3 className="line-clamp-2 text-[13px] font-heading font-semibold leading-[1.35] text-foreground transition-colors group-hover:text-primary sm:text-base">
+        <Link href={`/product/${id}`} className="mb-1 block h-[35px] sm:h-[42px]">
+          <h3 className="line-clamp-2 text-[12.5px] font-heading font-semibold leading-[1.35] text-foreground transition-colors group-hover:text-primary sm:text-base">
             {title}
           </h3>
         </Link>
 
-        <div className="mt-auto flex items-end justify-between gap-2.5 border-t material-divider pt-1.5">
+        <div className="mt-auto flex items-end justify-between gap-2 border-t material-divider pt-1">
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-1.5">
-              <span className="text-lg font-heading font-black tracking-tight text-primary sm:text-xl">{price} <span className="text-xs sm:text-sm">ج.م</span></span>
+              <span className="text-[17px] font-heading font-black tracking-tight text-primary sm:text-xl">{price} <span className="text-[11px] sm:text-sm">ج.م</span></span>
             </div>
             {oldPrice && (
               <span className="text-[11px] font-heading text-gray-500 line-through sm:text-xs">{oldPrice} ج.م</span>
             )}
-            {!oldPrice && <span className="h-2 sm:h-2.5"></span>}
+            {!oldPrice && <span className="h-1.5 sm:h-2"></span>}
           </div>
 
           <Button
             size="icon"
             variant="primary"
             className={cn(
-              "h-11 w-11 shrink-0 rounded-2xl bg-primary text-white shadow-[var(--shadow-material-2)] ring-1 ring-primary/15 transition-all duration-300 active:scale-90 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-[var(--shadow-material-3)] sm:h-12 sm:w-12",
+              "h-[42px] w-[42px] shrink-0 rounded-2xl bg-primary text-white shadow-[var(--shadow-material-2)] ring-1 ring-primary/15 transition-all duration-300 active:scale-90 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-[var(--shadow-material-3)] sm:h-12 sm:w-12",
               isAdded ? "bg-emerald-500 hover:bg-emerald-600 ring-emerald-500/20" : "border-primary/20"
             )}
             aria-label="أضف للسلة"
