@@ -109,13 +109,13 @@ export function ProductCard({
           </div>
         )}
 
-        <Link href={`/product/${id}`} className="mb-3 block min-h-[52px] flex-1">
+        <Link href={`/product/${id}`} className="mb-1.5 block min-h-[40px]">
           <h3 className="text-sm sm:text-base font-heading font-semibold line-clamp-2 leading-tight group-hover:text-primary transition-colors text-foreground">
             {title}
           </h3>
         </Link>
 
-        <div className="mt-auto flex items-end justify-between gap-3 border-t material-divider pt-3">
+        <div className="mt-auto flex items-end justify-between gap-3 border-t material-divider pt-2">
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-1.5">
               <span className="text-xl font-heading font-black tracking-tight text-primary">{price} <span className="text-sm">ج.م</span></span>
@@ -130,13 +130,13 @@ export function ProductCard({
             size="icon"
             variant="primary"
             className={cn(
-              "h-11 w-11 shrink-0 rounded-xl bg-primary text-white shadow-[var(--shadow-material-2)] transition-all duration-300 active:scale-90 hover:bg-primary-hover",
-              isAdded ? "bg-emerald-500 hover:bg-emerald-600 border-transparent" : "border-primary/20"
+              "h-12 w-12 shrink-0 rounded-2xl bg-primary text-white shadow-[var(--shadow-material-2)] ring-1 ring-primary/15 transition-all duration-300 active:scale-90 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-[var(--shadow-material-3)]",
+              isAdded ? "bg-emerald-500 hover:bg-emerald-600 ring-emerald-500/20" : "border-primary/20"
             )}
             aria-label="أضف للسلة"
             onClick={handleAddToCart}
           >
-            {isAdded ? <Check className="w-5 h-5 text-white" /> : <ShoppingCart className="w-5 h-5" />}
+            {isAdded ? <Check className="h-[18px] w-[18px] text-white" strokeWidth={2.4} /> : <ShoppingCart className="h-[18px] w-[18px] text-white" strokeWidth={2.2} />}
           </Button>
         </div>
       </div>
