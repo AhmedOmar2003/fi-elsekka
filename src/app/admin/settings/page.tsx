@@ -1,14 +1,19 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { Settings, Globe, Bell, ShieldCheck, Palette, Save, CheckCircle2, ExternalLink } from 'lucide-react';
+import { Settings, Globe, Bell, ShieldCheck, Palette, Save, CheckCircle2, ExternalLink, LockKeyhole } from 'lucide-react';
 import { toast } from 'sonner';
 import { DEFAULT_APP_SETTINGS, saveAdminAppSettings, fetchPublicAppSettings } from '@/services/appSettingsService';
+import { updateAuthPassword } from '@/services/authService';
+import { PasswordInput } from '@/components/ui/password-input';
 
 export default function AdminSettingsPage() {
     const [settings, setSettings] = useState({ ...DEFAULT_APP_SETTINGS });
     const [saved, setSaved] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isPasswordSaving, setIsPasswordSaving] = useState(false);
 
     useEffect(() => {
         let active = true;
@@ -39,6 +44,41 @@ export default function AdminSettingsPage() {
             toast.error(error?.message || 'فشل الحفظ');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handlePasswordSave = async () => {
+        if (!newPassword || !confirmPassword) {
+            toast.error('اكتب كلمة المرور الجديدة وبعدين أكدها.');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            toast.error('كلمتا المرور مش زي بعض.');
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            toast.error('كلمة المرور لازم تكون 6 حروف أو أكتر.');
+            return;
+        }
+
+        try {
+            setIsPasswordSaving(true);
+            const { error } = await updateAuthPassword(newPassword);
+
+            if (error) {
+                toast.error((error as any)?.message || 'ماقدرناش نغيّر كلمة المرور دلوقتي.');
+                return;
+            }
+
+            setNewPassword('');
+            setConfirmPassword('');
+            toast.success('تم تغيير كلمة المرور بنجاح ✅', {
+                description: 'من دلوقتي دخول الأدمن هيكون بكلمة المرور الجديدة فقط.',
+            });
+        } finally {
+            setIsPasswordSaving(false);
         }
     };
 
@@ -174,6 +214,55 @@ export default function AdminSettingsPage() {
                     >
                         Supabase <ExternalLink className="w-3 h-3" />
                     </a>
+                </div>
+            </div>
+
+            <div className="bg-surface border border-surface-hover rounded-2xl p-5 space-y-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-1">
+                    <LockKeyhole className="w-4 h-4 text-primary" />
+                    <h2 className="text-sm font-black text-foreground">تغيير كلمة مرور الأدمن</h2>
+                </div>
+                <p className="text-xs text-gray-500">
+                    غيّر كلمة المرور من هنا، وبعدها أي دخول جديد للأدمن هيبقى بكلمة المرور الجديدة فقط.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-bold text-gray-400 mb-1.5">كلمة المرور الجديدة</label>
+                        <PasswordInput
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="اكتب كلمة مرور جديدة"
+                            autoComplete="new-password"
+                            className="h-11"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-gray-400 mb-1.5">تأكيد كلمة المرور</label>
+                        <PasswordInput
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="اكتبها تاني للتأكيد"
+                            autoComplete="new-password"
+                            className="h-11"
+                        />
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-surface-hover bg-surface-hover/70 px-4 py-3">
+                    <p className="text-xs text-gray-500">
+                        خليها كلمة قوية وسهلة عليك، وصعبة على أي حد تاني.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={handlePasswordSave}
+                        disabled={isPasswordSaving}
+                        className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {isPasswordSaving ? <Save className="w-4 h-4 animate-pulse" /> : <LockKeyhole className="w-4 h-4" />}
+                        {isPasswordSaving ? 'جارٍ التغيير...' : 'حفظ كلمة المرور الجديدة'}
+                    </button>
                 </div>
             </div>
         </div>
