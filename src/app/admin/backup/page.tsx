@@ -45,6 +45,8 @@ export default function AdminBackupPage() {
   const [previewMeta, setPreviewMeta] = useState<{ scopeLabel: string; totalTables: number; totalRows: number; exportedAt: string | null } | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [replaceConfirm, setReplaceConfirm] = useState('');
+  const [isReplacing, setIsReplacing] = useState(false);
 
   React.useEffect(() => {
     if (isAuthLoading) return;
@@ -111,10 +113,13 @@ export default function AdminBackupPage() {
     };
   };
 
-  const applyRestore = async (file: File) => {
+  const applyRestore = async (file: File, mode: 'restore' | 'replace', confirm = '') => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('mode', 'restore');
+    formData.append('mode', mode);
+    if (confirm) {
+      formData.append('confirm', confirm);
+    }
 
     const response = await fetch('/api/admin/backup/restore', {
       method: 'POST',
@@ -175,7 +180,7 @@ export default function AdminBackupPage() {
 
     setIsRestoring(true);
     try {
-      const result = await applyRestore(restoreFile);
+      const result = await applyRestore(restoreFile, 'restore');
       toast.success('الاسترجاع تم بنجاح ✅', {
         description: `رجعنا ${result.totalRows.toLocaleString()} صف من ${result.totalTables} جدول. ${result.note || ''}`.trim(),
       });
@@ -185,6 +190,32 @@ export default function AdminBackupPage() {
       });
     } finally {
       setIsRestoring(false);
+    }
+  };
+
+  const handleReplaceRestore = async () => {
+    if (!restoreFile) {
+      toast.error('اختار ملف النسخة الأول');
+      return;
+    }
+
+    if (replaceConfirm.trim() !== 'استرجاع كامل') {
+      toast.error('اكتب جملة التأكيد الأول');
+      return;
+    }
+
+    setIsReplacing(true);
+    try {
+      const result = await applyRestore(restoreFile, 'replace', replaceConfirm);
+      toast.success('الاسترجاع الكامل تم ✅', {
+        description: `رجعنا ${result.totalRows.toLocaleString()} صف بعد ما مسحنا البيانات الحالية للجداول الموجودة في النسخة.`,
+      });
+    } catch (error: any) {
+      toast.error('الاسترجاع الكامل وقف', {
+        description: error?.message || 'جرب تاني بعد شوية',
+      });
+    } finally {
+      setIsReplacing(false);
     }
   };
 
@@ -339,15 +370,39 @@ export default function AdminBackupPage() {
               <input type="file" accept=".json,application/json" className="hidden" onChange={handlePickRestoreFile} />
             </label>
 
-            <button
-              type="button"
-              onClick={handleRestore}
-              disabled={!restoreFile || isPreviewLoading || isRestoring}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isRestoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-              ابدأ الاسترجاع
-            </button>
+            <div className="grid grid-cols-1 gap-3">
+              <button
+                type="button"
+                onClick={handleRestore}
+                disabled={!restoreFile || isPreviewLoading || isRestoring || isReplacing}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isRestoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                استرجاع آمن
+              </button>
+
+              <div className="rounded-[1.5rem] border border-rose-500/20 bg-rose-500/10 p-4 space-y-3">
+                <p className="text-sm font-black text-rose-100">استرجاع كامل</p>
+                <p className="text-xs leading-relaxed text-rose-200/90">
+                  ده بيمسح الجداول الموجودة في النسخة وبعدين يرجّعها من الملف من أول وجديد. استخدمه بس لو عاوز ترجع snapshot شبه مطابقة.
+                </p>
+                <input
+                  value={replaceConfirm}
+                  onChange={(event) => setReplaceConfirm(event.target.value)}
+                  placeholder='اكتب: استرجاع كامل'
+                  className="w-full rounded-2xl border border-rose-500/20 bg-[#0a0d14] px-4 py-3 text-sm text-white placeholder:text-rose-200/50 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                />
+                <button
+                  type="button"
+                  onClick={handleReplaceRestore}
+                  disabled={!restoreFile || isPreviewLoading || isRestoring || isReplacing}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-500 px-4 py-3 font-black text-white transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isReplacing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                  استرجاع كامل
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="rounded-[1.5rem] border border-surface-hover bg-background/40 p-5">

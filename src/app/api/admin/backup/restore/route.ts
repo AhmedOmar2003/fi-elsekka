@@ -27,6 +27,29 @@ type BackupPayload = {
   counts?: Record<string, number>;
 };
 
+const TABLE_DELETE_KEYS: Record<string, string> = {
+  app_settings: 'id',
+  users: 'id',
+  categories: 'id',
+  products: 'id',
+  product_specifications: 'id',
+  promotions: 'id',
+  discount_codes: 'id',
+  orders: 'id',
+  order_items: 'id',
+  delivery_info: 'id',
+  reviews: 'id',
+  driver_reviews: 'id',
+  notifications: 'id',
+  favorites: 'id',
+  cart_items: 'id',
+  driver_subscriptions: 'id',
+  user_subscriptions: 'id',
+  site_visits: 'id',
+  site_page_views: 'id',
+  admin_audit_logs: 'id',
+};
+
 function isPlainObject(value: unknown): value is Record<string, any> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
@@ -92,6 +115,78 @@ async function upsertRows(tableName: string, rows: any[]) {
   return processed;
 }
 
+async function insertRows(tableName: string, rows: any[]) {
+  if (!supabaseAdmin || rows.length === 0) {
+    return 0;
+  }
+
+  const batchSize = 200;
+  let processed = 0;
+
+  for (let i = 0; i < rows.length; i += batchSize) {
+    const batch = rows.slice(i, i + batchSize);
+    const { error } = await supabaseAdmin
+      .from(tableName)
+      .insert(batch);
+
+    if (error) {
+      throw new Error(`تعذر إدخال بيانات جدول ${BACKUP_TABLE_LABELS[tableName] || tableName}: ${error.message}`);
+    }
+
+    processed += batch.length;
+  }
+
+  return processed;
+}
+
+async function deleteTableRows(tableName: string) {
+  if (!supabaseAdmin) return 0;
+
+  const key = TABLE_DELETE_KEYS[tableName];
+  if (!key) {
+    throw new Error(`جدول ${tableName} مش متجهز حاليًا للاسترجاع الكامل`);
+  }
+
+  const batchSize = 500;
+  let deleted = 0;
+
+  while (true) {
+    const { data, error } = await supabaseAdmin
+      .from(tableName)
+      .select(key)
+      .limit(batchSize);
+
+    if (error) {
+      throw new Error(`تعذر قراءة جدول ${BACKUP_TABLE_LABELS[tableName] || tableName} قبل المسح: ${error.message}`);
+    }
+
+    const values = (data || [])
+      .map((row: any) => row?.[key])
+      .filter((value: any) => value !== null && value !== undefined);
+
+    if (values.length === 0) {
+      break;
+    }
+
+    const { error: deleteError } = await supabaseAdmin
+      .from(tableName)
+      .delete()
+      .in(key, values);
+
+    if (deleteError) {
+      throw new Error(`تعذر مسح بيانات جدول ${BACKUP_TABLE_LABELS[tableName] || tableName}: ${deleteError.message}`);
+    }
+
+    deleted += values.length;
+
+    if (values.length < batchSize) {
+      break;
+    }
+  }
+
+  return deleted;
+}
+
 export async function POST(request: Request) {
   if (!supabaseAdmin) {
     return NextResponse.json({ error: 'Missing service configuration' }, { status: 500 });
@@ -103,12 +198,13 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const file = formData.get('file');
   const mode = formData.get('mode');
+  const confirmText = String(formData.get('confirm') || '');
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: 'ارفع ملف الـ backup الأول' }, { status: 400 });
   }
 
-  if (mode !== 'preview' && mode !== 'restore') {
+  if (mode !== 'preview' && mode !== 'restore' && mode !== 'replace') {
     return NextResponse.json({ error: 'الوضع المطلوب غير معروف' }, { status: 400 });
   }
 
@@ -134,6 +230,43 @@ export async function POST(request: Request) {
     }
 
     const restored: Array<{ table: string; label: string; count: number }> = [];
+
+    if (mode === 'replace') {
+      if (confirmText.trim() !== 'استرجاع كامل') {
+        return NextResponse.json(
+          { error: 'اكتب "استرجاع كامل" الأول علشان نضمن إن القرار مقصود.' },
+          { status: 400 }
+        );
+      }
+
+      const deleteOrder = [...orderedTables].reverse();
+      for (const tableName of deleteOrder) {
+        await deleteTableRows(tableName);
+      }
+
+      for (const tableName of orderedTables) {
+        const rows = Array.isArray(tables[tableName]) ? tables[tableName] : [];
+        const count = await insertRows(tableName, rows);
+        restored.push({
+          table: tableName,
+          label: BACKUP_TABLE_LABELS[tableName] || tableName,
+          count,
+        });
+      }
+
+      return NextResponse.json({
+        ok: true,
+        mode: 'replace',
+        scope: payload.scope || 'full',
+        scopeLabel: payload.scopeLabel || BACKUP_SCOPES.full.label,
+        restoredAt: new Date().toISOString(),
+        totalTables: restored.length,
+        totalRows: restored.reduce((sum, row) => sum + row.count, 0),
+        restored,
+        note: 'الاسترجاع الكامل اشتغل: مسحنا الجداول اللي في النسخة وبعدين رجعنا بياناتها من جديد.',
+      });
+    }
+
     for (const tableName of orderedTables) {
       const rows = Array.isArray(tables[tableName]) ? tables[tableName] : [];
       const count = await upsertRows(tableName, rows);
@@ -146,6 +279,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
+      mode: 'restore',
       scope: payload.scope || 'full',
       scopeLabel: payload.scopeLabel || BACKUP_SCOPES.full.label,
       restoredAt: new Date().toISOString(),
