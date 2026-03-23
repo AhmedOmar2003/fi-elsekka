@@ -41,7 +41,7 @@ export async function middleware(request: NextRequest) {
 
     const { isAdmin, role, disabled, permissions } = await verifyAdminToken(token);
 
-    if (!isAdmin || disabled) {
+    if (!isAdmin || (disabled && role !== 'super_admin')) {
         if (isAdminApi) {
             return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
         }

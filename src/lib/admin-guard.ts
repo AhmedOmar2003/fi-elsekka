@@ -23,6 +23,9 @@ export type AdminCheck =
 
 const ALLOWED_ROLES = ['super_admin', 'operations_manager', 'catalog_manager', 'support_agent', 'admin'];
 
+const isProtectedSuperAdmin = (role: string | null, disabled: boolean) =>
+  role === 'super_admin' ? false : disabled;
+
 function extractToken(req: Request): string | null {
   const header = req.headers.get('authorization');
   if (header?.startsWith('Bearer ')) {
@@ -67,7 +70,7 @@ async function fetchUser(token: string) {
     : Array.isArray(user.user_metadata?.permissions)
       ? user.user_metadata?.permissions
       : [];
-  const disabled = profile?.disabled === true;
+  const disabled = isProtectedSuperAdmin(role, profile?.disabled === true);
 
   return { user, role, permissions, disabled };
 }
@@ -108,8 +111,9 @@ export async function requireAdminApi(req: Request, requiredPermissions?: string
 
 export async function verifyAdminToken(token: string) {
   const { user, role, permissions, disabled } = await fetchUser(token);
-  const isAdmin = !!user && !!role && !disabled && ALLOWED_ROLES.includes(role);
-  return { user, isAdmin, role, permissions, disabled };
+  const normalizedDisabled = isProtectedSuperAdmin(role, disabled);
+  const isAdmin = !!user && !!role && !normalizedDisabled && ALLOWED_ROLES.includes(role);
+  return { user, isAdmin, role, permissions, disabled: normalizedDisabled };
 }
 
 export function extractAccessToken(req: Request) {

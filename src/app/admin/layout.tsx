@@ -539,7 +539,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         );
     }
 
-    if (profile && profile.disabled) {
+    if (profile && profile.disabled && profile.role !== 'super_admin') {
         return (
             <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
                 <div className="w-16 h-16 rounded-full bg-rose-500/20 flex items-center justify-center mb-4">

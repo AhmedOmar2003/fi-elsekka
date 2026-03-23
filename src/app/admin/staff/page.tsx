@@ -292,6 +292,8 @@ export default function StaffPage() {
                   variant={s.disabled ? "outline" : "danger"}
                   className="gap-1"
                   onClick={() => handleDisable(s.id, !s.disabled)}
+                  disabled={s.role === 'super_admin'}
+                  title={s.role === 'super_admin' ? 'السوبر أدمن له دخول ثابت وماينفعش يتعطل من هنا' : undefined}
                 >
                   {s.disabled ? <CheckCircle2 className="w-3 h-3" /> : <Slash className="w-3 h-3" />}
                   {s.disabled ? "تفعيل" : "تعطيل"}
@@ -301,8 +303,8 @@ export default function StaffPage() {
                   variant="outline"
                   className="gap-1 border-rose-500/20 text-rose-500 hover:bg-rose-500/10 hover:text-rose-500"
                   onClick={() => handleDeleteStaff(s)}
-                  disabled={user?.id === s.id}
-                  title={user?.id === s.id ? "لا يمكنك حذف حسابك الحالي" : "حذف الموظف نهائيًا"}
+                  disabled={user?.id === s.id || s.role === 'super_admin'}
+                  title={s.role === 'super_admin' ? "السوبر أدمن له دخول ثابت وماينفعش يتحذف من هنا" : user?.id === s.id ? "لا يمكنك حذف حسابك الحالي" : "حذف الموظف نهائيًا"}
                 >
                   <Trash2 className="w-3 h-3" />
                   حذف

@@ -70,12 +70,19 @@ export async function PATCH(request: NextRequest, context: any) {
       .eq('id', id)
       .single();
 
+    if (!beforeUpdate) {
+      return NextResponse.json({ error: 'الموظف غير موجود', stage: 'db.select' }, { status: 404 });
+    }
+
     // Validate body
     if (disabled === undefined && full_name === undefined && username === undefined && role === undefined && permissions === undefined) {
       return NextResponse.json({ error: 'Nothing to update', stage: 'validate.body' }, { status: 400 });
     }
     if (disabled !== undefined && typeof disabled !== 'boolean') {
       return NextResponse.json({ error: 'disabled must be boolean', stage: 'validate.body' }, { status: 400 });
+    }
+    if (beforeUpdate.role === 'super_admin' && disabled === true) {
+      return NextResponse.json({ error: 'لا يمكن تعطيل حساب السوبر أدمن من إدارة الطاقم' }, { status: 403 });
     }
 
     const updates: Record<string, any> = {};
@@ -169,8 +176,8 @@ export async function DELETE(request: NextRequest, context: any) {
       return NextResponse.json({ error: 'الموظف غير موجود', stage: 'db.select' }, { status: 404 });
     }
 
-    if (targetStaff.role === 'super_admin' && auth.profile.role !== 'super_admin') {
-      return NextResponse.json({ error: 'فقط المشرف العام يمكنه حذف مشرف عام آخر', stage: 'authorize.delete' }, { status: 403 });
+    if (targetStaff.role === 'super_admin') {
+      return NextResponse.json({ error: 'لا يمكن حذف حساب السوبر أدمن من إدارة الطاقم', stage: 'authorize.delete' }, { status: 403 });
     }
 
     // Remove any customer-side activity created by this staff member before deleting the account.
