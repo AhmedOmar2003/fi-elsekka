@@ -109,13 +109,13 @@ export function ProductCard({
           </div>
         )}
 
-        <Link href={`/product/${id}`} className="mb-1 block h-[38px] sm:h-[44px]">
+        <Link href={`/product/${id}`} className="mb-1 block min-h-[34px] sm:min-h-[40px]">
           <h3 className="line-clamp-2 text-[13px] font-heading font-semibold leading-[1.35] text-foreground transition-colors group-hover:text-primary sm:text-base">
             {title}
           </h3>
         </Link>
 
-        <div className="mt-auto flex items-end justify-between gap-2.5 border-t material-divider pt-2">
+        <div className="mt-1.5 flex items-end justify-between gap-2.5 border-t material-divider pt-2">
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-1.5">
               <span className="text-lg font-heading font-black tracking-tight text-primary sm:text-xl">{price} <span className="text-xs sm:text-sm">ج.م</span></span>
