@@ -16,7 +16,12 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useCart } from "@/contexts/CartContext"
 import { createOrder } from "@/services/ordersService"
 import { getDefaultDeliveryAddress, saveDeliveryAddress } from "@/services/deliveryService"
-import { incrementDiscountCodeUsage } from "@/services/discountCodesService"
+import {
+   clearAppliedDiscountCodesForProducts,
+   clearLegacyAppliedDiscountCode,
+   getAppliedDiscountCodesForProducts,
+   incrementDiscountCodeUsage,
+} from "@/services/discountCodesService"
 import { CURRENT_DELIVERY_FEE } from "@/lib/order-economics"
 import {
    clearTextCategoryOrderDraft,
@@ -199,11 +204,16 @@ function CheckoutContent() {
          is_default: true
       })
 
-      // Increment usage count for the applied discount code, if any
-      const appliedCode = localStorage.getItem('applied_discount_code');
-      if (appliedCode && user) {
-         await incrementDiscountCodeUsage(appliedCode, user.id);
-         localStorage.removeItem('applied_discount_code');
+      // Increment usage count for the product-specific discount codes that were actually used
+      const orderedProductIds = Array.from(
+         new Set(displayItems.map((item) => item.product_id).filter((productId): productId is string => !!productId))
+      )
+      const appliedCodes = getAppliedDiscountCodesForProducts(orderedProductIds)
+      if (appliedCodes.length > 0 && user) {
+         await Promise.all(appliedCodes.map((appliedCode) => incrementDiscountCodeUsage(appliedCode, user.id)))
+         clearAppliedDiscountCodesForProducts(orderedProductIds)
+      } else {
+         clearLegacyAppliedDiscountCode()
       }
 
       if (isSearchRequestCheckout) {

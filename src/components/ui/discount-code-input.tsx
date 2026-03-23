@@ -2,48 +2,71 @@
 
 import React, { useState, useEffect } from 'react';
 import { Tag, Check, X, Loader2 } from 'lucide-react';
-import { validateDiscountCode, applyDiscount } from '@/services/discountCodesService';
+import {
+    validateDiscountCode,
+    applyDiscount,
+    clearLegacyAppliedDiscountCode,
+    getAppliedDiscountCodeForProduct,
+    removeAppliedDiscountCodeForProduct,
+    setAppliedDiscountCodeForProduct,
+} from '@/services/discountCodesService';
 
 interface DiscountCodeInputProps {
     originalPrice: number;
+    productId?: string;
     userId?: string;
     onDiscountApplied: (finalPrice: number, savedAmount: number, label: string) => void;
     onDiscountRemoved: () => void;
 }
 
-export function DiscountCodeInput({ originalPrice, userId, onDiscountApplied, onDiscountRemoved }: DiscountCodeInputProps) {
+export function DiscountCodeInput({ originalPrice, productId, userId, onDiscountApplied, onDiscountRemoved }: DiscountCodeInputProps) {
     const [code, setCode] = useState('');
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [appliedCode, setAppliedCode] = useState('');
     const [message, setMessage] = useState('');
 
-    // Load saved code on mount
     useEffect(() => {
         const loadSavedCode = async () => {
-            const savedCode = localStorage.getItem('applied_discount_code');
-            if (savedCode && originalPrice > 0) {
-                setCode(savedCode);
-                setStatus('loading');
-                const { discount, error } = await validateDiscountCode(savedCode, userId);
-                
-                if (discount) {
-                    const result = applyDiscount(originalPrice, discount);
-                    setStatus('success');
-                    setAppliedCode(savedCode.trim().toUpperCase());
-                    setMessage(result.label);
-                    onDiscountApplied(result.finalPrice, result.savedAmount, result.label);
-                } else {
-                    setStatus('idle');
-                    // Code is expired or maxed — remove it from storage
-                    localStorage.removeItem('applied_discount_code');
-                    if (error) setMessage(error);
-                }
+            clearLegacyAppliedDiscountCode();
+
+            if (!productId || originalPrice <= 0) {
+                setCode('');
+                setAppliedCode('');
+                setStatus('idle');
+                setMessage('');
+                return;
+            }
+
+            const savedCode = getAppliedDiscountCodeForProduct(productId);
+            if (!savedCode) {
+                setCode('');
+                setAppliedCode('');
+                setStatus('idle');
+                setMessage('');
+                return;
+            }
+
+            setCode(savedCode);
+            setStatus('loading');
+            const { discount, error } = await validateDiscountCode(savedCode, userId);
+
+            if (discount) {
+                const result = applyDiscount(originalPrice, discount);
+                setStatus('success');
+                setAppliedCode(savedCode.trim().toUpperCase());
+                setMessage(result.label);
+                onDiscountApplied(result.finalPrice, result.savedAmount, result.label);
+            } else {
+                setStatus('idle');
+                removeAppliedDiscountCodeForProduct(productId);
+                if (error) setMessage(error);
+                onDiscountRemoved();
             }
         };
-        
+
         loadSavedCode();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Only run once on mount
+    }, [originalPrice, productId, userId]);
 
     const handleApply = async () => {
         if (!code.trim()) return;
@@ -61,7 +84,11 @@ export function DiscountCodeInput({ originalPrice, userId, onDiscountApplied, on
         setStatus('success');
         setAppliedCode(code.trim().toUpperCase());
         setMessage(result.label);
-        localStorage.setItem('applied_discount_code', code.trim().toUpperCase());
+        if (productId) {
+            setAppliedDiscountCodeForProduct(productId, code.trim().toUpperCase());
+        } else {
+            clearLegacyAppliedDiscountCode();
+        }
         onDiscountApplied(result.finalPrice, result.savedAmount, result.label);
     };
 
@@ -70,7 +97,8 @@ export function DiscountCodeInput({ originalPrice, userId, onDiscountApplied, on
         setAppliedCode('');
         setStatus('idle');
         setMessage('');
-        localStorage.removeItem('applied_discount_code');
+        removeAppliedDiscountCodeForProduct(productId);
+        clearLegacyAppliedDiscountCode();
         onDiscountRemoved();
     };
 

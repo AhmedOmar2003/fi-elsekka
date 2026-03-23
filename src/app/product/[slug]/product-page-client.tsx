@@ -659,6 +659,7 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
               {product.price > 0 && (
                 <DiscountCodeInput
                   originalPrice={product.price}
+                  productId={dbProduct?.id}
                   userId={user?.id}
                   onDiscountApplied={(finalPrice, savedAmount, label) => {
                     setAppliedDiscountPrice(finalPrice);

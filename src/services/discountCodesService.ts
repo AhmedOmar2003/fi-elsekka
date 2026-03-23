@@ -1,5 +1,8 @@
 import { supabase } from '@/lib/supabase';
 
+const LEGACY_APPLIED_DISCOUNT_CODE_KEY = 'applied_discount_code';
+const APPLIED_DISCOUNT_CODES_KEY = 'applied_discount_codes';
+
 export interface DiscountCode {
     id: number;
     code: string;
@@ -12,6 +15,104 @@ export interface DiscountCode {
     used_by: string[] | null;      // Array of user IDs who have used this code
     created_at: string;
 }
+
+type AppliedDiscountCodesMap = Record<string, string>;
+
+const isBrowser = () => typeof window !== 'undefined';
+
+const normalizeDiscountCode = (code: string) => code.trim().toUpperCase();
+
+const readAppliedDiscountCodesMap = (): AppliedDiscountCodesMap => {
+    if (!isBrowser()) return {};
+
+    try {
+        const raw = localStorage.getItem(APPLIED_DISCOUNT_CODES_KEY);
+        if (!raw) return {};
+
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            return {};
+        }
+
+        return Object.fromEntries(
+            Object.entries(parsed)
+                .filter(([key, value]) => !!key && typeof value === 'string' && value.trim().length > 0)
+                .map(([key, value]) => [key, normalizeDiscountCode(value as string)])
+        );
+    } catch {
+        return {};
+    }
+};
+
+const writeAppliedDiscountCodesMap = (codes: AppliedDiscountCodesMap) => {
+    if (!isBrowser()) return;
+
+    const entries = Object.entries(codes).filter(
+        ([key, value]) => !!key && typeof value === 'string' && value.trim().length > 0
+    );
+
+    if (entries.length === 0) {
+        localStorage.removeItem(APPLIED_DISCOUNT_CODES_KEY);
+        return;
+    }
+
+    localStorage.setItem(APPLIED_DISCOUNT_CODES_KEY, JSON.stringify(Object.fromEntries(entries)));
+};
+
+export const clearLegacyAppliedDiscountCode = () => {
+    if (!isBrowser()) return;
+    localStorage.removeItem(LEGACY_APPLIED_DISCOUNT_CODE_KEY);
+};
+
+export const getAppliedDiscountCodeForProduct = (productId?: string | null): string | null => {
+    if (!productId) return null;
+    const codes = readAppliedDiscountCodesMap();
+    return codes[productId] || null;
+};
+
+export const setAppliedDiscountCodeForProduct = (productId: string, code: string) => {
+    if (!productId) return;
+    const codes = readAppliedDiscountCodesMap();
+    codes[productId] = normalizeDiscountCode(code);
+    writeAppliedDiscountCodesMap(codes);
+    clearLegacyAppliedDiscountCode();
+};
+
+export const removeAppliedDiscountCodeForProduct = (productId?: string | null) => {
+    if (!productId) return;
+    const codes = readAppliedDiscountCodesMap();
+    delete codes[productId];
+    writeAppliedDiscountCodesMap(codes);
+};
+
+export const getAppliedDiscountCodesForProducts = (productIds: string[]): string[] => {
+    const codes = readAppliedDiscountCodesMap();
+    return Array.from(
+        new Set(
+            productIds
+                .map((productId) => codes[productId])
+                .filter((code): code is string => typeof code === 'string' && code.trim().length > 0)
+        )
+    );
+};
+
+export const clearAppliedDiscountCodesForProducts = (productIds: string[]) => {
+    const codes = readAppliedDiscountCodesMap();
+    let hasChanges = false;
+
+    productIds.forEach((productId) => {
+        if (codes[productId]) {
+            delete codes[productId];
+            hasChanges = true;
+        }
+    });
+
+    if (hasChanges) {
+        writeAppliedDiscountCodesMap(codes);
+    }
+
+    clearLegacyAppliedDiscountCode();
+};
 
 /**
  * Validates a discount code and returns the discount record if valid,
@@ -125,4 +226,3 @@ export const incrementDiscountCodeUsage = async (code: string, userId: string): 
         })
         .eq('id', data.id);
 };
-
