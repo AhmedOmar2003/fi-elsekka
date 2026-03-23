@@ -4,13 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { Settings, Globe, Bell, ShieldCheck, Palette, Save, CheckCircle2, ExternalLink, LockKeyhole } from 'lucide-react';
 import { toast } from 'sonner';
 import { DEFAULT_APP_SETTINGS, saveAdminAppSettings, fetchPublicAppSettings } from '@/services/appSettingsService';
-import { updateAuthPassword } from '@/services/authService';
+import { signIn, updateAuthPassword } from '@/services/authService';
 import { PasswordInput } from '@/components/ui/password-input';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function AdminSettingsPage() {
+    const { user } = useAuth();
     const [settings, setSettings] = useState({ ...DEFAULT_APP_SETTINGS });
     const [saved, setSaved] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isPasswordSaving, setIsPasswordSaving] = useState(false);
@@ -48,6 +51,16 @@ export default function AdminSettingsPage() {
     };
 
     const handlePasswordSave = async () => {
+        if (!user?.email) {
+            toast.error('مش قادرين نحدد حساب الأدمن الحالي. اعمل تسجيل دخول تاني وحاول مرة كمان.');
+            return;
+        }
+
+        if (!currentPassword) {
+            toast.error('اكتب كلمة المرور الحالية الأول.');
+            return;
+        }
+
         if (!newPassword || !confirmPassword) {
             toast.error('اكتب كلمة المرور الجديدة وبعدين أكدها.');
             return;
@@ -65,6 +78,13 @@ export default function AdminSettingsPage() {
 
         try {
             setIsPasswordSaving(true);
+            const { error: verifyError } = await signIn(user.email, currentPassword);
+
+            if (verifyError) {
+                toast.error('كلمة المرور الحالية مش صحيحة.');
+                return;
+            }
+
             const { error } = await updateAuthPassword(newPassword);
 
             if (error) {
@@ -72,6 +92,7 @@ export default function AdminSettingsPage() {
                 return;
             }
 
+            setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
             toast.success('تم تغيير كلمة المرور بنجاح ✅', {
@@ -227,6 +248,17 @@ export default function AdminSettingsPage() {
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-gray-400 mb-1.5">كلمة المرور الحالية</label>
+                        <PasswordInput
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            placeholder="اكتب كلمة المرور الحالية"
+                            autoComplete="current-password"
+                            className="h-11"
+                        />
+                    </div>
+
                     <div>
                         <label className="block text-xs font-bold text-gray-400 mb-1.5">كلمة المرور الجديدة</label>
                         <PasswordInput
@@ -252,7 +284,7 @@ export default function AdminSettingsPage() {
 
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-surface-hover bg-surface-hover/70 px-4 py-3">
                     <p className="text-xs text-gray-500">
-                        خليها كلمة قوية وسهلة عليك، وصعبة على أي حد تاني.
+                        اكتب الحالية الأول، وبعدها حط كلمة جديدة قوية وسهلة عليك.
                     </p>
                     <button
                         type="button"
