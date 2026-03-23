@@ -61,38 +61,38 @@ export default async function Home() {
       <main className="flex-1 pb-24 md:pb-0">
 
         {/* Hero Section */}
-        <section className="relative overflow-hidden pt-8 pb-14 sm:pt-12 sm:pb-20">
+        <section className="relative overflow-hidden pt-4 pb-8 sm:pt-12 sm:pb-20">
           <div className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/4 w-[600px] h-[600px] bg-primary/10 blur-[100px] rounded-full pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/4 w-[520px] h-[520px] bg-secondary/10 blur-[120px] rounded-full pointer-events-none"></div>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center sm:text-start relative z-10">
-            <div className="material-card-elevated grid grid-cols-1 items-center gap-12 overflow-hidden rounded-[36px] px-6 py-8 sm:px-8 sm:py-10 lg:grid-cols-2 lg:px-12 lg:py-12">
+            <div className="material-card-elevated grid grid-cols-1 items-center gap-6 overflow-hidden rounded-[28px] px-4 py-5 sm:gap-12 sm:rounded-[36px] sm:px-8 sm:py-10 lg:grid-cols-2 lg:px-12 lg:py-12">
               <div className="z-10 max-w-2xl">
-                <Badge variant="success" className="mb-5 inline-flex rounded-full px-4 py-1.5 text-xs shadow-sm shadow-emerald-500/10">
+                <Badge variant="success" className="mb-3 inline-flex rounded-full px-3.5 py-1.5 text-[11px] shadow-sm shadow-emerald-500/10 sm:mb-5 sm:px-4 sm:text-xs">
                   🔥 عروض المدارس رجعت تاني!
                 </Badge>
-                <h1 className="mb-5 text-4xl sm:text-5xl lg:text-7xl font-black tracking-tight text-foreground leading-[1.15]">
+                <h1 className="mb-3 text-[2rem] font-black leading-[1.15] tracking-tight text-foreground sm:mb-5 sm:text-5xl lg:text-7xl">
                   كل طلباتك، <br className="hidden lg:block" />
                   <span className="text-primary tracking-tighter">في السكة</span> لحد عندك.
                 </h1>
-                <p className="mb-8 text-lg sm:text-xl text-foreground/60 max-w-xl mx-auto sm:mx-0 leading- relaxed font-medium">
+                <p className="mx-auto mb-5 max-w-xl text-sm font-medium leading-7 text-foreground/60 sm:mx-0 sm:mb-8 sm:text-xl">
                   من السوبر ماركت للصيدلية، ومن اللبس للإلكترونيات. اختار اللي نفسك فيه وادفع كاش وإنت بتستلم. أسرع، أسهل، وأروق! ✨
                 </p>
-                <div className="flex flex-col sm:flex-row items-center gap-4 justify-center sm:justify-start">
-                  <Button size="lg" className="w-full sm:w-auto h-14 text-base rounded-full px-8 shadow-premium" asChild>
+                <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:justify-start sm:gap-4">
+                  <Button size="lg" className="h-12 w-full rounded-full px-6 text-sm shadow-premium sm:h-14 sm:w-auto sm:px-8 sm:text-base" asChild>
                     <Link href="/category/all">يلا بينا نطلب</Link>
                   </Button>
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 text-base rounded-full px-8 backdrop-blur-md" asChild>
+                  <Button size="lg" variant="outline" className="h-12 w-full rounded-full px-6 text-sm backdrop-blur-md sm:h-14 sm:w-auto sm:px-8 sm:text-base" asChild>
                     <Link href="/offers">شوف الحاجات الحلوة</Link>
                   </Button>
                 </div>
 
                 {/* Trust mini-badges */}
-                <div className="mt-8 flex flex-wrap items-center justify-center sm:justify-start gap-4 sm:gap-6 text-sm text-gray-400 font-medium">
-                  <div className="material-chip text-sm">
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-xs font-medium text-gray-400 sm:mt-8 sm:justify-start sm:gap-6 sm:text-sm">
+                  <div className="material-chip text-xs sm:text-sm">
                     <ShieldCheck className="w-5 h-5 text-emerald-500" />
                     <span>دفع عند الاستلام</span>
                   </div>
-                  <div className="material-chip text-sm">
+                  <div className="material-chip text-xs sm:text-sm">
                     <Zap className="w-5 h-5 text-amber-500" />
                     <span>سريع ومريح</span>
                   </div>
@@ -100,8 +100,8 @@ export default async function Home() {
               </div>
 
               {/* Hero Image Mock */}
-              <div className="relative mx-auto mt-8 w-full max-w-md lg:mt-0 lg:max-w-none perspective-1000">
-                <div className="aspect-[4/3] rounded-[32px] bg-surface-container border border-surface-border p-4 shadow-premium relative overflow-hidden group transform hover:-translate-y-2 hover:shadow-glow-primary transition-all duration-700">
+              <div className="relative mx-auto mt-1 w-full max-w-[280px] sm:mt-8 sm:max-w-md lg:mt-0 lg:max-w-none perspective-1000">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] border border-surface-border bg-surface-container p-2.5 shadow-premium transition-all duration-700 group transform hover:-translate-y-2 hover:shadow-glow-primary sm:rounded-[32px] sm:p-4">
                   <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-secondary/20 opacity-60 mix-blend-overlay"></div>
                   <Image
                     src="https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop"
@@ -109,19 +109,19 @@ export default async function Home() {
                     fill
                     priority
                     sizes="(max-width: 1024px) 100vw, 50vw"
-                    className="object-cover w-full h-full rounded-2xl group-hover:scale-110 transition-transform duration-1000"
+                    className="h-full w-full rounded-[18px] object-cover transition-transform duration-1000 group-hover:scale-110 sm:rounded-2xl"
                   />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="text-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
-                      <span className="block text-6xl drop-shadow-2xl">📦</span>
-                      <span className="block mt-6 px-5 py-2.5 bg-background/80 backdrop-blur-xl rounded-full text-foreground font-bold tracking-widest text-sm border border-white/5 shadow-xl">كل حاجة في مكان واحد</span>
+                    <div className="text-center transition-transform duration-700 transform translate-y-2 group-hover:translate-y-0 sm:translate-y-4">
+                      <span className="block text-5xl drop-shadow-2xl sm:text-6xl">📦</span>
+                      <span className="mt-4 block rounded-full border border-white/5 bg-background/80 px-4 py-2 text-[11px] font-bold tracking-[0.18em] text-foreground shadow-xl backdrop-blur-xl sm:mt-6 sm:px-5 sm:py-2.5 sm:text-sm">كل حاجة في مكان واحد</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Floating decor */}
-                <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-rose-500/20 rounded-full blur-2xl animate-float"></div>
-                <div className="absolute -top-6 -left-6 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl animate-float" style={{ animationDelay: "2s" }}></div>
+                <div className="absolute -bottom-4 -right-4 h-16 w-16 rounded-full bg-rose-500/20 blur-2xl animate-float sm:-bottom-6 sm:-right-6 sm:h-24 sm:w-24"></div>
+                <div className="absolute -left-4 -top-4 h-20 w-20 rounded-full bg-emerald-500/20 blur-2xl animate-float sm:-left-6 sm:-top-6 sm:h-32 sm:w-32" style={{ animationDelay: "2s" }}></div>
               </div>
             </div>
           </div>
