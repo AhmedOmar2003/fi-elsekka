@@ -14,6 +14,7 @@ export function MobileNav() {
   // Hide on detail-focused pages where full attention is needed
   const isHidden =
     pathname.startsWith('/product/') ||
+    pathname.startsWith('/cart') ||
     pathname.startsWith('/checkout') ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/register') ||

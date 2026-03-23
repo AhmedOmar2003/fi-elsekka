@@ -9,7 +9,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Button } from '@/components/ui/button';
 import { CURRENT_DELIVERY_FEE } from '@/lib/order-economics';
-import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getBundleItemCount, getBundleItems } from '@/lib/product-presentation';
 
@@ -122,7 +122,7 @@ export default function CartPage() {
                      <Button size="lg" className="rounded-xl px-10 h-14 font-bold text-lg shadow-primary/20 shadow-lg" asChild>
                         <Link href="/category/all">
                            يلا نشوف المنتجات
-                           <ArrowRight className="w-5 h-5 mr-2" />
+                           <ArrowLeft className="w-5 h-5 mr-2" />
                         </Link>
                      </Button>
                   </div>
@@ -320,7 +320,7 @@ export default function CartPage() {
                               onClick={() => router.push('/checkout')}
                            >
                               متابعة الدفع
-                              <ArrowRight className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+                           <ArrowLeft className="w-5 h-5 mr-2 group-hover:translate-x-1 transition-transform" />
                            </Button>
 
                            <div className="mt-4 hidden items-center justify-center gap-2 text-xs text-gray-400 md:flex">
@@ -347,7 +347,7 @@ export default function CartPage() {
                         onClick={() => router.push('/checkout')}
                      >
                         متابعة الدفع
-                        <ArrowRight className="mr-2 h-5 w-5" />
+                        <ArrowLeft className="mr-2 h-5 w-5" />
                      </Button>
                   </div>
                </div>
