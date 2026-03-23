@@ -225,6 +225,16 @@ export default function StaffPage() {
     []
   );
 
+  const protectedStaff = useMemo(
+    () => staff.filter((member) => member.role === "super_admin"),
+    [staff]
+  );
+
+  const teamStaff = useMemo(
+    () => staff.filter((member) => member.role !== "super_admin"),
+    [staff]
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -238,7 +248,66 @@ export default function StaffPage() {
         </Button>
       </div>
 
+      {protectedStaff.length > 0 && (
+        <div className="bg-surface border border-amber-500/20 rounded-2xl overflow-hidden">
+          <div className="flex items-center justify-between gap-3 border-b border-amber-500/10 bg-amber-500/5 px-4 py-3">
+            <div>
+              <h2 className="text-sm font-black text-foreground">الحسابات المحمية</h2>
+              <p className="text-xs text-gray-500 mt-0.5">الحسابات دي دخولها ثابت، ومش بتتوقفش أو تتحذف من إدارة الطاقم.</p>
+            </div>
+            <span className="inline-flex items-center rounded-full bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-500">
+              {protectedStaff.length} حساب
+            </span>
+          </div>
+
+          <div className="divide-y divide-surface-hover">
+            {protectedStaff.map((member) => (
+              <div key={member.id} className="flex flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-black text-foreground">{member.full_name || member.username}</p>
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
+                      {roleLabel(member.role)}
+                    </span>
+                    <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-500">
+                      دخول ثابت
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-gray-400">{member.email}</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    آخر دخول: {member.last_login_at ? new Date(member.last_login_at).toLocaleString() : "—"}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => openEdit(member)}>
+                    <Edit2 className="w-3 h-3" /> تعديل
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1"
+                    onClick={() => handleResetPassword(member.id)}
+                  >
+                    <LockKeyhole className="w-3 h-3" /> إعادة تعيين
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="bg-surface border border-surface-hover rounded-2xl overflow-hidden">
+        <div className="flex items-center justify-between gap-3 border-b border-surface-hover px-4 py-3">
+          <div>
+            <h2 className="text-sm font-black text-foreground">الطاقم التشغيلي</h2>
+            <p className="text-xs text-gray-500 mt-0.5">كل الحسابات اللي بتدير التشغيل اليومي، من غير الحسابات المحمية.</p>
+          </div>
+          <span className="inline-flex items-center rounded-full bg-surface-hover px-3 py-1 text-xs font-bold text-gray-400">
+            {teamStaff.length} حساب
+          </span>
+        </div>
         <div className="grid grid-cols-12 bg-surface-hover px-4 py-3 text-xs font-bold text-gray-500">
           <div className="col-span-2">الاسم</div>
           <div className="col-span-2">البريد</div>
@@ -251,10 +320,10 @@ export default function StaffPage() {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
           </div>
-        ) : staff.length === 0 ? (
-          <div className="py-10 text-center text-gray-500">لا يوجد طاقم بعد</div>
+        ) : teamStaff.length === 0 ? (
+          <div className="py-10 text-center text-gray-500">لا يوجد طاقم تشغيلي بعد</div>
         ) : (
-          staff.map((s) => (
+          teamStaff.map((s) => (
             <div key={s.id} className="grid grid-cols-12 px-4 py-3 border-t border-surface-hover text-sm items-center">
               <div className="col-span-2">
                 <div className="font-bold text-foreground">{s.full_name || s.username}</div>
