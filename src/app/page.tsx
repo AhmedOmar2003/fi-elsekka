@@ -164,13 +164,26 @@ export default async function Home() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-              {displayOffers.length > 0 ? displayOffers.map((product) => (
-                <ProductCard key={product.id} {...product} />
-              )) : (
-                <div className="col-span-4 text-center py-10 text-gray-500">مفيش عروض ظاهرة دلوقتي، بس راجعنا تاني وهتلاقي الجديد 👀</div>
-              )}
-            </div>
+            {displayOffers.length > 0 ? (
+              <>
+                <div className="sm:hidden -mx-1 overflow-x-auto pb-2 no-scrollbar">
+                  <div className="flex gap-4 px-1 snap-x snap-mandatory">
+                    {displayOffers.map((product) => (
+                      <div key={product.id} className="snap-start min-w-[46vw] max-w-[46vw]">
+                        <ProductCard {...product} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="hidden sm:grid grid-cols-2 gap-6 lg:grid-cols-4">
+                  {displayOffers.map((product) => (
+                    <ProductCard key={product.id} {...product} />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-10 text-gray-500">مفيش عروض ظاهرة دلوقتي، بس راجعنا تاني وهتلاقي الجديد 👀</div>
+            )}
             </div>
           </div>
         </section>
@@ -189,7 +202,16 @@ export default async function Home() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+            <div className="sm:hidden -mx-1 overflow-x-auto pb-2 no-scrollbar">
+              <div className="flex gap-4 px-1 snap-x snap-mandatory">
+                {displayBestSellers.map((product) => (
+                  <div key={product.id} className="snap-start min-w-[46vw] max-w-[46vw]">
+                    <ProductCard {...product} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="hidden sm:grid grid-cols-2 gap-6 lg:grid-cols-4">
               {displayBestSellers.map((product) => (
                 <ProductCard key={product.id} {...product} />
               ))}
