@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { createPortal } from "react-dom"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
@@ -251,6 +252,7 @@ export function Header() {
   const desktopSearchRef = React.useRef<HTMLDivElement>(null)
   const deferredDesktopQuery = React.useDeferredValue(desktopQuery)
   const deferredMobileQuery = React.useDeferredValue(mobileQuery)
+  const [isClient, setIsClient] = React.useState(false)
 
   // Close desktop dropdown when clicking outside
   React.useEffect(() => {
@@ -285,6 +287,10 @@ export function Header() {
     document.body.style.overflow = overflow
     return () => { document.body.style.overflow = "unset" }
   }, [isMobileMenuOpen, isSearchOpen])
+
+  React.useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   React.useEffect(() => {
     void ensureCategoriesLoaded()
@@ -464,7 +470,7 @@ export function Header() {
       </div>
 
       {/* ── SEARCH OVERLAY (full-screen mobile) ───────────────────────────────────── */}
-      {isSearchOpen && (
+      {isSearchOpen && isClient && createPortal((
         <div className="fixed inset-0 z-[140] flex flex-col bg-background">
           {/* Search header */}
           <div className="sticky top-0 z-[141] flex items-center gap-3 border-b border-white/8 bg-[#101816] p-4">
@@ -520,7 +526,7 @@ export function Header() {
             )}
           </div>
         </div>
-      )}
+      ), document.body)}
 
       {/* ── MOBILE NAVIGATION DRAWER ───────────────────────────────────────── */}
       {isMobileMenuOpen && (
