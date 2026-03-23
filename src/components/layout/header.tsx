@@ -9,8 +9,8 @@ import { Input } from "../ui/input"
 import { cn } from "../ui/button"
 import {
   Menu, Search, User, ShoppingBag, BadgePercent, X,
-  ChevronLeft, Home, LayoutGrid, Package, Phone, Settings, HelpCircle,
-  Info, MessageCircleQuestion, LogOut, LogIn, ShoppingCart, ShieldCheck, HeartPulse, Sparkles
+  ChevronLeft, Home, LayoutGrid, Package, Phone,
+  Info, MessageCircleQuestion, LogOut, LogIn
 } from "lucide-react"
 import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
@@ -65,8 +65,6 @@ const DRAWER_ITEMS = [
   { label: "احنا مين", href: "/about", icon: <Info className="w-5 h-5" /> },
   { label: "الأسئلة الشائعة", href: "/faq", icon: <MessageCircleQuestion className="w-5 h-5" /> },
   { label: "تواصل معنا", href: "/contact", icon: <Phone className="w-5 h-5" /> },
-  { label: "الدعم", href: "/support", icon: <HelpCircle className="w-5 h-5" /> },
-  { label: "الإعدادات", href: "/settings", icon: <Settings className="w-5 h-5" /> },
 ]
 
 // ── Search Results Component ────────────────────────────────────────────
@@ -303,38 +301,41 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-surface-hover bg-background/90 backdrop-blur-lg">
+    <header className="sticky top-0 z-50 w-full px-2 pt-2 sm:px-4 sm:pt-3">
 
       {/* ── Main header row ─────────────────────────────────────────────────── */}
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
+      <div className="material-shell mx-auto flex h-16 max-w-7xl items-center gap-3 rounded-[28px] px-4 sm:px-5 lg:px-6">
 
         {/* Mobile: Hamburger */}
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:text-foreground hover:bg-surface-hover active:scale-95 transition-all shrink-0"
+          className="md:hidden flex items-center justify-center w-10 h-10 rounded-2xl text-gray-500 hover:text-foreground hover:bg-surface-container active:scale-95 transition-all shrink-0"
           aria-label="القائمة"
         >
           <Menu className="h-6 w-6" />
         </button>
 
         {/* ── Logo ──────────────────────────────────────────────────────────── */}
-        <Link href="/" className="flex items-center gap-2 shrink-0 group">
+        <Link href="/" className="flex items-center gap-3 shrink-0 group">
           <Image
             src="/icon-192x192.svg"
             alt="في السكة Logo"
             width={40}
             height={40}
             priority
-            className="rounded-xl shadow-lg shadow-primary/30 group-hover:shadow-primary/50 transition-shadow"
+            className="rounded-2xl shadow-[var(--shadow-material-2)] ring-1 ring-primary/10 group-hover:shadow-[var(--shadow-material-3)] transition-all"
           />
-          <div className="hidden sm:flex items-baseline gap-0 leading-none" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
-            <span className="font-black text-2xl text-foreground drop-shadow-sm">فِي&nbsp;</span>
-            <span className="font-black text-2xl text-primary drop-shadow-sm">السِّكَّةِ</span>
+          <div className="hidden sm:flex flex-col leading-none">
+            <div className="flex items-baseline gap-0" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
+              <span className="font-black text-2xl text-foreground">فِي&nbsp;</span>
+              <span className="font-black text-2xl text-primary">السِّكَّةِ</span>
+            </div>
+            <span className="mt-1 text-[10px] font-bold tracking-[0.18em] text-gray-400">طلباتك في الطريق</span>
           </div>
         </Link>
 
         {/* ── Desktop search bar with autocomplete ──────────────────────────── */}
-        <div className="hidden md:flex flex-1 max-w-lg px-4" ref={desktopSearchRef}>
+        <div className="hidden md:flex flex-1 max-w-xl px-4" ref={desktopSearchRef}>
           <div className="relative w-full">
             <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-gray-500">
               <Search className="h-4 w-4" />
@@ -342,7 +343,7 @@ export function Header() {
             <Input
               type="search"
               placeholder="بتدور على إيه النهاردة؟..."
-              className="h-10 w-full rounded-full bg-surface-hover ps-10 border-transparent focus-visible:bg-surface focus-visible:border-primary focus-visible:ring-0 text-sm"
+              className="h-11 w-full rounded-full border-transparent bg-surface-container ps-10 pe-4 text-sm shadow-none focus-visible:ring-primary/60"
               value={desktopQuery}
               onChange={(e) => {
                 setDesktopQuery(e.target.value)
@@ -365,15 +366,15 @@ export function Header() {
         </div>
 
         {/* ── Desktop-only action area ────────────────────────────────────────── */}
-        <div className="hidden md:flex items-center gap-3 ms-auto">
-          <Link href="/offers" className="font-heading flex items-center gap-1.5 text-sm font-semibold text-secondary hover:text-rose-400 transition-colors">
+        <div className="hidden md:flex items-center gap-2 ms-auto">
+          <Link href="/offers" className="material-chip font-heading text-sm font-semibold text-secondary hover:border-secondary/30 hover:bg-secondary/10 transition-colors">
             <BadgePercent className="h-4 w-4" />
             عروض جامدة
           </Link>
 
           {user ? (
-            <div className="flex items-center gap-2 px-3">
-              <span className="text-sm font-bold text-foreground">{profile?.full_name || user.email?.split('@')[0]}</span>
+            <div className="flex items-center gap-2 rounded-full border border-surface-border bg-surface-container px-2.5 py-1.5">
+              <span className="text-sm font-bold text-foreground px-2">{profile?.full_name || user.email?.split('@')[0]}</span>
               <NotificationBell />
               <Button variant="ghost" size="icon" onClick={handleLogoutClick} className="text-gray-500 hover:text-rose-500 hover:bg-rose-500/10" aria-label="تسجيل الخروج" title="تسجيل الخروج">
                 <LogOut className="h-4 w-4" />
@@ -390,7 +391,7 @@ export function Header() {
 
           <ThemeToggle />
 
-          <Link href="/cart" aria-label="سلة المشتريات" className="relative text-gray-500 hover:text-foreground bg-surface-hover/50 hover:bg-surface-hover w-10 h-10 flex items-center justify-center rounded-full transition-all">
+          <Link href="/cart" aria-label="سلة المشتريات" className="relative text-gray-500 hover:text-foreground bg-surface-container hover:bg-surface-hover w-11 h-11 flex items-center justify-center rounded-2xl transition-all shadow-[var(--shadow-material-1)]">
             <ShoppingBag className="h-5 w-5" />
             {cartCount > 0 && <span className="absolute -top-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white ring-2 ring-background">{cartCount}</span>}
           </Link>
@@ -400,7 +401,7 @@ export function Header() {
         <div className="flex md:hidden items-center gap-0.5 ms-auto">
           <Link href="/offers">
             <button
-              className="relative flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:text-foreground hover:bg-surface-hover active:scale-95 transition-all"
+              className="relative flex items-center justify-center w-10 h-10 rounded-2xl text-gray-500 hover:text-foreground hover:bg-surface-container active:scale-95 transition-all"
               aria-label="العروض"
             >
               <BadgePercent className="h-5 w-5" />
@@ -414,7 +415,7 @@ export function Header() {
 
           <Link
             href="/cart"
-            className="relative flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:text-foreground hover:bg-surface-hover active:scale-95 transition-all"
+            className="relative flex items-center justify-center w-10 h-10 rounded-2xl text-gray-500 hover:text-foreground hover:bg-surface-container active:scale-95 transition-all"
             aria-label="السلة"
           >
             <ShoppingBag className="h-5 w-5" />
@@ -425,10 +426,10 @@ export function Header() {
       </div>
 
       {/* ── Mobile inline search bar ── */}
-      <div className="md:hidden px-4 pb-3 pt-1">
+      <div className="md:hidden px-1.5 pb-3 pt-2">
         <button
           onClick={() => setIsSearchOpen(true)}
-          className="flex items-center gap-3 w-full h-10 rounded-full bg-surface-hover px-4 text-sm text-gray-500 hover:bg-surface-lighter transition-colors text-start"
+          className="material-shell flex items-center gap-3 w-full h-11 rounded-[24px] px-4 text-sm text-gray-500 hover:bg-surface-container transition-colors text-start"
           aria-label="ابحث عن منتج"
         >
           <Search className="h-4 w-4 shrink-0" />
@@ -501,10 +502,10 @@ export function Header() {
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="relative ms-auto w-4/5 max-w-xs bg-surface h-full flex flex-col shadow-premium border-s border-surface-hover">
+          <div className="relative ms-auto w-4/5 max-w-xs bg-surface-container-low h-full flex flex-col shadow-[var(--shadow-material-3)] border-s border-surface-hover">
             <div className="flex items-center justify-between p-4 border-b border-surface-hover">
               <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-white">
+                <div className="flex items-center justify-center w-9 h-9 rounded-2xl bg-primary text-white shadow-[var(--shadow-material-2)]">
                   <MotorcycleIcon className="w-5 h-5" />
                 </div>
                 <span className="font-heading font-black text-lg text-foreground">في السكة</span>
@@ -527,7 +528,7 @@ export function Header() {
                     href={item.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={cn(
-                      "flex items-center justify-between px-4 py-3.5 border-b border-surface-hover/50 hover:bg-surface-hover transition-colors",
+                      "mx-2 my-1 flex items-center justify-between rounded-2xl px-4 py-3.5 hover:bg-surface-container transition-colors",
                       isActive ? "text-primary bg-primary/5" : "text-foreground"
                     )}
                   >
@@ -544,7 +545,7 @@ export function Header() {
                 <Link
                   href="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-4 py-3.5 border-b border-surface-hover/50 hover:bg-primary/10 transition-colors text-primary"
+                  className="mx-2 my-1 flex items-center justify-between rounded-2xl px-4 py-3.5 hover:bg-primary/10 transition-colors text-primary"
                 >
                   <div className="flex items-center gap-3">
                     <LogIn className="w-5 h-5" />
@@ -558,7 +559,7 @@ export function Header() {
                     setIsMobileMenuOpen(false)
                     handleLogoutClick()
                   }}
-                  className="flex w-full items-center justify-between px-4 py-3.5 border-b border-surface-hover/50 hover:bg-rose-500/10 transition-colors text-rose-500"
+                  className="mx-2 my-1 flex w-[calc(100%-1rem)] items-center justify-between rounded-2xl px-4 py-3.5 hover:bg-rose-500/10 transition-colors text-rose-500"
                 >
                   <div className="flex items-center gap-3">
                     <LogOut className="w-5 h-5" />
@@ -571,7 +572,7 @@ export function Header() {
               <Link
                 href="/offers"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-between px-4 py-3.5 border-b border-surface-hover/50 hover:bg-rose-500/5 transition-colors text-secondary"
+                className="mx-2 my-1 flex items-center justify-between rounded-2xl px-4 py-3.5 hover:bg-rose-500/5 transition-colors text-secondary"
               >
                 <div className="flex items-center gap-3">
                   <BadgePercent className="w-5 h-5" />
@@ -583,7 +584,7 @@ export function Header() {
             </nav>
 
             <div className="p-4 border-t border-surface-hover">
-              <div className="bg-gradient-to-br from-primary/15 to-transparent p-4 rounded-2xl border border-primary/20 bg-surface">
+              <div className="bg-gradient-to-br from-primary/15 to-transparent p-4 rounded-[24px] border border-primary/20 bg-surface">
                 <p className="font-bold text-primary text-sm mb-1">محتاج حد يساعدك؟ 💬</p>
                 <p className="text-xs text-gray-500 mb-3">فريقنا موجود علشانك في أي وقت</p>
                 <Link

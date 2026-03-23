@@ -1,28 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&family=Cairo:wght@400;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @layer base {
   :root {
-    /* Light Mode (Premium Eye-Comfort & Luxurious) */
-    /* Warm alabaster backgrounds reduce screen glare/blue light while maintaining high contrast */
-    --background: #fcfbf9; 
-    --foreground: #292524; /* stone-800 - softer than pure black to reduce eye strain */
-    
-    /* Brand colors (Unchanged for identity) */
-    --brand-primary: #10b981; 
-    --brand-primary-hover: #059669; 
-    --brand-primary-glow: rgba(16, 185, 129, 0.15);
-    
-    --brand-secondary: #f43f5e; 
-    --brand-secondary-hover: #e11d48;
-    
-    /* Surfaces */
-    --brand-surface: #ffffff; /* Crisp white cards to pop against the off-white background */
-    --brand-surface-light: #f5f5f4; /* stone-100 for hover elements */
-    --brand-surface-lighter: #e7e5e4; /* stone-200 for deeper contrast */
-    
-    /* Borders */
-    --brand-surface-border: rgba(41, 37, 36, 0.08); /* Transparent soft stone for elegant lines */
+    --background: #f3f7f4;
+    --foreground: #17201d;
+
+    --brand-primary: #0f9d78;
+    --brand-primary-hover: #0c7f61;
+    --brand-primary-glow: rgba(15, 157, 120, 0.2);
+
+    --brand-secondary: #dc3f70;
+    --brand-secondary-hover: #c22f60;
+
+    --brand-surface: #ffffff;
+    --brand-surface-light: #ecf3ef;
+    --brand-surface-lighter: #dce8e2;
+    --brand-surface-border: rgba(23, 32, 29, 0.09);
+
+    --surface-container-low: #f8fbf9;
+    --surface-container: #eef4f1;
+    --surface-container-high: #e4ede8;
+    --surface-accent: rgba(15, 157, 120, 0.08);
+    --surface-accent-strong: rgba(15, 157, 120, 0.16);
+    --state-hover: rgba(23, 32, 29, 0.04);
+    --state-pressed: rgba(23, 32, 29, 0.08);
+    --shadow-color: rgba(23, 32, 29, 0.12);
   }
 
   /* Global Keyboard Focus (a11y) */
@@ -38,25 +41,29 @@
 
 
   .dark {
-    /* Dark Mode (Original Deep, rich styling) */
-    --background: #05070a; 
+    --background: #07110d;
     --foreground: #f0fdf4;
-    
-    /* Brand Colors (Same across themes) */
-    --brand-primary: #10b981; 
-    --brand-primary-hover: #059669; 
-    --brand-primary-glow: rgba(16, 185, 129, 0.2);
-    
-    --brand-secondary: #f43f5e; 
-    --brand-secondary-hover: #e11d48;
-    
-    /* Surfaces */
-    --brand-surface: #0a0e14; 
-    --brand-surface-light: #151a23; 
-    --brand-surface-lighter: #1e2430;
 
-    /* Borders */
-    --brand-surface-border: rgba(255, 255, 255, 0.05);
+    --brand-primary: #27c18f;
+    --brand-primary-hover: #1ea377;
+    --brand-primary-glow: rgba(39, 193, 143, 0.28);
+
+    --brand-secondary: #f45783;
+    --brand-secondary-hover: #e11d48;
+
+    --brand-surface: #0d1713;
+    --brand-surface-light: #15211c;
+    --brand-surface-lighter: #1d2b25;
+    --brand-surface-border: rgba(255, 255, 255, 0.07);
+
+    --surface-container-low: #0a1411;
+    --surface-container: #111d18;
+    --surface-container-high: #182721;
+    --surface-accent: rgba(39, 193, 143, 0.1);
+    --surface-accent-strong: rgba(39, 193, 143, 0.2);
+    --state-hover: rgba(255, 255, 255, 0.05);
+    --state-pressed: rgba(255, 255, 255, 0.1);
+    --shadow-color: rgba(0, 0, 0, 0.42);
   }
 }
 
@@ -71,19 +78,25 @@
   --color-surface-hover: var(--brand-surface-light);
   --color-surface-lighter: var(--brand-surface-lighter);
   --color-surface-border: var(--brand-surface-border);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-accent: var(--surface-accent);
+  --color-surface-accent-strong: var(--surface-accent-strong);
   
-  /* Premium UI shadows */
-  --shadow-glow-primary: 0 0 20px -5px var(--brand-primary-glow);
-  --shadow-premium: rgba(0, 0, 0, 0.05) 0px 10px 30px -5px, rgba(0, 0, 0, 0.03) 0px 5px 15px -5px;
+  --shadow-glow-primary: 0 0 22px -8px var(--brand-primary-glow);
+  --shadow-premium: 0 8px 20px -14px var(--shadow-color), 0 18px 40px -22px var(--shadow-color);
+  --shadow-material-1: 0 1px 2px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-material-2: 0 6px 16px -10px var(--shadow-color), 0 3px 8px -6px var(--shadow-color);
+  --shadow-material-3: 0 14px 30px -18px var(--shadow-color), 0 8px 18px -14px var(--shadow-color);
   
-  /* Animations */
   --animate-float: float 6s ease-in-out infinite;
   --animate-fade-in: fade-in 0.5s ease-out forwards;
   --animate-slide-up: slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-pulse-slow: pulse-slow 3s ease-in-out infinite;
 
-  --font-sans: var(--font-ibm), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-ibm), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans Arabic", var(--font-ibm), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Cairo", var(--font-ibm), ui-sans-serif, system-ui, sans-serif;
   --font-logo: var(--font-lalezar), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
@@ -117,6 +130,10 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  background-image:
+    radial-gradient(circle at top right, rgba(15, 157, 120, 0.08), transparent 28%),
+    radial-gradient(circle at bottom left, rgba(220, 63, 112, 0.05), transparent 24%);
+  background-attachment: fixed;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -143,6 +160,47 @@ img {
 /* Active Button Feedback */
 button:active {
   transform: scale(0.97);
+}
+
+::selection {
+  background: var(--surface-accent-strong);
+  color: var(--foreground);
+}
+
+.material-shell {
+  background: color-mix(in srgb, var(--brand-surface) 82%, transparent);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--brand-surface-border);
+  box-shadow: var(--shadow-material-1);
+}
+
+.material-card {
+  border-radius: 28px;
+  border: 1px solid var(--brand-surface-border);
+  background: var(--surface-container-low);
+  box-shadow: var(--shadow-material-1);
+}
+
+.material-card-elevated {
+  border-radius: 28px;
+  border: 1px solid color-mix(in srgb, var(--brand-surface-border) 80%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--brand-surface) 92%, transparent), var(--surface-container-low));
+  box-shadow: var(--shadow-material-2);
+}
+
+.material-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  padding: 0.5rem 0.9rem;
+  background: var(--surface-container);
+  color: var(--foreground);
+  border: 1px solid var(--brand-surface-border);
+}
+
+.material-divider {
+  border-color: color-mix(in srgb, var(--brand-surface-border) 86%, transparent);
 }
 
 /* Hide scrollbar for clean carousels */

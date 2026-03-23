@@ -16,22 +16,21 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", isLoading, asChild, children, ...props }, ref) => {
     
-    // Base classes ensure proper tap targets and accessible states
-    const baseClasses = "inline-flex items-center justify-center rounded-xl font-heading font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50"
+    const baseClasses = "inline-flex items-center justify-center gap-2 rounded-2xl font-heading font-bold tracking-[0.01em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:scale-[0.985]"
     
     const variants = {
-      primary: "bg-primary text-white hover:bg-primary-hover shadow-sm",
-      secondary: "bg-surface-hover text-foreground hover:bg-surface",
-      outline: "border-2 border-surface-hover bg-transparent hover:bg-surface-hover text-foreground",
-      ghost: "hover:bg-surface-hover text-foreground",
-      danger: "bg-secondary text-white hover:bg-rose-600 shadow-sm",
+      primary: "bg-primary text-white shadow-[var(--shadow-material-2)] hover:bg-primary-hover hover:shadow-[var(--shadow-material-3)]",
+      secondary: "bg-surface-container text-foreground border border-surface-border hover:bg-surface-hover hover:border-primary/20",
+      outline: "border border-surface-border bg-background/70 text-foreground hover:bg-surface-container hover:border-primary/25",
+      ghost: "bg-transparent text-foreground hover:bg-surface-container",
+      danger: "bg-secondary text-white shadow-[var(--shadow-material-2)] hover:bg-secondary-hover hover:shadow-[var(--shadow-material-3)]",
     }
 
     const sizes = {
-      sm: "h-9 px-4 text-xs",
-      md: "h-11 px-6 text-sm",
+      sm: "h-10 px-4 text-xs",
+      md: "h-12 px-6 text-sm",
       lg: "h-14 px-8 text-base",
-      icon: "h-11 w-11",
+      icon: "h-11 w-11 rounded-2xl",
     }
     
     const finalClassName = cn(baseClasses, variants[variant], sizes[size], className);
