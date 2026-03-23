@@ -51,9 +51,9 @@ export function MobileNav() {
   ]
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 block border-t border-surface-hover bg-surface md:hidden">
-      <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-around px-2">
-        <div className="flex flex-col items-center justify-center shrink-0 mb-1">
+    <div className="fixed bottom-0 left-0 right-0 z-50 block bg-transparent px-3 pb-3 md:hidden">
+      <nav className="material-shell mx-auto flex h-[74px] max-w-xl items-center justify-around rounded-[28px] px-2">
+        <div className="mb-1 flex shrink-0 flex-col items-center justify-center">
           <ThemeToggle />
         </div>
         {navItems.map((item) => {
@@ -63,8 +63,8 @@ export function MobileNav() {
               key={item.name}
               href={item.href}
               className={cn(
-                "relative flex h-full min-w-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-3 transition-all",
-                isActive ? "text-primary bg-primary/10" : "text-gray-400 hover:text-foreground hover:bg-surface-container"
+                "relative flex h-[58px] min-w-[64px] flex-col items-center justify-center gap-1 rounded-[22px] px-3 transition-all",
+                isActive ? "bg-primary/12 text-primary shadow-[var(--shadow-material-1)]" : "text-foreground/60 hover:bg-surface-container hover:text-foreground"
               )}
             >
               <div className="relative">

@@ -43,19 +43,19 @@ export function PromoBanner() {
     return (
         <section className="py-12 sm:py-16">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div className="relative overflow-hidden rounded-[2.25rem] border border-white/10 bg-[linear-gradient(135deg,#0f9d78_0%,#10b981_42%,#0b6b57_100%)] text-white p-8 sm:p-14 shadow-[var(--shadow-material-3)] flex flex-col sm:flex-row items-center justify-between gap-6 group">
+                <div className="group relative flex flex-col items-center justify-between gap-6 overflow-hidden rounded-[2.5rem] border border-white/10 bg-[linear-gradient(135deg,#237860_0%,#2f9274_100%)] p-7 text-white shadow-[var(--shadow-material-2)] sm:flex-row sm:p-14">
 
                     {/* Text */}
                     <div className="z-10 text-center sm:text-start">
-                        <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-black tracking-[0.08em] backdrop-blur-md mb-4">
+                        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-black tracking-[0.08em] backdrop-blur-sm">
                             <span className="h-2 w-2 rounded-full bg-white/80 animate-pulse"></span>
                             عرض متاح دلوقتي
                         </div>
-                        <h3 className="text-3xl sm:text-4xl font-black mb-3 drop-shadow-sm leading-tight">
+                        <h3 className="mb-3 text-3xl font-black leading-tight tracking-[-0.04em] drop-shadow-sm sm:text-4xl">
                             {promo.title}
                         </h3>
                         {promo.description && (
-                            <p className="text-white/90 text-lg sm:text-xl max-w-md font-medium leading-relaxed">
+                            <p className="max-w-md text-base font-medium leading-relaxed text-white/90 sm:text-xl">
                                 {promo.description}
                             </p>
                         )}
@@ -63,7 +63,7 @@ export function PromoBanner() {
                             <button
                                 onClick={handleCopy}
                                 title="انقر لنسخ الكود"
-                                className="mt-4 inline-flex items-center gap-2 font-mono bg-black/20 hover:bg-black/30 active:scale-95 transition-all px-4 py-2.5 rounded-2xl text-white border border-white/15 text-lg tracking-widest cursor-pointer select-none shadow-[var(--shadow-material-2)] backdrop-blur-sm"
+                                className="mt-4 inline-flex cursor-pointer select-none items-center gap-2 rounded-2xl border border-white/15 bg-black/20 px-4 py-2.5 font-mono text-lg tracking-widest text-white backdrop-blur-sm transition-all hover:bg-black/30 active:scale-95"
                             >
                                 <span className="text-sm text-white/60 font-sans ml-1">استخدم كود:</span>
                                 {promo.discount_code}
@@ -77,14 +77,14 @@ export function PromoBanner() {
                         {user ? (
                             <Link
                                 href="/offers"
-                                className="flex items-center justify-center bg-white text-primary font-black text-lg px-10 py-4 rounded-2xl shadow-[var(--shadow-material-3)] hover:scale-[1.02] active:scale-95 transition-transform text-center"
+                                className="flex items-center justify-center rounded-[24px] border border-white/40 bg-white px-10 py-4 text-center text-lg font-black text-primary shadow-[var(--shadow-material-2)] transition-all hover:-translate-y-0.5 active:scale-95"
                             >
                                 {promo.button_text || 'شوف العروض'}
                             </Link>
                         ) : (
                             <Link
                                 href="/register"
-                                className="flex items-center justify-center bg-white text-primary font-black text-lg px-10 py-4 rounded-2xl shadow-[var(--shadow-material-3)] hover:scale-[1.02] active:scale-95 transition-transform text-center"
+                                className="flex items-center justify-center rounded-[24px] border border-white/40 bg-white px-10 py-4 text-center text-lg font-black text-primary shadow-[var(--shadow-material-2)] transition-all hover:-translate-y-0.5 active:scale-95"
                             >
                                 سجل حساب جديد
                             </Link>
@@ -92,9 +92,10 @@ export function PromoBanner() {
                     </div>
 
                     {/* Decorative bg blobs */}
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(0,0,0,0.18),transparent_22%)] pointer-events-none" />
-                    <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 opacity-20 blur-3xl rounded-full w-96 h-96 bg-white pointer-events-none" />
-                    <div className="absolute bottom-0 left-0 translate-y-12 -translate-x-12 opacity-20 blur-2xl rounded-full w-64 h-64 bg-black pointer-events-none" />
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(0,0,0,0.18),transparent_22%)]" />
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/30" />
+                    <div className="pointer-events-none absolute right-0 top-0 h-96 w-96 translate-x-12 -translate-y-12 rounded-full bg-white opacity-20 blur-3xl" />
+                    <div className="pointer-events-none absolute bottom-0 left-0 h-64 w-64 -translate-x-12 translate-y-12 rounded-full bg-black opacity-20 blur-2xl" />
                 </div>
             </div>
         </section>

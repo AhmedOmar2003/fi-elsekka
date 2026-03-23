@@ -61,28 +61,28 @@ export default async function Home() {
       <main className="flex-1 pb-24 md:pb-0">
 
         {/* Hero Section */}
-        <section className="relative overflow-hidden pt-4 pb-8 sm:pt-12 sm:pb-20">
-          <div className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/4 w-[600px] h-[600px] bg-primary/10 blur-[100px] rounded-full pointer-events-none"></div>
-          <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/4 w-[520px] h-[520px] bg-secondary/10 blur-[120px] rounded-full pointer-events-none"></div>
+        <section className="relative overflow-hidden pt-4 pb-10 sm:pt-12 sm:pb-20">
+          <div className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/4 h-[520px] w-[520px] rounded-full bg-primary/4 blur-[120px] pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/4 h-[420px] w-[420px] rounded-full bg-secondary/3 blur-[130px] pointer-events-none"></div>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center sm:text-start relative z-10">
-            <div className="material-card-elevated grid grid-cols-1 items-center gap-6 overflow-hidden rounded-[28px] px-4 py-5 sm:gap-12 sm:rounded-[36px] sm:px-8 sm:py-10 lg:grid-cols-2 lg:px-12 lg:py-12">
+            <div className="material-card-elevated grid grid-cols-1 items-center gap-6 overflow-hidden rounded-[30px] px-4 py-5 sm:gap-12 sm:rounded-[40px] sm:px-8 sm:py-10 lg:grid-cols-2 lg:px-12 lg:py-12">
               <div className="z-10 max-w-2xl">
                 <Badge variant="success" className="mb-3 inline-flex rounded-full px-3.5 py-1.5 text-[11px] shadow-sm shadow-emerald-500/10 sm:mb-5 sm:px-4 sm:text-xs">
                   🔥 عروض المدارس رجعت تاني!
                 </Badge>
-                <h1 className="mb-3 text-[2rem] font-black leading-[1.15] tracking-tight text-foreground sm:mb-5 sm:text-5xl lg:text-7xl">
+                <h1 className="mb-3 text-[2rem] font-black leading-[1.08] tracking-[-0.05em] text-foreground sm:mb-5 sm:text-5xl lg:text-7xl">
                   كل طلباتك، <br className="hidden lg:block" />
                   <span className="text-primary tracking-tighter">في السكة</span> لحد عندك.
                 </h1>
-                <p className="mx-auto mb-5 max-w-xl text-sm font-medium leading-7 text-foreground/60 sm:mx-0 sm:mb-8 sm:text-xl">
+                <p className="storefront-subtle-text mx-auto mb-5 max-w-xl text-sm font-medium leading-7 sm:mx-0 sm:mb-8 sm:text-xl">
                   من السوبر ماركت للصيدلية، ومن اللبس للإلكترونيات. اختار اللي نفسك فيه وادفع كاش وإنت بتستلم. أسرع، أسهل، وأروق! ✨
                 </p>
                 <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:justify-start sm:gap-4">
                   <Button size="lg" className="h-12 w-full rounded-full px-6 text-sm shadow-premium sm:h-14 sm:w-auto sm:px-8 sm:text-base" asChild>
-                    <Link href="/category/all">يلا بينا نطلب</Link>
+                    <Link href="/category/all">ابدأ التسوق</Link>
                   </Button>
                   <Button size="lg" variant="outline" className="h-12 w-full rounded-full px-6 text-sm backdrop-blur-md sm:h-14 sm:w-auto sm:px-8 sm:text-base" asChild>
-                    <Link href="/offers">شوف الحاجات الحلوة</Link>
+                    <Link href="/offers">شوف العروض</Link>
                   </Button>
                 </div>
 
@@ -114,7 +114,7 @@ export default async function Home() {
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="text-center transition-transform duration-700 transform translate-y-2 group-hover:translate-y-0 sm:translate-y-4">
                       <span className="block text-5xl drop-shadow-2xl sm:text-6xl">📦</span>
-                      <span className="mt-4 block rounded-full border border-white/5 bg-background/80 px-4 py-2 text-[11px] font-bold tracking-[0.18em] text-foreground shadow-xl backdrop-blur-xl sm:mt-6 sm:px-5 sm:py-2.5 sm:text-sm">كل حاجة في مكان واحد</span>
+                      <span className="mt-4 block rounded-full border border-white/5 bg-background/62 px-4 py-2 text-[11px] font-bold tracking-[0.18em] text-foreground shadow-[var(--shadow-material-2)] backdrop-blur-md sm:mt-6 sm:px-5 sm:py-2.5 sm:text-sm">كل حاجة في مكان واحد</span>
                     </div>
                   </div>
                 </div>
@@ -132,8 +132,8 @@ export default async function Home() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-8 flex items-end justify-between">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground">نجيبلك إيه النهارده؟</h2>
-                <p className="mt-2 text-sm text-gray-500">كل أقسامنا موجودة علشان تلاقي اللي على بالك بسرعة</p>
+                <h2 className="storefront-section-title text-2xl sm:text-3xl text-foreground">نجيبلك إيه النهارده؟</h2>
+                <p className="storefront-subtle-text mt-2 text-sm">كل أقسامنا متظبطة علشان توصل للي على بالك بسرعة ومن غير لف</p>
               </div>
               <Link href="/categories" className="font-heading hidden sm:flex material-chip text-sm font-semibold text-primary hover:border-primary/20 hover:bg-primary/10">
                 شوف كل الأقسام &larr;
@@ -154,9 +154,9 @@ export default async function Home() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-secondary"></span>
                   </span>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-foreground">عروض جامدة ما تتفوتش</h2>
+                  <h2 className="storefront-section-title text-2xl sm:text-3xl text-foreground">عروض جامدة ما تتفوتش</h2>
                 </div>
-                <p className="text-sm text-gray-500">وفّر أكتر وخد أحسن سعر من غير وجع دماغ</p>
+                <p className="storefront-subtle-text text-sm">وفّر أكتر وخد أحسن سعر من غير وجع دماغ</p>
               </div>
               <Link href="/offers" className="font-heading material-chip whitespace-nowrap text-sm font-semibold text-secondary hover:border-secondary/20 hover:bg-secondary/10">
                 شوف الباقي
@@ -194,8 +194,8 @@ export default async function Home() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-6 flex items-end justify-between sm:mb-8">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground">الأكتر طلبًا</h2>
-                <p className="mt-2 text-sm text-gray-500">دي الحاجات اللي الناس بتحبها وبتطلبها كتير</p>
+                <h2 className="storefront-section-title text-2xl sm:text-3xl text-foreground">الأكتر طلبًا</h2>
+                <p className="storefront-subtle-text mt-2 text-sm">دي الحاجات اللي الناس بتحبها وبتطلبها كتير</p>
               </div>
               <Link href="/category/all" className="font-heading material-chip whitespace-nowrap text-sm font-semibold text-primary hover:border-primary/20 hover:bg-primary/10">
                 عرض الكل
@@ -220,11 +220,11 @@ export default async function Home() {
         </section>
 
         {/* Delivery Trust Section */}
-        <section className="mt-12 py-20 relative overflow-hidden">
+        <section className="relative mt-12 overflow-hidden py-20">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
           <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px]"></div>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="material-card-elevated grid grid-cols-1 gap-12 rounded-[36px] p-10 lg:p-14 text-center md:grid-cols-3 sm:gap-8 md:divide-x md:divide-x-reverse md:divide-y-0 divide-y divide-surface-border/50">
+            <div className="material-card grid grid-cols-1 gap-12 rounded-[34px] p-10 text-center sm:gap-8 md:grid-cols-3 md:divide-x md:divide-x-reverse md:divide-y-0 lg:p-14 divide-y divide-surface-border/50">
 
               <div className="flex flex-col items-center pt-8 md:pt-0 group">
                 <div className="h-20 w-20 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 text-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/5 group-hover:scale-110 transition-transform duration-500">

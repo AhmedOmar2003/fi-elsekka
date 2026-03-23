@@ -37,7 +37,10 @@ export function Footer() {
   return (
     <footer className="mt-auto w-full px-2 pb-20 pt-16 md:px-4 md:pb-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="material-card-elevated grid grid-cols-1 gap-12 rounded-3xl p-8 md:grid-cols-4 lg:gap-16 lg:p-12 relative overflow-hidden">
+        <div className="relative grid grid-cols-1 gap-12 overflow-hidden rounded-[36px] border border-white/8 bg-[#101816] p-8 text-white shadow-[var(--shadow-material-2)] md:grid-cols-4 lg:gap-16 lg:p-12">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
+          <div className="pointer-events-none absolute -top-24 start-10 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-28 end-8 h-44 w-44 rounded-full bg-white/5 blur-3xl" />
           
           <div className="md:col-span-1">
             <Link href="/" className="mb-4 flex items-center gap-2 group">
@@ -49,25 +52,25 @@ export function Footer() {
                 className="rounded-2xl shadow-[var(--shadow-material-2)] group-hover:shadow-[var(--shadow-material-3)] transition-shadow" 
               />
               <div className="flex items-baseline gap-0 leading-none" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
-                <span className="font-black text-2xl text-foreground">فِي&nbsp;</span>
+                <span className="font-black text-2xl text-white">فِي&nbsp;</span>
                 <span className="font-black text-2xl text-primary">السِّكَّةِ</span>
               </div>
             </Link>
-            <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
+            <p className="max-w-xs text-sm leading-relaxed text-white/64">
               صاحبك الجدع في الطلبات. كل اللي محتاجه، من البيت لحد باب البيت، وبأسهل طريقة وأروق تجربة.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <span className="material-chip text-xs font-bold text-primary">توصيل أسرع</span>
-              <span className="material-chip text-xs font-bold text-foreground">دفع عند الاستلام</span>
+              <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary">توصيل أسرع</span>
+              <span className="inline-flex items-center rounded-full border border-white/8 bg-white/6 px-3 py-1.5 text-xs font-bold text-white/82">دفع عند الاستلام</span>
             </div>
           </div>
 
           <div>
-            <h4 className="mb-4 text-base font-black text-foreground">الأقسام</h4>
-            <ul className="font-heading space-y-2 text-sm text-gray-500">
+            <h4 className="mb-4 text-base font-black text-white">الأقسام</h4>
+            <ul className="font-heading space-y-2 text-sm text-white/62">
               {footerCategories.map((category) => (
                 <li key={category.id}>
-                  <Link href={`/category/${category.id}`} className="inline-flex rounded-full px-2 py-1 hover:bg-surface-container hover:text-primary transition-colors">
+                  <Link href={`/category/${category.id}`} className="inline-flex rounded-full px-2 py-1 transition-colors hover:bg-white/6 hover:text-white">
                     {category.name}
                   </Link>
                 </li>
@@ -76,37 +79,37 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-4 text-base font-black text-foreground">خلينا في ظهرك</h4>
-            <ul className="font-heading space-y-2 text-sm text-gray-500">
-              <li><Link href="/about" className="inline-flex rounded-full px-2 py-1 hover:bg-surface-container hover:text-primary transition-colors">احنا مين</Link></li>
-              <li><Link href="/faq" className="inline-flex rounded-full px-2 py-1 hover:bg-surface-container hover:text-primary transition-colors">الأسئلة الشائعة</Link></li>
-              <li><Link href="/account" className="inline-flex rounded-full px-2 py-1 hover:bg-surface-container hover:text-primary transition-colors">حسابي</Link></li>
-              <li><Link href="/orders" className="inline-flex rounded-full px-2 py-1 hover:bg-surface-container hover:text-primary transition-colors">طلباتي</Link></li>
-              <li><Link href="/contact" className="inline-flex rounded-full px-2 py-1 hover:bg-surface-container hover:text-primary transition-colors">تواصل معنا</Link></li>
+            <h4 className="mb-4 text-base font-black text-white">خلينا في ظهرك</h4>
+            <ul className="font-heading space-y-2 text-sm text-white/62">
+              <li><Link href="/about" className="inline-flex rounded-full px-2 py-1 hover:bg-white/6 hover:text-white transition-colors">احنا مين</Link></li>
+              <li><Link href="/faq" className="inline-flex rounded-full px-2 py-1 hover:bg-white/6 hover:text-white transition-colors">الأسئلة الشائعة</Link></li>
+              <li><Link href="/account" className="inline-flex rounded-full px-2 py-1 hover:bg-white/6 hover:text-white transition-colors">حسابي</Link></li>
+              <li><Link href="/orders" className="inline-flex rounded-full px-2 py-1 hover:bg-white/6 hover:text-white transition-colors">طلباتي</Link></li>
+              <li><Link href="/contact" className="inline-flex rounded-full px-2 py-1 hover:bg-white/6 hover:text-white transition-colors">تواصل معنا</Link></li>
             </ul>
           </div>
 
           <div className="md:col-span-1">
-             <h4 className="mb-4 text-base font-black text-foreground">الدفع عند الاستلام</h4>
-             <div className="rounded-[28px] border border-surface-border bg-surface-container p-4 shadow-[var(--shadow-material-1)]">
+             <h4 className="mb-4 text-base font-black text-white">الدفع عند الاستلام</h4>
+             <div className="rounded-[28px] border border-white/8 bg-white/[0.04] p-4 shadow-[var(--shadow-material-2)] backdrop-blur-sm">
                <div className="flex items-center gap-3">
-               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
+               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary">
                  <Banknote className="h-6 w-6" />
                </div>
                <div>
-                  <p className="font-heading text-sm font-bold text-foreground">ادفع وإنت مطمن</p>
-                  <p className="text-xs text-gray-500">كل طلباتنا بتدفعها كاش وقت الاستلام</p>
+                  <p className="font-heading text-sm font-bold text-white">ادفع وإنت مطمن</p>
+                  <p className="text-xs text-white/58">كل طلباتنا بتدفعها كاش وقت الاستلام</p>
                </div>
                </div>
              </div>
           </div>
         </div>
 
-        <div className="mt-6 flex flex-col items-center justify-between border-t material-divider pt-6 pb-4 text-center sm:flex-row text-xs text-gray-500">
+        <div className="mt-6 flex flex-col items-center justify-between border-t border-white/8 pb-4 pt-6 text-center text-xs text-white/52 sm:flex-row">
           <p>© {new Date().getFullYear()} في السكة. كل الحقوق محفوظة.</p>
           <div className="mt-4 flex gap-4 sm:mt-0">
-             <Link href="/terms" className="hover:text-foreground transition-colors">الشروط والأحكام</Link>
-             <Link href="/privacy" className="hover:text-foreground transition-colors">سياسة الخصوصية</Link>
+             <Link href="/terms" className="hover:text-white transition-colors">الشروط والأحكام</Link>
+             <Link href="/privacy" className="hover:text-white transition-colors">سياسة الخصوصية</Link>
           </div>
         </div>
       </div>

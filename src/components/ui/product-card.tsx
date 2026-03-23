@@ -55,7 +55,7 @@ export function ProductCard({
 
   const isBundle = productMode === "bundle"
   return (
-    <div className={cn("group relative flex h-full flex-col overflow-hidden rounded-[26px] border border-surface-border bg-surface-container-low shadow-sm transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-premium hover:border-surface-border touch-manipulation sm:min-h-[320px] sm:rounded-3xl", className)}>
+    <div className={cn("group relative flex h-full flex-col overflow-hidden rounded-[24px] border border-surface-border/80 bg-surface shadow-[var(--shadow-material-1)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[var(--shadow-material-2)] hover:border-surface-border touch-manipulation sm:min-h-[320px] sm:rounded-[28px]", className)}>
       <Link href={`/product/${id}`} className="relative aspect-[4/3] sm:aspect-[3/2] w-full overflow-hidden bg-surface-container">
 
         <div className="absolute inset-0 flex items-center justify-center">
@@ -69,14 +69,14 @@ export function ProductCard({
         </div>
 
         {/* Discount Badge */}
-        <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-10">
+        <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5">
           {isBundle && (
-            <span className="inline-flex items-center rounded-full border border-emerald-700/20 bg-emerald-600 px-3 py-1 text-[11px] font-black tracking-wide text-white shadow-[var(--shadow-material-2)] dark:border-white/10 dark:bg-primary">
+            <span className="inline-flex items-center rounded-full border border-primary/10 bg-primary px-3 py-1 text-[11px] font-black tracking-wide text-white shadow-[var(--shadow-material-1)]">
               باكج
             </span>
           )}
           {discountBadge && (
-            <span className="inline-flex items-center rounded-full border border-rose-700/20 bg-rose-600 px-3 py-1 text-[11px] font-black tracking-wide text-white shadow-[var(--shadow-material-2)] dark:border-white/10 dark:bg-secondary">
+            <span className="inline-flex items-center rounded-full border border-secondary/10 bg-secondary px-3 py-1 text-[11px] font-black tracking-wide text-white shadow-[var(--shadow-material-1)]">
               {discountBadge}
             </span>
           )}
@@ -87,7 +87,7 @@ export function ProductCard({
           onClick={handleToggleFav}
           aria-label={fav ? "إزالة من المفضلة" : "أضف للمفضلة"}
           className={cn(
-            "absolute top-3 left-3 z-10 rounded-full p-2 backdrop-blur-xl shadow-sm border border-white/20 transition-all duration-300 active:scale-90",
+            "absolute top-3 left-3 z-10 rounded-full border border-white/20 p-2 backdrop-blur-md shadow-sm transition-all duration-300 active:scale-90",
             fav
               ? "bg-secondary/10 text-secondary border-secondary/20 opacity-100"
               : "bg-background/60 text-foreground/60 hover:text-secondary hover:bg-background/90 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
@@ -100,7 +100,7 @@ export function ProductCard({
         <div className="absolute inset-0 bg-gradient-to-t from-background/75 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
       </Link>
 
-      <div className="relative z-20 flex flex-1 flex-col bg-surface-container-low px-3 pb-2.5 pt-2.5 sm:p-5">
+      <div className="relative z-20 flex flex-1 flex-col bg-surface px-3 pb-2.5 pt-2.5 sm:p-5">
         {/* Rating */}
         {rating && (
           <div className="mb-1.5 inline-flex w-fit items-center gap-1 rounded-full border border-surface-border bg-surface-container px-2 py-1 text-[10px] font-medium transition-colors group-hover:bg-surface-container-high sm:mb-2 sm:gap-1.5 sm:px-2.5 sm:text-[11px]">
@@ -130,8 +130,8 @@ export function ProductCard({
             size="icon"
             variant="primary"
             className={cn(
-              "h-[42px] w-[42px] shrink-0 rounded-2xl bg-primary text-white shadow-[var(--shadow-material-2)] ring-1 ring-primary/15 transition-all duration-300 active:scale-90 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-[var(--shadow-material-3)] sm:h-12 sm:w-12",
-              isAdded ? "bg-emerald-500 hover:bg-emerald-600 ring-emerald-500/20" : "border-primary/20"
+              "h-[42px] w-[42px] shrink-0 rounded-2xl bg-primary text-white shadow-[var(--shadow-material-1)] ring-1 ring-primary/15 transition-all duration-300 active:scale-90 hover:bg-primary-hover sm:h-12 sm:w-12",
+              isAdded ? "bg-primary text-white ring-primary/15 hover:bg-primary-hover" : ""
             )}
             aria-label="أضف للسلة"
             onClick={handleAddToCart}

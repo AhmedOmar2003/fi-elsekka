@@ -125,7 +125,7 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${cairo.variable} ${ibmPlex.variable} ${lalezar.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col transition-colors duration-300`}
+        className={`${inter.variable} ${cairo.variable} ${ibmPlex.variable} ${lalezar.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col transition-colors duration-300 selection:bg-primary/20 selection:text-foreground`}
       >
         <a 
           href="#main-content" 
@@ -135,7 +135,7 @@ export default function RootLayout({
         </a>
         <Providers>
           <MaintenanceModeOverlay />
-          <div id="main-content" className="flex-1 flex flex-col w-full outline-none animate-fade-in" tabIndex={-1}>
+          <div id="main-content" className="flex-1 flex w-full flex-col outline-none animate-fade-in" tabIndex={-1}>
             {children}
           </div>
           <MobileNav />

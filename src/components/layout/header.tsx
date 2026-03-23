@@ -137,7 +137,7 @@ function SearchResults({ query, onSelect }: { query: string; onSelect: () => voi
   const hasResults = matchedProducts.length > 0 || matchedCategories.length > 0
 
   return (
-    <div className="absolute top-full left-0 right-0 mt-2 bg-surface border border-surface-hover rounded-2xl shadow-premium overflow-hidden z-50 max-h-[70vh] overflow-y-auto">
+    <div className="absolute left-0 right-0 top-full z-50 mt-3 max-h-[70vh] overflow-y-auto overflow-hidden rounded-[24px] border border-surface-border bg-surface shadow-[var(--shadow-material-2)]">
       {isLoadingResults ? (
         <div className="p-6 text-center">
           <Search className="w-8 h-8 text-primary/60 mx-auto mb-2 animate-pulse" />
@@ -284,6 +284,9 @@ export function Header() {
     void ensureCategoriesLoaded()
   }, [ensureCategoriesLoaded])
 
+  const userDisplayName = profile?.full_name || user?.email?.split('@')[0] || "حسابي"
+  const userInitial = userDisplayName.trim().charAt(0)
+
   const handleDesktopSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && desktopQuery.trim()) {
       router.push(`/category/all?q=${encodeURIComponent(desktopQuery.trim())}`)
@@ -301,15 +304,15 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-surface-hover bg-background px-2 pt-2 sm:px-4 sm:pt-3">
+    <header className="sticky top-0 z-50 w-full border-b border-white/8 bg-[#101816]/95 text-white backdrop-blur-sm shadow-[var(--shadow-material-2)]">
 
       {/* ── Main header row ─────────────────────────────────────────────────── */}
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 rounded-2xl bg-surface px-4 sm:rounded-full sm:px-6 shadow-[var(--shadow-material-1)] transition-all duration-300">
+      <div className="mx-auto flex h-[68px] max-w-7xl items-center gap-3 px-4 sm:px-6 transition-all duration-300">
 
         {/* Mobile: Hamburger */}
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="md:hidden flex items-center justify-center w-10 h-10 rounded-2xl text-gray-500 hover:text-foreground hover:bg-surface-container active:scale-95 transition-all shrink-0"
+          className="md:hidden flex items-center justify-center w-11 h-11 rounded-2xl text-white/70 hover:text-white hover:bg-white/6 active:scale-95 transition-all shrink-0"
           aria-label="القائمة"
         >
           <Menu className="h-6 w-6" />
@@ -327,23 +330,23 @@ export function Header() {
           />
           <div className="hidden sm:flex flex-col leading-none">
             <div className="flex items-baseline gap-0" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
-              <span className="font-black text-2xl text-foreground">فِي&nbsp;</span>
+              <span className="font-black text-2xl text-white">فِي&nbsp;</span>
               <span className="font-black text-2xl text-primary">السِّكَّةِ</span>
             </div>
-            <span className="mt-1 text-[10px] font-bold tracking-[0.18em] text-gray-400">طلباتك في الطريق</span>
+            <span className="mt-1 text-[10px] font-bold tracking-[0.18em] text-white/45">طلباتك رايقة ووصلالك بسرعة</span>
           </div>
         </Link>
 
         {/* ── Desktop search bar with autocomplete ──────────────────────────── */}
         <div className="hidden md:flex flex-1 max-w-xl px-4" ref={desktopSearchRef}>
           <div className="relative w-full">
-            <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-gray-500">
+            <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-white/55">
               <Search className="h-4 w-4" />
             </div>
             <Input
               type="search"
               placeholder="بتدور على إيه النهاردة؟..."
-              className="h-11 w-full rounded-full border-transparent bg-surface-container ps-10 pe-4 text-sm shadow-none focus-visible:ring-primary/60"
+              className="h-12 w-full rounded-full border-white/6 bg-white/6 ps-10 pe-4 text-sm text-white placeholder:text-white/40 shadow-none focus-visible:ring-primary/30"
               value={desktopQuery}
               onChange={(e) => {
                 setDesktopQuery(e.target.value)
@@ -367,22 +370,41 @@ export function Header() {
 
         {/* ── Desktop-only action area ────────────────────────────────────────── */}
         <div className="hidden md:flex items-center gap-2 ms-auto">
-          <Link href="/offers" className="material-chip font-heading text-sm font-semibold text-secondary hover:border-secondary/30 hover:bg-secondary/10 transition-colors">
+          <Link href="/offers" className="material-chip !border-rose-300/24 !bg-rose-400/12 !text-rose-100 !shadow-[var(--shadow-material-1)] hover:!border-rose-300/35 hover:!bg-rose-400/16 font-heading text-sm font-semibold transition-colors">
             <BadgePercent className="h-4 w-4" />
             عروض جامدة
           </Link>
 
           {user ? (
-            <div className="flex items-center gap-2 rounded-full border border-surface-border bg-surface-container px-2.5 py-1.5">
-              <span className="text-sm font-bold text-foreground px-2">{profile?.full_name || user.email?.split('@')[0]}</span>
+            <div className="flex items-center gap-2 rounded-full border border-white/8 bg-white/6 px-2.5 py-1.5 shadow-[var(--shadow-material-1)]">
+              <Link
+                href="/account"
+                className="flex items-center gap-3 rounded-full px-1.5 py-0.5 transition-colors hover:bg-white/6"
+                aria-label="افتح حسابي"
+              >
+                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-[#17231f] text-sm font-black text-primary shadow-[var(--shadow-material-1)]">
+                  {profile?.profile_picture ? (
+                    <Image
+                      src={profile.profile_picture}
+                      alt={userDisplayName}
+                      fill
+                      sizes="40px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <span>{userInitial}</span>
+                  )}
+                </div>
+                <div className="flex flex-col items-start leading-none">
+                  <span className="text-sm font-bold text-white">{userDisplayName}</span>
+                  <span className="mt-1 text-[11px] text-white/55">حسابي</span>
+                </div>
+              </Link>
               <NotificationBell />
-              <Button variant="ghost" size="icon" onClick={handleLogoutClick} className="text-gray-500 hover:text-rose-500 hover:bg-rose-500/10" aria-label="تسجيل الخروج" title="تسجيل الخروج">
-                <LogOut className="h-4 w-4" />
-              </Button>
             </div>
           ) : (
             <Link href="/login">
-              <Button variant="ghost" className="text-gray-500 hover:text-foreground flex items-center gap-2">
+              <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/6 flex items-center gap-2">
                 <LogIn className="h-4 w-4" />
                 <span>ادخل</span>
               </Button>
@@ -391,17 +413,17 @@ export function Header() {
 
           <ThemeToggle />
 
-          <Link href="/cart" aria-label="سلة المشتريات" className="relative text-gray-500 hover:text-foreground bg-surface-container hover:bg-surface-hover w-11 h-11 flex items-center justify-center rounded-2xl transition-all shadow-[var(--shadow-material-1)]">
+          <Link href="/cart" aria-label="سلة المشتريات" className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-white/6 text-white/72 shadow-[var(--shadow-material-1)] transition-all hover:-translate-y-0.5 hover:text-white hover:shadow-[var(--shadow-material-2)]">
             <ShoppingBag className="h-5 w-5" />
             {cartCount > 0 && <span className="absolute -top-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white ring-2 ring-background">{cartCount}</span>}
           </Link>
         </div>
 
         {/* ── Mobile top-right utility icons ─────────────────────────────────── */}
-        <div className="flex md:hidden items-center gap-0.5 ms-auto">
+        <div className="ms-auto flex items-center gap-1 md:hidden">
           <Link href="/offers">
             <button
-              className="relative flex items-center justify-center w-10 h-10 rounded-2xl text-gray-500 hover:text-foreground hover:bg-surface-container active:scale-95 transition-all"
+              className="relative flex items-center justify-center w-10 h-10 rounded-2xl text-white/70 hover:text-white hover:bg-white/6 active:scale-95 transition-all"
               aria-label="العروض"
             >
               <BadgePercent className="h-5 w-5" />
@@ -415,7 +437,7 @@ export function Header() {
 
           <Link
             href="/cart"
-            className="relative flex items-center justify-center w-10 h-10 rounded-2xl text-gray-500 hover:text-foreground hover:bg-surface-container active:scale-95 transition-all"
+            className="relative flex items-center justify-center w-10 h-10 rounded-2xl text-white/70 hover:text-white hover:bg-white/6 active:scale-95 transition-all"
             aria-label="السلة"
           >
             <ShoppingBag className="h-5 w-5" />
@@ -426,10 +448,10 @@ export function Header() {
       </div>
 
       {/* ── Mobile inline search bar ── */}
-      <div className="md:hidden px-1.5 pb-3 pt-2">
+      <div className="md:hidden border-t border-white/8 bg-[#101816] px-3 pb-3 pt-2">
         <button
           onClick={() => setIsSearchOpen(true)}
-          className="flex items-center gap-3 w-full h-11 rounded-[24px] border border-surface-hover bg-surface px-4 text-sm text-gray-500 hover:bg-surface-hover transition-colors text-start shadow-[var(--shadow-material-1)]"
+          className="flex h-12 w-full items-center gap-3 rounded-[24px] border border-white/8 bg-white/6 px-4 text-start text-sm text-white/55 shadow-[var(--shadow-material-1)] transition-colors hover:bg-white/8"
           aria-label="ابحث عن منتج"
         >
           <Search className="h-4 w-4 shrink-0" />
@@ -439,17 +461,17 @@ export function Header() {
 
       {/* ── SEARCH OVERLAY (full-screen mobile) ───────────────────────────────────── */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-[100] bg-background flex flex-col">
+        <div className="fixed inset-0 z-[100] flex flex-col bg-background">
           {/* Search header */}
-          <div className="flex items-center gap-3 p-4 border-b border-surface-hover bg-surface">
+          <div className="flex items-center gap-3 border-b border-white/8 bg-[#101816] p-4">
             <div className="relative flex-1">
-              <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-gray-500">
+              <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-white/55">
                 <Search className="h-5 w-5" />
               </div>
               <Input
                 type="search"
                 placeholder="بتدور على إيه؟..."
-                className="h-12 w-full rounded-2xl bg-background ps-11 text-base border-surface-hover focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+                className="h-12 w-full rounded-2xl border-white/8 bg-white/6 ps-11 text-base text-white placeholder:text-white/40 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
                 autoFocus
                 value={mobileQuery}
                 onChange={(e) => setMobileQuery(e.target.value)}
@@ -458,7 +480,7 @@ export function Header() {
             </div>
             <button
               onClick={() => { setIsSearchOpen(false); setMobileQuery("") }}
-              className="flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:text-foreground hover:bg-surface-hover active:scale-95 transition-all shrink-0"
+              className="flex items-center justify-center w-10 h-10 rounded-xl text-white/65 hover:text-white hover:bg-white/6 active:scale-95 transition-all shrink-0"
               aria-label="إغلاق البحث"
             >
               <X className="h-5 w-5" />
@@ -502,8 +524,8 @@ export function Header() {
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="relative ms-auto w-4/5 max-w-xs bg-surface-container-low h-full flex flex-col shadow-[var(--shadow-material-3)] border-s border-surface-hover">
-            <div className="flex items-center justify-between p-4 border-b border-surface-hover">
+          <div className="relative ms-auto flex h-full w-4/5 max-w-xs flex-col border-s border-surface-hover bg-[linear-gradient(180deg,var(--surface-container-low),var(--surface-container))] shadow-[var(--shadow-material-3)]">
+            <div className="flex items-center justify-between border-b border-surface-hover p-4">
               <div className="flex items-center gap-2">
                 <div className="flex items-center justify-center w-9 h-9 rounded-2xl bg-primary text-white shadow-[var(--shadow-material-2)]">
                   <MotorcycleIcon className="w-5 h-5" />
