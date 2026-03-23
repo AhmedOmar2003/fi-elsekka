@@ -8,12 +8,20 @@ export interface DiscountCode {
     code: string;
     discount_percentage: number | null;
     discount_amount: number | null;
+    applicable_product_id?: string | null;
+    applicable_category_id?: string | null;
     is_active: boolean;
     max_uses: number | null;       // null = unlimited
     used_count: number;
     expires_at: string | null;     // ISO datetime string, null = no expiry
     used_by: string[] | null;      // Array of user IDs who have used this code
     created_at: string;
+}
+
+interface DiscountValidationContext {
+    userId?: string;
+    productId?: string | null;
+    categoryId?: string | null;
 }
 
 type AppliedDiscountCodesMap = Record<string, string>;
@@ -118,7 +126,17 @@ export const clearAppliedDiscountCodesForProducts = (productIds: string[]) => {
  * Validates a discount code and returns the discount record if valid,
  * also checking expiry and usage limits.
  */
-export const validateDiscountCode = async (code: string, userId?: string): Promise<{ discount: DiscountCode | null; error?: string }> => {
+export const validateDiscountCode = async (
+    code: string,
+    context?: string | DiscountValidationContext
+): Promise<{ discount: DiscountCode | null; error?: string }> => {
+    const normalizedContext: DiscountValidationContext =
+        typeof context === 'string'
+            ? { userId: context }
+            : (context || {});
+
+    const { userId, productId, categoryId } = normalizedContext;
+
     const { data, error } = await supabase
         .from('discount_codes')
         .select('*')
@@ -143,6 +161,18 @@ export const validateDiscountCode = async (code: string, userId?: string): Promi
     // Check one-time per user limit
     if (userId && discount.used_by && discount.used_by.includes(userId)) {
         return { discount: null, error: 'لقد قمت باستخدام هذا الكود مسبقاً.' };
+    }
+
+    if (discount.applicable_product_id) {
+        if (!productId || discount.applicable_product_id !== productId) {
+            return { discount: null, error: 'الكود ده شغال على منتج معين، ومش متاح للمنتج الحالي.' };
+        }
+    }
+
+    if (discount.applicable_category_id) {
+        if (!categoryId || discount.applicable_category_id !== categoryId) {
+            return { discount: null, error: 'الكود ده مخصوص لقسم تاني، ومش متاح على المنتج الحالي.' };
+        }
     }
 
     return { discount };

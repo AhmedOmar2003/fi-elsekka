@@ -7,6 +7,8 @@ import {
     DiscountCode, fetchAllDiscountCodes, createDiscountCode, 
     updateDiscountCode, deleteDiscountCode, CreateDiscountCodeInput
 } from '@/services/discountCodesService';
+import { fetchProducts, Product } from '@/services/productsService';
+import { Category, fetchCategories } from '@/services/categoriesService';
 
 const EMPTY_FORM = {
     code: '',
@@ -14,10 +16,15 @@ const EMPTY_FORM = {
     discount_value: '',
     is_active: true,
     max_uses: '',          // empty = unlimited
+    target_scope: 'all' as 'all' | 'product' | 'category',
+    applicable_product_id: '',
+    applicable_category_id: '',
 };
 
 export default function AdminDiscountsPage() {
     const [codes, setCodes] = useState<DiscountCode[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -26,8 +33,14 @@ export default function AdminDiscountsPage() {
 
     const load = async () => {
         setIsLoading(true);
-        const data = await fetchAllDiscountCodes();
+        const [data, productData, categoryData] = await Promise.all([
+            fetchAllDiscountCodes(),
+            fetchProducts(),
+            fetchCategories(),
+        ]);
         setCodes(data);
+        setProducts(productData);
+        setCategories(categoryData);
         setIsLoading(false);
     };
 
@@ -50,6 +63,9 @@ export default function AdminDiscountsPage() {
             discount_value: String(val),
             is_active: c.is_active,
             max_uses: c.max_uses !== null ? String(c.max_uses) : '',
+            target_scope: c.applicable_product_id ? 'product' : c.applicable_category_id ? 'category' : 'all',
+            applicable_product_id: c.applicable_product_id || '',
+            applicable_category_id: c.applicable_category_id || '',
         });
         setIsModalOpen(true);
     };
@@ -71,7 +87,21 @@ export default function AdminDiscountsPage() {
             is_active: form.is_active,
             max_uses: form.max_uses.trim() !== '' ? parseInt(form.max_uses) : null,
             expires_at: null,
+            applicable_product_id: form.target_scope === 'product' ? form.applicable_product_id || null : null,
+            applicable_category_id: form.target_scope === 'category' ? form.applicable_category_id || null : null,
         };
+
+        if (form.target_scope === 'product' && !form.applicable_product_id) {
+            setIsSaving(false);
+            toast.error('اختار المنتج اللي الكود ده هيشتغل عليه.');
+            return;
+        }
+
+        if (form.target_scope === 'category' && !form.applicable_category_id) {
+            setIsSaving(false);
+            toast.error('اختار القسم اللي الكود ده هيشتغل عليه.');
+            return;
+        }
 
         const { error } = editingId
             ? await updateDiscountCode(editingId, payload)
@@ -109,6 +139,20 @@ export default function AdminDiscountsPage() {
         }
     };
 
+    const getTargetLabel = (code: DiscountCode) => {
+        if (code.applicable_product_id) {
+            const product = products.find((item) => item.id === code.applicable_product_id);
+            return product ? `منتج: ${product.name}` : 'منتج محدد';
+        }
+
+        if (code.applicable_category_id) {
+            const category = categories.find((item) => item.id === code.applicable_category_id);
+            return category ? `قسم: ${category.name}` : 'قسم محدد';
+        }
+
+        return 'كل المنتجات';
+    };
+
     return (
         <div className="space-y-5">
             {/* Header */}
@@ -131,6 +175,7 @@ export default function AdminDiscountsPage() {
                             <tr className="border-b border-surface-hover">
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500">الكود</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500">قيمة الخصم</th>
+                                <th className="px-4 py-3 text-xs font-bold text-gray-500 hidden lg:table-cell">بيشتغل على</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 hidden md:table-cell">الاستخدام</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500">الحالة</th>
                                 <th className="px-4 py-3 text-xs font-bold text-gray-500 text-center">إجراءات</th>
@@ -139,11 +184,11 @@ export default function AdminDiscountsPage() {
                         <tbody className="divide-y divide-surface-hover">
                             {isLoading ? (
                                 [...Array(3)].map((_, i) => (
-                                    <tr key={i}><td colSpan={5} className="px-4 py-4"><div className="h-10 bg-surface-hover rounded-lg animate-pulse" /></td></tr>
+                                    <tr key={i}><td colSpan={6} className="px-4 py-4"><div className="h-10 bg-surface-hover rounded-lg animate-pulse" /></td></tr>
                                 ))
                             ) : codes.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="text-center py-16">
+                                    <td colSpan={6} className="text-center py-16">
                                         <Ticket className="w-10 h-10 mx-auto mb-3 text-gray-700" />
                                         <p className="text-gray-500">لا توجد أكواد خصم بعد، أضف الكود الأول!</p>
                                     </td>
@@ -157,6 +202,11 @@ export default function AdminDiscountsPage() {
                                     </td>
                                     <td className="px-4 py-3 text-primary font-bold tracking-tight">
                                         {c.discount_percentage ? `${c.discount_percentage}%` : `${c.discount_amount} ج.م`}
+                                    </td>
+                                    <td className="px-4 py-3 hidden lg:table-cell">
+                                        <span className="inline-flex items-center rounded-full border border-surface-hover bg-surface-hover px-3 py-1 text-xs font-bold text-foreground">
+                                            {getTargetLabel(c)}
+                                        </span>
                                     </td>
                                     <td className="px-4 py-3 hidden md:table-cell">
                                         <span className="flex items-center gap-1.5 text-xs text-gray-500">
@@ -256,6 +306,71 @@ export default function AdminDiscountsPage() {
                                     placeholder="مثال: 100"
                                     className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50" dir="ltr" />
                             </div>
+
+                            <div className="space-y-3">
+                                <label className="block text-xs font-bold text-gray-500">الكود يشتغل على إيه؟</label>
+                                <div className="grid grid-cols-3 gap-2 bg-surface-hover p-1 rounded-xl">
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm({ ...form, target_scope: 'all', applicable_product_id: '', applicable_category_id: '' })}
+                                        className={`py-2 text-xs font-bold rounded-lg transition-all ${form.target_scope === 'all' ? 'bg-surface border border-surface-hover text-foreground shadow-sm' : 'text-gray-500 hover:text-foreground'}`}
+                                    >
+                                        كل المنتجات
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm({ ...form, target_scope: 'product', applicable_category_id: '' })}
+                                        className={`py-2 text-xs font-bold rounded-lg transition-all ${form.target_scope === 'product' ? 'bg-surface border border-surface-hover text-foreground shadow-sm' : 'text-gray-500 hover:text-foreground'}`}
+                                    >
+                                        منتج معيّن
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm({ ...form, target_scope: 'category', applicable_product_id: '' })}
+                                        className={`py-2 text-xs font-bold rounded-lg transition-all ${form.target_scope === 'category' ? 'bg-surface border border-surface-hover text-foreground shadow-sm' : 'text-gray-500 hover:text-foreground'}`}
+                                    >
+                                        قسم معيّن
+                                    </button>
+                                </div>
+                            </div>
+
+                            {form.target_scope === 'product' && (
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 mb-1.5">اختار المنتج</label>
+                                    <select
+                                        value={form.applicable_product_id}
+                                        onChange={(e) => setForm({ ...form, applicable_product_id: e.target.value })}
+                                        className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                    >
+                                        <option value="">اختار منتج</option>
+                                        {products.map((product) => (
+                                            <option key={product.id} value={product.id}>
+                                                {product.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="mt-1 text-[11px] text-gray-500">الكود ده هيتطبق على المنتج ده فقط، وبرضه المستخدم الواحد له مرة واحدة فقط.</p>
+                                </div>
+                            )}
+
+                            {form.target_scope === 'category' && (
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 mb-1.5">اختار القسم</label>
+                                    <select
+                                        value={form.applicable_category_id}
+                                        onChange={(e) => setForm({ ...form, applicable_category_id: e.target.value })}
+                                        className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                    >
+                                        <option value="">اختار قسم</option>
+                                        {categories.map((category) => (
+                                            <option key={category.id} value={category.id}>
+                                                {category.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="mt-1 text-[11px] text-gray-500">الكود ده هيشتغل على كل منتجات القسم ده فقط، وبرضه المستخدم الواحد له مرة واحدة فقط.</p>
+                                </div>
+                            )}
 
                             {/* Active Toggle */}
                             <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-colors ${form.is_active ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-surface-hover border-surface-hover'}`}>

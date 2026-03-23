@@ -14,12 +14,13 @@ import {
 interface DiscountCodeInputProps {
     originalPrice: number;
     productId?: string;
+    categoryId?: string | null;
     userId?: string;
     onDiscountApplied: (finalPrice: number, savedAmount: number, label: string) => void;
     onDiscountRemoved: () => void;
 }
 
-export function DiscountCodeInput({ originalPrice, productId, userId, onDiscountApplied, onDiscountRemoved }: DiscountCodeInputProps) {
+export function DiscountCodeInput({ originalPrice, productId, categoryId, userId, onDiscountApplied, onDiscountRemoved }: DiscountCodeInputProps) {
     const [code, setCode] = useState('');
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [appliedCode, setAppliedCode] = useState('');
@@ -48,7 +49,7 @@ export function DiscountCodeInput({ originalPrice, productId, userId, onDiscount
 
             setCode(savedCode);
             setStatus('loading');
-            const { discount, error } = await validateDiscountCode(savedCode, userId);
+            const { discount, error } = await validateDiscountCode(savedCode, { userId, productId, categoryId });
 
             if (discount) {
                 const result = applyDiscount(originalPrice, discount);
@@ -66,13 +67,13 @@ export function DiscountCodeInput({ originalPrice, productId, userId, onDiscount
 
         loadSavedCode();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [originalPrice, productId, userId]);
+    }, [categoryId, originalPrice, productId, userId]);
 
     const handleApply = async () => {
         if (!code.trim()) return;
         setStatus('loading');
 
-        const { discount, error } = await validateDiscountCode(code, userId);
+        const { discount, error } = await validateDiscountCode(code, { userId, productId, categoryId });
 
         if (!discount) {
             setStatus('error');
