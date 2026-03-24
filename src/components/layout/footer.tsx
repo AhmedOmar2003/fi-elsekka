@@ -26,7 +26,7 @@ export function Footer() {
   const { categories } = useProducts()
 
   const footerCategoryNames = React.useMemo(
-    () => ["ملابس وأزياء", "سوبر ماركت", "صيدلية", "أدوات منزلية"],
+    () => ["ملابس وأزياء", "سوبر ماركت", "طعام", "صيدلية", "أدوات منزلية"],
     []
   )
 

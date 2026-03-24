@@ -114,6 +114,59 @@ const CATEGORY_TAXONOMIES: CategoryTaxonomyConfig[] = [
     ],
   },
   {
+    categoryName: "طعام",
+    primaryLabel: "نوع الأكل",
+    secondaryLabel: "التصنيف",
+    tertiaryLabel: "النوع الأدق",
+    options: [
+      {
+        value: "meals",
+        label: "وجبات",
+        children: [
+          { value: "breakfast", label: "فطار" },
+          { value: "lunch", label: "غدا" },
+          { value: "dinner", label: "عشا" },
+        ],
+      },
+      {
+        value: "sandwiches",
+        label: "ساندوتشات",
+        children: [
+          { value: "meat", label: "لحوم" },
+          { value: "chicken", label: "فراخ" },
+          { value: "mix", label: "ميكس" },
+        ],
+      },
+      {
+        value: "bakery",
+        label: "مخبوزات",
+        children: [
+          { value: "pastries", label: "فطاير" },
+          { value: "bread", label: "عيش ومخبوزات" },
+          { value: "pizza", label: "بيتزا" },
+        ],
+      },
+      {
+        value: "desserts",
+        label: "حلويات",
+        children: [
+          { value: "eastern", label: "شرقي" },
+          { value: "western", label: "غربي" },
+          { value: "icecream", label: "آيس كريم" },
+        ],
+      },
+      {
+        value: "drinks",
+        label: "مشروبات",
+        children: [
+          { value: "hot", label: "ساخنة" },
+          { value: "cold", label: "باردة" },
+          { value: "fresh", label: "فريش" },
+        ],
+      },
+    ],
+  },
+  {
     categoryName: "إلكترونيات",
     primaryLabel: "القسم الفرعي",
     secondaryLabel: "التصنيف",

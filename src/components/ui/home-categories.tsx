@@ -26,10 +26,19 @@ export function HomeCategoriesList() {
         return null;
     }
 
+    const categoryPriority = ['ملابس وأزياء', 'سوبر ماركت', 'طعام', 'صيدلية', 'إلكترونيات', 'ألعاب أطفال', 'أدوات منزلية', 'عناية شخصية']
+
     const sortedCategories = [...categories].sort((a, b) => {
-        if (a.name === 'ملابس وأزياء') return -1;
-        if (b.name === 'ملابس وأزياء') return 1;
-        return 0;
+        const aIndex = categoryPriority.indexOf(a.name)
+        const bIndex = categoryPriority.indexOf(b.name)
+
+        if (aIndex !== -1 || bIndex !== -1) {
+            if (aIndex === -1) return 1
+            if (bIndex === -1) return -1
+            return aIndex - bIndex
+        }
+
+        return a.name.localeCompare(b.name, 'ar')
     });
 
     return (

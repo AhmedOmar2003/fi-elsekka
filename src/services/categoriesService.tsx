@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
 import React from 'react';
-import { Shirt, Laptop, Pill, ShoppingBasket, Baby, Sparkles, Home as HomeIcon, LayoutGrid } from 'lucide-react';
+import { Shirt, Laptop, Pill, ShoppingBasket, Baby, Sparkles, Home as HomeIcon, LayoutGrid, UtensilsCrossed } from 'lucide-react';
 
 export interface Category {
     id: string;
@@ -63,6 +63,12 @@ export const getCategoryDesign = (name: string) => {
                 iconComponent: ShoppingBasket,
                 color: "from-emerald-500/20 to-emerald-500/5 hover:from-emerald-500/30",
                 iconColor: "text-emerald-500 bg-emerald-500/10"
+            };
+        case 'طعام':
+            return {
+                iconComponent: UtensilsCrossed,
+                color: "from-orange-500/20 to-orange-500/5 hover:from-orange-500/30",
+                iconColor: "text-orange-500 bg-orange-500/10"
             };
         case 'ألعاب أطفال':
             return {
