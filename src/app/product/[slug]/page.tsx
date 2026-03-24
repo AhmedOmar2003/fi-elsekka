@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import ProductPageClient from "./product-page-client"
-import { fetchProductDetails } from "@/services/productsService"
+import { fetchProductDetails, fetchRelatedProducts } from "@/services/productsService"
 import { cache } from "react"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://fi-elsekka.vercel.app"
@@ -72,6 +72,7 @@ export default async function ProductPage({
 }) {
   const { slug } = await params
   const product = await getProductForPage(slug)
+  const relatedProducts = product ? await fetchRelatedProducts(product.id, 8) : []
 
-  return <ProductPageClient initialProduct={product} />
+  return <ProductPageClient initialProduct={product} initialRelatedProducts={relatedProducts} />
 }

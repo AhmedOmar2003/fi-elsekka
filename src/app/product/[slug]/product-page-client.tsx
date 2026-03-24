@@ -5,17 +5,19 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { ProductCard } from "@/components/ui/product-card"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Tag, Camera, Send, MessageSquare, X, Share2, Copy } from "lucide-react"
-import { fetchProductDetails, Product } from "@/services/productsService"
+import { fetchProductDetails, fetchRelatedProducts, Product } from "@/services/productsService"
 import { fetchProductReviews, calcReviewStats, createReview, updateReview, fetchUserProductReview, checkUserPurchased, checkUserReviewed, uploadReviewImage, Review, ReviewStats } from "@/services/reviewsService"
 import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { DiscountCodeInput } from "@/components/ui/discount-code-input"
 import { toast } from "sonner"
-import { getBundleItems, getBundleSummary, getProductMode } from "@/lib/product-presentation"
+import { getBundleItems, getBundleSummary, getProductMode, toProductCardProps } from "@/lib/product-presentation"
 import { getTaxonomyLabel, getTaxonomySelection } from "@/lib/category-taxonomy"
+import { getProductCatalogMetadata } from "@/lib/product-metadata"
 
 function WhatsAppIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -65,7 +67,13 @@ function TikTokIcon(props: React.SVGProps<SVGSVGElement>) {
   )
 }
 
-export default function ProductPage({ initialProduct = null }: { initialProduct?: Product | null }) {
+export default function ProductPage({
+  initialProduct = null,
+  initialRelatedProducts = [],
+}: {
+  initialProduct?: Product | null
+  initialRelatedProducts?: Product[]
+}) {
   const params = useParams()
   const router = useRouter()
   const { addItem } = useCart()
@@ -133,6 +141,7 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
   const slugOrId = typeof params.slug === 'string' ? params.slug : ''
 
   const [dbProduct, setDbProduct] = React.useState<Product | null>(initialProduct)
+  const [relatedProducts, setRelatedProducts] = React.useState<Product[]>(initialRelatedProducts)
   const [isLoading, setIsLoading] = React.useState(!initialProduct)
 
   const normalizedSpecs = React.useMemo(() => {
@@ -160,22 +169,28 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
   React.useEffect(() => {
     const loadProduct = async () => {
       setIsLoading(true)
-      const data = await fetchProductDetails(slugOrId)
+      const [data, related] = await Promise.all([
+        fetchProductDetails(slugOrId),
+        fetchRelatedProducts(slugOrId, 8),
+      ])
       setDbProduct(data)
+      setRelatedProducts(related)
       setIsLoading(false)
     }
 
     if (slugOrId) {
       if (initialProduct?.id === slugOrId) {
         setDbProduct(initialProduct)
+        setRelatedProducts(initialRelatedProducts)
         setIsLoading(false)
       } else {
         loadProduct()
       }
     } else {
       setIsLoading(false)
+      setRelatedProducts([])
     }
-  }, [slugOrId, initialProduct])
+  }, [slugOrId, initialProduct, initialRelatedProducts])
 
   // ── Reviews state ─────────────────────────────────────────
   const [reviews, setReviews] = React.useState<Review[]>([])
@@ -312,8 +327,9 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
 
 
   const product = dbProduct ? (() => {
+    const metadata = getProductCatalogMetadata(dbProduct.specifications)
     let price = dbProduct.price;
-    let oldPrice: number | undefined = dbProduct.specifications?.old_price || undefined;
+    let oldPrice: number | undefined = metadata.oldPrice || undefined;
     let discountAmount = dbProduct.specifications?.discount_badge || undefined;
 
     if (dbProduct.discount_percentage && dbProduct.discount_percentage > 0) {
@@ -338,10 +354,11 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
       stock: dbProduct.stock_quantity ? `متوفر ${dbProduct.stock_quantity} قطعة` : (dbProduct.specifications?.stock || "متوفر"),
       stockQty: dbProduct.stock_quantity ?? null,
       description: dbProduct.description || "لا يوجد وصف متاح لهذا المنتج حالياً.",
+      shortDescription: metadata.shortDescription,
       specs: normalizedSpecs.length > 0
         ? normalizedSpecs
         : [
-          { label: "الماركة", value: dbProduct.categories?.name || "عام" },
+          { label: "الماركة", value: metadata.brand || dbProduct.categories?.name || "عام" },
         ],
       features: dbProduct.specifications?.features || [
         "جودة عالية ومضمونة",
@@ -356,7 +373,9 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
         dbProduct.image_url,
         ...(dbProduct.images || [])
       ].filter(Boolean) as string[],
-      category_name: dbProduct.categories?.name || "منتجات"
+      category_name: dbProduct.categories?.name || "منتجات",
+      brand: metadata.brand,
+      sku: metadata.sku,
     };
   })() : {
     title: "سماعة بلوتوث لاسلكية عازلة للضوضاء",
@@ -369,6 +388,7 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
     stock: "متوفر 15 قطعة فقط",
     stockQty: null,
     description: "استمتع بتجربة صوتية لا مثيل لها مع سماعة البلوتوث اللاسلكية الجديدة. تصميم مريح للأذن، بطارية تدوم حتى 24 ساعة، وعزل تام للضوضاء الخارجية عشان تفصل براحتك.",
+    shortDescription: "",
     specs: [
       { label: "الماركة", value: "SoundMax" },
       { label: "عمر البطارية", value: "24 ساعة" },
@@ -384,13 +404,15 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
     productMode: "single",
     bundleItems: [],
     bundleSummary: "",
-    taxonomyLabel: { primary: "", secondary: "" },
+    taxonomyLabel: { primary: "", secondary: "", tertiary: "" },
     images: [
       "https://th.bing.com/th/id/OIG3.C_W_T_P_j_B_k_O_d_J_?pid=ImgGn",
       "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn",
       "https://th.bing.com/th/id/OIG1.3T.W.G_A_u2z4O6.7Z1Y?pid=ImgGn",
     ],
     category_name: "إلكترونيات",
+    brand: "",
+    sku: "",
   }
 
   const [activeImage, setActiveImage] = React.useState(0)
@@ -616,6 +638,12 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
                 {product.title}
               </h1>
 
+              {product.shortDescription && (
+                <p className="mb-5 max-w-2xl text-sm leading-7 text-gray-400 md:text-base">
+                  {product.shortDescription}
+                </p>
+              )}
+
               {product.productMode === "bundle" && (
                 <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-4">
                   <p className="text-sm font-black text-primary mb-1">الباكج دي متجهزة علشان تاخد كذا حاجة مرة واحدة</p>
@@ -635,6 +663,21 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
                   {product.taxonomyLabel.secondary && (
                     <span className="inline-flex items-center rounded-full bg-surface-hover px-3 py-1 text-xs font-black text-gray-400">
                       {product.taxonomyLabel.secondary}
+                    </span>
+                  )}
+                  {product.taxonomyLabel.tertiary && (
+                    <span className="inline-flex items-center rounded-full bg-surface-hover px-3 py-1 text-xs font-black text-gray-400">
+                      {product.taxonomyLabel.tertiary}
+                    </span>
+                  )}
+                  {product.brand && (
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">
+                      {product.brand}
+                    </span>
+                  )}
+                  {product.sku && (
+                    <span className="inline-flex items-center rounded-full bg-surface-hover px-3 py-1 text-xs font-bold text-gray-500">
+                      SKU: {product.sku}
                     </span>
                   )}
                 </div>
@@ -866,6 +909,43 @@ export default function ProductPage({ initialProduct = null }: { initialProduct?
                     ))}
                   </div>
                 </section>
+
+                {relatedProducts.length > 0 && (
+                  <section className="pt-2">
+                    <div className="mb-4 flex items-end justify-between gap-3">
+                      <div>
+                        <h3 className="text-xl font-black text-foreground">منتجات مشابهة</h3>
+                        <p className="mt-1 text-sm text-gray-500">اختيارات قريبة من نفس النوع علشان تلاقي بديل أو تكمل طلبك بحاجة أنسب.</p>
+                      </div>
+                      {dbProduct?.category_id ? (
+                        <Link href={`/category/${dbProduct.category_id}`} className="hidden md:inline-flex text-sm font-bold text-primary hover:text-primary/80">
+                          شوف القسم كله
+                        </Link>
+                      ) : null}
+                    </div>
+
+                    <div className="hidden sm:grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                      {relatedProducts.slice(0, 8).map((relatedProduct) => (
+                        <ProductCard
+                          key={relatedProduct.id}
+                          {...toProductCardProps(relatedProduct)}
+                        />
+                      ))}
+                    </div>
+
+                    <div className="sm:hidden -mx-4 overflow-x-auto px-4 pb-2 no-scrollbar snap-x snap-mandatory">
+                      <div className="flex w-max gap-3">
+                        {relatedProducts.slice(0, 8).map((relatedProduct) => (
+                          <ProductCard
+                            key={relatedProduct.id}
+                            {...toProductCardProps(relatedProduct)}
+                            className="w-[220px] snap-start"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </section>
+                )}
               </div>
               </div>
             </div>

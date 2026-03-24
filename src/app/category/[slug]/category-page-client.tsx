@@ -178,6 +178,7 @@ export default function CategoryPageClient({
         matchesProductTaxonomy(p.specifications, {
           primary: taxonomyPrimaryFilter,
           secondary: taxonomySecondaryFilter,
+          tertiary: "",
         })
       )
     }

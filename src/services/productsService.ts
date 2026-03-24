@@ -1,5 +1,10 @@
 import { supabase } from '@/lib/supabase';
 import { Category } from './categoriesService';
+import {
+    compareRelatedCandidates,
+    getManualRelatedProductIds,
+    isPublishedProduct,
+} from '@/lib/product-metadata';
 
 const isUUID = (uuid: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid);
 
@@ -16,6 +21,13 @@ const PRODUCT_DETAIL_FIELDS = `
   *,
   categories ( name ),
   product_specifications ( id, label, description )
+`;
+
+const RELATED_PRODUCT_FIELDS = `
+  id, name, price, image_url,
+  discount_percentage, is_best_seller, show_in_offers,
+  category_id, specifications, created_at, stock_quantity,
+  categories ( name )
 `;
 
 export interface Product {
@@ -263,4 +275,72 @@ export const fetchProductById = async (productId: string): Promise<Product | nul
         return null;
     }
     return data as Product;
+};
+
+async function fetchProductsByIds(ids: string[]): Promise<Product[]> {
+    const validIds = ids.filter((id) => isUUID(id));
+    if (validIds.length === 0) return [];
+
+    const { data, error } = await supabase
+        .from('products')
+        .select(RELATED_PRODUCT_FIELDS)
+        .in('id', validIds);
+
+    if (error) {
+        console.error('fetchProductsByIds error:', error.message);
+        return [];
+    }
+
+    const lookup = new Map((data || []).map((product) => [product.id, product as unknown as Product]));
+    return validIds
+        .map((id) => lookup.get(id))
+        .filter((product): product is Product => Boolean(product));
+}
+
+export const fetchRelatedProducts = async (productId: string, limit: number = 8): Promise<Product[]> => {
+    if (!isUUID(productId)) return [];
+
+    const currentProduct = await fetchProductDetails(productId);
+    if (!currentProduct) return [];
+
+    const manualIds = getManualRelatedProductIds(currentProduct).filter((id) => id !== currentProduct.id);
+    const manualProducts = (await fetchProductsByIds(manualIds))
+        .filter((product) => isPublishedProduct(product))
+        .slice(0, limit);
+
+    const excludedIds = new Set<string>([currentProduct.id, ...manualProducts.map((product) => product.id)]);
+    const remainingLimit = Math.max(limit - manualProducts.length, 0);
+
+    if (remainingLimit === 0) {
+        return manualProducts;
+    }
+
+    let query = supabase
+        .from('products')
+        .select(RELATED_PRODUCT_FIELDS)
+        .neq('id', currentProduct.id)
+        .order('created_at', { ascending: false })
+        .limit(currentProduct.category_id ? 80 : 120);
+
+    if (currentProduct.category_id) {
+        query = query.eq('category_id', currentProduct.category_id);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+        console.error('fetchRelatedProducts error:', error.message);
+        return manualProducts;
+    }
+
+    const candidates = (data || [])
+        .map((item) => item as unknown as Product)
+        .filter((product) => !excludedIds.has(product.id))
+        .filter((product) => isPublishedProduct(product));
+
+    const automaticProducts = candidates
+        .sort((left, right) => compareRelatedCandidates(currentProduct, left, right))
+        .slice(0, remainingLimit);
+
+    return [...manualProducts, ...automaticProducts].slice(0, limit);
 };

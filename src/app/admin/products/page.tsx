@@ -14,8 +14,16 @@ import {
     getTaxonomyLabel,
     getTaxonomyPrimaryOptions,
     getTaxonomySecondaryOptions,
+    getTaxonomyTertiaryOptions,
     getTaxonomySelection,
 } from '@/lib/category-taxonomy';
+import {
+    extractBaseSpecifications,
+    getProductCatalogMetadata,
+    normalizeStringArray,
+} from '@/lib/product-metadata';
+import { ChipsInput } from '@/components/admin/chips-input';
+import { RelatedProductsPicker } from '@/components/admin/related-products-picker';
 
 type Product = {
     id: string;
@@ -38,6 +46,24 @@ type Category = { id: string; name: string };
 const EMPTY_FORM = {
     name: '', description: '', price: '', stock_quantity: '',
     discount_percentage: '', category_id: '', image_url: '',
+    short_description: '',
+    old_price: '',
+    sku: '',
+    brand: '',
+    slug: '',
+    status: 'published',
+    featured: false,
+    product_type: '',
+    tags: [] as string[],
+    keywords: [] as string[],
+    gender: '',
+    age_group: '',
+    season: '',
+    style: '',
+    color_family: '',
+    material: '',
+    size_group: '',
+    related_product_ids: [] as string[],
     images: ['', '', '', ''],
     image_file: null as File | null,
     images_files: [null, null, null, null] as (File | null)[],
@@ -47,6 +73,7 @@ const EMPTY_FORM = {
     bundle_items: [] as BundleItem[],
     taxonomy_primary: '',
     taxonomy_secondary: '',
+    taxonomy_tertiary: '',
     specifications_base: {} as Record<string, any>,
 };
 
@@ -85,6 +112,7 @@ export default function AdminProductsPage() {
     const taxonomyConfig = getCategoryTaxonomyConfig(selectedCategoryName);
     const taxonomyPrimaryOptions = getTaxonomyPrimaryOptions(selectedCategoryName);
     const taxonomySecondaryOptions = getTaxonomySecondaryOptions(selectedCategoryName, form.taxonomy_primary);
+    const taxonomyTertiaryOptions = getTaxonomyTertiaryOptions(selectedCategoryName, form.taxonomy_primary, form.taxonomy_secondary);
 
     const load = async () => {
         setIsLoading(true);
@@ -114,17 +142,32 @@ export default function AdminProductsPage() {
         setEditingId(p.id);
         const pImages = p.images || [];
         const taxonomySelection = getTaxonomySelection(p.specifications);
-        const baseSpecifications = { ...(p.specifications || {}) };
-        delete baseSpecifications.custom_specs;
-        delete baseSpecifications.product_mode;
-        delete baseSpecifications.bundle_items;
-        delete baseSpecifications.category_taxonomy;
+        const metadata = getProductCatalogMetadata(p.specifications);
+        const baseSpecifications = extractBaseSpecifications(p.specifications);
         setForm({
             name: p.name, description: p.description || '',
             price: String(p.price), stock_quantity: String(p.stock_quantity || 0),
             discount_percentage: String(p.discount_percentage || 0),
             category_id: p.category_id || '',
             image_url: p.image_url || '',
+            short_description: metadata.shortDescription,
+            old_price: metadata.oldPrice ? String(metadata.oldPrice) : '',
+            sku: metadata.sku,
+            brand: metadata.brand,
+            slug: metadata.slug,
+            status: metadata.status || 'published',
+            featured: metadata.featured,
+            product_type: metadata.productType,
+            tags: metadata.tags,
+            keywords: metadata.keywords,
+            gender: metadata.gender,
+            age_group: metadata.ageGroup,
+            season: metadata.season,
+            style: metadata.style,
+            color_family: metadata.colorFamily,
+            material: metadata.material,
+            size_group: metadata.sizeGroup,
+            related_product_ids: metadata.relatedProductIds.filter((id) => id !== p.id),
             images: [
                 pImages[0] || '',
                 pImages[1] || '',
@@ -139,6 +182,7 @@ export default function AdminProductsPage() {
             bundle_items: getBundleItems(p.specifications),
             taxonomy_primary: taxonomySelection.primary,
             taxonomy_secondary: taxonomySelection.secondary,
+            taxonomy_tertiary: taxonomySelection.tertiary,
             specifications_base: baseSpecifications,
         });
         setIsModalOpen(true);
@@ -181,6 +225,10 @@ export default function AdminProductsPage() {
         }
         if (taxonomyConfig && taxonomySecondaryOptions.length > 0 && !form.taxonomy_secondary) {
             toast.error(`اختار ${taxonomyConfig.secondaryLabel} كمان علشان الفلترة تبقى دقيقة`);
+            return;
+        }
+        if (taxonomyConfig && taxonomyTertiaryOptions.length > 0 && !form.taxonomy_tertiary) {
+            toast.error(`اختار ${taxonomyConfig.tertiaryLabel || 'التصنيف الأدق'} علشان الترشيحات تبقى أذكى`);
             return;
         }
         setSaveError(null);
@@ -237,13 +285,33 @@ export default function AdminProductsPage() {
                 show_in_offers: form.show_in_offers,
                 specifications: {
                     ...form.specifications_base,
+                    slug: form.slug.trim(),
+                    short_description: form.short_description.trim(),
+                    old_price: form.old_price ? parseFloat(form.old_price) : null,
+                    sku: form.sku.trim(),
+                    brand: form.brand.trim(),
+                    status: form.status || 'published',
+                    featured: form.featured,
+                    product_type: form.product_type.trim(),
+                    tags: normalizeStringArray(form.tags),
+                    keywords: normalizeStringArray(form.keywords),
+                    gender: form.gender.trim(),
+                    age_group: form.age_group.trim(),
+                    season: form.season.trim(),
+                    style: form.style.trim(),
+                    color_family: form.color_family.trim(),
+                    material: form.material.trim(),
+                    size_group: form.size_group.trim(),
+                    related_product_ids: Array.from(new Set(form.related_product_ids.filter(id => id && id !== editingId))),
                     product_mode: form.product_mode,
                     bundle_items: form.product_mode === 'bundle' ? cleanedBundleItems : [],
                     category_taxonomy: taxonomyConfig ? {
                         primary: form.taxonomy_primary,
                         secondary: form.taxonomy_secondary,
-                        primary_label: getTaxonomyLabel(selectedCategoryName, form.taxonomy_primary, form.taxonomy_secondary).primary,
-                        secondary_label: getTaxonomyLabel(selectedCategoryName, form.taxonomy_primary, form.taxonomy_secondary).secondary,
+                        tertiary: form.taxonomy_tertiary,
+                        primary_label: getTaxonomyLabel(selectedCategoryName, form.taxonomy_primary, form.taxonomy_secondary, form.taxonomy_tertiary).primary,
+                        secondary_label: getTaxonomyLabel(selectedCategoryName, form.taxonomy_primary, form.taxonomy_secondary, form.taxonomy_tertiary).secondary,
+                        tertiary_label: getTaxonomyLabel(selectedCategoryName, form.taxonomy_primary, form.taxonomy_secondary, form.taxonomy_tertiary).tertiary,
                     } : null,
                     custom_specs: form.specs
                         .filter(spec => spec.label.trim() && spec.description.trim())
@@ -464,15 +532,19 @@ export default function AdminProductsPage() {
                                                         ) : null}
                                                         {(() => {
                                                             const categoryName = p.categories?.name || '';
+                                                            const taxonomySelection = getTaxonomySelection(p.specifications);
                                                             const labels = getTaxonomyLabel(
                                                                 categoryName,
-                                                                getTaxonomySelection(p.specifications).primary,
-                                                                getTaxonomySelection(p.specifications).secondary
+                                                                taxonomySelection.primary,
+                                                                taxonomySelection.secondary,
+                                                                taxonomySelection.tertiary
                                                             );
                                                             if (!labels.primary) return null;
                                                             return (
                                                                 <span className="text-[10px] text-gray-500 line-clamp-1">
-                                                                    {labels.primary}{labels.secondary ? ` / ${labels.secondary}` : ''}
+                                                                    {labels.primary}
+                                                                    {labels.secondary ? ` / ${labels.secondary}` : ''}
+                                                                    {labels.tertiary ? ` / ${labels.tertiary}` : ''}
                                                                 </span>
                                                             );
                                                         })()}
@@ -531,7 +603,7 @@ export default function AdminProductsPage() {
             {/* Add/Edit Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-                    <div className="bg-surface border border-surface-hover rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+                    <div className="bg-surface border border-surface-hover rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
                         <div className="flex items-center justify-between p-5 border-b border-surface-hover sticky top-0 bg-surface z-10">
                             <h2 className="font-heading font-black text-foreground">{editingId ? 'تعديل المنتج' : 'إضافة منتج جديد'}</h2>
                             <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">
@@ -639,6 +711,102 @@ export default function AdminProductsPage() {
                                     )}
                                 </div>
                             ))}
+
+                            <div className="rounded-2xl border border-surface-hover bg-surface-hover/40 p-4 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-black text-foreground mb-1">بيانات تسويقية وتجارية</label>
+                                    <p className="text-[11px] text-gray-500">البيانات دي بتفيد صفحة المنتج والترشيحات والبحث الداخلي من غير ما نغيّر مسار البيع الحالي.</p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">وصف قصير</label>
+                                        <textarea
+                                            rows={2}
+                                            value={form.short_description}
+                                            onChange={e => setForm(f => ({ ...f, short_description: e.target.value }))}
+                                            placeholder="سطرين يوضحوا أهم نقطة بيع للمنتج"
+                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50 resize-none"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 mb-1.5">السعر قبل الخصم</label>
+                                            <input
+                                                type="number"
+                                                value={form.old_price}
+                                                onChange={e => setForm(f => ({ ...f, old_price: e.target.value }))}
+                                                placeholder="مثال: 250"
+                                                className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 mb-1.5">SKU / كود المنتج</label>
+                                            <input
+                                                value={form.sku}
+                                                onChange={e => setForm(f => ({ ...f, sku: e.target.value }))}
+                                                placeholder="مثال: TSH-2026-01"
+                                                className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 mb-1.5">البراند</label>
+                                            <input
+                                                value={form.brand}
+                                                onChange={e => setForm(f => ({ ...f, brand: e.target.value }))}
+                                                placeholder="مثال: Nike / Fresh"
+                                                className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 mb-1.5">Slug داخلي</label>
+                                            <input
+                                                value={form.slug}
+                                                onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
+                                                placeholder="مثال: black-jacket-light"
+                                                className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">حالة المنتج</label>
+                                        <select
+                                            value={form.status}
+                                            onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                        >
+                                            <option value="published">منشور</option>
+                                            <option value="active">نشط</option>
+                                            <option value="draft">مسودة</option>
+                                            <option value="archived">مؤرشف</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">نوع المنتج التجاري</label>
+                                        <input
+                                            value={form.product_type}
+                                            onChange={e => setForm(f => ({ ...f, product_type: e.target.value }))}
+                                            placeholder="مثال: تيشيرت / زبادي / سماعة"
+                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                        />
+                                    </div>
+
+                                    <label className="flex items-center gap-3 rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={form.featured}
+                                            onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))}
+                                            className="h-4 w-4 accent-primary"
+                                        />
+                                        <span className="text-sm font-bold text-foreground">تمييز كمنتج Featured</span>
+                                    </label>
+                                </div>
+                            </div>
 
                             <div className="rounded-2xl border border-surface-hover bg-surface-hover/50 p-4">
                                 <div className="flex items-center justify-between gap-3 mb-3">
@@ -761,6 +929,7 @@ export default function AdminProductsPage() {
                                                 category_id: nextCategoryId,
                                                 taxonomy_primary: nextTaxonomyConfig ? f.taxonomy_primary : '',
                                                 taxonomy_secondary: nextTaxonomyConfig ? f.taxonomy_secondary : '',
+                                                taxonomy_tertiary: nextTaxonomyConfig ? f.taxonomy_tertiary : '',
                                             }));
                                         }}
                                         className="w-full bg-surface border border-surface-hover rounded-xl pr-9 pl-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 appearance-none"
@@ -782,7 +951,7 @@ export default function AdminProductsPage() {
                                             <label className="block text-[11px] font-bold text-gray-500 mb-1.5">{taxonomyConfig.primaryLabel}</label>
                                             <select
                                                 value={form.taxonomy_primary}
-                                                onChange={e => setForm(f => ({ ...f, taxonomy_primary: e.target.value, taxonomy_secondary: '' }))}
+                                                onChange={e => setForm(f => ({ ...f, taxonomy_primary: e.target.value, taxonomy_secondary: '', taxonomy_tertiary: '' }))}
                                                 className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
                                             >
                                                 <option value="">اختار التصنيف الرئيسي</option>
@@ -795,7 +964,7 @@ export default function AdminProductsPage() {
                                             <label className="block text-[11px] font-bold text-gray-500 mb-1.5">{taxonomyConfig.secondaryLabel}</label>
                                             <select
                                                 value={form.taxonomy_secondary}
-                                                onChange={e => setForm(f => ({ ...f, taxonomy_secondary: e.target.value }))}
+                                                onChange={e => setForm(f => ({ ...f, taxonomy_secondary: e.target.value, taxonomy_tertiary: '' }))}
                                                 disabled={!form.taxonomy_primary}
                                                 className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 disabled:opacity-50"
                                             >
@@ -805,9 +974,146 @@ export default function AdminProductsPage() {
                                                 ))}
                                             </select>
                                         </div>
+                                        {taxonomyTertiaryOptions.length > 0 && (
+                                            <div className="sm:col-span-2">
+                                                <label className="block text-[11px] font-bold text-gray-500 mb-1.5">{taxonomyConfig.tertiaryLabel || 'التصنيف الأدق'}</label>
+                                                <select
+                                                    value={form.taxonomy_tertiary}
+                                                    onChange={e => setForm(f => ({ ...f, taxonomy_tertiary: e.target.value }))}
+                                                    disabled={!form.taxonomy_secondary}
+                                                    className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 disabled:opacity-50"
+                                                >
+                                                    <option value="">اختار التصنيف الأدق</option>
+                                                    {taxonomyTertiaryOptions.map(option => (
+                                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
+
+                            <div className="rounded-2xl border border-surface-hover bg-surface-hover/40 p-4 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-black text-foreground mb-1">حقول التشابه الذكي</label>
+                                    <p className="text-[11px] text-gray-500">الحقول دي هي اللي هتخلّي النظام يطلع منتجات مشابهة بذكاء حسب كل قسم.</p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">النوع / الجنس</label>
+                                        <select
+                                            value={form.gender}
+                                            onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}
+                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                        >
+                                            <option value="">غير محدد</option>
+                                            <option value="men">رجالي</option>
+                                            <option value="women">نسائي</option>
+                                            <option value="boys">أولاد</option>
+                                            <option value="girls">بنات</option>
+                                            <option value="unisex">للجنسين</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">الفئة العمرية</label>
+                                        <select
+                                            value={form.age_group}
+                                            onChange={e => setForm(f => ({ ...f, age_group: e.target.value }))}
+                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                        >
+                                            <option value="">غير محدد</option>
+                                            <option value="baby">بيبي</option>
+                                            <option value="kids">أطفال</option>
+                                            <option value="teens">مراهقين</option>
+                                            <option value="adults">كبار</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">الموسم</label>
+                                        <select
+                                            value={form.season}
+                                            onChange={e => setForm(f => ({ ...f, season: e.target.value }))}
+                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                        >
+                                            <option value="">غير محدد</option>
+                                            <option value="summer">صيفي</option>
+                                            <option value="winter">شتوي</option>
+                                            <option value="spring">ربيعي</option>
+                                            <option value="autumn">خريفي</option>
+                                            <option value="all_season">كل المواسم</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">الستايل</label>
+                                        <input
+                                            value={form.style}
+                                            onChange={e => setForm(f => ({ ...f, style: e.target.value }))}
+                                            placeholder="مثال: كاجوال / رسمي / سبورت"
+                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">الخامة</label>
+                                        <input
+                                            value={form.material}
+                                            onChange={e => setForm(f => ({ ...f, material: e.target.value }))}
+                                            placeholder="مثال: قطن / بلاستيك / ستانلس"
+                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">عائلة اللون</label>
+                                        <input
+                                            value={form.color_family}
+                                            onChange={e => setForm(f => ({ ...f, color_family: e.target.value }))}
+                                            placeholder="مثال: أسود / أبيض / متعدد"
+                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">مجموعة المقاس</label>
+                                        <input
+                                            value={form.size_group}
+                                            onChange={e => setForm(f => ({ ...f, size_group: e.target.value }))}
+                                            placeholder="مثال: أطفال / Adult / Free Size"
+                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    <ChipsInput
+                                        label="Tags"
+                                        helper="مثال: قطن، صيفي، عروض، بدون سكر، وايرلس"
+                                        placeholder="اكتب tag واضغط Enter"
+                                        values={form.tags}
+                                        onChange={(values) => setForm(f => ({ ...f, tags: values }))}
+                                    />
+                                    <ChipsInput
+                                        label="Keywords"
+                                        helper="كلمات تساعد الترشيح والبحث الذكي"
+                                        placeholder="اكتب keyword واضغط Enter"
+                                        values={form.keywords}
+                                        onChange={(values) => setForm(f => ({ ...f, keywords: values }))}
+                                    />
+                                </div>
+
+                                <RelatedProductsPicker
+                                    products={products}
+                                    selectedIds={form.related_product_ids}
+                                    onChange={(ids) => setForm(f => ({ ...f, related_product_ids: ids }))}
+                                    currentProductId={editingId}
+                                    currentCategoryId={form.category_id}
+                                />
+                            </div>
 
                             {/* Specifications */}
                             <div className="pt-4 border-t border-surface-hover">
