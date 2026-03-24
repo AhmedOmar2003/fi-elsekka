@@ -910,45 +910,44 @@ export default function ProductPage({
                   </div>
                 </section>
 
-                {relatedProducts.length > 0 && (
-                  <section className="pt-2">
-                    <div className="mb-4 flex items-end justify-between gap-3">
-                      <div>
-                        <h3 className="text-xl font-black text-foreground">منتجات مشابهة</h3>
-                        <p className="mt-1 text-sm text-gray-500">اختيارات قريبة من نفس النوع علشان تلاقي بديل أو تكمل طلبك بحاجة أنسب.</p>
-                      </div>
-                      {dbProduct?.category_id ? (
-                        <Link href={`/category/${dbProduct.category_id}`} className="hidden md:inline-flex text-sm font-bold text-primary hover:text-primary/80">
-                          شوف القسم كله
-                        </Link>
-                      ) : null}
-                    </div>
-
-                    <div className="hidden sm:grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                      {relatedProducts.slice(0, 8).map((relatedProduct) => (
-                        <ProductCard
-                          key={relatedProduct.id}
-                          {...toProductCardProps(relatedProduct)}
-                        />
-                      ))}
-                    </div>
-
-                    <div className="sm:hidden -mx-4 overflow-x-auto px-4 pb-2 no-scrollbar snap-x snap-mandatory">
-                      <div className="flex w-max gap-3">
-                        {relatedProducts.slice(0, 8).map((relatedProduct) => (
-                          <ProductCard
-                            key={relatedProduct.id}
-                            {...toProductCardProps(relatedProduct)}
-                            className="w-[220px] snap-start"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </section>
-                )}
               </div>
               </div>
             </div>
+
+            {relatedProducts.length > 0 && (
+              <section className="mt-14 w-full border-t border-surface-hover pt-10">
+                <div className="mb-6 flex items-end justify-between gap-3">
+                  <div>
+                    <h3 className="text-2xl font-black text-foreground">منتجات مشابهة</h3>
+                    <p className="mt-1 text-sm text-gray-500">اختيارات قريبة من نفس النوع علشان تلاقي بديل أو تكمل طلبك بحاجة أنسب.</p>
+                  </div>
+                  {dbProduct?.category_id ? (
+                    <Link href={`/category/${dbProduct.category_id}`} className="hidden md:inline-flex text-sm font-bold text-primary hover:text-primary/80">
+                      شوف القسم كله
+                    </Link>
+                  ) : null}
+                </div>
+
+                <div className="hidden sm:grid grid-cols-2 gap-6 lg:grid-cols-4">
+                  {relatedProducts.slice(0, 8).map((relatedProduct) => (
+                    <ProductCard
+                      key={relatedProduct.id}
+                      {...toProductCardProps(relatedProduct)}
+                    />
+                  ))}
+                </div>
+
+                <div className="sm:hidden -mx-1 overflow-x-auto pb-2 no-scrollbar">
+                  <div className="flex gap-4 px-1 snap-x snap-mandatory">
+                    {relatedProducts.slice(0, 8).map((relatedProduct) => (
+                      <div key={relatedProduct.id} className="snap-start min-w-[46vw] max-w-[46vw]">
+                        <ProductCard {...toProductCardProps(relatedProduct)} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
 
             {/* ── Reviews Section ────────────────────────────────────────── */}
             <div className="mt-16 pt-10 border-t border-surface-hover w-full" id="reviews">
