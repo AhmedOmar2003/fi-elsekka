@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { normalizeAuthEmail, validateCustomerEmail, validateStrongPassword } from '@/lib/auth-validation';
 
 export interface UserProfile {
     id: string;
@@ -13,8 +14,18 @@ export interface UserProfile {
 }
 
 export const signUp = async (email: string, password: string, fullName: string) => {
+    const emailError = validateCustomerEmail(email);
+    if (emailError) {
+        return { data: null, error: new Error(emailError) };
+    }
+
+    const passwordError = validateStrongPassword(password);
+    if (passwordError) {
+        return { data: null, error: new Error(passwordError) };
+    }
+
     const { data, error } = await supabase.auth.signUp({
-        email,
+        email: normalizeAuthEmail(email),
         password,
         options: {
             data: {
@@ -29,7 +40,7 @@ export const signUp = async (email: string, password: string, fullName: string) 
 
 export const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: normalizeAuthEmail(email),
         password,
     });
     return { data, error };
@@ -90,7 +101,12 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 };
 
 export const updateAuthEmail = async (newEmail: string) => {
-    const { data, error } = await supabase.auth.updateUser({ email: newEmail });
+    const emailError = validateCustomerEmail(newEmail);
+    if (emailError) {
+        return { data: null, error: new Error(emailError) };
+    }
+
+    const { data, error } = await supabase.auth.updateUser({ email: normalizeAuthEmail(newEmail) });
     return { data, error };
 };
 
@@ -103,6 +119,11 @@ export const sendPasswordResetEmail = async (email: string) => {
 };
 
 export const updateAuthPassword = async (newPassword: string) => {
+    const passwordError = validateStrongPassword(newPassword);
+    if (passwordError) {
+        return { data: null, error: new Error(passwordError) };
+    }
+
     const { data, error } = await supabase.auth.updateUser({ password: newPassword });
     return { data, error };
 };

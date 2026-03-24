@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/ui/password-input"
 import { signUp, signIn } from "@/services/authService"
+import { validateCustomerEmail, validateStrongPassword } from "@/lib/auth-validation"
 import { UserPlus, AlertCircle, CheckCircle } from "lucide-react"
 
 export default function RegisterPage() {
@@ -46,8 +47,22 @@ function RegisterContent() {
     const translateError = (msg: string) => {
       if (msg.includes("User already registered") || msg.includes("already registered")) return "البريد الإلكتروني ده عنده حساب بالفعل، جرب تسجيل الدخول."
       if (msg.includes("Too many requests") || msg.includes("rate limit") || msg.includes("email rate")) return "تجاوزت حد رسائل التأكيد للساعة. حاول تاني بعد ساعة، أو عطل تأكيد الإيميل من Supabase Dashboard."
-      if (msg.includes("Password should be at least")) return "كلمة المرور لازم تكون 6 أحرف على الأقل."
+      if (msg.includes("Password should be at least")) return "كلمة المرور لازم تكون 8 حروف أو أكثر."
       return msg
+    }
+
+    const emailError = validateCustomerEmail(email)
+    if (emailError) {
+      setIsLoading(false)
+      setErrorMsg(emailError)
+      return
+    }
+
+    const passwordError = validateStrongPassword(password)
+    if (passwordError) {
+      setIsLoading(false)
+      setErrorMsg(passwordError)
+      return
     }
 
     const { error } = await signUp(email, password, fullName)
@@ -117,10 +132,11 @@ function RegisterContent() {
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="example@mail.com"
+              placeholder="name@gmail.com"
               className="text-start direction-ltr"
               required
             />
+            <p className="px-1 text-xs text-muted-foreground">لازم البريد الإلكتروني العادي يكون Gmail مثل: `name@gmail.com`</p>
           </div>
 
           <div className="space-y-2">
@@ -131,8 +147,9 @@ function RegisterContent() {
               placeholder="••••••••"
               className="text-start direction-ltr"
               required
-              minLength={6}
+              minLength={8}
             />
+            <p className="px-1 text-xs text-muted-foreground">استخدم 8 أحرف أو أكثر، ويكون فيها حرف + رقم + رمز مميز</p>
           </div>
 
           <Button

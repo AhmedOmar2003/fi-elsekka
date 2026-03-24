@@ -17,6 +17,7 @@ import { fetchUserFavorites } from "@/services/favoritesService"
 import { fetchUserDeliveryAddresses, saveDeliveryAddress, updateDeliveryAddress, deleteDeliveryAddress, setDefaultDeliveryAddress, DeliveryInfo } from "@/services/deliveryService"
 import { Product } from "@/services/productsService"
 import { signOut, updateAuthEmail, updateAuthPassword, uploadAvatar } from "@/services/authService"
+import { validateCustomerEmail, validateStrongPassword } from "@/lib/auth-validation"
 import {
     User, Package, Settings, LogOut, Camera, Loader2,
     MapPin, AlertCircle, CheckCircle, Clock, Truck, XCircle, ShoppingBag, Plus, Trash2, Star, Heart
@@ -237,16 +238,27 @@ export default function AccountPage() {
 
         // 2. Update Auth Email if changed
         if (emailInput && emailInput !== user.email) {
+            const emailValidationError = validateCustomerEmail(emailInput)
+            if (emailValidationError) {
+                hasError = true
+                exactErrorStr += `Email Error: ${emailValidationError} | `
+            } else {
             const { error: emailError } = await updateAuthEmail(emailInput)
             if (emailError) {
                 hasError = true;
                 exactErrorStr += `Email Error: ${emailError.message} | `;
                 console.error("Email Update Error: ", emailError);
             }
+            }
         }
 
         // 3. Update Auth Password if provided
         if (passwordInput) {
+            const passwordValidationError = validateStrongPassword(passwordInput)
+            if (passwordValidationError) {
+                hasError = true
+                exactErrorStr += `Password Error: ${passwordValidationError} | `
+            } else {
             const { error: passError } = await updateAuthPassword(passwordInput)
             if (passError) {
                 hasError = true;
@@ -254,6 +266,7 @@ export default function AccountPage() {
                 console.error("Password Update Error: ", passError);
             }
             else setPasswordInput(""); // clear it on success
+            }
         }
 
         setIsSaving(false)
