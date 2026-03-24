@@ -285,7 +285,8 @@ export default function ProductPage({
         )
 
     if (error) {
-      toast.error("حصلت مشكلة", { description: "جرب تاني بعد شوية" })
+      const message = error instanceof Error ? error.message : "جرب تاني بعد شوية"
+      toast.error("لسه مش متاح تكتب تقييم", { description: message })
     } else if (data) {
       const nextReviews = existingReview
         ? reviews.map((review) => review.id === data.id ? data : review)

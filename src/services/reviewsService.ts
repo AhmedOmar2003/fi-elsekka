@@ -54,13 +54,14 @@ export const calcReviewStats = (reviews: Review[]): ReviewStats => {
     };
 };
 
-/** Check if a user has purchased a product (delivered orders only) */
+/** Check if a user received a delivered order that contains this product */
 export const checkUserPurchased = async (userId: string, productId: string): Promise<boolean> => {
     const { data, error } = await supabase
-        .from('order_items')
-        .select('id, order:orders!inner(user_id, status)')
-        .eq('product_id', productId)
-        .eq('orders.user_id', userId)
+        .from('orders')
+        .select('id, order_items!inner(product_id)')
+        .eq('user_id', userId)
+        .eq('status', 'delivered')
+        .eq('order_items.product_id', productId)
         .limit(1);
 
     if (error) {
@@ -112,6 +113,14 @@ export const createReview = async (
     images: string[],
     userName: string
 ): Promise<{ data: Review | null; error: any }> => {
+    const canReview = await checkUserPurchased(userId, productId);
+    if (!canReview) {
+        return {
+            data: null,
+            error: new Error('مينفعش تكتب تقييم غير بعد ما الطلب يتسلم فعلًا وتتحول حالته إلى تم التوصيل'),
+        };
+    }
+
     const { data, error } = await supabase
         .from('reviews')
         .insert({
