@@ -366,7 +366,7 @@ export default function CategoryPageClient({
                 </div>
 
                 {isLoading ? (
-                  <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3">
                     {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
                   </div>
                 ) : productCards.length === 0 ? (
@@ -395,7 +395,7 @@ export default function CategoryPageClient({
                         ) : null}
                       </div>
                     )}
-                    <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3">
                       {productCards.map(product => <ProductCard key={product.id} {...product} />)}
                     </div>
 
