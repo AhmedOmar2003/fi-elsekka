@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/ui/password-input"
 import { signUp, signIn } from "@/services/authService"
-import { validateCustomerEmail, validateStrongPassword } from "@/lib/auth-validation"
-import { UserPlus, AlertCircle, CheckCircle } from "lucide-react"
+import { generateStrongPassword, validateCustomerEmail, validateStrongPassword } from "@/lib/auth-validation"
+import { UserPlus, AlertCircle, CheckCircle, Copy, RefreshCw } from "lucide-react"
+import { toast } from "sonner"
 
 export default function RegisterPage() {
   return (
@@ -34,10 +35,24 @@ function RegisterContent() {
   const [fullName, setFullName] = React.useState("")
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
+  const [suggestedPassword, setSuggestedPassword] = React.useState(() => generateStrongPassword())
 
   const [errorMsg, setErrorMsg] = React.useState("")
   const [success, setSuccess] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
+
+  const applySuggestedPassword = React.useCallback(() => {
+    setPassword(suggestedPassword)
+  }, [suggestedPassword])
+
+  const copySuggestedPassword = React.useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(suggestedPassword)
+      toast.success("انسخنا الكلمة", { description: "احفظها في مكان آمن علشان ما تضيعش منك" })
+    } catch {
+      toast.error("مقدرناش ننسخها", { description: "انسخها يدويًا لو تحب" })
+    }
+  }, [suggestedPassword])
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -150,6 +165,33 @@ function RegisterContent() {
               minLength={8}
             />
             <p className="px-1 text-xs text-muted-foreground">استخدم 8 أحرف أو أكثر، ويكون فيها حرف + رقم + رمز مميز</p>
+            <div className="rounded-2xl border border-surface-border bg-surface p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-foreground">اقتراح كلمة مرور قوية</p>
+                  <p className="text-xs text-muted-foreground">احفظها في مكان آمن قبل ما تكمل</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSuggestedPassword(generateStrongPassword())}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-surface-border text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="اقتراح كلمة مرور جديدة"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="mt-3 rounded-xl bg-background/70 px-3 py-2 text-start font-mono text-sm tracking-[0.18em] text-foreground" dir="ltr">
+                {suggestedPassword}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={applySuggestedPassword}>
+                  استخدمها
+                </Button>
+                <Button type="button" variant="ghost" className="rounded-xl px-3" onClick={copySuggestedPassword}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
 
           <Button

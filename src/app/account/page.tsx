@@ -17,10 +17,10 @@ import { fetchUserFavorites } from "@/services/favoritesService"
 import { fetchUserDeliveryAddresses, saveDeliveryAddress, updateDeliveryAddress, deleteDeliveryAddress, setDefaultDeliveryAddress, DeliveryInfo } from "@/services/deliveryService"
 import { Product } from "@/services/productsService"
 import { signOut, updateAuthEmail, updateAuthPassword, uploadAvatar } from "@/services/authService"
-import { validateCustomerEmail, validateStrongPassword } from "@/lib/auth-validation"
+import { generateStrongPassword, validateCustomerEmail, validateStrongPassword } from "@/lib/auth-validation"
 import {
     User, Package, Settings, LogOut, Camera, Loader2,
-    MapPin, AlertCircle, CheckCircle, Clock, Truck, XCircle, ShoppingBag, Plus, Trash2, Star, Heart
+    MapPin, AlertCircle, CheckCircle, Clock, Truck, XCircle, ShoppingBag, Plus, Trash2, Star, Heart, Copy, RefreshCw
 } from "lucide-react"
 import { LogoutModal } from "@/components/ui/logout-modal"
 import { toast } from "sonner"
@@ -71,6 +71,7 @@ export default function AccountPage() {
     const [street, setStreet] = React.useState("")
     const [emailInput, setEmailInput] = React.useState("")
     const [passwordInput, setPasswordInput] = React.useState("")
+    const [suggestedPassword, setSuggestedPassword] = React.useState(() => generateStrongPassword())
     const [isSaving, setIsSaving] = React.useState(false)
     const [saveMsg, setSaveMsg] = React.useState("")
 
@@ -300,6 +301,19 @@ export default function AccountPage() {
         await setDefaultDeliveryAddress(id, user.id)
         const updated = await fetchUserDeliveryAddresses(user.id)
         setAddresses(updated)
+    }
+
+    const applySuggestedPassword = () => {
+        setPasswordInput(suggestedPassword)
+    }
+
+    const copySuggestedPassword = async () => {
+        try {
+            await navigator.clipboard.writeText(suggestedPassword)
+            toast.success("انسخنا الكلمة", { description: "احفظها في مكان آمن علشان تقدر ترجع لها بعدين" })
+        } catch {
+            toast.error("مقدرناش ننسخها", { description: "انسخها يدويًا لو تحب" })
+        }
     }
 
     if (isLoading) {
@@ -696,6 +710,33 @@ export default function AccountPage() {
                                 <div className="space-y-2 md:col-span-2">
                                     <Label>كلمة المرور الجديدة</Label>
                                     <Input value={passwordInput} onChange={e => setPasswordInput(e.target.value)} type="password" placeholder="سيبه فاضي لو مش عاوز تغيّره" dir="ltr" className="text-right" />
+                                    <div className="rounded-2xl border border-surface-hover bg-surface p-3">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                                <p className="text-sm font-bold text-foreground">كلمة مرور قوية جاهزة</p>
+                                                <p className="text-xs text-gray-500">يفضل تحفظها في مكان آمن قبل ما تغيّر الباسورد</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSuggestedPassword(generateStrongPassword())}
+                                                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-surface-hover text-gray-500 transition-colors hover:text-foreground"
+                                                aria-label="اقتراح كلمة مرور جديدة"
+                                            >
+                                                <RefreshCw className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                        <div className="mt-3 rounded-xl bg-background/70 px-3 py-2 text-start font-mono text-sm tracking-[0.18em] text-foreground" dir="ltr">
+                                            {suggestedPassword}
+                                        </div>
+                                        <div className="mt-3 flex gap-2">
+                                            <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={applySuggestedPassword}>
+                                                استخدمها
+                                            </Button>
+                                            <Button type="button" variant="ghost" className="rounded-xl px-3" onClick={copySuggestedPassword}>
+                                                <Copy className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

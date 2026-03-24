@@ -27,3 +27,26 @@ export function validateStrongPassword(password: string) {
 
   return null
 }
+
+export function generateStrongPassword(length = 12) {
+  const uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ"
+  const lowercase = "abcdefghijkmnopqrstuvwxyz"
+  const numbers = "23456789"
+  const symbols = "!@#$%&*?"
+  const allChars = `${uppercase}${lowercase}${numbers}${symbols}`
+
+  const requiredChars = [
+    uppercase[Math.floor(Math.random() * uppercase.length)],
+    lowercase[Math.floor(Math.random() * lowercase.length)],
+    numbers[Math.floor(Math.random() * numbers.length)],
+    symbols[Math.floor(Math.random() * symbols.length)],
+  ]
+
+  while (requiredChars.length < length) {
+    requiredChars.push(allChars[Math.floor(Math.random() * allChars.length)])
+  }
+
+  return requiredChars
+    .sort(() => Math.random() - 0.5)
+    .join("")
+}
