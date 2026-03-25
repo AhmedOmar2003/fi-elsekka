@@ -85,6 +85,9 @@ export type SuggestionInput = {
   taxonomyPrimary?: string;
   taxonomySecondary?: string;
   taxonomyTertiary?: string;
+  taxonomyPrimaryLabel?: string;
+  taxonomySecondaryLabel?: string;
+  taxonomyTertiaryLabel?: string;
   productType?: string;
   gender?: string;
   ageGroup?: string;
@@ -97,20 +100,18 @@ export type SuggestionInput = {
 
 export type AdminProductPreset = {
   id: string;
-  label: string;
+  title: string;
   description: string;
-  values: Partial<{
-    productType: string;
-    gender: string;
-    ageGroup: string;
-    season: string;
-    style: string;
-    material: string;
-    colorFamily: string;
-    sizeGroup: string;
-    tags: string[];
-    keywords: string[];
-  }>;
+  productType?: string;
+  gender?: string;
+  ageGroup?: string;
+  season?: string;
+  style?: string;
+  material?: string;
+  colorFamily?: string;
+  sizeGroup?: string;
+  tags: string[];
+  keywords: string[];
 };
 
 type SuggestionResult = {
@@ -122,21 +123,22 @@ type SuggestionResult = {
 
 const buildPreset = (
   id: string,
-  label: string,
+  title: string,
   description: string,
-  values: AdminProductPreset["values"],
+  values: Omit<AdminProductPreset, "id" | "title" | "description" | "tags" | "keywords"> & {
+    tags?: string[];
+    keywords?: string[];
+  },
 ): AdminProductPreset => ({
   id,
-  label,
+  title,
   description,
-  values: {
-    ...values,
-    tags: uniq(values.tags || []),
-    keywords: uniq(values.keywords || []),
-  },
+  ...values,
+  tags: uniq(values.tags || []),
+  keywords: uniq(values.keywords || []),
 });
 
-export const getAdminCategoryPresets = (categoryName?: string): AdminProductPreset[] => {
+export const getAdminProductPresets = (categoryName?: string): AdminProductPreset[] => {
   switch (categoryName) {
     case "ملابس وأزياء":
       return [
@@ -211,6 +213,8 @@ export const getAdminCategoryPresets = (categoryName?: string): AdminProductPres
       return [];
   }
 };
+
+export const getAdminCategoryPresets = getAdminProductPresets;
 
 export const getAdminProductSuggestions = (input: SuggestionInput): SuggestionResult => {
   const {
