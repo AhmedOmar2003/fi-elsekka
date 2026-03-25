@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { optimizeImageForUpload } from '@/lib/image-upload';
 
 export interface Review {
     id: string;
@@ -160,12 +161,17 @@ export const updateReview = async (
 
 /** Upload a review image to Supabase Storage */
 export const uploadReviewImage = async (file: File): Promise<string | null> => {
-    const ext = file.name.split('.').pop();
+    const optimizedFile = await optimizeImageForUpload(file, { maxDimension: 1400, quality: 0.82 });
+    const ext = optimizedFile.name.split('.').pop() || 'webp';
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
 
     const { error } = await supabase.storage
         .from('review-images')
-        .upload(fileName, file, { cacheControl: '3600', upsert: false });
+        .upload(fileName, optimizedFile, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: optimizedFile.type || 'image/webp',
+        });
 
     if (error) {
         console.error('uploadReviewImage error:', error);

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { attachOrderEconomics, getOrderEconomics } from '@/lib/order-economics';
+import { optimizeImageForUpload } from '@/lib/image-upload';
 
 // ─── Helper: log Supabase errors properly (they are objects, not strings) ──────
 export function logError(ctx: string, error: unknown) {
@@ -1324,9 +1325,13 @@ export async function deleteProduct(id: string) {
 
 // ─── Image Upload ─────────────────────────────────────────────────────────────
 export async function uploadProductImage(file: File): Promise<string | null> {
-    const ext = file.name.split('.').pop() || 'png';
+    const optimizedFile = await optimizeImageForUpload(file);
+    const ext = optimizedFile.name.split('.').pop() || 'webp';
     const path = `products/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`;
-    const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true });
+    const { error } = await supabase.storage.from('product-images').upload(path, optimizedFile, {
+        upsert: true,
+        contentType: optimizedFile.type || 'image/webp',
+    });
     if (error) { logError('uploadProductImage', error); return null; }
     const { data } = supabase.storage.from('product-images').getPublicUrl(path);
     return data.publicUrl;

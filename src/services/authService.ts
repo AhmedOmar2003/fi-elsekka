@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { normalizeAuthEmail, validateCustomerEmail, validateStrongPassword } from '@/lib/auth-validation';
+import { optimizeImageForUpload } from '@/lib/image-upload';
 
 export interface UserProfile {
     id: string;
@@ -130,14 +131,18 @@ export const updateAuthPassword = async (newPassword: string) => {
 
 export const uploadAvatar = async (userId: string, file: File) => {
     try {
-        const fileExt = file.name.split('.').pop();
+        const optimizedFile = await optimizeImageForUpload(file, { maxDimension: 1200, quality: 0.82 });
+        const fileExt = optimizedFile.name.split('.').pop() || 'webp';
         const fileName = `${userId}-${Date.now()}.${fileExt}`;
         const filePath = `avatars/${fileName}`;
 
         // Upload the file to the 'avatars' bucket
-        const { error: uploadError, data } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
             .from('avatars')
-            .upload(filePath, file, { upsert: true });
+            .upload(filePath, optimizedFile, {
+                upsert: true,
+                contentType: optimizedFile.type || 'image/webp',
+            });
 
         if (uploadError) {
             console.error('Avatar upload error:', uploadError);

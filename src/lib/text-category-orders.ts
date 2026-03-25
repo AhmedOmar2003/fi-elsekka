@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { optimizeImageForUpload } from '@/lib/image-upload';
 
 export const TEXT_CATEGORY_ORDER_MODE = 'text-category';
 
@@ -68,13 +69,18 @@ export function clearTextCategoryOrderDraft(categoryId: string) {
 }
 
 export async function uploadTextCategoryRequestImage(categoryId: string, file: File) {
-  const ext = file.name.split('.').pop() || 'jpg';
+  const optimizedFile = await optimizeImageForUpload(file, { maxDimension: 1600, quality: 0.82 });
+  const ext = optimizedFile.name.split('.').pop() || 'webp';
   const safeCategoryId = categoryId.replace(/[^a-zA-Z0-9_-]/g, '');
   const fileName = `category-requests/${safeCategoryId}/${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`;
 
   const { error } = await supabase.storage
     .from('review-images')
-    .upload(fileName, file, { cacheControl: '3600', upsert: false });
+    .upload(fileName, optimizedFile, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: optimizedFile.type || 'image/webp',
+    });
 
   if (error) {
     console.error('uploadTextCategoryRequestImage error:', error);
