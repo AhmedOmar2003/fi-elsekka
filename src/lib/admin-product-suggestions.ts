@@ -1,155 +1,278 @@
 const CATEGORY_CODES: Record<string, string> = {
   "ملابس وأزياء": "FAS",
   "سوبر ماركت": "SUP",
+  "إلكترونيات": "ELC",
   "ألعاب أطفال": "TOY",
-  "طعام": "FOD",
-  "إلكترونيات": "ELE",
   "أدوات منزلية": "HOM",
-  "العناية الشخصية": "CAR",
-  "عناية شخصية": "CAR",
-  "صيدلية": "PHA",
-}
+  "عناية شخصية": "PCR",
+  "صيدلية": "PHR",
+  "طعام": "FOD",
+};
 
 const VALUE_LABELS: Record<string, string> = {
   men: "رجالي",
   women: "نسائي",
   boys: "أولاد",
   girls: "بنات",
-  unisex: "للجنسين",
+  unisex: "للجميع",
   baby: "بيبي",
   kids: "أطفال",
   teens: "مراهقين",
   adults: "كبار",
   summer: "صيفي",
   winter: "شتوي",
-  spring: "ربيعي",
-  autumn: "خريفي",
-  all_season: "كل المواسم",
-}
+  "all-season": "كل المواسم",
+  casual: "كاجوال",
+  formal: "رسمي",
+  sport: "رياضي",
+  oversized: "أوفر سايز",
+};
 
-type SuggestionInput = {
-  name: string
-  brand?: string
-  categoryName?: string
-  taxonomyPrimary?: string
-  taxonomySecondary?: string
-  taxonomyTertiary?: string
-  taxonomyPrimaryLabel?: string
-  taxonomySecondaryLabel?: string
-  taxonomyTertiaryLabel?: string
-  productType?: string
-  gender?: string
-  ageGroup?: string
-  season?: string
-  style?: string
-  material?: string
-  colorFamily?: string
-  sizeGroup?: string
-}
+const uniq = (items: string[]) =>
+  Array.from(
+    new Set(
+      items
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  );
 
-function normalizeText(value?: string) {
-  return String(value || "").trim()
-}
+const normalizeText = (value: string) =>
+  value
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .trim();
 
-function uniqueList(values: string[]) {
-  const seen = new Set<string>()
-  return values.filter((item) => {
-    const normalized = item.trim().toLowerCase()
-    if (!normalized || seen.has(normalized)) return false
-    seen.add(normalized)
-    return true
-  })
-}
+const keywordizeTitle = (title: string) => {
+  const clean = normalizeText(title);
+  if (!clean) return [];
 
-function keywordizeTitle(title: string) {
-  return title
-    .split(/[\s\-_/،,.()]+/g)
-    .map((part) => part.trim())
-    .filter((part) => part.length >= 3)
-    .slice(0, 6)
-}
+  const words = clean.split(" ").filter((word) => word.length > 1);
+  const pairs = words.slice(0, Math.max(0, words.length - 1)).map((word, index) => `${word} ${words[index + 1]}`);
 
-function toCode(value?: string, fallback = "GEN") {
-  const normalized = normalizeText(value)
-  if (!normalized) return fallback
+  return uniq([clean, ...words, ...pairs]).slice(0, 6);
+};
 
-  const words = normalized
-    .replace(/[^a-zA-Z0-9_\-\s]/g, " ")
-    .split(/[\s_-]+/g)
+const toCode = (value: string, fallback = "GEN") => {
+  const clean = normalizeText(value);
+  if (!clean) return fallback;
+
+  const latinized = clean
+    .replace(/[أإآ]/g, "A")
+    .replace(/ة/g, "H")
+    .replace(/ى/g, "Y")
+    .replace(/[ؤئ]/g, "E")
+    .replace(/[^A-Za-z0-9\s]/g, " ")
+    .trim();
+
+  if (!latinized) return fallback;
+
+  const parts = latinized
+    .split(/\s+/)
     .filter(Boolean)
+    .map((part) => part.slice(0, 3).toUpperCase());
 
-  if (words.length === 0) return fallback
-  if (words.length === 1) return words[0].slice(0, 3).toUpperCase()
+  return parts.join("").slice(0, 6) || fallback;
+};
 
-  return words
-    .slice(0, 3)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase()
-}
+const toReadableLabel = (value: string) => VALUE_LABELS[value] || value;
 
-function toReadableLabel(value?: string) {
-  const normalized = normalizeText(value)
-  return VALUE_LABELS[normalized] || normalized
-}
+export type SuggestionInput = {
+  name: string;
+  brand?: string;
+  categoryName?: string;
+  taxonomyPrimary?: string;
+  taxonomySecondary?: string;
+  taxonomyTertiary?: string;
+  productType?: string;
+  gender?: string;
+  ageGroup?: string;
+  season?: string;
+  style?: string;
+  material?: string;
+  colorFamily?: string;
+  sizeGroup?: string;
+};
 
-export function getAdminProductSuggestions(input: SuggestionInput) {
-  const name = normalizeText(input.name)
-  const categoryName = normalizeText(input.categoryName)
-  const brand = normalizeText(input.brand)
-  const productType = normalizeText(input.productType || input.taxonomyTertiaryLabel || input.taxonomySecondaryLabel)
-  const primaryLabel = normalizeText(input.taxonomyPrimaryLabel)
-  const secondaryLabel = normalizeText(input.taxonomySecondaryLabel)
-  const tertiaryLabel = normalizeText(input.taxonomyTertiaryLabel)
-  const genderLabel = toReadableLabel(input.gender)
-  const ageGroupLabel = toReadableLabel(input.ageGroup)
-  const seasonLabel = toReadableLabel(input.season)
-  const style = normalizeText(input.style)
-  const material = normalizeText(input.material)
-  const colorFamily = normalizeText(input.colorFamily)
-  const sizeGroup = normalizeText(input.sizeGroup)
+export type AdminProductPreset = {
+  id: string;
+  label: string;
+  description: string;
+  values: Partial<{
+    productType: string;
+    gender: string;
+    ageGroup: string;
+    season: string;
+    style: string;
+    material: string;
+    colorFamily: string;
+    sizeGroup: string;
+    tags: string[];
+    keywords: string[];
+  }>;
+};
 
-  const titleWords = keywordizeTitle(name)
-  const tags = uniqueList([
+type SuggestionResult = {
+  sku: string;
+  productType: string;
+  tags: string[];
+  keywords: string[];
+};
+
+const buildPreset = (
+  id: string,
+  label: string,
+  description: string,
+  values: AdminProductPreset["values"],
+): AdminProductPreset => ({
+  id,
+  label,
+  description,
+  values: {
+    ...values,
+    tags: uniq(values.tags || []),
+    keywords: uniq(values.keywords || []),
+  },
+});
+
+export const getAdminCategoryPresets = (categoryName?: string): AdminProductPreset[] => {
+  switch (categoryName) {
+    case "ملابس وأزياء":
+      return [
+        buildPreset("fashion-casual-tee", "تيشيرت كاجوال", "مناسب لمنتجات اللبس اليومية والسريعة.", {
+          productType: "تيشيرت",
+          gender: "unisex",
+          season: "summer",
+          style: "casual",
+          material: "cotton",
+          tags: ["ملابس", "تيشيرت", "كاجوال", "لبس يومي", "صيفي"],
+          keywords: ["تيشيرت كاجوال", "ملابس يومية", "تيشيرت قطن", "لبس مريح"],
+        }),
+        buildPreset("fashion-daily-pants", "بنطلون يومي", "قالب مناسب للبناطيل والجينز واللبس العملي.", {
+          productType: "بنطلون",
+          gender: "unisex",
+          season: "all-season",
+          style: "casual",
+          material: "cotton",
+          tags: ["ملابس", "بنطلون", "كاجوال", "لبس عملي"],
+          keywords: ["بنطلون يومي", "ملابس عملية", "بنطلون مريح", "لبس خروج"],
+        }),
+        buildPreset("fashion-light-jacket", "جاكيت خفيف", "قالب مناسب للجاكيتات والقطعة الخارجية.", {
+          productType: "جاكيت",
+          gender: "unisex",
+          season: "winter",
+          style: "casual",
+          material: "polyester",
+          tags: ["جاكيت", "شتوي", "ملابس خروج", "لبس عملي"],
+          keywords: ["جاكيت خفيف", "جاكيت شتوي", "ملابس خارجية", "ملابس عملية"],
+        }),
+      ];
+    case "سوبر ماركت":
+      return [
+        buildPreset("market-grocery", "بقالة أساسية", "مناسب للسلع اليومية مثل السكر والأرز والدقيق.", {
+          productType: "بقالة",
+          tags: ["بقالة", "طلبات البيت", "سلع أساسية", "مواد غذائية"],
+          keywords: ["بقالة", "سلع غذائية", "طلبات البيت", "مشتريات شهرية"],
+        }),
+        buildPreset("market-daily-dairy", "ألبان يومية", "مناسب للألبان والمنتجات اليومية السريعة.", {
+          productType: "ألبان",
+          tags: ["ألبان", "منتجات يومية", "فطار البيت", "طلبات يومية"],
+          keywords: ["ألبان", "منتجات يومية", "لبن", "زبادي"],
+        }),
+        buildPreset("market-drinks", "مشروبات", "مناسب للعصائر والمياه والمشروبات الباردة.", {
+          productType: "مشروبات",
+          tags: ["مشروبات", "منتجات يومية", "طلبات البيت", "بارد"],
+          keywords: ["مشروبات", "عصير", "مياه", "مشروب بارد"],
+        }),
+      ];
+    case "ألعاب أطفال":
+      return [
+        buildPreset("toy-educational", "لعبة تعليمية", "مناسب للألعاب التعليمية وتنمية المهارات.", {
+          productType: "تعليمي",
+          ageGroup: "kids",
+          tags: ["ألعاب أطفال", "تعليمي", "تنمية مهارات", "لعبة مفيدة"],
+          keywords: ["لعبة تعليمية", "ألعاب أطفال", "تنمية مهارات", "ألعاب ذكاء"],
+        }),
+        buildPreset("toy-action", "لعبة حركة", "مناسب للألعاب الحركية والمسلية.", {
+          productType: "حركي",
+          ageGroup: "kids",
+          tags: ["ألعاب أطفال", "حركة", "لعبة مسلية", "نشاط أطفال"],
+          keywords: ["لعبة حركة", "ألعاب أطفال", "نشاط أطفال", "لعبة مسلية"],
+        }),
+        buildPreset("toy-puzzle", "بازل وتركيب", "مناسب للمكعبات والبازل وألعاب التركيب.", {
+          productType: "تركيب",
+          ageGroup: "kids",
+          tags: ["ألعاب أطفال", "تركيب", "بازل", "تنمية الذكاء"],
+          keywords: ["بازل أطفال", "لعبة تركيب", "ألعاب ذكاء", "مكعبات"],
+        }),
+      ];
+    default:
+      return [];
+  }
+};
+
+export const getAdminProductSuggestions = (input: SuggestionInput): SuggestionResult => {
+  const {
     name,
-    categoryName,
-    primaryLabel,
-    secondaryLabel,
-    tertiaryLabel,
     brand,
+    categoryName,
+    taxonomyPrimary,
+    taxonomySecondary,
+    taxonomyTertiary,
     productType,
-    genderLabel,
-    ageGroupLabel,
-    seasonLabel,
+    gender,
+    ageGroup,
+    season,
     style,
     material,
     colorFamily,
-    ...titleWords,
-  ])
+    sizeGroup,
+  } = input;
 
-  const keywords = uniqueList([
-    name,
-    [name, categoryName].filter(Boolean).join(" "),
-    [name, secondaryLabel || tertiaryLabel || primaryLabel].filter(Boolean).join(" "),
-    [brand, name].filter(Boolean).join(" "),
-    [categoryName, secondaryLabel].filter(Boolean).join(" "),
-    [name, seasonLabel].filter(Boolean).join(" "),
-    [name, genderLabel].filter(Boolean).join(" "),
-    [name, material].filter(Boolean).join(" "),
-    [name, colorFamily].filter(Boolean).join(" "),
-    [name, ageGroupLabel].filter(Boolean).join(" "),
-  ]).filter(Boolean)
+  const categoryCode = CATEGORY_CODES[categoryName || ""] || "GEN";
+  const primaryCode = toCode(taxonomyPrimary || productType || name, "CAT");
+  const detailCode = toCode(taxonomyTertiary || taxonomySecondary || brand || name, "PRD");
 
-  const categoryCode = CATEGORY_CODES[categoryName] || toCode(categoryName, "CAT")
-  const primaryCode = toCode(input.taxonomyPrimary, "GEN")
-  const detailSource = input.taxonomyTertiary || input.taxonomySecondary || productType || name
-  const detailCode = toCode(detailSource, "ITM")
-  const sku = `${categoryCode}-${primaryCode}-${detailCode}-001`
+  const inferredType =
+    normalizeText(productType || taxonomyTertiary || taxonomySecondary || taxonomyPrimary || keywordizeTitle(name)[1] || name) ||
+    "منتج عام";
+
+  const labelFields = [
+    categoryName,
+    taxonomyPrimary,
+    taxonomySecondary,
+    taxonomyTertiary,
+    brand,
+    toReadableLabel(gender || ""),
+    toReadableLabel(ageGroup || ""),
+    toReadableLabel(season || ""),
+    toReadableLabel(style || ""),
+    material,
+    colorFamily,
+    sizeGroup,
+  ].filter(Boolean) as string[];
+
+  const tags = uniq([
+    inferredType,
+    ...labelFields,
+    ...keywordizeTitle(name).slice(0, 4),
+  ]).slice(0, 8);
+
+  const keywords = uniq([
+    ...keywordizeTitle(name),
+    ...(brand ? [`${name} ${brand}`, `${inferredType} ${brand}`] : []),
+    ...(taxonomyPrimary ? [`${inferredType} ${taxonomyPrimary}`] : []),
+    ...(taxonomySecondary ? [`${inferredType} ${taxonomySecondary}`] : []),
+    ...(categoryName ? [`${categoryName} ${inferredType}`] : []),
+    ...(gender ? [`${inferredType} ${toReadableLabel(gender)}`] : []),
+    ...(season ? [`${inferredType} ${toReadableLabel(season)}`] : []),
+  ]).slice(0, 10);
 
   return {
-    sku,
-    productType: productType || secondaryLabel || primaryLabel || "",
-    tags: tags.slice(0, 8),
-    keywords: keywords.slice(0, 10),
-  }
-}
+    sku: `${categoryCode}-${primaryCode}-${detailCode}-001`,
+    productType: inferredType,
+    tags,
+    keywords,
+  };
+};

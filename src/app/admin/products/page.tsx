@@ -22,7 +22,7 @@ import {
     getProductCatalogMetadata,
     normalizeStringArray,
 } from '@/lib/product-metadata';
-import { getAdminProductSuggestions } from '@/lib/admin-product-suggestions';
+import { getAdminProductPresets, getAdminProductSuggestions } from '@/lib/admin-product-suggestions';
 import { ChipsInput } from '@/components/admin/chips-input';
 import { RelatedProductsPicker } from '@/components/admin/related-products-picker';
 
@@ -152,6 +152,22 @@ export default function AdminProductsPage() {
         taxonomyLabels.secondary,
         taxonomyLabels.tertiary,
     ]);
+    const categoryPresets = React.useMemo(() => getAdminProductPresets(selectedCategoryName), [selectedCategoryName]);
+    const suggestedSku = React.useMemo(() => {
+        const basePrefix = smartSuggestions.sku.replace(/-\d{3}$/, '');
+        if (!basePrefix) return smartSuggestions.sku;
+
+        const matchingNumbers = products
+            .filter(product => product.id !== editingId)
+            .map(product => getProductCatalogMetadata(product.specifications).sku)
+            .filter(Boolean)
+            .filter(sku => sku.startsWith(`${basePrefix}-`))
+            .map(sku => Number(sku.split('-').pop()))
+            .filter(num => Number.isFinite(num));
+
+        const nextNumber = (matchingNumbers.length ? Math.max(...matchingNumbers) : 0) + 1;
+        return `${basePrefix}-${String(nextNumber).padStart(3, '0')}`;
+    }, [editingId, products, smartSuggestions.sku]);
 
     const load = async () => {
         setIsLoading(true);
@@ -180,12 +196,33 @@ export default function AdminProductsPage() {
     const applySmartSuggestions = () => {
         setForm(prev => ({
             ...prev,
-            sku: smartSuggestions.sku,
+            sku: suggestedSku,
             product_type: smartSuggestions.productType || prev.product_type,
             tags: smartSuggestions.tags,
             keywords: smartSuggestions.keywords,
         }));
         toast.success('جهزت لك اقتراحات المنتج ✨');
+    };
+
+    const applySuggestedSkuOnly = () => {
+        setForm(prev => ({ ...prev, sku: suggestedSku }));
+        toast.success('حددت لك SKU جاهز ✨');
+    };
+
+    const applyCategoryPreset = (preset: ReturnType<typeof getAdminProductPresets>[number]) => {
+        setForm(prev => ({
+            ...prev,
+            product_type: preset.productType || prev.product_type,
+            gender: preset.gender || prev.gender,
+            age_group: preset.ageGroup || prev.age_group,
+            season: preset.season || prev.season,
+            style: preset.style || prev.style,
+            material: preset.material || prev.material,
+            size_group: preset.sizeGroup || prev.size_group,
+            tags: Array.from(new Set([...preset.tags, ...prev.tags])),
+            keywords: Array.from(new Set([...preset.keywords, ...prev.keywords])),
+        }));
+        toast.success(`طبقت قالب ${preset.title} ✨`);
     };
 
     const openEdit = (p: Product) => {
@@ -1052,26 +1089,57 @@ export default function AdminProductsPage() {
                                             اختار القسم والتصنيفات واكتب اسم المنتج، وإحنا نجهز لك SKU وTags وKeywords تسرّع الإضافة جدًا.
                                         </p>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={applySmartSuggestions}
-                                        className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs font-black text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
-                                    >
-                                        استخدم الاقتراحات
-                                    </button>
+                                    <div className="flex flex-wrap gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={applySuggestedSkuOnly}
+                                            className="inline-flex items-center justify-center rounded-xl border border-surface-hover bg-surface px-4 py-2 text-xs font-black text-foreground transition-all hover:bg-surface-hover"
+                                        >
+                                            استخدم الـ SKU فقط
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={applySmartSuggestions}
+                                            className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs font-black text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
+                                        >
+                                            استخدم الاقتراحات
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <div className="rounded-xl border border-surface-hover bg-surface px-3 py-3">
                                         <p className="text-[11px] font-black text-gray-500 mb-1">SKU المقترح</p>
-                                        <p className="text-sm font-mono tracking-[0.14em] text-foreground" dir="ltr">{smartSuggestions.sku}</p>
-                                        <p className="mt-1 text-[10px] text-gray-500">عدّل آخر 3 أرقام لو المنتج له تسلسل مختلف.</p>
+                                        <p className="text-sm font-mono tracking-[0.14em] text-foreground" dir="ltr">{suggestedSku}</p>
+                                        <p className="mt-1 text-[10px] text-gray-500">الرقم الأخير بيتحسب من الموجود عندك تلقائيًا كاقتراح، وأنت تقدر تعدله براحتك.</p>
                                     </div>
                                     <div className="rounded-xl border border-surface-hover bg-surface px-3 py-3">
                                         <p className="text-[11px] font-black text-gray-500 mb-1">نوع المنتج المقترح</p>
                                         <p className="text-sm font-bold text-foreground">{smartSuggestions.productType || 'لسه محتاج تحدد القسم أو التصنيف الفرعي'}</p>
                                     </div>
                                 </div>
+
+                                {categoryPresets.length > 0 && (
+                                    <div className="space-y-3">
+                                        <div>
+                                            <p className="text-[11px] font-black text-gray-500 mb-1">قوالب جاهزة للقسم</p>
+                                            <p className="text-[11px] text-gray-500">اختار القالب المناسب، وهو يملأ لك الحقول الشائعة فقط، وأنت تفضل متحكم في الباقي.</p>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            {categoryPresets.map(preset => (
+                                                <button
+                                                    key={preset.id}
+                                                    type="button"
+                                                    onClick={() => applyCategoryPreset(preset)}
+                                                    className="rounded-2xl border border-surface-hover bg-surface px-4 py-3 text-start transition-all hover:bg-surface-hover"
+                                                >
+                                                    <p className="text-sm font-black text-foreground mb-1">{preset.title}</p>
+                                                    <p className="text-[11px] leading-5 text-gray-500">{preset.description}</p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                                     <div className="rounded-xl border border-surface-hover bg-surface px-3 py-3">
