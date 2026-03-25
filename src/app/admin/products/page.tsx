@@ -22,6 +22,7 @@ import {
     getProductCatalogMetadata,
     normalizeStringArray,
 } from '@/lib/product-metadata';
+import { getAdminProductSuggestions } from '@/lib/admin-product-suggestions';
 import { ChipsInput } from '@/components/admin/chips-input';
 import { RelatedProductsPicker } from '@/components/admin/related-products-picker';
 
@@ -113,6 +114,44 @@ export default function AdminProductsPage() {
     const taxonomyPrimaryOptions = getTaxonomyPrimaryOptions(selectedCategoryName);
     const taxonomySecondaryOptions = getTaxonomySecondaryOptions(selectedCategoryName, form.taxonomy_primary);
     const taxonomyTertiaryOptions = getTaxonomyTertiaryOptions(selectedCategoryName, form.taxonomy_primary, form.taxonomy_secondary);
+    const taxonomyLabels = getTaxonomyLabel(selectedCategoryName, form.taxonomy_primary, form.taxonomy_secondary, form.taxonomy_tertiary);
+    const smartSuggestions = React.useMemo(() => getAdminProductSuggestions({
+        name: form.name,
+        brand: form.brand,
+        categoryName: selectedCategoryName,
+        taxonomyPrimary: form.taxonomy_primary,
+        taxonomySecondary: form.taxonomy_secondary,
+        taxonomyTertiary: form.taxonomy_tertiary,
+        taxonomyPrimaryLabel: taxonomyLabels.primary,
+        taxonomySecondaryLabel: taxonomyLabels.secondary,
+        taxonomyTertiaryLabel: taxonomyLabels.tertiary,
+        productType: form.product_type,
+        gender: form.gender,
+        ageGroup: form.age_group,
+        season: form.season,
+        style: form.style,
+        material: form.material,
+        colorFamily: form.color_family,
+        sizeGroup: form.size_group,
+    }), [
+        form.name,
+        form.brand,
+        form.taxonomy_primary,
+        form.taxonomy_secondary,
+        form.taxonomy_tertiary,
+        form.product_type,
+        form.gender,
+        form.age_group,
+        form.season,
+        form.style,
+        form.material,
+        form.color_family,
+        form.size_group,
+        selectedCategoryName,
+        taxonomyLabels.primary,
+        taxonomyLabels.secondary,
+        taxonomyLabels.tertiary,
+    ]);
 
     const load = async () => {
         setIsLoading(true);
@@ -136,6 +175,17 @@ export default function AdminProductsPage() {
         setEditingId(null);
         setForm({ ...EMPTY_FORM });
         setIsModalOpen(true);
+    };
+
+    const applySmartSuggestions = () => {
+        setForm(prev => ({
+            ...prev,
+            sku: smartSuggestions.sku,
+            product_type: smartSuggestions.productType || prev.product_type,
+            tags: smartSuggestions.tags,
+            keywords: smartSuggestions.keywords,
+        }));
+        toast.success('جهزت لك اقتراحات المنتج ✨');
     };
 
     const openEdit = (p: Product) => {
@@ -993,6 +1043,59 @@ export default function AdminProductsPage() {
                                     </div>
                                 </div>
                             )}
+
+                            <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 space-y-4">
+                                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                                    <div>
+                                        <label className="block text-sm font-black text-foreground mb-1">اقتراحات ذكية للمنتج</label>
+                                        <p className="text-[11px] text-gray-500">
+                                            اختار القسم والتصنيفات واكتب اسم المنتج، وإحنا نجهز لك SKU وTags وKeywords تسرّع الإضافة جدًا.
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={applySmartSuggestions}
+                                        className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs font-black text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
+                                    >
+                                        استخدم الاقتراحات
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div className="rounded-xl border border-surface-hover bg-surface px-3 py-3">
+                                        <p className="text-[11px] font-black text-gray-500 mb-1">SKU المقترح</p>
+                                        <p className="text-sm font-mono tracking-[0.14em] text-foreground" dir="ltr">{smartSuggestions.sku}</p>
+                                        <p className="mt-1 text-[10px] text-gray-500">عدّل آخر 3 أرقام لو المنتج له تسلسل مختلف.</p>
+                                    </div>
+                                    <div className="rounded-xl border border-surface-hover bg-surface px-3 py-3">
+                                        <p className="text-[11px] font-black text-gray-500 mb-1">نوع المنتج المقترح</p>
+                                        <p className="text-sm font-bold text-foreground">{smartSuggestions.productType || 'لسه محتاج تحدد القسم أو التصنيف الفرعي'}</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                    <div className="rounded-xl border border-surface-hover bg-surface px-3 py-3">
+                                        <p className="text-[11px] font-black text-gray-500 mb-2">Tags جاهزة</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {smartSuggestions.tags.map(tag => (
+                                                <span key={tag} className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="rounded-xl border border-surface-hover bg-surface px-3 py-3">
+                                        <p className="text-[11px] font-black text-gray-500 mb-2">Keywords جاهزة</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {smartSuggestions.keywords.map(keyword => (
+                                                <span key={keyword} className="rounded-full bg-surface-hover px-2.5 py-1 text-[11px] font-bold text-gray-300">
+                                                    {keyword}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
                             <div className="rounded-2xl border border-surface-hover bg-surface-hover/40 p-4 space-y-4">
                                 <div>
