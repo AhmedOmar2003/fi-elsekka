@@ -56,7 +56,7 @@ export function ProductCard({
   const isBundle = productMode === "bundle"
   return (
     <div className={cn("group relative flex h-full flex-col overflow-hidden rounded-[24px] border border-surface-border/80 bg-surface shadow-[var(--shadow-material-1)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[var(--shadow-material-2)] hover:border-surface-border touch-manipulation sm:min-h-[320px] sm:rounded-[28px]", className)}>
-      <Link href={`/product/${id}`} className="relative aspect-[4/3] sm:aspect-[3/2] w-full overflow-hidden bg-surface-container">
+      <Link href={`/product/${id}`} className="relative aspect-[4/3] sm:aspect-[4/3] w-full overflow-hidden bg-surface-container">
 
         <div className="absolute inset-0 flex items-center justify-center">
           <Image
@@ -64,7 +64,7 @@ export function ProductCard({
             alt={title}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="w-full h-full object-cover object-center scale-[1.04] transition-transform duration-500 group-hover:scale-[1.12]"
+            className="w-full h-full object-cover object-center scale-[1.06] transition-transform duration-500 group-hover:scale-[1.14]"
           />
         </div>
 
