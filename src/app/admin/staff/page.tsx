@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getPermissionMeta, getRoleMeta } from "@/lib/permissions";
 import { toast } from "sonner";
-import { Loader2, Plus, Shield, Edit2, LockKeyhole, Slash, CheckCircle2, Trash2 } from "lucide-react";
+import { Loader2, Plus, Shield, Edit2, LockKeyhole, Slash, CheckCircle2, Trash2, Info } from "lucide-react";
 
 type Staff = {
   id: string;
@@ -41,6 +42,19 @@ const PERMISSION_OPTIONS = [
   "manage_settings",
   "view_reports",
 ];
+
+function InfoHint({ text }: { text: string }) {
+  return (
+    <span className="group relative inline-flex">
+      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-surface-hover bg-surface text-gray-500 transition-colors group-hover:border-primary/30 group-hover:text-primary">
+        <Info className="h-3 w-3" />
+      </span>
+      <span className="pointer-events-none absolute bottom-[calc(100%+10px)] start-1/2 z-20 hidden w-64 -translate-x-1/2 rounded-2xl border border-surface-hover bg-background px-3 py-2 text-[11px] font-medium leading-5 text-gray-300 shadow-2xl group-hover:block">
+        {text}
+      </span>
+    </span>
+  );
+}
 
 export default function StaffPage() {
   const { user, profile, isLoading } = useAuth();
@@ -220,10 +234,7 @@ export default function StaffPage() {
     }
   };
 
-  const roleLabel = useMemo(
-    () => (value: string) => ROLE_OPTIONS.find((r) => r.value === value)?.label || value,
-    []
-  );
+  const roleLabel = useMemo(() => (value: string) => getRoleMeta(value).label, []);
 
   const protectedStaff = useMemo(
     () => staff.filter((member) => member.role === "super_admin"),
@@ -415,8 +426,11 @@ export default function StaffPage() {
                 <label className="text-xs text-gray-500 font-bold">البريد</label>
                 <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs text-gray-500 font-bold">الدور</label>
+                <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-gray-500 font-bold">الدور</label>
+                  <InfoHint text={getRoleMeta(form.role).description} />
+                </div>
                 <select
                   className="w-full h-10 rounded-xl border border-surface-hover bg-background px-3 text-sm"
                   value={form.role}
@@ -428,6 +442,7 @@ export default function StaffPage() {
                     </option>
                   ))}
                 </select>
+                <p className="text-[11px] leading-5 text-gray-500">{getRoleMeta(form.role).description}</p>
               </div>
               <div className="space-y-1">
                 <label className="text-xs text-gray-500 font-bold">كلمة مرور مؤقتة (اختياري)</label>
@@ -445,16 +460,23 @@ export default function StaffPage() {
                   onChange={(e) => setForm({ ...form, disabled: e.target.checked })}
                 />
                 <span className="text-sm text-gray-500">تعطيل الحساب</span>
+                <InfoHint text="لو فعلت الاختيار ده، الموظف مش هيقدر يسجل دخول لحسابه لحد ما ترجع تفعله تاني." />
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="text-xs font-bold text-gray-500">الصلاحيات</div>
+              <div className="flex items-center gap-2">
+                <div className="text-xs font-bold text-gray-500">الصلاحيات</div>
+                <InfoHint text="كل صلاحية من دول بتحدد الموظف هيشوف إيه وهيقدر يعمل إيه جوه لوحة الإدارة." />
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {PERMISSION_OPTIONS.map((perm) => (
+                {PERMISSION_OPTIONS.map((perm) => {
+                  const meta = getPermissionMeta(perm);
+                  return (
                   <label
                     key={perm}
-                    className={`flex items-center gap-2 text-xs rounded-xl px-3 py-2 border ${
+                    title={meta.description}
+                    className={`group relative flex items-center gap-2 text-xs rounded-xl px-3 py-2 border ${
                       form.permissions.includes(perm) ? "border-primary text-primary" : "border-surface-hover text-gray-500"
                     }`}
                   >
@@ -463,9 +485,18 @@ export default function StaffPage() {
                       checked={form.permissions.includes(perm)}
                       onChange={() => togglePerm(perm)}
                     />
-                    <span>{perm}</span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold">{meta.label}</span>
+                        <InfoHint text={meta.description} />
+                      </div>
+                      <span className="mt-0.5 block text-[10px] leading-4 text-gray-500">
+                        {meta.description}
+                      </span>
+                    </div>
                   </label>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

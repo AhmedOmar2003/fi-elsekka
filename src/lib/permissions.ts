@@ -16,6 +16,94 @@ export type Permission =
 
 type RolePermShape = { role?: string | null; permissions?: string[] | null };
 
+export const PERMISSION_META: Record<Permission, { label: string; description: string }> = {
+  view_orders: {
+    label: 'عرض الطلبات',
+    description: 'الموظف هيقدر يشوف الطلبات وتفاصيلها من لوحة الطلبات، لكن من غير صلاحيات إدارية إضافية لوحدها.',
+  },
+  update_order_status: {
+    label: 'تحديث حالة الطلب',
+    description: 'الموظف هيقدر يغيّر حالة الطلب مثل قيد التجهيز أو تم الشحن أو تم التوصيل حسب الشغل المسموح له.',
+  },
+  assign_driver: {
+    label: 'تعيين مندوب',
+    description: 'الموظف هيقدر يربط الطلب بمندوب مناسب ويتابع تسليمه من لوحة الطلبات.',
+  },
+  view_drivers: {
+    label: 'عرض المندوبين',
+    description: 'الموظف هيشوف قائمة المندوبين وحالتهم وتوفرهم من غير ما يدير باقي أقسام الإدارة.',
+  },
+  manage_products: {
+    label: 'إدارة المنتجات',
+    description: 'الموظف هيقدر يضيف ويعدل ويحذف المنتجات والباقات ويرتب بيانات العرض الخاصة بيها.',
+  },
+  manage_categories: {
+    label: 'إدارة الأقسام',
+    description: 'الموظف هيقدر يضيف الأقسام ويعدلها ويرتب ظهورها في المتجر.',
+  },
+  manage_offers: {
+    label: 'إدارة العروض',
+    description: 'الموظف هيقدر يشغّل المنتجات في قسم العروض ويتابع الظهور التجاري للعناصر المخفضة.',
+  },
+  manage_discounts: {
+    label: 'إدارة أكواد الخصم',
+    description: 'الموظف هيقدر ينشئ أكواد خصم ويحدد استخدامها ويربطها بمنتجات أو أقسام لو متاح.',
+  },
+  manage_users: {
+    label: 'إدارة المستخدمين',
+    description: 'الموظف هيقدر يراجع حسابات العملاء ويتابع بياناتهم وما يتعلق بإدارة المستخدمين.',
+  },
+  manage_admins: {
+    label: 'إدارة الطاقم',
+    description: 'الموظف هيقدر يضيف ويعدل الطاقم والصلاحيات ويعيد تعيين كلمات المرور للحسابات الإدارية.',
+  },
+  manage_settings: {
+    label: 'إدارة الإعدادات',
+    description: 'الموظف هيقدر يعدل إعدادات المتجر العامة ورسائل الصيانة وبعض إعدادات التشغيل.',
+  },
+  view_reports: {
+    label: 'عرض التقارير',
+    description: 'الموظف هيقدر يشوف التحليلات والتقارير والأرقام الخاصة بالمبيعات والزيارات والأداء.',
+  },
+};
+
+export const ROLE_META: Record<string, { label: string; description: string }> = {
+  super_admin: {
+    label: 'مشرف عام',
+    description: 'صلاحية كاملة وثابتة على كل أجزاء النظام، والحساب ده محمي من التعطيل والحذف من صفحة الطاقم.',
+  },
+  operations_manager: {
+    label: 'إدارة العمليات',
+    description: 'مناسب لمتابعة الطلبات وتحديث حالاتها وتعيين المندوبين ومراقبة التشغيل اليومي.',
+  },
+  catalog_manager: {
+    label: 'إدارة المنتجات',
+    description: 'مناسب لإضافة المنتجات وتعديل الأقسام والعروض وأكواد الخصم ومحتوى المتجر التجاري.',
+  },
+  support_agent: {
+    label: 'دعم العملاء',
+    description: 'مناسب لمتابعة الطلبات والرد على العملاء ومراجعة الحالة العامة بدون صلاحيات إدارية واسعة.',
+  },
+  admin: {
+    label: 'أدمن',
+    description: 'صلاحيات إدارية واسعة حسب بنية النظام الحالية.',
+  },
+};
+
+export function getPermissionMeta(permission: Permission | string) {
+  return PERMISSION_META[permission as Permission] || {
+    label: permission,
+    description: 'صلاحية داخلية في النظام.',
+  };
+}
+
+export function getRoleMeta(role: string | null | undefined) {
+  return ROLE_META[role || ''] || {
+    label: role || 'غير محدد',
+    description: 'دور داخل النظام.',
+  };
+}
+
 const FULL_ADMIN_PERMISSIONS = [
   'manage_admins',
   'manage_users',
