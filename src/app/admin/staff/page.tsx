@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getPermissionMeta, getRoleMeta } from "@/lib/permissions";
+import { getPermissionMeta, getRoleMeta, hasFullAdminAccess, hasPermission } from "@/lib/permissions";
 import { toast } from "sonner";
 import { Loader2, Plus, Shield, Edit2, LockKeyhole, Slash, CheckCircle2, Trash2, Info } from "lucide-react";
 
@@ -42,6 +42,25 @@ const PERMISSION_OPTIONS = [
   "manage_settings",
   "view_reports",
 ];
+
+const PREVIEW_ITEMS = [
+  { label: "لوحة التحكم", description: "الصفحة الرئيسية للأدمن والملخص السريع.", perm: null, fullAdmin: false },
+  { label: "التحليلات", description: "أرقام المبيعات والزيارات والتقارير.", perm: "view_reports", fullAdmin: false },
+  { label: "الطلبات", description: "عرض الطلبات ومتابعة حالتها.", perm: "view_orders", fullAdmin: false },
+  { label: "طلبات بندور عليها", description: "متابعة الطلبات اللي محتاجة بحث وتسعير.", perm: "view_orders", fullAdmin: false },
+  { label: "مركز العمليات", description: "أدوات التشغيل السريعة والمتقدمة.", perm: null, fullAdmin: true },
+  { label: "المندوبين", description: "قائمة المندوبين والتوفر وحالة التوزيع.", perm: "view_drivers", fullAdmin: false },
+  { label: "المنتجات", description: "إضافة وتعديل المنتجات والباقات.", perm: "manage_products", fullAdmin: false },
+  { label: "الأقسام", description: "إدارة الأقسام وترتيب ظهورها.", perm: "manage_categories", fullAdmin: false },
+  { label: "المستخدمون", description: "مراجعة حسابات العملاء وبياناتهم.", perm: "manage_users", fullAdmin: false },
+  { label: "إدارة الطاقم", description: "إدارة الموظفين والصلاحيات.", perm: "manage_admins", fullAdmin: false },
+  { label: "البحث الشامل", description: "بحث إداري سريع داخل النظام كله.", perm: null, fullAdmin: true },
+  { label: "سجل الإدارة", description: "متابعة التغييرات الإدارية المهمة.", perm: null, fullAdmin: true },
+  { label: "التقييمات", description: "مراجعة تقييمات العملاء للمنتجات.", perm: "view_reports", fullAdmin: false },
+  { label: "العروض الترويجية", description: "إدارة البانرات والحملات والعروض.", perm: "manage_offers", fullAdmin: false },
+  { label: "أكواد الخصم", description: "إنشاء ومتابعة أكواد الخصم.", perm: "manage_discounts", fullAdmin: false },
+  { label: "النسخ الاحتياطي", description: "تصدير واسترجاع النسخ الاحتياطية.", perm: "manage_settings", fullAdmin: false },
+] as const;
 
 function InfoHint({ text }: { text: string }) {
   return (
@@ -244,6 +263,26 @@ export default function StaffPage() {
   const teamStaff = useMemo(
     () => staff.filter((member) => member.role !== "super_admin"),
     [staff]
+  );
+
+  const previewProfile = useMemo(
+    () => ({ role: form.role, permissions: form.permissions }),
+    [form.permissions, form.role]
+  );
+
+  const visiblePreviewItems = useMemo(
+    () =>
+      PREVIEW_ITEMS.filter((item) => {
+        if (item.fullAdmin) return hasFullAdminAccess(previewProfile);
+        if (item.perm === null) return true;
+        return hasPermission(previewProfile, item.perm as any);
+      }),
+    [previewProfile]
+  );
+
+  const hiddenPreviewItems = useMemo(
+    () => PREVIEW_ITEMS.filter((item) => !visiblePreviewItems.includes(item)),
+    [visiblePreviewItems]
   );
 
   return (
@@ -497,6 +536,44 @@ export default function StaffPage() {
                   </label>
                   );
                 })}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-surface-hover bg-surface-hover/40 p-4 space-y-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="text-xs font-bold text-gray-500">معاينة لوحة الموظف</div>
+                  <InfoHint text="المعاينة دي بتوضح لك الأقسام اللي هتظهر للموظف في السايدبار بناءً على الدور والصلاحيات الحالية قبل ما تحفظ." />
+                </div>
+                <p className="mt-1 text-[11px] leading-5 text-gray-500">
+                  كده تقدر تعرف بالضبط هو هيشوف إيه قدامه في لوحة التحكم، وإيه اللي هيفضل مخفي عنه.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4">
+                  <p className="mb-3 text-sm font-black text-foreground">اللي هيظهر للموظف</p>
+                  <div className="space-y-2">
+                    {visiblePreviewItems.map((item) => (
+                      <div key={item.label} className="rounded-xl border border-emerald-500/10 bg-surface px-3 py-2">
+                        <p className="text-sm font-bold text-foreground">{item.label}</p>
+                        <p className="mt-1 text-[11px] leading-5 text-gray-500">{item.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-surface-hover bg-surface/60 p-4">
+                  <p className="mb-3 text-sm font-black text-foreground">اللي هيبقى مخفي عنه</p>
+                  <div className="space-y-2">
+                    {hiddenPreviewItems.map((item) => (
+                      <div key={item.label} className="rounded-xl border border-surface-hover bg-background px-3 py-2 opacity-80">
+                        <p className="text-sm font-bold text-gray-300">{item.label}</p>
+                        <p className="mt-1 text-[11px] leading-5 text-gray-500">{item.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
