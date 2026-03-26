@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { ProductCard } from "@/components/ui/product-card"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
-import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Tag, Camera, Send, MessageSquare, X, Share2, Copy } from "lucide-react"
+import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Tag, Camera, Send, MessageSquare, X, Share2, Copy, MapPin, Banknote, Clock3 } from "lucide-react"
 import { fetchProductDetails, fetchRelatedProducts, Product } from "@/services/productsService"
 import { fetchProductReviews, calcReviewStats, createReview, updateReview, fetchUserProductReview, checkUserPurchased, checkUserReviewed, uploadReviewImage, Review, ReviewStats } from "@/services/reviewsService"
 import { useCart } from "@/contexts/CartContext"
@@ -18,6 +18,7 @@ import { toast } from "sonner"
 import { getBundleItems, getBundleSummary, getProductMode, toProductCardProps } from "@/lib/product-presentation"
 import { getTaxonomyLabel, getTaxonomySelection } from "@/lib/category-taxonomy"
 import { getProductCatalogMetadata } from "@/lib/product-metadata"
+import { CURRENT_DELIVERY_FEE } from "@/lib/order-economics"
 
 function WhatsAppIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -645,6 +646,30 @@ export default function ProductPage({
                 </p>
               )}
 
+              <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-surface-hover bg-surface/55 p-4">
+                  <div className="mb-2 inline-flex rounded-xl bg-primary/10 p-2 text-primary">
+                    <MapPin className="h-5 w-5" />
+                  </div>
+                  <p className="text-sm font-black text-foreground">التوصيل الحالي</p>
+                  <p className="mt-1 text-xs leading-6 text-gray-500">بنوصّل حاليًا داخل القاهرة والجيزة علشان الخدمة تفضل سريعة ومضمونة.</p>
+                </div>
+                <div className="rounded-2xl border border-surface-hover bg-surface/55 p-4">
+                  <div className="mb-2 inline-flex rounded-xl bg-emerald-500/10 p-2 text-emerald-500">
+                    <Banknote className="h-5 w-5" />
+                  </div>
+                  <p className="text-sm font-black text-foreground">مصاريف الشحن</p>
+                  <p className="mt-1 text-xs leading-6 text-gray-500">الشحن الحالي {CURRENT_DELIVERY_FEE} ج.م، وبيظهر لك واضح قبل تأكيد الطلب النهائي.</p>
+                </div>
+                <div className="rounded-2xl border border-surface-hover bg-surface/55 p-4">
+                  <div className="mb-2 inline-flex rounded-xl bg-amber-500/10 p-2 text-amber-500">
+                    <Clock3 className="h-5 w-5" />
+                  </div>
+                  <p className="text-sm font-black text-foreground">قرارك يبقى على بينة</p>
+                  <p className="mt-1 text-xs leading-6 text-gray-500">تقدر تراجع السعر والشحن وتدفع كاش وقت الاستلام من غير خطوات معقدة.</p>
+                </div>
+              </div>
+
               {product.productMode === "bundle" && (
                 <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-4">
                   <p className="text-sm font-black text-primary mb-1">الباكج دي متجهزة علشان تاخد كذا حاجة مرة واحدة</p>
@@ -859,6 +884,31 @@ export default function ProductPage({
                   <div>
                     <p className="font-heading font-bold text-sm text-foreground mb-1">توصيل سريع ومضمون</p>
                     <p className="text-xs text-gray-500 leading-relaxed">هنعرفك مصاريف الشحن بالضبط قبل التأكيد</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-8 rounded-3xl border border-surface-hover bg-surface/40 p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="max-w-2xl">
+                    <p className="text-sm font-black text-foreground">ليه المنتج ده يطمنك وأنت بتشتري؟</p>
+                    <p className="mt-2 text-sm leading-7 text-gray-500">
+                      وضحنا لك التوصيل الحالي والشحن وطريقة الدفع من بدري علشان ما يبقاش فيه مفاجآت في آخر المشوار. ولو المنتج مش مناسبك، تقدر ببساطة تكمل على منتج مشابه من نفس الصفحة.
+                    </p>
+                  </div>
+                  <div className="grid min-w-[240px] gap-2 text-xs text-gray-400">
+                    <div className="inline-flex items-center gap-2 rounded-2xl border border-surface-hover bg-surface px-3 py-2">
+                      <Check className="h-4 w-4 text-primary" />
+                      تفاصيل الشحن واضحة قبل التأكيد
+                    </div>
+                    <div className="inline-flex items-center gap-2 rounded-2xl border border-surface-hover bg-surface px-3 py-2">
+                      <Check className="h-4 w-4 text-primary" />
+                      دفع كاش وقت الاستلام
+                    </div>
+                    <div className="inline-flex items-center gap-2 rounded-2xl border border-surface-hover bg-surface px-3 py-2">
+                      <Check className="h-4 w-4 text-primary" />
+                      منتجات مشابهة لو حبيت تشوف بديل
+                    </div>
                   </div>
                 </div>
               </div>

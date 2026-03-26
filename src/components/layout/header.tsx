@@ -73,6 +73,15 @@ const SECONDARY_DRAWER_ITEMS = [
   { label: "سياسة الخصوصية", href: "/privacy", icon: <Info className="w-5 h-5" /> },
 ]
 
+const QUICK_SEARCH_TERMS = [
+  "عروض",
+  "الأكثر طلبًا",
+  "تيشيرتات",
+  "طعام",
+  "ألعاب أطفال",
+  "صيدلية",
+]
+
 // ── Search Results Component ────────────────────────────────────────────
 type SearchResultProduct = {
   id: string
@@ -240,6 +249,75 @@ function SearchResults({ query, onSelect, mobile = false }: { query: string; onS
   )
 }
 
+function SearchDiscoveryPanel({
+  mobile = false,
+  categories,
+  onSelect,
+  onPickTerm,
+}: {
+  mobile?: boolean
+  categories: { id: string; name: string }[]
+  onSelect: () => void
+  onPickTerm: (term: string) => void
+}) {
+  const topCategories = categories.slice(0, 8)
+
+  return (
+    <div
+      className={cn(
+        "overflow-y-auto rounded-[24px] border border-surface-border bg-surface shadow-[var(--shadow-material-2)]",
+        mobile
+          ? "fixed inset-x-0 bottom-0 top-[81px] z-[160] rounded-none border-0 border-t border-surface-border bg-background p-4 pt-5 shadow-none"
+          : "absolute left-0 right-0 top-full z-50 mt-3 p-4"
+      )}
+    >
+      <div className="space-y-5">
+        <div>
+          <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">لف في الأقسام</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {topCategories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/category/${cat.id}`}
+                onClick={onSelect}
+                className="flex items-center gap-2 rounded-2xl border border-surface-hover bg-gradient-to-br from-primary/10 to-transparent p-3 text-sm font-bold text-foreground transition-all hover:border-primary/30 active:scale-95"
+              >
+                <LayoutGrid className="h-4 w-4 text-primary" />
+                {cat.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">بحث شائع</h3>
+          <div className="flex flex-wrap gap-2">
+            {QUICK_SEARCH_TERMS.map((term) => (
+              <button
+                key={term}
+                type="button"
+                onClick={() => onPickTerm(term)}
+                className="inline-flex items-center rounded-full border border-surface-hover bg-surface px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-primary/30 hover:text-white"
+              >
+                {term}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-primary/10 bg-primary/5 p-4">
+          <p className="text-sm font-black text-foreground">ملحوظة سريعة قبل ما تطلب</p>
+          <p className="mt-2 text-xs leading-6 text-gray-500">
+            التوصيل الحالي داخل القاهرة والجيزة، ولو ملقتش المنتج اللي عاوزه هتقدر تطلبه من زر
+            <span className="mx-1 font-black text-primary">ملقتش المنتج؟</span>
+            ونرجعلك بالسعر قبل التأكيد.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function Header() {
   const pathname = usePathname()
   const router = useRouter()
@@ -322,6 +400,18 @@ export function Header() {
     }
   }
 
+  const pickDesktopQuickSearch = (term: string) => {
+    router.push(`/category/all?q=${encodeURIComponent(term)}`)
+    setShowDesktopResults(false)
+    setDesktopQuery("")
+  }
+
+  const pickMobileQuickSearch = (term: string) => {
+    router.push(`/category/all?q=${encodeURIComponent(term)}`)
+    setIsSearchOpen(false)
+    setMobileQuery("")
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/8 bg-[#101816]/95 text-white backdrop-blur-sm shadow-[var(--shadow-material-2)]">
 
@@ -371,18 +461,26 @@ export function Header() {
                 setDesktopQuery(e.target.value)
                 setShowDesktopResults(true)
               }}
-              onFocus={() => deferredDesktopQuery.trim().length >= 2 && setShowDesktopResults(true)}
+              onFocus={() => setShowDesktopResults(true)}
               onKeyDown={handleDesktopSearch}
             />
             {/* Autocomplete dropdown */}
-            {showDesktopResults && deferredDesktopQuery.trim().length >= 2 && (
-              <SearchResults
-                query={deferredDesktopQuery}
-                onSelect={() => {
-                  setShowDesktopResults(false)
-                  setDesktopQuery("")
-                }}
-              />
+            {showDesktopResults && (
+              deferredDesktopQuery.trim().length >= 2 ? (
+                <SearchResults
+                  query={deferredDesktopQuery}
+                  onSelect={() => {
+                    setShowDesktopResults(false)
+                    setDesktopQuery("")
+                  }}
+                />
+              ) : (
+                <SearchDiscoveryPanel
+                  categories={categories}
+                  onSelect={() => setShowDesktopResults(false)}
+                  onPickTerm={pickDesktopQuickSearch}
+                />
+              )
             )}
           </div>
         </div>
@@ -513,23 +611,12 @@ export function Header() {
                 onSelect={() => { setIsSearchOpen(false); setMobileQuery("") }}
               />
             ) : (
-              /* Default: category suggestions */
-              <div className="fixed inset-x-0 bottom-0 top-[81px] z-[160] overflow-y-auto bg-background p-4 pt-5">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">لف في الأقسام</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {categories.map(cat => (
-                    <Link
-                      key={cat.id}
-                      href={`/category/${cat.id}`}
-                      onClick={() => { setIsSearchOpen(false); setMobileQuery("") }}
-                      className="flex items-center gap-2 p-3 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border border-surface-hover text-sm font-bold text-foreground hover:border-primary/30 active:scale-95 transition-all"
-                    >
-                      <LayoutGrid className="w-4 h-4 text-primary" />
-                      {cat.name}
-                    </Link>
-                  ))}
-                </div>
-              </div>
+              <SearchDiscoveryPanel
+                mobile
+                categories={categories}
+                onSelect={() => { setIsSearchOpen(false); setMobileQuery("") }}
+                onPickTerm={pickMobileQuickSearch}
+              />
             )}
           </div>
         </div>

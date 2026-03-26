@@ -5,11 +5,12 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import Link from "next/link"
 import Image from "next/image"
-import { ShieldCheck, Zap, Banknote, Clock } from "lucide-react"
+import { ShieldCheck, Zap, Banknote, Clock, MapPin } from "lucide-react"
 import { fetchHomeProducts, fetchOffers, fetchBestSellers } from "@/services/productsService"
 import { HomeCategoriesList } from "@/components/ui/home-categories"
 import { PromoBanner } from "@/components/ui/promo-banner"
 import { toProductCardProps } from "@/lib/product-presentation"
+import { CURRENT_DELIVERY_FEE } from "@/lib/order-economics"
 
 // Public home page: cache with ISR for strong performance while still refreshing often.
 export const revalidate = 300;
@@ -96,7 +97,18 @@ export default async function Home() {
                     <Zap className="w-5 h-5 text-amber-500" />
                     <span>سريع ومريح</span>
                   </div>
+                  <div className="material-chip text-xs sm:text-sm">
+                    <MapPin className="w-5 h-5 text-primary" />
+                    <span>التوصيل الحالي: القاهرة والجيزة</span>
+                  </div>
+                  <div className="material-chip text-xs sm:text-sm">
+                    <Banknote className="w-5 h-5 text-emerald-500" />
+                    <span>مصاريف الشحن الحالية: {CURRENT_DELIVERY_FEE} ج.م</span>
+                  </div>
                 </div>
+                <p className="mt-4 text-xs leading-6 text-gray-500 sm:mt-5 sm:text-sm">
+                  لو ملقتش المنتج اللي عاوزه، تقدر تطلبه من زر <span className="font-black text-primary">ملقتش المنتج؟</span> وإحنا نرجعلك بالسعر قبل ما تكمل.
+                </p>
               </div>
 
               {/* Hero Image Mock */}
@@ -250,6 +262,11 @@ export default async function Home() {
                 <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">بنختار منتجاتنا بعناية علشان اللي يوصلك يبقى نضيف ويستاهل فلوسه فعلًا.</p>
               </div>
 
+            </div>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-center text-xs text-gray-500">
+              <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">التشغيل الحالي داخل القاهرة والجيزة</span>
+              <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">الشحن الحالي {CURRENT_DELIVERY_FEE} ج.م</span>
+              <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">لو المنتج مش موجود هنرجعلك بالسعر الأول</span>
             </div>
           </div>
         </section>

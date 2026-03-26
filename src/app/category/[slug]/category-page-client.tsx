@@ -117,6 +117,8 @@ export default function CategoryPageClient({
   const [categoryFilters, setCategoryFilters] = React.useState<Set<string>>(new Set())
   const [taxonomyPrimaryFilter, setTaxonomyPrimaryFilter] = React.useState("")
   const [taxonomySecondaryFilter, setTaxonomySecondaryFilter] = React.useState("")
+  const [availableOnly, setAvailableOnly] = React.useState(false)
+  const [offersOnly, setOffersOnly] = React.useState(false)
 
   const currentCategory = React.useMemo(() => {
     if (isAllPage) return null
@@ -152,6 +154,8 @@ export default function CategoryPageClient({
     setCategoryFilters(new Set())
     setTaxonomyPrimaryFilter("")
     setTaxonomySecondaryFilter("")
+    setAvailableOnly(false)
+    setOffersOnly(false)
   }
 
   const hasActiveFilters =
@@ -159,7 +163,9 @@ export default function CategoryPageClient({
     categoryFilters.size > 0 ||
     sortBy !== "popular" ||
     !!taxonomyPrimaryFilter ||
-    !!taxonomySecondaryFilter
+    !!taxonomySecondaryFilter ||
+    availableOnly ||
+    offersOnly
 
   const displayProducts = React.useMemo(() => {
     let filtered = [...allProducts]
@@ -181,6 +187,14 @@ export default function CategoryPageClient({
           tertiary: "",
         })
       )
+    }
+
+    if (availableOnly) {
+      filtered = filtered.filter((p) => (p.stock_quantity ?? 0) > 0)
+    }
+
+    if (offersOnly) {
+      filtered = filtered.filter((p) => !!p.show_in_offers || !!p.discount_percentage)
     }
 
     if (priceFilters.size > 0) {
@@ -228,6 +242,8 @@ export default function CategoryPageClient({
     taxonomyConfig,
     taxonomyPrimaryFilter,
     taxonomySecondaryFilter,
+    availableOnly,
+    offersOnly,
   ])
 
   const productCards = displayProducts.map(toProductCardProps)
@@ -285,6 +301,19 @@ export default function CategoryPageClient({
                     <X className="w-3.5 h-3.5" />مسح كل الفلاتر
                   </button>
                   )}
+                <div className="space-y-4">
+                  <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">تصفية سريعة</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                      <Checkbox id="available-only" checked={availableOnly} onChange={() => setAvailableOnly(prev => !prev)} />
+                      <Label htmlFor="available-only" className="text-foreground cursor-pointer">المتوفر فقط</Label>
+                    </div>
+                    <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                      <Checkbox id="offers-only" checked={offersOnly} onChange={() => setOffersOnly(prev => !prev)} />
+                      <Label htmlFor="offers-only" className="text-foreground cursor-pointer">العروض والخصومات فقط</Label>
+                    </div>
+                  </div>
+                </div>
                 {taxonomyConfig && (
                   <div className="space-y-4">
                     <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">التصنيف</h3>
@@ -363,6 +392,43 @@ export default function CategoryPageClient({
                 <div className="hidden md:flex justify-between items-center mb-6">
                   <span className="text-sm text-gray-500">عرض {productCards.length} نتيجة</span>
                   {hasActiveFilters && <button onClick={clearAllFilters} className="text-xs font-bold text-rose-500 hover:text-rose-400 transition-colors">مسح الفلاتر</button>}
+                </div>
+
+                <div className="mb-6 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAvailableOnly(prev => !prev)}
+                    className={`inline-flex items-center rounded-full border px-3 py-2 text-xs font-black transition-colors ${
+                      availableOnly
+                        ? "border-primary bg-primary text-white"
+                        : "border-surface-hover bg-surface text-gray-300 hover:border-primary/30"
+                    }`}
+                  >
+                    المتوفر فقط
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOffersOnly(prev => !prev)}
+                    className={`inline-flex items-center rounded-full border px-3 py-2 text-xs font-black transition-colors ${
+                      offersOnly
+                        ? "border-rose-500 bg-rose-500 text-white"
+                        : "border-surface-hover bg-surface text-gray-300 hover:border-rose-500/30"
+                    }`}
+                  >
+                    العروض فقط
+                  </button>
+                  {taxonomyConfig && taxonomyPrimaryFilter ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTaxonomyPrimaryFilter("")
+                        setTaxonomySecondaryFilter("")
+                      }}
+                      className="inline-flex items-center rounded-full border border-surface-hover bg-surface px-3 py-2 text-xs font-black text-gray-300 hover:border-primary/30"
+                    >
+                      رجّع كل التصنيفات
+                    </button>
+                  ) : null}
                 </div>
 
                 {isLoading ? (
