@@ -33,6 +33,7 @@ import {
   Megaphone,
   Ticket,
   Database,
+  ChevronDown,
 } from "lucide-react";
 
 type Staff = {
@@ -117,6 +118,8 @@ export default function StaffPage() {
     tempPassword: "",
     disabled: false,
   });
+  const [permissionsOpen, setPermissionsOpen] = useState(true);
+  const [previewOpen, setPreviewOpen] = useState(true);
 
   useEffect(() => {
     if (isLoading) return;
@@ -161,11 +164,15 @@ export default function StaffPage() {
 
   const openAdd = () => {
     resetForm();
+    setPermissionsOpen(true);
+    setPreviewOpen(true);
     setModalOpen(true);
   };
 
   const openEdit = (item: Staff) => {
     setEditing(item);
+    setPermissionsOpen(true);
+    setPreviewOpen(true);
     setForm({
       full_name: item.full_name || "",
       username: item.username || "",
@@ -543,44 +550,62 @@ export default function StaffPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="text-xs font-bold text-gray-500">الصلاحيات</div>
-                <InfoHint text="كل صلاحية من دول بتحدد الموظف هيشوف إيه وهيقدر يعمل إيه جوه لوحة الإدارة." />
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {PERMISSION_OPTIONS.map((perm) => {
-                  const meta = getPermissionMeta(perm);
-                  return (
-                  <label
-                    key={perm}
-                    title={meta.description}
-                    className={`group relative flex items-center gap-2 text-xs rounded-xl px-3 py-2 border ${
-                      form.permissions.includes(perm) ? "border-primary text-primary" : "border-surface-hover text-gray-500"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form.permissions.includes(perm)}
-                      onChange={() => togglePerm(perm)}
-                    />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold">{meta.label}</span>
-                        <InfoHint text={meta.description} />
-                      </div>
-                      <span className="mt-0.5 block text-[10px] leading-4 text-gray-500">
-                        {meta.description}
-                      </span>
-                    </div>
-                  </label>
-                  );
-                })}
-              </div>
+            <div className="rounded-2xl border border-surface-hover bg-surface-hover/20">
+              <button
+                type="button"
+                onClick={() => setPermissionsOpen((prev) => !prev)}
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-start"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="text-xs font-bold text-gray-500">الصلاحيات</div>
+                  <InfoHint text="كل صلاحية من دول بتحدد الموظف هيشوف إيه وهيقدر يعمل إيه جوه لوحة الإدارة." />
+                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black text-primary">
+                    {form.permissions.length} مفعلة
+                  </span>
+                </div>
+                <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${permissionsOpen ? "rotate-180" : ""}`} />
+              </button>
+              {permissionsOpen && (
+                <div className="border-t border-surface-hover px-4 py-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {PERMISSION_OPTIONS.map((perm) => {
+                      const meta = getPermissionMeta(perm);
+                      return (
+                      <label
+                        key={perm}
+                        title={meta.description}
+                        className={`group relative flex items-center gap-2 text-xs rounded-xl px-3 py-2 border ${
+                          form.permissions.includes(perm) ? "border-primary text-primary" : "border-surface-hover text-gray-500"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={form.permissions.includes(perm)}
+                          onChange={() => togglePerm(perm)}
+                        />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold">{meta.label}</span>
+                            <InfoHint text={meta.description} />
+                          </div>
+                          <span className="mt-0.5 block text-[10px] leading-4 text-gray-500">
+                            {meta.description}
+                          </span>
+                        </div>
+                      </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="rounded-2xl border border-surface-hover bg-surface-hover/40 p-4 space-y-4">
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="rounded-2xl border border-surface-hover bg-surface-hover/40">
+              <button
+                type="button"
+                onClick={() => setPreviewOpen((prev) => !prev)}
+                className="flex w-full items-start justify-between gap-3 px-4 py-4 text-start"
+              >
                 <div>
                   <div className="flex items-center gap-2">
                     <div className="text-xs font-bold text-gray-500">معاينة لوحة الموظف</div>
@@ -590,92 +615,99 @@ export default function StaffPage() {
                     كده تقدر تعرف بالضبط هو هيشوف إيه قدامه في لوحة التحكم، وإيه اللي هيفضل مخفي عنه.
                   </p>
                 </div>
-                <div className={`inline-flex w-fit items-center rounded-full border px-3 py-1.5 text-xs font-black ${previewAccess.className}`}>
-                  {previewAccess.label}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-surface-hover bg-background/70 p-3">
-                <div className="flex items-center justify-between gap-3 rounded-2xl border border-surface-hover bg-surface px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-black text-foreground">{form.full_name || "اسم الموظف هيظهر هنا"}</p>
-                    <p className="mt-1 text-[11px] text-gray-500">
-                      {getRoleMeta(form.role).label} · {previewAccess.description}
-                    </p>
+                <div className="flex items-center gap-2">
+                  <div className={`inline-flex w-fit items-center rounded-full border px-3 py-1.5 text-xs font-black ${previewAccess.className}`}>
+                    {previewAccess.label}
                   </div>
-                  <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary">
-                    <Shield className="h-4 w-4" />
-                  </div>
+                  <ChevronDown className={`mt-1 h-4 w-4 text-gray-500 transition-transform ${previewOpen ? "rotate-180" : ""}`} />
                 </div>
-              </div>
+              </button>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4">
-                  <p className="mb-3 text-sm font-black text-foreground">اللي هيظهر للموظف</p>
-                  <div className="rounded-2xl border border-emerald-500/10 bg-surface p-3">
-                    <div className="mb-3 flex items-center justify-between">
-                      <p className="text-xs font-bold text-gray-400">شكل قريب من السايدبار</p>
-                      <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black text-emerald-400">
-                        {visiblePreviewItems.length} قسم ظاهر
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      {visiblePreviewItems.map((item) => (
-                        <div
-                          key={item.label}
-                          className="flex items-start gap-3 rounded-xl border border-emerald-500/10 bg-background/80 px-3 py-2.5"
-                        >
-                          <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/15 bg-emerald-500/10 text-emerald-400">
-                            <item.icon className="h-4 w-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-sm font-bold text-foreground">{item.label}</p>
-                              <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black text-emerald-400">
-                                {item.access}
-                              </span>
-                            </div>
-                            <p className="mt-1 text-[11px] leading-5 text-gray-500">{item.description}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-surface-hover bg-surface/60 p-4">
-                  <p className="mb-3 text-sm font-black text-foreground">اللي هيبقى مخفي عنه</p>
+              {previewOpen && (
+                <div className="border-t border-surface-hover px-4 py-4 space-y-4">
                   <div className="rounded-2xl border border-surface-hover bg-background/70 p-3">
-                    <div className="mb-3 flex items-center justify-between">
-                      <p className="text-xs font-bold text-gray-400">أقسام مش هتظهر في السايدبار</p>
-                      <span className="inline-flex items-center rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-black text-gray-400">
-                        {hiddenPreviewItems.length} قسم مخفي
-                      </span>
+                    <div className="flex items-center justify-between gap-3 rounded-2xl border border-surface-hover bg-surface px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-foreground">{form.full_name || "اسم الموظف هيظهر هنا"}</p>
+                        <p className="mt-1 text-[11px] text-gray-500">
+                          {getRoleMeta(form.role).label} · {previewAccess.description}
+                        </p>
+                      </div>
+                      <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary">
+                        <Shield className="h-4 w-4" />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      {hiddenPreviewItems.map((item) => (
-                        <div
-                          key={item.label}
-                          className="flex items-start gap-3 rounded-xl border border-dashed border-surface-hover bg-background px-3 py-2.5 opacity-80"
-                        >
-                          <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-surface-hover bg-surface text-gray-500">
-                            <item.icon className="h-4 w-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-sm font-bold text-gray-300">{item.label}</p>
-                              <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-black text-gray-400">
-                                مخفي
-                              </span>
-                            </div>
-                            <p className="mt-1 text-[11px] leading-5 text-gray-500">{item.description}</p>
-                          </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4">
+                      <p className="mb-3 text-sm font-black text-foreground">اللي هيظهر للموظف</p>
+                      <div className="rounded-2xl border border-emerald-500/10 bg-surface p-3">
+                        <div className="mb-3 flex items-center justify-between">
+                          <p className="text-xs font-bold text-gray-400">شكل قريب من السايدبار</p>
+                          <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black text-emerald-400">
+                            {visiblePreviewItems.length} قسم ظاهر
+                          </span>
                         </div>
-                      ))}
+                        <div className="space-y-2">
+                          {visiblePreviewItems.map((item) => (
+                            <div
+                              key={item.label}
+                              className="flex items-start gap-3 rounded-xl border border-emerald-500/10 bg-background/80 px-3 py-2.5"
+                            >
+                              <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/15 bg-emerald-500/10 text-emerald-400">
+                                <item.icon className="h-4 w-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="text-sm font-bold text-foreground">{item.label}</p>
+                                  <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black text-emerald-400">
+                                    {item.access}
+                                  </span>
+                                </div>
+                                <p className="mt-1 text-[11px] leading-5 text-gray-500">{item.description}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-surface-hover bg-surface/60 p-4">
+                      <p className="mb-3 text-sm font-black text-foreground">اللي هيبقى مخفي عنه</p>
+                      <div className="rounded-2xl border border-surface-hover bg-background/70 p-3">
+                        <div className="mb-3 flex items-center justify-between">
+                          <p className="text-xs font-bold text-gray-400">أقسام مش هتظهر في السايدبار</p>
+                          <span className="inline-flex items-center rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-black text-gray-400">
+                            {hiddenPreviewItems.length} قسم مخفي
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {hiddenPreviewItems.map((item) => (
+                            <div
+                              key={item.label}
+                              className="flex items-start gap-3 rounded-xl border border-dashed border-surface-hover bg-background px-3 py-2.5 opacity-80"
+                            >
+                              <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-surface-hover bg-surface text-gray-500">
+                                <item.icon className="h-4 w-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="text-sm font-bold text-gray-300">{item.label}</p>
+                                  <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-black text-gray-400">
+                                    مخفي
+                                  </span>
+                                </div>
+                                <p className="mt-1 text-[11px] leading-5 text-gray-500">{item.description}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="sticky bottom-0 -mx-6 mt-2 border-t border-surface-hover bg-surface px-6 py-4">
