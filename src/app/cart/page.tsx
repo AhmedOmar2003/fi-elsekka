@@ -314,7 +314,16 @@ export default function CartPage() {
                               </div>
                            </div>
 
-                           <div className="mt-2 flex items-center justify-center gap-2 text-xs text-gray-400">
+                           <Button
+                              size="lg"
+                              className="hidden md:flex h-14 w-full rounded-2xl px-6 text-base font-black shadow-primary/20 shadow-lg"
+                              onClick={() => router.push('/checkout')}
+                           >
+                              متابعة الدفع
+                              <ArrowLeft className="mr-2 h-5 w-5" />
+                           </Button>
+
+                           <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
                               <ShoppingBag className="w-4 h-4" />
                               طلبك معانا مضمون 100%
                            </div>

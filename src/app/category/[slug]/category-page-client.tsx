@@ -246,7 +246,7 @@ export default function CategoryPageClient({
                 ? `تم العثور على ${productCards.length} منتج`
                 : isRequestOnlyCategoryPage
                   ? "القسم ده بيتطلب بالنص أو بالروشتة، وإحنا هنراجعه معاك خطوة بخطوة."
-                                        : "تصفح المنتجات الأول، ولو ملقتش اللي عاوزه اطلبه من زر طلب البحث."}
+                                                : "تصفح المنتجات الأول، ولو ملقتش اللي عاوزه اطلبه من زر ملقتش المنتج؟"}
             </p>
             {canShowRequestPageLink && currentCategory ? (
               <div className="mt-4">
