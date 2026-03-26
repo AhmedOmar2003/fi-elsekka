@@ -16,6 +16,7 @@ export function InstallPrompt() {
   const PROMPT_DISMISS_COUNT_KEY = "pwa_prompt_dismiss_count"
   const PROMPT_NEXT_ALLOWED_KEY = "pwa_prompt_next_allowed_at"
   const MAX_PROMPT_SHOWS = 3
+  const INITIAL_PROMPT_DELAY_MS = 5_000
   const PROMPT_RESHOW_DELAY_MS = 10_000
 
   const clearPromptTimer = React.useCallback(() => {
@@ -33,7 +34,7 @@ export function InstallPrompt() {
     const dismissCount = Number(localStorage.getItem(PROMPT_DISMISS_COUNT_KEY) || "0")
     if (dismissCount >= MAX_PROMPT_SHOWS) return
 
-    const nextAllowedAt = Number(localStorage.getItem(PROMPT_NEXT_ALLOWED_KEY) || "0")
+    const nextAllowedAt = Number(localStorage.getItem(PROMPT_NEXT_ALLOWED_KEY) || String(Date.now() + INITIAL_PROMPT_DELAY_MS))
     const delay = Math.max(0, nextAllowedAt - Date.now())
 
     promptTimer.current = window.setTimeout(() => {
@@ -87,6 +88,7 @@ export function InstallPrompt() {
       const { outcome } = await deferredPrompt.current.userChoice;
       if (outcome === "accepted") {
         setShowPrompt(false);
+        localStorage.removeItem(PROMPT_NEXT_ALLOWED_KEY)
       }
       deferredPrompt.current = null;
     }
@@ -122,16 +124,18 @@ export function InstallPrompt() {
           </div>
           <div className="flex-1">
             <h3 className="font-heading font-bold text-foreground mb-1 text-lg">
-              نزّل تطبيق في السكة
+              {isIOS ? "ضيف في السكة على موبايلك" : "نزّل تطبيق في السكة"}
             </h3>
             <p className="text-sm text-gray-500 leading-relaxed mb-4">
-              تجربة أسرع وأسهل بدل متصفح الويب.
+              {isIOS
+                ? "افتحه بسرعة من الشاشة الرئيسية بدل ما تفتحه كل مرة من Safari."
+                : "تجربة أسرع وأسهل من فتح الموقع من المتصفح كل مرة."}
             </p>
 
             {isIOS ? (
               <div className="bg-primary/5 rounded-xl p-3 text-xs leading-relaxed text-gray-600 border border-primary/10">
-                في متصفح Safari، اضغط على <b>مشاركة (Share)</b> <Share className="w-4 h-4 inline-block mx-1" />
-                ثم اختر <br /><b>Add to Home Screen</b> <PlusSquare className="w-4 h-4 inline-block mx-1" />
+                على iPhone من Safari، اضغط على <b>مشاركة</b> <Share className="w-4 h-4 inline-block mx-1" />
+                وبعدها اختار <br /><b>إضافة إلى الشاشة الرئيسية</b> <PlusSquare className="w-4 h-4 inline-block mx-1" />
               </div>
             ) : isReadyForInstall ? (
               <Button
@@ -139,7 +143,7 @@ export function InstallPrompt() {
                 className="w-full rounded-xl font-bold bg-secondary hover:bg-secondary/90 text-white shadow-xl shadow-secondary/20"
                 onClick={handleInstallClick}
               >
-                تثبيت التطبيق دلوقتي
+                تثبيت التطبيق على Android
               </Button>
             ) : null}
           </div>

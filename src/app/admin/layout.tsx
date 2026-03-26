@@ -9,7 +9,7 @@ import {
     LayoutDashboard, Package, Tag, ShoppingCart, Users,
     Menu, X, LogOut, ChevronRight, Bell, Settings, Bike, Megaphone, Ticket,
     UserPlus, ShoppingBag, CheckCircle2, Clock, Truck, XCircle, Loader2, ShieldAlert, MessageSquare, Star, Search, History, AlertTriangle
-    , BarChart3, Database
+    , BarChart3, Database, SunMedium, MoonStar
 } from 'lucide-react';
 import { signOut } from '@/services/authService';
 import { supabase } from '@/lib/supabase';
@@ -53,7 +53,6 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
     const router = useRouter();
     const { user, profile } = useAuth();
     const canAccessControlCenter = hasFullAdminAccess(profile);
-    const firstName = (profile?.full_name || user?.email?.split('@')[0] || 'صاحبنا').trim().split(/\s+/)[0];
     const currentRoleLabel = getRoleLabel(profile?.role);
 
     const handleLogout = async () => {
@@ -81,15 +80,6 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
                         <X className="w-4 h-4" />
                     </button>
                 )}
-            </div>
-
-            <div className="px-4 py-4 border-b border-surface-hover">
-                <div className="rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3">
-                    <p className="text-sm font-black text-foreground">أهلاً يا {firstName}</p>
-                    <p className="mt-1 text-xs leading-5 text-gray-500">
-                        جاهز تكمل شغلك؟ الأقسام اللي ظاهرالك هنا هي بس اللي متاحة لك حسب الصلاحيات اللي اتحددّت ليك.
-                    </p>
-                </div>
             </div>
 
             {/* Nav */}
@@ -531,6 +521,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const canManageSettings = hasPermission(profile, 'manage_settings');
     const canAccessControlCenter = hasFullAdminAccess(profile);
+    const firstName = (profile?.full_name || user?.email?.split('@')[0] || 'صاحبنا').trim().split(/\s+/)[0];
+    const currentHour = new Date().getHours();
+    const isMorning = currentHour >= 5 && currentHour < 17;
+    const greetingText = isMorning ? 'صباح الخير' : 'مساء الخير';
+    const GreetingIcon = isMorning ? SunMedium : MoonStar;
 
     useEffect(() => {
         if (!isLoading) {
@@ -611,15 +606,21 @@ WHERE email = '${user.email}';`}
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
                 {/* Top Bar */}
-                <header className="sticky top-0 z-30 flex items-center justify-between px-4 lg:px-6 h-14 bg-background/90 backdrop-blur-lg border-b border-surface-hover">
+                <header className="sticky top-0 z-30 flex items-center justify-between px-4 lg:px-6 h-16 bg-background/90 backdrop-blur-lg border-b border-surface-hover">
                     <button
                         onClick={() => setIsSidebarOpen(true)}
                         className="lg:hidden p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover"
                     >
                         <Menu className="w-5 h-5" />
                     </button>
-                    <div className="hidden lg:block text-xs text-gray-500">
-                        لوحة الإدارة - في السكة
+                    <div className="hidden lg:flex items-center gap-3 min-w-0">
+                        <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary">
+                            <GreetingIcon className="w-4.5 h-4.5" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-sm font-black text-foreground truncate">{greetingText} يا {firstName}</p>
+                            <p className="text-[11px] text-gray-500 truncate">الأقسام الظاهرة هنا هي المساحات المتاحة لك دلوقتي.</p>
+                        </div>
                     </div>
                     <div className="flex items-center gap-2 mr-auto lg:mr-0">
                         {canAccessControlCenter && (
