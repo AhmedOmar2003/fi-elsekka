@@ -78,6 +78,12 @@ const EMPTY_FORM = {
     specifications_base: {} as Record<string, any>,
 };
 
+const modalSectionLabelClass = "block text-xs font-black text-gray-300 mb-1.5";
+const modalInputClass = "w-full rounded-xl border border-emerald-400/15 bg-[#101815] px-3 py-2.5 text-sm font-medium text-white placeholder:text-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15";
+const modalTextareaClass = `${modalInputClass} resize-none`;
+const modalSelectClass = `${modalInputClass} appearance-none`;
+const modalSoftPanelClass = "rounded-2xl border border-emerald-400/10 bg-[#101815]/80";
+
 function normalizeSpecs(
     relationalSpecs?: { id?: string; label: string; description: string }[] | null,
     jsonSpecs?: Record<string, any> | null,
@@ -690,7 +696,7 @@ export default function AdminProductsPage() {
             {/* Add/Edit Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-                    <div className="bg-surface border border-surface-hover rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                    <div className="bg-[#0c1411] border border-emerald-400/10 rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
                         <div className="flex items-center justify-between p-5 border-b border-surface-hover sticky top-0 bg-surface z-10">
                             <h2 className="font-heading font-black text-foreground">{editingId ? 'تعديل المنتج' : 'إضافة منتج جديد'}</h2>
                             <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">
@@ -700,11 +706,11 @@ export default function AdminProductsPage() {
                         <div className="p-5 space-y-4">
                             {/* Images */}
                             <div>
-                                <label className="block text-sm font-bold text-gray-500 mb-3 border-b border-surface-hover pb-2">صور المنتج (صورة أساسية + 4 إضافية)</label>
+                                <label className="block text-sm font-black text-gray-200 mb-3 border-b border-surface-hover pb-2">صور المنتج (صورة أساسية + 4 إضافية)</label>
                                 <div className="space-y-4">
                                     {/* Main Image */}
-                                    <div className="bg-surface-hover p-3 rounded-2xl border border-surface-hover">
-                                        <label className="block text-xs font-bold text-gray-500 mb-2">الصورة الأساسية (الغلاف)</label>
+                                    <div className={`${modalSoftPanelClass} p-3`}>
+                                        <label className={modalSectionLabelClass}>الصورة الأساسية (الغلاف)</label>
                                         <div
                                             onClick={() => fileInput.current?.click()}
                                             className="w-full h-32 rounded-xl border-2 border-dashed border-gray-400/30 hover:border-primary/40 flex items-center justify-center cursor-pointer transition-colors relative overflow-hidden"
@@ -721,7 +727,7 @@ export default function AdminProductsPage() {
                                         <input type="file" ref={fileInput} accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e)} />
                                         <input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
                                             placeholder="أو أدخل رابط الصورة..."
-                                            className="mt-2 w-full bg-surface border border-surface-hover rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary/50"
+                                            className={`mt-2 ${modalInputClass} text-xs`}
                                         />
                                     </div>
 
@@ -740,8 +746,8 @@ export default function AdminProductsPage() {
                                             }
 
                                             return (
-                                                <div key={index} className="bg-surface-hover p-2.5 rounded-2xl border border-surface-hover">
-                                                    <label className="block text-[10px] font-bold text-gray-500 mb-1.5">صورة إضافية {index + 1}</label>
+                                                <div key={index} className={`${modalSoftPanelClass} p-2.5`}>
+                                                    <label className="block text-[10px] font-bold text-gray-300 mb-1.5">صورة إضافية {index + 1}</label>
                                                     <label className="w-full h-20 rounded-lg border-2 border-dashed border-gray-400/30 hover:border-primary/40 flex items-center justify-center cursor-pointer transition-colors relative overflow-hidden block">
                                                         {isValidUrl ? (
                                                             <Image src={imgStr} alt={`Preview Extra ${index + 1}`} fill className="object-contain p-1" />
@@ -761,7 +767,7 @@ export default function AdminProductsPage() {
                                                     });
                                                 }}
                                                     placeholder="أو رابط الصورة..."
-                                                    className="mt-1.5 w-full bg-surface border border-surface-hover rounded-lg px-2 py-1.5 text-[10px] text-foreground focus:outline-none focus:border-primary/50"
+                                                    className={`mt-1.5 ${modalInputClass} rounded-lg px-2 py-1.5 text-[10px]`}
                                                 />
                                             </div>
                                             );
@@ -770,7 +776,7 @@ export default function AdminProductsPage() {
                                 </div>
                             </div>
 
-                            {[
+                            {[ 
                                 { key: 'name', label: 'اسم المنتج *', placeholder: 'اسم المنتج', type: 'text' },
                                 { key: 'description', label: 'الوصف', placeholder: 'وصف مختصر للمنتج', type: 'textarea' },
                                 { key: 'price', label: 'السعر (ج.م) *', placeholder: '100', type: 'number' },
@@ -778,14 +784,14 @@ export default function AdminProductsPage() {
                                 { key: 'discount_percentage', label: 'الخصم (%)', placeholder: '0', type: 'number' },
                             ].map(({ key, label, placeholder, type }) => (
                                 <div key={key}>
-                                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{label}</label>
+                                    <label className={modalSectionLabelClass}>{label}</label>
                                     {type === 'textarea' ? (
                                         <textarea
                                             rows={3}
                                             value={(form as any)[key]}
                                             onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                                             placeholder={placeholder}
-                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50 resize-none"
+                                            className={modalTextareaClass}
                                         />
                                     ) : (
                                         <input
@@ -793,15 +799,15 @@ export default function AdminProductsPage() {
                                             value={(form as any)[key]}
                                             onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                                             placeholder={placeholder}
-                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                            className={modalInputClass}
                                         />
                                     )}
                                 </div>
                             ))}
 
-                            <div className="rounded-2xl border border-surface-hover bg-surface-hover/40 p-4 space-y-4">
+                            <div className="rounded-2xl border border-emerald-400/10 bg-[#101815]/70 p-4 space-y-4">
                                 <div>
-                                    <label className="block text-sm font-black text-foreground mb-1">بيانات تسويقية وتجارية</label>
+                                    <label className="block text-sm font-black text-white mb-1">بيانات تسويقية وتجارية</label>
                                     <p className="text-[11px] text-gray-500">البيانات دي بتفيد صفحة المنتج والترشيحات والبحث الداخلي من غير ما نغيّر مسار البيع الحالي.</p>
                                 </div>
 
@@ -819,40 +825,40 @@ export default function AdminProductsPage() {
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 mb-1.5">السعر قبل الخصم</label>
+                                            <label className={modalSectionLabelClass}>السعر قبل الخصم</label>
                                             <input
                                                 type="number"
                                                 value={form.old_price}
                                                 onChange={e => setForm(f => ({ ...f, old_price: e.target.value }))}
                                                 placeholder="مثال: 250"
-                                                className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                                className={modalInputClass}
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 mb-1.5">SKU / كود المنتج</label>
+                                            <label className={modalSectionLabelClass}>SKU / كود المنتج</label>
                                             <input
                                                 value={form.sku}
                                                 onChange={e => setForm(f => ({ ...f, sku: e.target.value }))}
                                                 placeholder="مثال: TSH-2026-01"
-                                                className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                                className={modalInputClass}
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 mb-1.5">البراند</label>
+                                            <label className={modalSectionLabelClass}>البراند</label>
                                             <input
                                                 value={form.brand}
                                                 onChange={e => setForm(f => ({ ...f, brand: e.target.value }))}
                                                 placeholder="مثال: Nike / Fresh"
-                                                className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                                className={modalInputClass}
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 mb-1.5">Slug داخلي</label>
+                                            <label className={modalSectionLabelClass}>Slug داخلي</label>
                                             <input
                                                 value={form.slug}
                                                 onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
                                                 placeholder="مثال: black-jacket-light"
-                                                className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                                className={modalInputClass}
                                             />
                                         </div>
                                     </div>
@@ -860,11 +866,11 @@ export default function AdminProductsPage() {
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">حالة المنتج</label>
+                                        <label className={modalSectionLabelClass}>حالة المنتج</label>
                                         <select
                                             value={form.status}
                                             onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                            className={modalSelectClass}
                                         >
                                             <option value="published">منشور</option>
                                             <option value="active">نشط</option>
@@ -874,12 +880,12 @@ export default function AdminProductsPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">نوع المنتج التجاري</label>
+                                        <label className={modalSectionLabelClass}>نوع المنتج التجاري</label>
                                         <input
                                             value={form.product_type}
                                             onChange={e => setForm(f => ({ ...f, product_type: e.target.value }))}
                                             placeholder="مثال: تيشيرت / زبادي / سماعة"
-                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                            className={modalInputClass}
                                         />
                                     </div>
 
@@ -906,9 +912,9 @@ export default function AdminProductsPage() {
                                     <button
                                         type="button"
                                         onClick={() => setForm(f => ({ ...f, product_mode: 'single', bundle_items: [] }))}
-                                        className={`rounded-2xl border px-4 py-3 text-start transition-all ${form.product_mode === 'single'
+                                            className={`rounded-2xl border px-4 py-3 text-start transition-all ${form.product_mode === 'single'
                                             ? 'border-primary bg-primary/10 text-white shadow-lg shadow-primary/10'
-                                            : 'border-surface-hover bg-surface text-gray-300 hover:bg-surface-hover'
+                                            : 'border-emerald-400/10 bg-[#101815] text-gray-200 hover:bg-[#12201a]'
                                             }`}
                                     >
                                         <p className="font-black text-sm mb-1">منتج عادي</p>
@@ -917,9 +923,9 @@ export default function AdminProductsPage() {
                                     <button
                                         type="button"
                                         onClick={() => setForm(f => ({ ...f, product_mode: 'bundle', bundle_items: f.bundle_items.length > 0 ? f.bundle_items : [{ name: '', quantity: '', note: '' }] }))}
-                                        className={`rounded-2xl border px-4 py-3 text-start transition-all ${form.product_mode === 'bundle'
+                                            className={`rounded-2xl border px-4 py-3 text-start transition-all ${form.product_mode === 'bundle'
                                             ? 'border-primary bg-primary/10 text-white shadow-lg shadow-primary/10'
-                                            : 'border-surface-hover bg-surface text-gray-300 hover:bg-surface-hover'
+                                            : 'border-emerald-400/10 bg-[#101815] text-gray-200 hover:bg-[#12201a]'
                                             }`}
                                     >
                                         <p className="font-black text-sm mb-1">باكج / مجموعة</p>
@@ -946,20 +952,20 @@ export default function AdminProductsPage() {
 
                                     <div className="space-y-3">
                                         {form.bundle_items.map((item, idx) => (
-                                            <div key={idx} className="rounded-2xl border border-surface-hover bg-surface-hover p-3 space-y-2">
+                                            <div key={idx} className="rounded-2xl border border-emerald-400/10 bg-[#101815] p-3 space-y-2">
                                                 <div className="flex items-start gap-2">
                                                     <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                         <input
                                                             value={item.name || ''}
                                                             onChange={e => updateBundleItem(idx, 'name', e.target.value)}
                                                             placeholder="اسم المنتج جوه الباكج"
-                                                            className="w-full bg-surface border border-surface-hover rounded-lg px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+                                                            className={`${modalInputClass} rounded-lg py-2 text-xs`}
                                                         />
                                                         <input
                                                             value={item.quantity || ''}
                                                             onChange={e => updateBundleItem(idx, 'quantity', e.target.value)}
                                                             placeholder="الكمية أو الحجم (مثال: 2 علبة / 1 كيلو)"
-                                                            className="w-full bg-surface border border-surface-hover rounded-lg px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+                                                            className={`${modalInputClass} rounded-lg py-2 text-xs`}
                                                         />
                                                     </div>
                                                     <button
@@ -975,7 +981,7 @@ export default function AdminProductsPage() {
                                                     value={item.note || ''}
                                                     onChange={e => updateBundleItem(idx, 'note', e.target.value)}
                                                     placeholder="ملاحظة اختيارية (مثال: النكهات حسب المتوفر)"
-                                                    className="w-full bg-surface border border-surface-hover rounded-lg px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+                                                    className={`${modalInputClass} rounded-lg py-2 text-xs`}
                                                 />
                                             </div>
                                         ))}
@@ -1002,7 +1008,7 @@ export default function AdminProductsPage() {
 
                             {/* Category */}
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1.5">القسم</label>
+                                <label className={modalSectionLabelClass}>القسم</label>
                                 <div className="relative">
                                     <Tag className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                     <select
@@ -1019,7 +1025,7 @@ export default function AdminProductsPage() {
                                                 taxonomy_tertiary: nextTaxonomyConfig ? f.taxonomy_tertiary : '',
                                             }));
                                         }}
-                                        className="w-full bg-surface border border-surface-hover rounded-xl pr-9 pl-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 appearance-none"
+                                        className={`${modalSelectClass} pr-9 pl-3`}
                                     >
                                         <option value="">— بدون قسم —</option>
                                         {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -1028,18 +1034,18 @@ export default function AdminProductsPage() {
                             </div>
 
                             {taxonomyConfig && (
-                                <div className="rounded-2xl border border-surface-hover bg-surface-hover/50 p-4 space-y-3">
+                                <div className="rounded-2xl border border-emerald-400/10 bg-[#101815]/70 p-4 space-y-3">
                                     <div>
                                         <label className="block text-xs font-black text-gray-400 mb-1">تصنيفات {selectedCategoryName}</label>
                                         <p className="text-[11px] text-gray-500">اختار التصنيف الرئيسي والفرعي علشان المنتج يظهر للعميل في المكان الصح.</p>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block text-[11px] font-bold text-gray-500 mb-1.5">{taxonomyConfig.primaryLabel}</label>
+                                            <label className="block text-[11px] font-black text-gray-300 mb-1.5">{taxonomyConfig.primaryLabel}</label>
                                             <select
                                                 value={form.taxonomy_primary}
                                                 onChange={e => setForm(f => ({ ...f, taxonomy_primary: e.target.value, taxonomy_secondary: '', taxonomy_tertiary: '' }))}
-                                                className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                                className={modalSelectClass}
                                             >
                                                 <option value="">اختار التصنيف الرئيسي</option>
                                                 {taxonomyPrimaryOptions.map(option => (
@@ -1048,12 +1054,12 @@ export default function AdminProductsPage() {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-[11px] font-bold text-gray-500 mb-1.5">{taxonomyConfig.secondaryLabel}</label>
+                                            <label className="block text-[11px] font-black text-gray-300 mb-1.5">{taxonomyConfig.secondaryLabel}</label>
                                             <select
                                                 value={form.taxonomy_secondary}
                                                 onChange={e => setForm(f => ({ ...f, taxonomy_secondary: e.target.value, taxonomy_tertiary: '' }))}
                                                 disabled={!form.taxonomy_primary}
-                                                className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 disabled:opacity-50"
+                                                className={`${modalSelectClass} disabled:opacity-50`}
                                             >
                                                 <option value="">اختار التصنيف الفرعي</option>
                                                 {taxonomySecondaryOptions.map(option => (
@@ -1063,12 +1069,12 @@ export default function AdminProductsPage() {
                                         </div>
                                         {taxonomyTertiaryOptions.length > 0 && (
                                             <div className="sm:col-span-2">
-                                                <label className="block text-[11px] font-bold text-gray-500 mb-1.5">{taxonomyConfig.tertiaryLabel || 'التصنيف الأدق'}</label>
+                                                <label className="block text-[11px] font-black text-gray-300 mb-1.5">{taxonomyConfig.tertiaryLabel || 'التصنيف الأدق'}</label>
                                                 <select
                                                     value={form.taxonomy_tertiary}
                                                     onChange={e => setForm(f => ({ ...f, taxonomy_tertiary: e.target.value }))}
                                                     disabled={!form.taxonomy_secondary}
-                                                    className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 disabled:opacity-50"
+                                                    className={`${modalSelectClass} disabled:opacity-50`}
                                                 >
                                                     <option value="">اختار التصنيف الأدق</option>
                                                     {taxonomyTertiaryOptions.map(option => (
@@ -1108,12 +1114,12 @@ export default function AdminProductsPage() {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <div className="rounded-xl border border-surface-hover bg-surface px-3 py-3">
+                                    <div className="rounded-xl border border-emerald-400/10 bg-[#101815] px-3 py-3">
                                         <p className="text-[11px] font-black text-gray-500 mb-1">SKU المقترح</p>
                                         <p className="text-sm font-mono tracking-[0.14em] text-foreground" dir="ltr">{suggestedSku}</p>
                                         <p className="mt-1 text-[10px] text-gray-500">الرقم الأخير بيتحسب من الموجود عندك تلقائيًا كاقتراح، وأنت تقدر تعدله براحتك.</p>
                                     </div>
-                                    <div className="rounded-xl border border-surface-hover bg-surface px-3 py-3">
+                                    <div className="rounded-xl border border-emerald-400/10 bg-[#101815] px-3 py-3">
                                         <p className="text-[11px] font-black text-gray-500 mb-1">نوع المنتج المقترح</p>
                                         <p className="text-sm font-bold text-foreground">{smartSuggestions.productType || 'لسه محتاج تحدد القسم أو التصنيف الفرعي'}</p>
                                     </div>
@@ -1131,7 +1137,7 @@ export default function AdminProductsPage() {
                                                     key={preset.id}
                                                     type="button"
                                                     onClick={() => applyCategoryPreset(preset)}
-                                                    className="rounded-2xl border border-surface-hover bg-surface px-4 py-3 text-start transition-all hover:bg-surface-hover"
+                                                    className="rounded-2xl border border-emerald-400/10 bg-[#101815] px-4 py-3 text-start transition-all hover:bg-[#12201a]"
                                                 >
                                                     <p className="text-sm font-black text-foreground mb-1">{preset.title}</p>
                                                     <p className="text-[11px] leading-5 text-gray-500">{preset.description}</p>
@@ -1142,7 +1148,7 @@ export default function AdminProductsPage() {
                                 )}
 
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                                    <div className="rounded-xl border border-surface-hover bg-surface px-3 py-3">
+                                    <div className="rounded-xl border border-emerald-400/10 bg-[#101815] px-3 py-3">
                                         <p className="text-[11px] font-black text-gray-500 mb-2">Tags جاهزة</p>
                                         <div className="flex flex-wrap gap-2">
                                             {smartSuggestions.tags.map(tag => (
@@ -1152,7 +1158,7 @@ export default function AdminProductsPage() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="rounded-xl border border-surface-hover bg-surface px-3 py-3">
+                                    <div className="rounded-xl border border-emerald-400/10 bg-[#101815] px-3 py-3">
                                         <p className="text-[11px] font-black text-gray-500 mb-2">Keywords جاهزة</p>
                                         <div className="flex flex-wrap gap-2">
                                             {smartSuggestions.keywords.map(keyword => (
@@ -1165,7 +1171,7 @@ export default function AdminProductsPage() {
                                 </div>
                             </div>
 
-                            <div className="rounded-2xl border border-surface-hover bg-surface-hover/40 p-4 space-y-4">
+                            <div className="rounded-2xl border border-emerald-400/10 bg-[#101815]/70 p-4 space-y-4">
                                 <div>
                                     <label className="block text-sm font-black text-foreground mb-1">حقول التشابه الذكي</label>
                                     <p className="text-[11px] text-gray-500">الحقول دي هي اللي هتخلّي النظام يطلع منتجات مشابهة بذكاء حسب كل قسم.</p>
@@ -1173,11 +1179,11 @@ export default function AdminProductsPage() {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">النوع / الجنس</label>
+                                        <label className={modalSectionLabelClass}>النوع / الجنس</label>
                                         <select
                                             value={form.gender}
                                             onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}
-                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                            className={modalSelectClass}
                                         >
                                             <option value="">غير محدد</option>
                                             <option value="men">رجالي</option>
@@ -1189,11 +1195,11 @@ export default function AdminProductsPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">الفئة العمرية</label>
+                                        <label className={modalSectionLabelClass}>الفئة العمرية</label>
                                         <select
                                             value={form.age_group}
                                             onChange={e => setForm(f => ({ ...f, age_group: e.target.value }))}
-                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                            className={modalSelectClass}
                                         >
                                             <option value="">غير محدد</option>
                                             <option value="baby">بيبي</option>
@@ -1204,11 +1210,11 @@ export default function AdminProductsPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">الموسم</label>
+                                        <label className={modalSectionLabelClass}>الموسم</label>
                                         <select
                                             value={form.season}
                                             onChange={e => setForm(f => ({ ...f, season: e.target.value }))}
-                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                                            className={modalSelectClass}
                                         >
                                             <option value="">غير محدد</option>
                                             <option value="summer">صيفي</option>
@@ -1220,42 +1226,42 @@ export default function AdminProductsPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">الستايل</label>
+                                        <label className={modalSectionLabelClass}>الستايل</label>
                                         <input
                                             value={form.style}
                                             onChange={e => setForm(f => ({ ...f, style: e.target.value }))}
                                             placeholder="مثال: كاجوال / رسمي / سبورت"
-                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                            className={modalInputClass}
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">الخامة</label>
+                                        <label className={modalSectionLabelClass}>الخامة</label>
                                         <input
                                             value={form.material}
                                             onChange={e => setForm(f => ({ ...f, material: e.target.value }))}
                                             placeholder="مثال: قطن / بلاستيك / ستانلس"
-                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                            className={modalInputClass}
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">عائلة اللون</label>
+                                        <label className={modalSectionLabelClass}>عائلة اللون</label>
                                         <input
                                             value={form.color_family}
                                             onChange={e => setForm(f => ({ ...f, color_family: e.target.value }))}
                                             placeholder="مثال: أسود / أبيض / متعدد"
-                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                            className={modalInputClass}
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 mb-1.5">مجموعة المقاس</label>
+                                        <label className={modalSectionLabelClass}>مجموعة المقاس</label>
                                         <input
                                             value={form.size_group}
                                             onChange={e => setForm(f => ({ ...f, size_group: e.target.value }))}
                                             placeholder="مثال: أطفال / Adult / Free Size"
-                                            className="w-full bg-surface border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                            className={modalInputClass}
                                         />
                                     </div>
                                 </div>
@@ -1300,7 +1306,7 @@ export default function AdminProductsPage() {
                                 </div>
                                 <div className="space-y-3">
                                     {form.specs.map((spec, idx) => (
-                                        <div key={idx} className="flex gap-2 items-start p-3 bg-surface-hover rounded-xl border border-surface-hover">
+                                        <div key={idx} className="flex gap-2 items-start p-3 bg-[#101815] rounded-xl border border-emerald-400/10">
                                             <div className="flex-1 space-y-2">
                                                 <input
                                                     value={spec.label}
@@ -1310,7 +1316,7 @@ export default function AdminProductsPage() {
                                                         setForm(f => ({ ...f, specs: newSpecs }));
                                                     }}
                                                     placeholder="الاسم (مثل: اللون, الماركة, الخامة)"
-                                                    className="w-full bg-surface border border-surface-hover rounded-lg px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+                                                    className={`${modalInputClass} rounded-lg py-2 text-xs`}
                                                 />
                                                 <input
                                                     value={spec.description}
@@ -1320,7 +1326,7 @@ export default function AdminProductsPage() {
                                                         setForm(f => ({ ...f, specs: newSpecs }));
                                                     }}
                                                     placeholder="القيمة (مثل: أحمر, Apple, قطن 100%)"
-                                                    className="w-full bg-surface border border-surface-hover rounded-lg px-3 py-2 text-xs text-foreground focus:border-primary/50 focus:outline-none"
+                                                    className={`${modalInputClass} rounded-lg py-2 text-xs`}
                                                 />
                                             </div>
                                             <button
@@ -1345,7 +1351,7 @@ export default function AdminProductsPage() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-3 p-5 border-t border-surface-hover">
+                        <div className="flex flex-col gap-3 p-5 border-t border-surface-hover bg-[#0f1714]">
                             {/* Error banner */}
                             {saveError && (
                                 <div className="flex items-start gap-2 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium px-3 py-2.5 rounded-xl">
@@ -1360,7 +1366,7 @@ export default function AdminProductsPage() {
                                 </div>
                             )}
                             <div className="flex items-center gap-3">
-                                <button onClick={() => { setIsModalOpen(false); setSaveError(null); }} className="flex-1 py-2.5 rounded-xl border border-surface-hover text-sm font-bold text-gray-500 hover:text-foreground hover:bg-surface-hover transition-all">
+                                <button onClick={() => { setIsModalOpen(false); setSaveError(null); }} className="flex-1 py-2.5 rounded-xl border border-emerald-400/10 text-sm font-bold text-gray-200 hover:text-white hover:bg-[#12201a] transition-all">
                                     إلغاء
                                 </button>
                                 <button

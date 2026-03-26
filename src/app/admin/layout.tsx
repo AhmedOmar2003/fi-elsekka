@@ -526,6 +526,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const isMorning = currentHour >= 5 && currentHour < 17;
     const greetingText = isMorning ? 'صباح الخير' : 'مساء الخير';
     const GreetingIcon = isMorning ? SunMedium : MoonStar;
+    const greetingTone = isMorning
+        ? 'border-amber-500/15 bg-amber-500/10 text-amber-400'
+        : 'border-sky-500/15 bg-sky-500/10 text-sky-400';
 
     useEffect(() => {
         if (!isLoading) {
@@ -614,12 +617,20 @@ WHERE email = '${user.email}';`}
                         <Menu className="w-5 h-5" />
                     </button>
                     <div className="hidden lg:flex items-center gap-3 min-w-0">
-                        <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary">
+                        <div className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${greetingTone}`}>
                             <GreetingIcon className="w-4.5 h-4.5" />
                         </div>
                         <div className="min-w-0">
                             <p className="text-sm font-black text-foreground truncate">{greetingText} يا {firstName}</p>
                             <p className="text-[11px] text-gray-500 truncate">الأقسام الظاهرة هنا هي المساحات المتاحة لك دلوقتي.</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 lg:hidden min-w-0 mr-2">
+                        <div className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${greetingTone}`}>
+                            <GreetingIcon className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-xs font-black text-foreground truncate">{greetingText} يا {firstName}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2 mr-auto lg:mr-0">
