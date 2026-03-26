@@ -7,7 +7,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getPermissionMeta, getRoleMeta, hasFullAdminAccess, hasPermission } from "@/lib/permissions";
 import { toast } from "sonner";
-import { Loader2, Plus, Shield, Edit2, LockKeyhole, Slash, CheckCircle2, Trash2, Info } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Shield,
+  Edit2,
+  LockKeyhole,
+  Slash,
+  CheckCircle2,
+  Trash2,
+  Info,
+  LayoutDashboard,
+  BarChart3,
+  ShoppingCart,
+  Clock,
+  AlertTriangle,
+  Bike,
+  Package,
+  Tag,
+  Users,
+  ShieldAlert,
+  Search,
+  History,
+  MessageSquare,
+  Megaphone,
+  Ticket,
+  Database,
+} from "lucide-react";
 
 type Staff = {
   id: string;
@@ -44,22 +70,22 @@ const PERMISSION_OPTIONS = [
 ];
 
 const PREVIEW_ITEMS = [
-  { label: "لوحة التحكم", description: "الصفحة الرئيسية للأدمن والملخص السريع.", perm: null, fullAdmin: false },
-  { label: "التحليلات", description: "أرقام المبيعات والزيارات والتقارير.", perm: "view_reports", fullAdmin: false },
-  { label: "الطلبات", description: "عرض الطلبات ومتابعة حالتها.", perm: "view_orders", fullAdmin: false },
-  { label: "طلبات بندور عليها", description: "متابعة الطلبات اللي محتاجة بحث وتسعير.", perm: "view_orders", fullAdmin: false },
-  { label: "مركز العمليات", description: "أدوات التشغيل السريعة والمتقدمة.", perm: null, fullAdmin: true },
-  { label: "المندوبين", description: "قائمة المندوبين والتوفر وحالة التوزيع.", perm: "view_drivers", fullAdmin: false },
-  { label: "المنتجات", description: "إضافة وتعديل المنتجات والباقات.", perm: "manage_products", fullAdmin: false },
-  { label: "الأقسام", description: "إدارة الأقسام وترتيب ظهورها.", perm: "manage_categories", fullAdmin: false },
-  { label: "المستخدمون", description: "مراجعة حسابات العملاء وبياناتهم.", perm: "manage_users", fullAdmin: false },
-  { label: "إدارة الطاقم", description: "إدارة الموظفين والصلاحيات.", perm: "manage_admins", fullAdmin: false },
-  { label: "البحث الشامل", description: "بحث إداري سريع داخل النظام كله.", perm: null, fullAdmin: true },
-  { label: "سجل الإدارة", description: "متابعة التغييرات الإدارية المهمة.", perm: null, fullAdmin: true },
-  { label: "التقييمات", description: "مراجعة تقييمات العملاء للمنتجات.", perm: "view_reports", fullAdmin: false },
-  { label: "العروض الترويجية", description: "إدارة البانرات والحملات والعروض.", perm: "manage_offers", fullAdmin: false },
-  { label: "أكواد الخصم", description: "إنشاء ومتابعة أكواد الخصم.", perm: "manage_discounts", fullAdmin: false },
-  { label: "النسخ الاحتياطي", description: "تصدير واسترجاع النسخ الاحتياطية.", perm: "manage_settings", fullAdmin: false },
+  { label: "لوحة التحكم", description: "الصفحة الرئيسية للأدمن والملخص السريع.", access: "يشوف الملخص العام", icon: LayoutDashboard, perm: null, fullAdmin: false },
+  { label: "التحليلات", description: "أرقام المبيعات والزيارات والتقارير.", access: "يشوف التقارير والتحليلات", icon: BarChart3, perm: "view_reports", fullAdmin: false },
+  { label: "الطلبات", description: "عرض الطلبات ومتابعة حالتها.", access: "يشوف الطلبات ويتابعها", icon: ShoppingCart, perm: "view_orders", fullAdmin: false },
+  { label: "طلبات بندور عليها", description: "متابعة الطلبات اللي محتاجة بحث وتسعير.", access: "يشوف الطلبات الخاصة والردود", icon: Clock, perm: "view_orders", fullAdmin: false },
+  { label: "مركز العمليات", description: "أدوات التشغيل السريعة والمتقدمة.", access: "وصول كامل لأدوات التشغيل", icon: AlertTriangle, perm: null, fullAdmin: true },
+  { label: "المندوبين", description: "قائمة المندوبين والتوفر وحالة التوزيع.", access: "يشوف المندوبين ويتابعهم", icon: Bike, perm: "view_drivers", fullAdmin: false },
+  { label: "المنتجات", description: "إضافة وتعديل المنتجات والباقات.", access: "يدير المنتجات ويعدّلها", icon: Package, perm: "manage_products", fullAdmin: false },
+  { label: "الأقسام", description: "إدارة الأقسام وترتيب ظهورها.", access: "يدير الأقسام وترتيبها", icon: Tag, perm: "manage_categories", fullAdmin: false },
+  { label: "المستخدمون", description: "مراجعة حسابات العملاء وبياناتهم.", access: "يشوف العملاء ويعدّل بياناتهم", icon: Users, perm: "manage_users", fullAdmin: false },
+  { label: "إدارة الطاقم", description: "إدارة الموظفين والصلاحيات.", access: "يدير الموظفين والصلاحيات", icon: ShieldAlert, perm: "manage_admins", fullAdmin: false },
+  { label: "البحث الشامل", description: "بحث إداري سريع داخل النظام كله.", access: "وصول كامل للبحث الإداري", icon: Search, perm: null, fullAdmin: true },
+  { label: "سجل الإدارة", description: "متابعة التغييرات الإدارية المهمة.", access: "يشوف سجل التغييرات الإدارية", icon: History, perm: null, fullAdmin: true },
+  { label: "التقييمات", description: "مراجعة تقييمات العملاء للمنتجات.", access: "يشوف التقييمات ويراجعها", icon: MessageSquare, perm: "view_reports", fullAdmin: false },
+  { label: "العروض الترويجية", description: "إدارة البانرات والحملات والعروض.", access: "يدير العروض والحملات", icon: Megaphone, perm: "manage_offers", fullAdmin: false },
+  { label: "أكواد الخصم", description: "إنشاء ومتابعة أكواد الخصم.", access: "ينشئ ويعدّل أكواد الخصم", icon: Ticket, perm: "manage_discounts", fullAdmin: false },
+  { label: "النسخ الاحتياطي", description: "تصدير واسترجاع النسخ الاحتياطية.", access: "يدير النسخ الاحتياطية", icon: Database, perm: "manage_settings", fullAdmin: false },
 ] as const;
 
 function InfoHint({ text }: { text: string }) {
@@ -452,8 +478,8 @@ export default function StaffPage() {
 
       {modalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-surface border border-surface-hover rounded-2xl w-full max-w-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="bg-surface border border-surface-hover rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-surface-hover">
               <div>
                 <h2 className="text-xl font-black text-foreground">
                   {editing ? "تعديل موظف" : "إضافة موظف جديد"}
@@ -465,6 +491,7 @@ export default function StaffPage() {
               </Button>
             </div>
 
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-xs text-gray-500 font-bold">الاسم الكامل</label>
@@ -598,9 +625,16 @@ export default function StaffPage() {
                           key={item.label}
                           className="flex items-start gap-3 rounded-xl border border-emerald-500/10 bg-background/80 px-3 py-2.5"
                         >
-                          <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-400" />
+                          <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/15 bg-emerald-500/10 text-emerald-400">
+                            <item.icon className="h-4 w-4" />
+                          </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-bold text-foreground">{item.label}</p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-sm font-bold text-foreground">{item.label}</p>
+                              <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black text-emerald-400">
+                                {item.access}
+                              </span>
+                            </div>
                             <p className="mt-1 text-[11px] leading-5 text-gray-500">{item.description}</p>
                           </div>
                         </div>
@@ -624,9 +658,16 @@ export default function StaffPage() {
                           key={item.label}
                           className="flex items-start gap-3 rounded-xl border border-dashed border-surface-hover bg-background px-3 py-2.5 opacity-80"
                         >
-                          <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-gray-500" />
+                          <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-surface-hover bg-surface text-gray-500">
+                            <item.icon className="h-4 w-4" />
+                          </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-bold text-gray-300">{item.label}</p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-sm font-bold text-gray-300">{item.label}</p>
+                              <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-black text-gray-400">
+                                مخفي
+                              </span>
+                            </div>
                             <p className="mt-1 text-[11px] leading-5 text-gray-500">{item.description}</p>
                           </div>
                         </div>
@@ -637,11 +678,14 @@ export default function StaffPage() {
               </div>
             </div>
 
+            <div className="sticky bottom-0 -mx-6 mt-2 border-t border-surface-hover bg-surface px-6 py-4">
             <div className="flex items-center justify-end gap-3">
               <Button variant="outline" onClick={() => setModalOpen(false)}>
                 إلغاء
               </Button>
               <Button onClick={handleSave}>{editing ? "حفظ التغييرات" : "إضافة"}</Button>
+            </div>
+            </div>
             </div>
           </div>
         </div>
