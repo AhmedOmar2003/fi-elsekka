@@ -29,7 +29,7 @@ interface Notification {
 
 // ── Nav Items ────────────────────────────────────────────────
 const NAV_ITEMS = [
-    { label: 'لوحة التحكم', href: '/admin', icon: LayoutDashboard, perm: null },
+    { label: 'لوحة التحكم', href: '/admin', icon: LayoutDashboard, fullAdmin: true },
     { label: 'التحليلات', href: '/admin/analytics', icon: BarChart3, perm: 'view_reports' },
     { label: 'الطلبات', href: '/admin/orders', icon: ShoppingCart, perm: 'view_orders' },
     { label: 'طلبات بندور عليها', href: '/admin/orders/search-requests', icon: Clock, perm: 'view_orders' },

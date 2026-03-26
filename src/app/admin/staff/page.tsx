@@ -71,7 +71,7 @@ const PERMISSION_OPTIONS = [
 ];
 
 const PREVIEW_ITEMS = [
-  { label: "لوحة التحكم", description: "الصفحة الرئيسية للأدمن والملخص السريع.", access: "يشوف الملخص العام", icon: LayoutDashboard, perm: null, fullAdmin: false },
+  { label: "لوحة التحكم", description: "الصفحة الرئيسية للأدمن والملخص السريع.", access: "يشوف الملخص العام", icon: LayoutDashboard, perm: null, fullAdmin: true },
   { label: "التحليلات", description: "أرقام المبيعات والزيارات والتقارير.", access: "يشوف التقارير والتحليلات", icon: BarChart3, perm: "view_reports", fullAdmin: false },
   { label: "الطلبات", description: "عرض الطلبات ومتابعة حالتها.", access: "يشوف الطلبات ويتابعها", icon: ShoppingCart, perm: "view_orders", fullAdmin: false },
   { label: "طلبات بندور عليها", description: "متابعة الطلبات اللي محتاجة بحث وتسعير.", access: "يشوف الطلبات الخاصة والردود", icon: Clock, perm: "view_orders", fullAdmin: false },

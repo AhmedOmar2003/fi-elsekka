@@ -52,9 +52,7 @@ export async function middleware(request: NextRequest) {
 
     const requiredPerm = requiredPermissionForPath(pathname);
     const hasManageAdmins = permissions?.includes?.('manage_admins');
-    const hasFullAdmin = role === 'super_admin' || role === 'admin' || permissions?.some(p =>
-        ['manage_admins','manage_users','manage_products','manage_categories','manage_offers','manage_discounts','manage_settings','view_reports'].includes(p)
-    );
+    const hasFullAdmin = role === 'super_admin' || role === 'admin';
 
     // Staff page needs manage_admins (or admin/super_admin)
     if (pathname.startsWith('/admin/staff') && !(role === 'super_admin' || role === 'admin' || hasManageAdmins)) {
