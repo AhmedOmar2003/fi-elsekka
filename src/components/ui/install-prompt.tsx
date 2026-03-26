@@ -8,8 +8,38 @@ export function InstallPrompt() {
   const [isReadyForInstall, setIsReadyForInstall] = React.useState(false)
   const [isIOS, setIsIOS] = React.useState(false)
   const [isStandalone, setIsStandalone] = React.useState(false)
+  const [isMobileViewport, setIsMobileViewport] = React.useState(false)
   const [showPrompt, setShowPrompt] = React.useState(false)
   const deferredPrompt = React.useRef<any>(null)
+  const promptTimer = React.useRef<number | null>(null)
+
+  const PROMPT_DISMISS_COUNT_KEY = "pwa_prompt_dismiss_count"
+  const PROMPT_NEXT_ALLOWED_KEY = "pwa_prompt_next_allowed_at"
+  const MAX_PROMPT_SHOWS = 3
+  const PROMPT_RESHOW_DELAY_MS = 10_000
+
+  const clearPromptTimer = React.useCallback(() => {
+    if (promptTimer.current) {
+      clearTimeout(promptTimer.current)
+      promptTimer.current = null
+    }
+  }, [])
+
+  const schedulePrompt = React.useCallback(() => {
+    clearPromptTimer()
+
+    if (typeof window === "undefined") return
+
+    const dismissCount = Number(localStorage.getItem(PROMPT_DISMISS_COUNT_KEY) || "0")
+    if (dismissCount >= MAX_PROMPT_SHOWS) return
+
+    const nextAllowedAt = Number(localStorage.getItem(PROMPT_NEXT_ALLOWED_KEY) || "0")
+    const delay = Math.max(0, nextAllowedAt - Date.now())
+
+    promptTimer.current = window.setTimeout(() => {
+      setShowPrompt(true)
+    }, delay)
+  }, [clearPromptTimer])
 
   React.useEffect(() => {
     // 1. Check if already installed (standalone mode)
@@ -18,19 +48,18 @@ export function InstallPrompt() {
       document.referrer.includes("android-app://");
     setIsStandalone(isModeStandalone)
 
-    // Check if user dismissed it before
-    const hasDismissed = localStorage.getItem("pwa_prompt_dismissed") === "true"
-
-    if (isModeStandalone) return;
+    const mediaQuery = window.matchMedia("(max-width: 768px)")
+    const syncViewport = () => setIsMobileViewport(mediaQuery.matches)
+    syncViewport()
+    mediaQuery.addEventListener?.("change", syncViewport)
 
     // 2. Detect iOS Safari
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
     setIsIOS(isIosDevice);
 
-    if (isIosDevice && !hasDismissed) {
-      // Show immediately on iOS if not installed & not dismissed
-      setShowPrompt(true);
+    if (!isModeStandalone && isIosDevice && mediaQuery.matches) {
+      schedulePrompt();
     }
 
     // 3. Android / Chrome: Listen for beforeinstallprompt
@@ -38,17 +67,19 @@ export function InstallPrompt() {
       e.preventDefault();
       deferredPrompt.current = e;
       setIsReadyForInstall(true);
-      if (!hasDismissed) {
-        setShowPrompt(true);
+      if (!isModeStandalone && mediaQuery.matches) {
+        schedulePrompt();
       }
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     return () => {
+      clearPromptTimer()
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      mediaQuery.removeEventListener?.("change", syncViewport)
     };
-  }, [])
+  }, [clearPromptTimer, schedulePrompt])
 
   const handleInstallClick = async () => {
     if (deferredPrompt.current) {
@@ -63,10 +94,15 @@ export function InstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false)
-    localStorage.setItem("pwa_prompt_dismissed", "true")
+    const dismissCount = Number(localStorage.getItem(PROMPT_DISMISS_COUNT_KEY) || "0") + 1
+    localStorage.setItem(PROMPT_DISMISS_COUNT_KEY, String(dismissCount))
+    localStorage.setItem(PROMPT_NEXT_ALLOWED_KEY, String(Date.now() + PROMPT_RESHOW_DELAY_MS))
+    if (dismissCount < MAX_PROMPT_SHOWS) {
+      schedulePrompt()
+    }
   }
 
-  if (isStandalone || !showPrompt) {
+  if (isStandalone || !isMobileViewport || !showPrompt) {
     return null;
   }
 

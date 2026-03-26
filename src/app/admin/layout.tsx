@@ -53,6 +53,8 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
     const router = useRouter();
     const { user, profile } = useAuth();
     const canAccessControlCenter = hasFullAdminAccess(profile);
+    const firstName = (profile?.full_name || user?.email?.split('@')[0] || 'صاحبنا').trim().split(/\s+/)[0];
+    const currentRoleLabel = getRoleLabel(profile?.role);
 
     const handleLogout = async () => {
         await signOut();
@@ -79,6 +81,15 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
                         <X className="w-4 h-4" />
                     </button>
                 )}
+            </div>
+
+            <div className="px-4 py-4 border-b border-surface-hover">
+                <div className="rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3">
+                    <p className="text-sm font-black text-foreground">أهلاً يا {firstName}</p>
+                    <p className="mt-1 text-xs leading-5 text-gray-500">
+                        جاهز تكمل شغلك؟ الأقسام اللي ظاهرالك هنا هي بس اللي متاحة لك حسب الصلاحيات اللي اتحددّت ليك.
+                    </p>
+                </div>
             </div>
 
             {/* Nav */}
@@ -116,7 +127,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
                     </div>
                     <div className="min-w-0">
                         <p className="text-xs font-bold text-foreground truncate">{user?.email}</p>
-                        <p className="text-[10px] text-primary">مدير النظام</p>
+                        <p className="text-[10px] text-primary">{currentRoleLabel}</p>
                     </div>
                 </div>
                 <button
@@ -156,13 +167,13 @@ const STAFF_ROLES = ['super_admin', 'admin', 'operations_manager', 'catalog_mana
 function getRoleLabel(role?: string | null) {
     switch (role) {
         case 'super_admin':
-            return 'مشرف عام';
+            return 'مدير النظام';
         case 'admin':
-            return 'مدير نظام';
+            return 'مشرف إداري';
         case 'operations_manager':
             return 'مسؤول العمليات';
         case 'catalog_manager':
-            return 'مسؤول الكتالوج';
+            return 'مسؤول المنتجات';
         case 'support_agent':
             return 'موظف دعم';
         case 'driver':
