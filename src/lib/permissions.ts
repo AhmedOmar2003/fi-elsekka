@@ -16,6 +16,20 @@ export type Permission =
 
 type RolePermShape = { role?: string | null; permissions?: string[] | null };
 
+const ADMIN_DESTINATIONS: Array<{ path: string; perm?: Permission; fullAdmin?: boolean }> = [
+  { path: '/admin', fullAdmin: true },
+  { path: '/admin/orders', perm: 'view_orders' },
+  { path: '/admin/drivers', perm: 'view_drivers' },
+  { path: '/admin/products', perm: 'manage_products' },
+  { path: '/admin/categories', perm: 'manage_categories' },
+  { path: '/admin/promotions', perm: 'manage_offers' },
+  { path: '/admin/discounts', perm: 'manage_discounts' },
+  { path: '/admin/users', perm: 'manage_users' },
+  { path: '/admin/staff', perm: 'manage_admins' },
+  { path: '/admin/settings', perm: 'manage_settings' },
+  { path: '/admin/analytics', perm: 'view_reports' },
+];
+
 export const PERMISSION_META: Record<Permission, { label: string; description: string }> = {
   view_orders: {
     label: 'عرض الطلبات',
@@ -113,6 +127,23 @@ export function hasPermission(profile: RolePermShape | null | undefined, perm: P
 export function hasFullAdminAccess(profile: RolePermShape | null | undefined) {
   if (!profile) return false;
   return profile.role === 'super_admin' || profile.role === 'admin';
+}
+
+export function getFirstAccessibleAdminPath(profile: RolePermShape | null | undefined) {
+  if (!profile) return '/system-access/login';
+
+  for (const destination of ADMIN_DESTINATIONS) {
+    if (destination.fullAdmin) {
+      if (hasFullAdminAccess(profile)) return destination.path;
+      continue;
+    }
+
+    if (destination.perm && hasPermission(profile, destination.perm)) {
+      return destination.path;
+    }
+  }
+
+  return '/system-access/login?error=unauthorized';
 }
 
 export function requiredPermissionForPath(pathname: string): Permission | null {

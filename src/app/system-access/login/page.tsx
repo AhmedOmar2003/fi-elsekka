@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signIn, signOut } from '@/services/authService';
+import { getUserProfile, signIn, signOut } from '@/services/authService';
+import { getFirstAccessibleAdminPath } from '@/lib/permissions';
 import { supabase } from '@/lib/supabase';
 import { ShieldCheck, Mail, Lock, Loader2, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
@@ -36,7 +37,7 @@ function LoginClient() {
     // Rate limit now fail-open (server returns ok); keep call for future
     await fetch('/api/system-access/rate-limit', { method: 'POST', cache: 'no-store' }).catch(() => {});
 
-    const { error } = await signIn(email.trim().toLowerCase(), password);
+    const { data: signInData, error } = await signIn(email.trim().toLowerCase(), password);
 
     if (error) {
       setIsLoading(false);
@@ -53,8 +54,18 @@ function LoginClient() {
       console.debug('[auth] post-login session', data?.session ? 'present' : 'missing');
     }
 
+    const profile = signInData?.user?.id ? await getUserProfile(signInData.user.id) : null;
+    const adminRoles = ['super_admin', 'admin', 'operations_manager', 'catalog_manager', 'support_agent'];
+
+    if (!profile || !adminRoles.includes(profile.role || '')) {
+      await signOut();
+      setIsLoading(false);
+      toast.error('الحساب ده مش مخصص لدخول لوحة التحكم.');
+      return;
+    }
+
     setIsLoading(false);
-    router.replace(redirect);
+    router.replace(redirect === '/admin' ? getFirstAccessibleAdminPath(profile) : redirect);
   };
 
   return (

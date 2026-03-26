@@ -7,7 +7,7 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { signIn, signOut } from "@/services/authService"
+import { getUserProfile, signIn, signOut } from "@/services/authService"
 import { supabase } from "@/lib/supabase"
 import { LogIn, AlertCircle, Mail } from "lucide-react"
 import { PasswordInput } from "@/components/ui/password-input"
@@ -71,11 +71,21 @@ function LoginContent() {
       return
     }
 
-    const userRole = data?.user?.user_metadata?.role;
+    const profile = data?.user?.id ? await getUserProfile(data.user.id) : null
+    const userRole = profile?.role || data?.user?.user_metadata?.role
+
     if (userRole === 'driver') {
       await signOut()
       router.push(`/driver/login?blocked=1&email=${encodeURIComponent(email)}`)
       return;
+    }
+
+    if (userRole && userRole !== 'user' && userRole !== 'super_admin') {
+      await signOut()
+      setIsLoading(false)
+      setErrorMsg("الحساب ده مخصص للوحة التحكم فقط. لو أنت من الطاقم ادخل من بوابة الإدارة.")
+      router.push(`/system-access/login?blocked=1&email=${encodeURIComponent(email)}`)
+      return
     }
 
     router.push(redirectParams || "/account")

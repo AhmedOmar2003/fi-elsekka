@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extractAccessToken, verifyAdminToken } from './lib/admin-guard';
-import { requiredPermissionForPath } from './lib/permissions';
+import { getFirstAccessibleAdminPath, requiredPermissionForPath } from './lib/permissions';
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -68,7 +68,7 @@ export async function middleware(request: NextRequest) {
         if (isAdminApi) {
             return NextResponse.json({ error: 'Forbidden: full admin access required' }, { status: 403 });
         }
-        const redirectUrl = new URL('/admin/orders', request.url);
+        const redirectUrl = new URL(getFirstAccessibleAdminPath({ role, permissions }), request.url);
         redirectUrl.searchParams.set('error', 'forbidden');
         return NextResponse.redirect(redirectUrl);
     }
@@ -78,14 +78,16 @@ export async function middleware(request: NextRequest) {
         if (isAdminApi) {
             return NextResponse.json({ error: 'Forbidden: insufficient permissions' }, { status: 403 });
         }
-        const redirectUrl = pathname.startsWith('/admin') ? new URL('/admin/orders', request.url) : new URL('/system-access/login', request.url);
+        const redirectUrl = pathname.startsWith('/admin')
+            ? new URL(getFirstAccessibleAdminPath({ role, permissions }), request.url)
+            : new URL('/system-access/login', request.url);
         redirectUrl.searchParams.set('error', 'forbidden');
         return NextResponse.redirect(redirectUrl);
     }
 
-    // If a restricted operator hits /admin root, sendهم للطلبات
+    // If a restricted operator hits /admin root, sendه لأول صفحة مسموح بها له
     if (pathname === '/admin' && !hasFullAdmin) {
-        return NextResponse.redirect(new URL('/admin/orders', request.url));
+        return NextResponse.redirect(new URL(getFirstAccessibleAdminPath({ role, permissions }), request.url));
     }
 
     // Admin verified — pass through
