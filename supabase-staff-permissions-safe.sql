@@ -1,11 +1,12 @@
 -- Idempotent seed for a limited operations staff user.
 -- Run AFTER applying supabase-admin-rls.sql (it creates permissions/disabled columns).
 -- Edit target_email and temp_pass before running.
+-- NOTE: never commit real staff credentials in this file.
 
 do $$
 declare
-  temp_pass text := 'Ops!Temp#2024'; -- change
-  target_email text := 'ops@example.com'; -- change
+  temp_pass text := 'CHANGE_ME_STRONG_TEMP_PASSWORD'; -- change
+  target_email text := 'change-me-staff@example.com'; -- change
   existing_auth uuid;
 begin
   -- ensure columns exist (no error if already there)

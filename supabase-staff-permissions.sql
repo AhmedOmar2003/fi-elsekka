@@ -6,11 +6,11 @@ alter table public.users
   add column if not exists disabled boolean default false,
   add column if not exists permissions jsonb default '[]';
 
--- Create a limited operations staff user (replace password as needed)
--- NOTE: update email/password before running in production
+-- Create a limited operations staff user (replace placeholders before running)
+-- NOTE: never commit real staff credentials in this file
 do $$
 declare
-  temp_pass text := 'Ops!Temp#2024';
+  temp_pass text := 'CHANGE_ME_STRONG_TEMP_PASSWORD';
   new_user uuid;
 begin
   -- Create auth user
@@ -20,7 +20,7 @@ begin
     gen_random_uuid(),
     'authenticated',
     'authenticated',
-    'ops@example.com',
+    'change-me-staff@example.com',
     crypt(temp_pass, gen_salt('bf')),
     now(),
     jsonb_build_object('role','operations_manager','permissions',jsonb_build_array('view_orders','update_order_status','assign_driver','view_drivers'))
@@ -29,6 +29,6 @@ begin
 
   -- Public profile
   insert into public.users (id, email, full_name, role, permissions, disabled, must_change_password)
-  values (new_user, 'ops@example.com', 'Operations Staff', 'operations_manager',
+  values (new_user, 'change-me-staff@example.com', 'Operations Staff', 'operations_manager',
           jsonb_build_array('view_orders','update_order_status','assign_driver','view_drivers'), false, true);
 end $$;
