@@ -285,6 +285,19 @@ export default function StaffPage() {
     [visiblePreviewItems]
   );
 
+  const previewAccess = useMemo(() => {
+    const fullAccess = hasFullAdminAccess(previewProfile);
+    return {
+      label: fullAccess ? "وصول كامل" : "وصول محدود",
+      description: fullAccess
+        ? "الموظف هيشوف أغلب أقسام لوحة الإدارة الأساسية بدون قيود كبيرة."
+        : "الموظف هيشوف فقط الأقسام اللي أنت فعّلتها له، والباقي هيفضل مخفي.",
+      className: fullAccess
+        ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+        : "border-amber-500/20 bg-amber-500/10 text-amber-400",
+    };
+  }, [previewProfile]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -540,38 +553,85 @@ export default function StaffPage() {
             </div>
 
             <div className="rounded-2xl border border-surface-hover bg-surface-hover/40 p-4 space-y-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="text-xs font-bold text-gray-500">معاينة لوحة الموظف</div>
-                  <InfoHint text="المعاينة دي بتوضح لك الأقسام اللي هتظهر للموظف في السايدبار بناءً على الدور والصلاحيات الحالية قبل ما تحفظ." />
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs font-bold text-gray-500">معاينة لوحة الموظف</div>
+                    <InfoHint text="المعاينة دي بتوضح لك الأقسام اللي هتظهر للموظف في السايدبار بناءً على الدور والصلاحيات الحالية قبل ما تحفظ." />
+                  </div>
+                  <p className="mt-1 text-[11px] leading-5 text-gray-500">
+                    كده تقدر تعرف بالضبط هو هيشوف إيه قدامه في لوحة التحكم، وإيه اللي هيفضل مخفي عنه.
+                  </p>
                 </div>
-                <p className="mt-1 text-[11px] leading-5 text-gray-500">
-                  كده تقدر تعرف بالضبط هو هيشوف إيه قدامه في لوحة التحكم، وإيه اللي هيفضل مخفي عنه.
-                </p>
+                <div className={`inline-flex w-fit items-center rounded-full border px-3 py-1.5 text-xs font-black ${previewAccess.className}`}>
+                  {previewAccess.label}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-surface-hover bg-background/70 p-3">
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-surface-hover bg-surface px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-foreground">{form.full_name || "اسم الموظف هيظهر هنا"}</p>
+                    <p className="mt-1 text-[11px] text-gray-500">
+                      {getRoleMeta(form.role).label} · {previewAccess.description}
+                    </p>
+                  </div>
+                  <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary">
+                    <Shield className="h-4 w-4" />
+                  </div>
+                </div>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4">
                   <p className="mb-3 text-sm font-black text-foreground">اللي هيظهر للموظف</p>
-                  <div className="space-y-2">
-                    {visiblePreviewItems.map((item) => (
-                      <div key={item.label} className="rounded-xl border border-emerald-500/10 bg-surface px-3 py-2">
-                        <p className="text-sm font-bold text-foreground">{item.label}</p>
-                        <p className="mt-1 text-[11px] leading-5 text-gray-500">{item.description}</p>
-                      </div>
-                    ))}
+                  <div className="rounded-2xl border border-emerald-500/10 bg-surface p-3">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-xs font-bold text-gray-400">شكل قريب من السايدبار</p>
+                      <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black text-emerald-400">
+                        {visiblePreviewItems.length} قسم ظاهر
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {visiblePreviewItems.map((item) => (
+                        <div
+                          key={item.label}
+                          className="flex items-start gap-3 rounded-xl border border-emerald-500/10 bg-background/80 px-3 py-2.5"
+                        >
+                          <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-400" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-foreground">{item.label}</p>
+                            <p className="mt-1 text-[11px] leading-5 text-gray-500">{item.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 <div className="rounded-2xl border border-surface-hover bg-surface/60 p-4">
                   <p className="mb-3 text-sm font-black text-foreground">اللي هيبقى مخفي عنه</p>
-                  <div className="space-y-2">
-                    {hiddenPreviewItems.map((item) => (
-                      <div key={item.label} className="rounded-xl border border-surface-hover bg-background px-3 py-2 opacity-80">
-                        <p className="text-sm font-bold text-gray-300">{item.label}</p>
-                        <p className="mt-1 text-[11px] leading-5 text-gray-500">{item.description}</p>
-                      </div>
-                    ))}
+                  <div className="rounded-2xl border border-surface-hover bg-background/70 p-3">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-xs font-bold text-gray-400">أقسام مش هتظهر في السايدبار</p>
+                      <span className="inline-flex items-center rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-black text-gray-400">
+                        {hiddenPreviewItems.length} قسم مخفي
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {hiddenPreviewItems.map((item) => (
+                        <div
+                          key={item.label}
+                          className="flex items-start gap-3 rounded-xl border border-dashed border-surface-hover bg-background px-3 py-2.5 opacity-80"
+                        >
+                          <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-gray-500" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-gray-300">{item.label}</p>
+                            <p className="mt-1 text-[11px] leading-5 text-gray-500">{item.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
