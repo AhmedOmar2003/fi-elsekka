@@ -277,6 +277,26 @@ export const fetchProductById = async (productId: string): Promise<Product | nul
     return data as Product;
 };
 
+export const fetchProductPurchaseCount = async (productId: string): Promise<number> => {
+    if (!isUUID(productId)) return 0;
+
+    const { data, error } = await supabase
+        .from('order_items')
+        .select('quantity, orders(status)')
+        .eq('product_id', productId);
+
+    if (error) {
+        console.error('fetchProductPurchaseCount error:', error.message);
+        return 0;
+    }
+
+    return (data || []).reduce((total, item: any) => {
+        const relatedOrder = Array.isArray(item.orders) ? item.orders[0] : item.orders;
+        if (relatedOrder?.status === 'cancelled') return total;
+        return total + (item.quantity || 1);
+    }, 0);
+};
+
 async function fetchProductsByIds(ids: string[]): Promise<Product[]> {
     const validIds = ids.filter((id) => isUUID(id));
     if (validIds.length === 0) return [];

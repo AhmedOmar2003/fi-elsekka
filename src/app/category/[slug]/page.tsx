@@ -4,7 +4,6 @@ import CategoryPageClient from "./category-page-client"
 import {
   fetchCategoryByIdServer,
   fetchPaginatedProductsServer,
-  fetchProductsByCategoryServer,
 } from "@/services/serverCatalogService"
 import {
   getCategoryTaxonomyConfig,
@@ -12,7 +11,7 @@ import {
 } from "@/lib/category-taxonomy"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://fi-elsekka.vercel.app"
-const PAGE_SIZE = 20
+const PAGE_SIZE = 12
 
 export const revalidate = 300
 
@@ -26,15 +25,15 @@ const getCategoryPageData = cache(async (slug: string) => {
     }
   }
 
-  const [category, products] = await Promise.all([
+  const [category, paginatedResult] = await Promise.all([
     fetchCategoryByIdServer(slug),
-    fetchProductsByCategoryServer(slug),
+    fetchPaginatedProductsServer(0, PAGE_SIZE, slug),
   ])
 
   return {
     category,
-    products,
-    hasMore: false,
+    products: paginatedResult.products,
+    hasMore: paginatedResult.hasMore,
   }
 })
 

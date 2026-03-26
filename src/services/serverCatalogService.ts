@@ -66,16 +66,23 @@ export async function fetchProductsByCategoryServer(categoryId: string): Promise
 export async function fetchPaginatedProductsServer(
   page = 0,
   pageSize = 20,
+  categoryId?: string,
 ): Promise<{ products: Product[]; hasMore: boolean }> {
   const from = page * pageSize
   const to = from + pageSize - 1
 
   const supabase = getPublicServerSupabase()
-  const { data, error } = await supabase
+  let query = supabase
     .from('products')
     .select(PRODUCT_CARD_FIELDS)
     .order('created_at', { ascending: false })
     .range(from, to)
+
+  if (categoryId && isUUID(categoryId)) {
+    query = query.eq('category_id', categoryId)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     console.error('Error fetching server paginated products:', error.message)

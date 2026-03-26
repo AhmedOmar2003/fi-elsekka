@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
 import { Loader2, Search, X } from "lucide-react"
-import { Product, fetchProductsByCategory, fetchPaginatedProducts } from "@/services/productsService"
+import { Product, fetchPaginatedProducts } from "@/services/productsService"
 import { useProducts } from "@/contexts/ProductsContext"
 import { isRequestOnlyTextCategory } from "@/lib/text-category-orders"
 import { CategoryRequestPanel } from "@/components/categories/category-request-panel"
@@ -26,7 +26,7 @@ import {
   matchesProductTaxonomy,
 } from "@/lib/category-taxonomy"
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 12
 
 type CategoryPageClientProps = {
   initialCategory?: Category | null
@@ -51,14 +51,26 @@ export default function CategoryPageClient({
   const isAllPage = slug === "all"
 
   const [allPageProducts, setAllPageProducts] = React.useState<Product[]>(isAllPage ? initialProducts : [])
-  const [currentPage, setCurrentPage] = React.useState(isAllPage && initialProducts.length > 0 ? 1 : 0)
-  const [hasMore, setHasMore] = React.useState(isAllPage ? initialHasMore : true)
+  const [currentPage, setCurrentPage] = React.useState(initialProducts.length > 0 ? 1 : 0)
+  const [hasMore, setHasMore] = React.useState(initialHasMore)
   const [isLoadingMore, setIsLoadingMore] = React.useState(false)
   const [isInitialLoading, setIsInitialLoading] = React.useState(isAllPage && initialProducts.length === 0)
 
   const [categoryProducts, setCategoryProducts] = React.useState<Product[]>(!isAllPage ? initialProducts : [])
-  const [isCategoryLoading, setIsCategoryLoading] = React.useState(!isAllPage && !initialCategory && initialProducts.length === 0)
-  const categoryFetchedSlug = React.useRef<string | null>(!isAllPage && initialCategory ? slug : null)
+  const [isCategoryLoading, setIsCategoryLoading] = React.useState(!isAllPage && initialProducts.length === 0)
+
+  React.useEffect(() => {
+    setCurrentPage(initialProducts.length > 0 ? 1 : 0)
+    setHasMore(initialHasMore)
+
+    if (isAllPage) {
+      setAllPageProducts(initialProducts)
+      setIsInitialLoading(initialProducts.length === 0)
+    } else {
+      setCategoryProducts(initialProducts)
+      setIsCategoryLoading(initialProducts.length === 0)
+    }
+  }, [initialHasMore, initialProducts, isAllPage])
 
   React.useEffect(() => {
     if (!isAllPage) return
@@ -82,31 +94,36 @@ export default function CategoryPageClient({
   const loadMore = React.useCallback(async () => {
     if (isLoadingMore || !hasMore) return
     setIsLoadingMore(true)
-    const { products, hasMore: more } = await fetchPaginatedProducts(currentPage, PAGE_SIZE)
-    setAllPageProducts(prev => {
+    const { products, hasMore: more } = await fetchPaginatedProducts(currentPage, PAGE_SIZE, isAllPage ? undefined : slug)
+    const mergeProducts = (prev: Product[]) => {
       const ids = new Set(prev.map(p => p.id))
       return [...prev, ...products.filter(p => !ids.has(p.id))]
-    })
+    }
+
+    if (isAllPage) {
+      setAllPageProducts(mergeProducts)
+    } else {
+      setCategoryProducts(mergeProducts)
+    }
     setCurrentPage(p => p + 1)
     setHasMore(more)
     setIsLoadingMore(false)
-  }, [currentPage, hasMore, isLoadingMore])
+  }, [currentPage, hasMore, isAllPage, isLoadingMore, slug])
 
   React.useEffect(() => {
-    if (isAllPage) return
+    if (isAllPage || initialProducts.length > 0) return
 
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
     if (!isUUID) return
 
-    if (categoryFetchedSlug.current === slug) return
-    categoryFetchedSlug.current = slug
-
     setIsCategoryLoading(true)
-    fetchProductsByCategory(slug).then(data => {
-      setCategoryProducts(data)
+    fetchPaginatedProducts(0, PAGE_SIZE, slug).then(({ products, hasMore }) => {
+      setCategoryProducts(products)
+      setCurrentPage(1)
+      setHasMore(hasMore)
       setIsCategoryLoading(false)
     })
-  }, [slug, isAllPage])
+  }, [slug, isAllPage, initialProducts.length])
 
   const allProducts = isAllPage ? allPageProducts : categoryProducts
   const isLoading = isAllPage ? isInitialLoading : isCategoryLoading
@@ -465,7 +482,7 @@ export default function CategoryPageClient({
                       {productCards.map(product => <ProductCard key={product.id} {...product} />)}
                     </div>
 
-                    {isAllPage && hasMore && !hasActiveFilters && (
+                    {hasMore && !hasActiveFilters && (
                       <div className="flex justify-center mt-10">
                         <button
                           onClick={loadMore}
