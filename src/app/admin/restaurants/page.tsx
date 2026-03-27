@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ChipsInput } from "@/components/admin/chips-input";
 import { toast } from "sonner";
 import { fetchAdminCategories } from "@/services/adminService";
 import {
@@ -29,6 +30,7 @@ const EMPTY_FORM = {
   manager_name: "",
   manager_email: "",
   manager_password: "",
+  menu_sections: [] as string[],
   is_active: true,
   is_available: true,
   sort_order: "0",
@@ -83,6 +85,7 @@ export default function AdminRestaurantsPage() {
       manager_name: restaurant.manager_name || "",
       manager_email: restaurant.manager_email || "",
       manager_password: "",
+      menu_sections: restaurant.menu_sections || [],
       is_active: restaurant.is_active,
       is_available: restaurant.is_available,
       sort_order: String(restaurant.sort_order ?? 0),
@@ -154,6 +157,7 @@ export default function AdminRestaurantsPage() {
       phone: form.phone.trim() || null,
       manager_name: form.manager_name.trim() || null,
       manager_email: form.manager_email.trim() || null,
+      menu_sections: form.menu_sections,
       category_id: foodCategory.id,
       is_active: form.is_active,
       is_available: form.is_available,
@@ -283,6 +287,11 @@ export default function AdminRestaurantsPage() {
                       {restaurant.cuisine}
                     </span>
                   ) : null}
+                  {restaurant.menu_sections?.length ? (
+                    <p className="mt-2 text-[11px] text-gray-500">
+                      تصنيفات المنيو: {restaurant.menu_sections.join(" - ")}
+                    </p>
+                  ) : null}
                 </div>
               </div>
               <div className="col-span-2">
@@ -372,6 +381,15 @@ export default function AdminRestaurantsPage() {
                     value={form.cuisine}
                     onChange={(e) => setForm((prev) => ({ ...prev, cuisine: e.target.value }))}
                     placeholder="مثال: بيتزا إيطالي، أكل شرقي، وجبات سريعة..."
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <ChipsInput
+                    label="تصنيفات المنيو"
+                    helper="اكتب التصنيفات اللي هتظهر فوق منيو المطعم زي: بيتزا، كريب، مشروبات، حلويات."
+                    placeholder="اكتب تصنيف واضغط Enter"
+                    values={form.menu_sections}
+                    onChange={(values) => setForm((prev) => ({ ...prev, menu_sections: values }))}
                   />
                 </div>
                 <div className="space-y-1.5">

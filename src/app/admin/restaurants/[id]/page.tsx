@@ -37,6 +37,7 @@ type MenuFormState = {
   discount_percentage: string;
   image_url: string;
   available: boolean;
+  menu_section: string;
   related_product_ids: string[];
 };
 
@@ -48,6 +49,7 @@ const EMPTY_FORM: MenuFormState = {
   discount_percentage: "",
   image_url: "",
   available: true,
+  menu_section: "",
   related_product_ids: [],
 };
 
@@ -132,6 +134,7 @@ export default function AdminRestaurantProductsPage() {
       discount_percentage: normalizeDiscountFromProduct(product),
       image_url: product.image_url || "",
       available: metadata.restaurantAvailable !== false && (product.stock_quantity || 0) > 0,
+      menu_section: metadata.restaurantSection || "",
       related_product_ids: metadata.relatedProductIds || [],
     });
     setModalOpen(true);
@@ -198,6 +201,7 @@ export default function AdminRestaurantProductsPage() {
         discountPercentage,
         imageUrl: form.image_url.trim(),
         available: form.available,
+        menuSection: form.menu_section,
         relatedProductIds: form.related_product_ids,
         specs: [],
       });
@@ -390,6 +394,11 @@ export default function AdminRestaurantProductsPage() {
 
                   <div className="space-y-2">
                     <p className="line-clamp-1 text-base font-black text-foreground">{product.name}</p>
+                    {metadata.restaurantSection ? (
+                      <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-black text-primary">
+                        {metadata.restaurantSection}
+                      </span>
+                    ) : null}
                     <p className="line-clamp-2 text-sm text-gray-500">
                       {metadata.shortDescription || product.description || "بدون وصف قصير حتى الآن."}
                     </p>
@@ -475,6 +484,24 @@ export default function AdminRestaurantProductsPage() {
                         onChange={(e) => setForm((prev) => ({ ...prev, discount_percentage: e.target.value }))}
                         placeholder="مثال: 15"
                       />
+                    </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <label className="text-xs font-black text-gray-400">تصنيف المنيو</label>
+                      <select
+                        value={form.menu_section}
+                        onChange={(e) => setForm((prev) => ({ ...prev, menu_section: e.target.value }))}
+                        className="w-full rounded-2xl border border-surface-hover bg-background px-4 py-3 text-sm text-foreground outline-none transition-colors focus:border-primary"
+                      >
+                        <option value="">بدون تصنيف محدد</option>
+                        {(restaurant.menu_sections || []).map((section) => (
+                          <option key={section} value={section}>
+                            {section}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[11px] text-gray-500">
+                        لو اخترت تصنيف، المنتج هيظهر تحت التبويب المناسب في صفحة المطعم.
+                      </p>
                     </div>
                     <div className="space-y-1.5 md:col-span-2">
                       <label className="text-xs font-black text-gray-400">وصف قصير</label>
@@ -565,6 +592,7 @@ export default function AdminRestaurantProductsPage() {
                     <ul className="mt-3 space-y-2 text-xs leading-6 text-gray-400">
                       <li>• المنتج هيتربط تلقائيًا بـ {restaurant.name}.</li>
                       <li>• هيتحط داخل قسم طعام وتصنيف مطاعم من غير ما تختاره يدويًا.</li>
+                      <li>• لو اخترت تصنيف منيو، العميل هيلاقيه فوق في تبويب مستقل داخل صفحة المطعم.</li>
                       <li>• المنتجات المشابهة اليدوية هنا هتكون من نفس المطعم فقط.</li>
                       <li>• التقييمات تفضل شغالة طبيعي على صفحة المنتج.</li>
                     </ul>

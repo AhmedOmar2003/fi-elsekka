@@ -2,11 +2,12 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
-import { ProductCard } from "@/components/ui/product-card"
 import { Button } from "@/components/ui/button"
+import { RestaurantMenuBrowser } from "@/components/restaurants/restaurant-menu-browser"
 import { fetchCategoryByIdServer } from "@/services/serverCatalogService"
 import { fetchRestaurantByIdServer, fetchRestaurantMenuServer } from "@/services/serverRestaurantsService"
 import { toProductCardProps } from "@/lib/product-presentation"
+import { getProductCatalogMetadata } from "@/lib/product-metadata"
 import { ArrowRight, Clock3, Sparkles, Store, UtensilsCrossed } from "lucide-react"
 import Link from "next/link"
 
@@ -62,7 +63,14 @@ export default async function RestaurantPage({
 
   const foodCategory = restaurant.category_id ? await fetchCategoryByIdServer(restaurant.category_id) : null
   const products = await fetchRestaurantMenuServer(restaurant.id, foodCategory?.id)
-  const cards = products.map(toProductCardProps)
+  const cards = products.map((product) => {
+    const metadata = getProductCatalogMetadata(product.specifications)
+    return {
+      ...toProductCardProps(product),
+      section: metadata.restaurantSection || "المنيو كله",
+    }
+  })
+  const restaurantSections = restaurant.menu_sections || []
 
   return (
     <>
@@ -127,10 +135,12 @@ export default async function RestaurantPage({
           <div className="mb-6 rounded-[28px] border border-surface-hover bg-surface p-5 md:p-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-              <h2 className="text-2xl font-black text-foreground">المنيو</h2>
-              <p className="mt-1 text-sm text-gray-500">
-                {cards.length > 0 ? `فيه ${cards.length} صنف جاهزين للطلب من ${restaurant.name}.` : "لسه المنيو ما اتحطتش بالكامل، لكن المطعم اتجهز للظهور."}
-              </p>
+                <h2 className="text-2xl font-black text-foreground">المنيو</h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  {cards.length > 0
+                    ? `فيه ${cards.length} صنف جاهزين للطلب من ${restaurant.name}.`
+                    : "لسه المنيو ما اتحطتش بالكامل، لكن المطعم اتجهز للظهور."}
+                </p>
               </div>
               <Button asChild variant="outline" className="rounded-2xl">
                 <Link href={foodCategory?.id ? `/category/${foodCategory.id}/request` : "/category/all"}>
@@ -146,27 +156,7 @@ export default async function RestaurantPage({
               <p className="mt-2 text-sm text-gray-500">ارجع قريب، أو اطلب المنتج اللي محتاجه من زر ملقتش اللي عاوزه؟</p>
             </div>
           ) : (
-            <>
-              <div className="hidden gap-6 lg:grid lg:grid-cols-4">
-                {cards.map((product) => (
-                  <ProductCard key={product.id} {...product} />
-                ))}
-              </div>
-
-              <div className="flex gap-3 overflow-x-auto pb-2 md:hidden">
-                {cards.map((product) => (
-                  <div key={product.id} className="min-w-[46vw] max-w-[46vw] shrink-0">
-                    <ProductCard {...product} />
-                  </div>
-                ))}
-              </div>
-
-              <div className="hidden gap-4 md:grid lg:hidden md:grid-cols-3">
-                {cards.map((product) => (
-                  <ProductCard key={product.id} {...product} />
-                ))}
-              </div>
-            </>
+            <RestaurantMenuBrowser items={cards} restaurantName={restaurant.name} sections={restaurantSections} />
           )}
         </section>
       </main>

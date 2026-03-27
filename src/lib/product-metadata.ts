@@ -34,6 +34,7 @@ export type ProductCatalogMetadata = {
   restaurantName: string;
   restaurantItem: boolean;
   restaurantAvailable: boolean;
+  restaurantSection: string;
   availabilityMode: string;
 };
 
@@ -70,6 +71,7 @@ const METADATA_KEYS = [
   "restaurant_name",
   "restaurant_item",
   "restaurant_available",
+  "restaurant_section",
   "availability_mode",
 ] as const;
 
@@ -253,6 +255,7 @@ export function getProductCatalogMetadata(specifications?: Record<string, any> |
     restaurantName: normalizeText(specifications?.restaurant_name),
     restaurantItem: specifications?.restaurant_item === true,
     restaurantAvailable: specifications?.restaurant_available !== false,
+    restaurantSection: normalizeText(specifications?.restaurant_section),
     availabilityMode: normalizeText(specifications?.availability_mode) || "stock",
   };
 }
@@ -315,6 +318,11 @@ export function scoreRelatedProduct(baseProduct: ProductRecordLike, candidatePro
   if (baseMeta.restaurantId && candidateMeta.restaurantId && baseMeta.restaurantId === candidateMeta.restaurantId) {
     score += 36;
     reasons.push("من نفس المطعم");
+  }
+
+  if (baseMeta.restaurantSection && candidateMeta.restaurantSection && baseMeta.restaurantSection === candidateMeta.restaurantSection) {
+    score += 22;
+    reasons.push("من نفس تصنيف المنيو");
   }
 
   if (baseTaxonomy.tertiary && candidateTaxonomy.tertiary && baseTaxonomy.tertiary === candidateTaxonomy.tertiary) {

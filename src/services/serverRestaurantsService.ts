@@ -3,7 +3,7 @@ import 'server-only'
 import { createClient } from '@supabase/supabase-js'
 import type { Product } from './productsService'
 import type { Restaurant } from './restaurantsService'
-import { getProductCatalogMetadata } from '@/lib/product-metadata'
+import { getProductCatalogMetadata, normalizeStringArray } from '@/lib/product-metadata'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -16,6 +16,14 @@ function getPublicServerSupabase() {
   return createClient(supabaseUrl, supabaseAnonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
+}
+
+function normalizeRestaurantRecord(restaurant: Restaurant | null) {
+  if (!restaurant) return null
+  return {
+    ...restaurant,
+    menu_sections: normalizeStringArray(restaurant.menu_sections),
+  } as Restaurant
 }
 
 export async function fetchRestaurantsServer(categoryId?: string | null): Promise<Restaurant[]> {
@@ -37,7 +45,7 @@ export async function fetchRestaurantsServer(categoryId?: string | null): Promis
     return []
   }
 
-  return (data || []) as Restaurant[]
+  return ((data || []) as Restaurant[]).map((item) => normalizeRestaurantRecord(item)!)
 }
 
 export async function fetchRestaurantByIdServer(id: string): Promise<Restaurant | null> {
@@ -54,7 +62,7 @@ export async function fetchRestaurantByIdServer(id: string): Promise<Restaurant 
     return null
   }
 
-  return data as Restaurant
+  return normalizeRestaurantRecord(data as Restaurant)
 }
 
 export async function fetchRestaurantMenuServer(restaurantId: string, foodCategoryId?: string | null): Promise<Product[]> {

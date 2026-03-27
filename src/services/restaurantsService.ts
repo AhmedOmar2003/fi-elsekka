@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { optimizeImageForUpload } from '@/lib/image-upload';
 import type { Product } from './productsService';
-import { getProductCatalogMetadata } from '@/lib/product-metadata';
+import { getProductCatalogMetadata, normalizeStringArray } from '@/lib/product-metadata';
 import { createProduct, saveProductSpecifications, updateProduct, uploadProductImage } from './adminService';
 
 export type Restaurant = {
@@ -14,6 +14,7 @@ export type Restaurant = {
   phone: string | null;
   manager_name: string | null;
   manager_email: string | null;
+  menu_sections?: string[] | null;
   category_id: string | null;
   is_active: boolean;
   is_available: boolean;
@@ -32,13 +33,22 @@ type RestaurantPayload = {
   phone?: string | null;
   manager_name?: string | null;
   manager_email?: string | null;
+  menu_sections?: string[] | null;
   category_id?: string | null;
   is_active?: boolean;
   is_available?: boolean;
   sort_order?: number | null;
 };
 
-const OPTIONAL_RESTAURANT_COLUMNS = ['cuisine'] as const;
+const OPTIONAL_RESTAURANT_COLUMNS = ['cuisine', 'menu_sections'] as const;
+
+function normalizeRestaurantRecord(restaurant: Restaurant | null) {
+  if (!restaurant) return null;
+  return {
+    ...restaurant,
+    menu_sections: normalizeStringArray(restaurant.menu_sections),
+  } as Restaurant;
+}
 
 function isRestaurantColumnError(message: string) {
   return message.includes("Could not find the '") || message.includes('schema cache') || message.includes('column');
@@ -91,7 +101,7 @@ export async function fetchRestaurants(options?: {
     return [];
   }
 
-  return sortRestaurants((data || []) as Restaurant[]);
+  return sortRestaurants(((data || []) as Restaurant[]).map((item) => normalizeRestaurantRecord(item)!));
 }
 
 export async function fetchRestaurantById(restaurantId: string): Promise<Restaurant | null> {
@@ -106,7 +116,7 @@ export async function fetchRestaurantById(restaurantId: string): Promise<Restaur
     return null;
   }
 
-  return data as Restaurant;
+  return normalizeRestaurantRecord(data as Restaurant);
 }
 
 export async function fetchRestaurantProducts(restaurantId: string): Promise<Product[]> {
@@ -171,7 +181,7 @@ export async function createRestaurant(payload: RestaurantPayload) {
     console.error('createRestaurant error:', result.error.message);
   }
 
-  return { data: result.data, error: result.error };
+  return { data: normalizeRestaurantRecord(result.data as Restaurant | null), error: result.error };
 }
 
 export async function updateRestaurant(id: string, payload: RestaurantPayload) {
@@ -201,7 +211,7 @@ export async function updateRestaurant(id: string, payload: RestaurantPayload) {
     console.error('updateRestaurant error:', result.error.message);
   }
 
-  return { data: result.data, error: result.error };
+  return { data: normalizeRestaurantRecord(result.data as Restaurant | null), error: result.error };
 }
 
 export async function deleteRestaurant(id: string) {
@@ -257,6 +267,7 @@ type SaveRestaurantMenuProductPayload = {
   imageUrl?: string | null;
   imageFile?: File | null;
   available?: boolean;
+  menuSection?: string | null;
   relatedProductIds?: string[];
   specs?: { id?: string; label: string; description: string }[];
 };
@@ -272,6 +283,8 @@ export async function saveRestaurantMenuProduct(payload: SaveRestaurantMenuProdu
     finalImageUrl = await uploadProductImage(payload.imageFile);
   }
 
+  const menuSection = payload.menuSection?.trim() || '';
+  const menuSectionTag = menuSection ? [menuSection] : [];
   const productPayload: Record<string, unknown> = {
     name: payload.name.trim(),
     description: payload.description?.trim() || null,
@@ -288,21 +301,22 @@ export async function saveRestaurantMenuProduct(payload: SaveRestaurantMenuProdu
       status: 'published',
       featured: false,
       product_type: 'restaurant_menu_item',
-      tags: [payload.restaurant.name, 'مطعم', 'منيو'],
-      keywords: [payload.restaurant.name, payload.name.trim(), 'مطاعم', 'طعام'],
+      tags: [payload.restaurant.name, 'مطعم', 'منيو', ...menuSectionTag],
+      keywords: [payload.restaurant.name, payload.name.trim(), 'مطاعم', 'طعام', ...menuSectionTag],
       related_product_ids: payload.relatedProductIds || [],
       restaurant_id: payload.restaurant.id,
       restaurant_name: payload.restaurant.name,
       restaurant_item: true,
       restaurant_available: payload.available !== false,
+      restaurant_section: menuSection,
       availability_mode: 'manual',
       category_taxonomy: {
         primary: 'restaurants',
         secondary: payload.restaurant.cuisine || '',
-        tertiary: '',
+        tertiary: menuSection,
         primary_label: 'مطاعم',
         secondary_label: payload.restaurant.cuisine || '',
-        tertiary_label: '',
+        tertiary_label: menuSection,
       },
       custom_specs: [],
     },
