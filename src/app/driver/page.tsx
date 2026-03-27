@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { signOut } from '@/services/authService'
-import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown, ChevronUp, Bell, BellOff, X, AlertCircle, Coffee, Truck, LogOut } from 'lucide-react'
+import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown, ChevronUp, Bell, BellOff, X, AlertCircle, Coffee, Truck } from 'lucide-react'
 import { toast } from 'sonner'
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery'
 import { getRestaurantOrderSnapshot } from '@/lib/restaurant-order'
@@ -712,34 +712,8 @@ export default function DriverDashboard() {
 
     return (
         <div className="space-y-6 pb-8 relative">
-            <div className="rounded-3xl border border-surface-hover bg-surface p-5">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                            <Truck className="h-7 w-7" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-black text-primary">لوحة المندوب</p>
-                            <p className="mt-1 text-sm text-gray-500">
-                                الطلبات اللي اتعينت لك هتظهر هنا، ومن هنا تتابع الاستلام والتوصيل بشكل واضح.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-3">
-                        <div className="shrink-0">
-                            <ThemeToggle />
-                        </div>
-                        <button
-                            type="button"
-                            onClick={handleLogout}
-                            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-400 transition-colors hover:bg-rose-500 hover:text-white"
-                        >
-                            <LogOut className="h-4 w-4" />
-                            تسجيل الخروج
-                        </button>
-                    </div>
-                </div>
+            <div className="flex justify-end">
+                <ThemeToggle />
             </div>
 
             {/* Full Screen Availability Prompt Modal (After Delivery) */}

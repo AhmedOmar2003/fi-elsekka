@@ -507,7 +507,7 @@ export default function CategoryPageClient({
                       <p className="text-gray-500">أول ما تضيف مطاعم من لوحة الإدارة، هتظهر هنا للعميل بشكل منظم.</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:gap-6">
+                    <div className="w-full space-y-4 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
                       {restaurantCards.map((restaurant) => (
                         <RestaurantCard
                           key={restaurant.id}
@@ -517,7 +517,7 @@ export default function CategoryPageClient({
                           cuisine={restaurant.cuisine}
                           imageUrl={restaurant.image_url}
                           isAvailable={restaurant.is_available}
-                          className="w-full"
+                          className="block w-full max-w-none"
                         />
                       ))}
                     </div>
