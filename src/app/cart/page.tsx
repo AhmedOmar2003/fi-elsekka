@@ -316,7 +316,7 @@ export default function CartPage() {
 
                            <Button
                               size="lg"
-                              className="hidden md:flex h-14 w-full rounded-2xl px-6 text-base font-black shadow-primary/20 shadow-lg"
+                              className="hidden lg:flex h-14 w-full rounded-2xl px-6 text-base font-black shadow-primary/20 shadow-lg"
                               onClick={() => router.push('/checkout')}
                            >
                               متابعة الدفع
