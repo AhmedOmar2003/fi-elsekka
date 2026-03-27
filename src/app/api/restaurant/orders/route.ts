@@ -11,9 +11,7 @@ export async function GET(request: Request) {
   if (!auth.ok) return auth.response;
   const restaurant = auth.profile.restaurant;
 
-  const { data: orders, error: ordersError } = await restaurantSupabaseAdmin
-    .from("orders")
-    .select(`
+  const baseSelect = `
       *,
       users(full_name, email, phone),
       order_items(
@@ -23,9 +21,24 @@ export async function GET(request: Request) {
         price_at_purchase,
         products(id, name, price, image_url, specifications)
       )
-    `)
+    `;
+
+  let ordersResult = await restaurantSupabaseAdmin
+    .from("orders")
+    .select(baseSelect)
+    .contains("shipping_address", { restaurant_id: restaurant.id })
     .order("created_at", { ascending: false })
     .limit(120);
+
+  if (ordersResult.error) {
+    ordersResult = await restaurantSupabaseAdmin
+      .from("orders")
+      .select(baseSelect)
+      .order("created_at", { ascending: false })
+      .limit(120);
+  }
+
+  const { data: orders, error: ordersError } = ordersResult;
 
   if (ordersError) {
     return NextResponse.json({ error: ordersError.message || "Failed to load orders" }, { status: 500 });

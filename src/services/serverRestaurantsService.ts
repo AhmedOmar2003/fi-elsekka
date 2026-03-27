@@ -67,14 +67,17 @@ export async function fetchRestaurantByIdServer(id: string): Promise<Restaurant 
 
 export async function fetchRestaurantMenuServer(restaurantId: string, foodCategoryId?: string | null): Promise<Product[]> {
   const supabase = getPublicServerSupabase()
-  let query = supabase
-    .from('products')
-    .select(`
+  const baseSelect = `
       id, name, description, price, category_id, specifications, created_at, updated_at,
       image_url, discount_percentage, stock_quantity, is_best_seller, show_in_offers,
       categories ( name ),
       product_specifications ( id, label, description )
-    `)
+    `
+
+  let query = supabase
+    .from('products')
+    .select(baseSelect)
+    .contains('specifications', { restaurant_id: restaurantId, restaurant_item: true })
     .order('created_at', { ascending: false })
     .limit(120)
 
@@ -82,7 +85,22 @@ export async function fetchRestaurantMenuServer(restaurantId: string, foodCatego
     query = query.eq('category_id', foodCategoryId)
   }
 
-  const { data, error } = await query
+  let result = await query
+  if (result.error) {
+    let fallbackQuery = supabase
+      .from('products')
+      .select(baseSelect)
+      .order('created_at', { ascending: false })
+      .limit(120)
+
+    if (foodCategoryId) {
+      fallbackQuery = fallbackQuery.eq('category_id', foodCategoryId)
+    }
+
+    result = await fallbackQuery
+  }
+
+  const { data, error } = result
   if (error) {
     console.error('fetchRestaurantMenuServer error:', error.message)
     return []

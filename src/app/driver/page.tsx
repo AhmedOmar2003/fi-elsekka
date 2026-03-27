@@ -312,15 +312,25 @@ export default function DriverDashboard() {
     // Also fetch "recently" delivered orders for the driver to review (last 24h)
     const fetchDeliveredOrders = useCallback(async (userId: string) => {
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        const { data } = await supabase
+        let result = await supabase
             .from('orders')
             .select('*')
+            .contains('shipping_address', { driver: { id: userId } })
             .gte('created_at', yesterday)
             .eq('status', 'delivered')
             .order('created_at', { ascending: false })
-        if (data) {
-            // Filter only this driver's delivered orders
-            return data.filter((o: any) => o.shipping_address?.driver?.id === userId)
+
+        if (result.error) {
+            result = await supabase
+                .from('orders')
+                .select('*')
+                .gte('created_at', yesterday)
+                .eq('status', 'delivered')
+                .order('created_at', { ascending: false })
+        }
+
+        if (result.data) {
+            return result.data.filter((o: any) => o.shipping_address?.driver?.id === userId)
         }
         return []
     }, [])

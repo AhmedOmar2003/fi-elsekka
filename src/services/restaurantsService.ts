@@ -120,16 +120,30 @@ export async function fetchRestaurantById(restaurantId: string): Promise<Restaur
 }
 
 export async function fetchRestaurantProducts(restaurantId: string): Promise<Product[]> {
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
+  const foodCategoryId = (await getFoodCategoryId()) || '';
+  const baseSelect = `
       id, name, description, price, category_id, specifications, created_at, updated_at,
       image_url, discount_percentage, stock_quantity, is_best_seller, show_in_offers,
       categories ( name ),
       product_specifications ( id, label, description )
-    `)
-    .eq('category_id', (await getFoodCategoryId()) || '')
+    `;
+
+  let result = await supabase
+    .from('products')
+    .select(baseSelect)
+    .eq('category_id', foodCategoryId)
+    .contains('specifications', { restaurant_id: restaurantId, restaurant_item: true })
     .order('created_at', { ascending: false });
+
+  if (result.error) {
+    result = await supabase
+      .from('products')
+      .select(baseSelect)
+      .eq('category_id', foodCategoryId)
+      .order('created_at', { ascending: false });
+  }
+
+  const { data, error } = result;
 
   if (error) {
     console.error('fetchRestaurantProducts error:', error.message);

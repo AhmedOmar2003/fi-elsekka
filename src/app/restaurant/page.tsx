@@ -418,6 +418,7 @@ export default function RestaurantPortalPage() {
   const ordersRef = React.useRef<RestaurantPortalOrder[]>([]);
   const hasLoadedOnceRef = React.useRef(false);
   const restaurantIdRef = React.useRef<string>("");
+  const refreshTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadOrders = React.useCallback(async (options?: { withLoader?: boolean; notifyNewOrders?: boolean }) => {
     if (options?.withLoader !== false) {
@@ -466,6 +467,17 @@ export default function RestaurantPortalPage() {
     }
   }, [router]);
 
+  const queueOrdersRefresh = React.useCallback((options?: { notifyNewOrders?: boolean }) => {
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+
+    refreshTimeoutRef.current = setTimeout(() => {
+      refreshTimeoutRef.current = null;
+      void loadOrders({ withLoader: false, notifyNewOrders: options?.notifyNewOrders });
+    }, 200);
+  }, [loadOrders]);
+
   React.useEffect(() => {
     loadOrders();
   }, [loadOrders]);
@@ -495,7 +507,7 @@ export default function RestaurantPortalPage() {
               (nextRestaurantId === currentRestaurantId || previousRestaurantId === currentRestaurantId);
 
             if (!affectsCurrentRestaurant) return;
-            await loadOrders({ withLoader: false, notifyNewOrders: true });
+            queueOrdersRefresh({ notifyNewOrders: true });
           }
         )
         .on(
@@ -507,7 +519,7 @@ export default function RestaurantPortalPage() {
           },
           async () => {
             if (!restaurantIdRef.current) return;
-            await loadOrders({ withLoader: false, notifyNewOrders: true });
+            queueOrdersRefresh({ notifyNewOrders: true });
           }
         )
         .subscribe();
@@ -521,9 +533,13 @@ export default function RestaurantPortalPage() {
 
     return () => {
       isCancelled = true;
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = null;
+      }
       void cleanupPromise.then((cleanup) => cleanup?.());
     };
-  }, [loadOrders]);
+  }, [loadOrders, queueOrdersRefresh]);
 
   const handleLogout = async () => {
     await signOut();
