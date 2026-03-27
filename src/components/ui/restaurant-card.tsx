@@ -27,18 +27,18 @@ export function RestaurantCard({
   return (
     <div
       className={cn(
-        "group overflow-hidden rounded-[30px] border border-surface-border bg-surface shadow-[var(--shadow-material-1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-material-2)]",
+        "group aspect-square overflow-hidden rounded-[30px] border border-surface-border bg-surface shadow-[var(--shadow-material-1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-material-2)]",
         className
       )}
     >
-      <Link href={`/restaurants/${id}`} className="block">
-        <div className="relative aspect-square overflow-hidden bg-surface-container">
+      <Link href={`/restaurants/${id}`} className="grid h-full grid-rows-[1.08fr_auto]">
+        <div className="relative overflow-hidden bg-surface-container">
           {imageUrl ? (
             <Image
               src={imageUrl}
               alt={name}
               fill
-              sizes="(max-width: 768px) 50vw, 50vw"
+              sizes="(max-width: 768px) 50vw, 33vw"
               className="object-cover transition-transform duration-500 group-hover:scale-[1.06]"
             />
           ) : (
@@ -52,36 +52,38 @@ export function RestaurantCard({
             </span>
           </div>
         </div>
-      </Link>
+        <div className="flex min-h-0 flex-col justify-between p-3.5 md:p-4">
+          <div className="flex items-start justify-between gap-2.5">
+            <div className="min-w-0">
+              <h3 className="line-clamp-1 text-sm font-black text-foreground md:text-base">{name}</h3>
+              {cuisine ? (
+                <span className="mt-1.5 inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black text-primary">
+                  {cuisine}
+                </span>
+              ) : null}
+            </div>
+            <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/10 bg-primary/10 text-primary">
+              <Store className="h-4 w-4" />
+            </div>
+          </div>
 
-      <div className="space-y-4 p-4 md:p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="line-clamp-1 text-base font-black text-foreground md:text-lg">{name}</h3>
-            {cuisine ? (
-              <span className="mt-2 inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black text-primary">
-                {cuisine}
-              </span>
-            ) : null}
-            <p className="mt-2 line-clamp-2 min-h-[48px] text-xs leading-6 text-gray-500 md:text-sm">
-              {shortDescription || "منيو متجدد ومنظم جوه في السكة، ادخل شوف اللي بيقدمه المطعم واطلب بسهولة."}
+          <div className="mt-2 min-h-0">
+            <p className="line-clamp-2 text-[11px] leading-5 text-gray-500 md:text-xs md:leading-6">
+              {shortDescription || "منيو مرتب وسهل من داخل في السكة. ادخل شوف الأصناف واطلب مباشرة."}
             </p>
           </div>
-          <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-primary/10 bg-primary/10 text-primary md:h-12 md:w-12">
-            <Store className="h-4 w-4 md:h-5 md:w-5" />
+
+          <div className="mt-3 space-y-2 border-t material-divider pt-3">
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-gray-500 md:text-[11px]">
+              <Clock3 className="h-3.5 w-3.5" />
+              نرتب الوقت مع المطعم
+            </span>
+            <Button asChild className="h-10 rounded-2xl px-4 text-xs font-black md:text-sm">
+              <span>ادخل شوف اللي بيقدمه</span>
+            </Button>
           </div>
         </div>
-
-        <div className="flex flex-col gap-3 border-t material-divider pt-4">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gray-500 md:text-xs">
-            <Clock3 className="h-3.5 w-3.5" />
-            الإدارة بتتابع وقت التوصيل مع المطعم
-          </span>
-          <Button asChild className="h-11 rounded-2xl px-4 text-sm font-black">
-            <Link href={`/restaurants/${id}`}>ادخل شوف اللي بيقدمه</Link>
-          </Button>
-        </div>
-      </div>
+      </Link>
     </div>
   )
 }
