@@ -23,6 +23,25 @@ import { toast } from "sonner";
 import { formatRestaurantEtaWindow, getRestaurantOrderSnapshot } from "@/lib/restaurant-order";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
+function playRestaurantNotificationSound() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.type = "triangle";
+    oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0.35, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.55);
+  } catch (_error) {
+    // Ignore audio errors when browser blocks playback.
+  }
+}
+
 type RestaurantPortalOrder = {
   id: string;
   status: string;
@@ -395,9 +414,14 @@ export default function RestaurantPortalPage() {
   const [loading, setLoading] = React.useState(true);
   const [restaurant, setRestaurant] = React.useState<any>(null);
   const [orders, setOrders] = React.useState<RestaurantPortalOrder[]>([]);
+  const ordersRef = React.useRef<RestaurantPortalOrder[]>([]);
+  const hasLoadedOnceRef = React.useRef(false);
+  const restaurantIdRef = React.useRef<string>("");
 
-  const loadOrders = React.useCallback(async () => {
-    setLoading(true);
+  const loadOrders = React.useCallback(async (options?: { withLoader?: boolean; notifyNewOrders?: boolean }) => {
+    if (options?.withLoader !== false) {
+      setLoading(true);
+    }
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
@@ -406,8 +430,45 @@ export default function RestaurantPortalPage() {
       }
 
       const payload = await fetchRestaurantManagerOrders();
-      setRestaurant(payload.restaurant || null);
-      setOrders(payload.orders || []);
+      const nextRestaurant = payload.restaurant || null;
+      const nextOrders = (payload.orders || []) as RestaurantPortalOrder[];
+      const previousActiveIds = new Set(
+        ordersRef.current
+          .filter((order) => !["delivered", "cancelled"].includes(order.status))
+          .map((order) => order.id)
+      );
+      const newActiveOrders = nextOrders.filter(
+        (order) =>
+          !["delivered", "cancelled"].includes(order.status) &&
+          !previousActiveIds.has(order.id)
+      );
+
+      restaurantIdRef.current = String(nextRestaurant?.id || "");
+      setRestaurant(nextRestaurant);
+      setOrders(nextOrders);
+      ordersRef.current = nextOrders;
+
+      if (hasLoadedOnceRef.current && options?.notifyNewOrders && newActiveOrders.length > 0) {
+        const latestOrder = newActiveOrders[0];
+        const customer = orderUser(latestOrder.users);
+        playRestaurantNotificationSound();
+        toast.success(
+          customer?.full_name
+            ? `طلب جديد من العميل ${customer.full_name}`
+            : "فيه طلب جديد واصل للمطعم"
+        );
+
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification("طلب جديد من في السكة", {
+            body: customer?.full_name
+              ? `طلب جديد من ${customer.full_name} وصل للمطعم.`
+              : "فيه طلب جديد وصل للمطعم.",
+            silent: false,
+          });
+        }
+      }
+
+      hasLoadedOnceRef.current = true;
     } catch (error: any) {
       if (String(error?.message || "").includes("Unauthorized") || String(error?.message || "").includes("Forbidden")) {
         router.replace("/restaurant/login");
@@ -422,6 +483,61 @@ export default function RestaurantPortalPage() {
 
   React.useEffect(() => {
     loadOrders();
+  }, [loadOrders]);
+
+  React.useEffect(() => {
+    let isCancelled = false;
+
+    const setupRealtime = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || isCancelled) return;
+
+      const channel = supabase
+        .channel(`restaurant-orders-${session.user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "orders",
+          },
+          async (payload: any) => {
+            const nextRestaurantId = String(payload.new?.shipping_address?.restaurant_id || "").trim();
+            const previousRestaurantId = String(payload.old?.shipping_address?.restaurant_id || "").trim();
+            const currentRestaurantId = restaurantIdRef.current;
+            const affectsCurrentRestaurant =
+              !!currentRestaurantId &&
+              (nextRestaurantId === currentRestaurantId || previousRestaurantId === currentRestaurantId);
+
+            if (!affectsCurrentRestaurant) return;
+            await loadOrders({ withLoader: false, notifyNewOrders: true });
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "order_items",
+          },
+          async () => {
+            if (!restaurantIdRef.current) return;
+            await loadOrders({ withLoader: false, notifyNewOrders: true });
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+
+    const cleanupPromise = setupRealtime();
+
+    return () => {
+      isCancelled = true;
+      void cleanupPromise.then((cleanup) => cleanup?.());
+    };
   }, [loadOrders]);
 
   const handleLogout = async () => {

@@ -47,8 +47,8 @@ export function RestaurantMenuBrowser({
   return (
     <div className="space-y-6">
       {availableSections.length > 1 ? (
-        <div className="sticky top-[72px] z-10 -mx-1 overflow-x-auto pb-1 md:top-[88px]">
-          <div className="inline-flex min-w-full gap-2 rounded-[28px] border border-surface-hover bg-surface/95 p-2 backdrop-blur">
+        <div className="sticky top-[72px] z-10 -mx-1 overflow-x-auto border-b border-surface-hover bg-background/95 px-1 pb-0 backdrop-blur md:top-[88px]">
+          <div className="inline-flex min-w-full items-end gap-1.5">
             {availableSections.map((section) => {
               const isActive = selectedSection === section;
               const sectionCount =
@@ -59,16 +59,16 @@ export function RestaurantMenuBrowser({
                   key={section}
                   type="button"
                   onClick={() => setSelectedSection(section)}
-                  className={`inline-flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-black transition-all ${
+                  className={`inline-flex shrink-0 items-center gap-2 rounded-t-2xl border-b-2 px-4 py-3 text-sm font-black transition-all ${
                     isActive
-                      ? "bg-primary text-white shadow-[var(--shadow-material-1)]"
-                      : "bg-background/70 text-gray-300 hover:bg-surface-hover hover:text-foreground"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-transparent text-gray-400 hover:bg-surface-hover/60 hover:text-foreground"
                   }`}
                 >
                   <span>{section}</span>
                   <span
                     className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
-                      isActive ? "bg-white/15 text-white" : "bg-primary/10 text-primary"
+                      isActive ? "bg-primary/15 text-primary" : "bg-surface-hover text-gray-500"
                     }`}
                   >
                     {sectionCount}

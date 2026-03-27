@@ -269,6 +269,8 @@ export default function DriverDashboard() {
     const [showAvailabilityPrompt, setShowAvailabilityPrompt] = useState(false)
     const [isSettingAvailability, setIsSettingAvailability] = useState(false)
     const [isAvailable, setIsAvailable] = useState<boolean | null>(null) // null = not loaded yet
+    const activeOrdersRef = useRef<DriverOrder[]>([])
+    const notificationsAllowedRef = useRef(true)
     const knownOrderIds = useRef<Set<string>>(new Set())
     const isFirstLoad = useRef(true)
     const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_KEY
@@ -324,6 +326,59 @@ export default function DriverDashboard() {
     }, [])
 
     useEffect(() => {
+        activeOrdersRef.current = activeOrders
+    }, [activeOrders])
+
+    useEffect(() => {
+        notificationsAllowedRef.current = notificationsAllowed
+    }, [notificationsAllowed])
+
+    const refreshDriverOrders = useCallback(async (
+        session: any,
+        userId: string,
+        options?: { notifyNewOrders?: boolean; withLoader?: boolean }
+    ) => {
+        const notifyNewOrders = options?.notifyNewOrders === true
+        if (options?.withLoader) {
+            setIsLoading(true)
+        }
+
+        const [nextActiveOrders, nextDeliveredOrders] = await Promise.all([
+            fetchOrders(session, userId),
+            fetchDeliveredOrders(userId),
+        ])
+
+        const previousActiveIds = new Set(activeOrdersRef.current.map((order) => order.id))
+        const newPendingOrders = nextActiveOrders.filter(
+            (order) =>
+                !previousActiveIds.has(order.id) &&
+                order.shipping_address?.driver?.acceptance_status === 'pending'
+        )
+
+        nextActiveOrders.forEach((order) => knownOrderIds.current.add(order.id))
+
+        setActiveOrders(nextActiveOrders)
+        setDeliveredOrders(nextDeliveredOrders)
+
+        if (!isFirstLoad.current && notifyNewOrders && newPendingOrders.length > 0) {
+            const primaryPendingOrder = newPendingOrders[0]
+            const restaurantOrder = getRestaurantOrderSnapshot(primaryPendingOrder.shipping_address)
+            if (notificationsAllowedRef.current) {
+                playNotificationSound()
+            }
+            toast(
+                restaurantOrder.isRestaurantOrder
+                    ? `🛵 طلب جديد من مطعم ${restaurantOrder.restaurantName || 'من في السكة'} بانتظارك!`
+                    : '🛵 طلب جديد بانتظارك من الإدارة!',
+                { duration: 6000 }
+            )
+        }
+
+        activeOrdersRef.current = nextActiveOrders
+        setIsLoading(false)
+    }, [fetchDeliveredOrders, fetchOrders])
+
+    useEffect(() => {
         const init = async () => {
             setIsLoading(true)
             const { data: { session } } = await supabase.auth.getSession()
@@ -345,21 +400,9 @@ export default function DriverDashboard() {
             if (!isDriver) { router.push('/account'); return; }
             setDriverUser(user)
 
-            const [active, delivered] = await Promise.all([
-                fetchOrders(session, user.id),
-                fetchDeliveredOrders(user.id)
-            ])
-
-            // Also fetch driver availability status
             initializeDriver()
-
-            // Seed known IDs on first load to avoid fake notifications
-            active.forEach(o => knownOrderIds.current.add(o.id))
+            await refreshDriverOrders(session, user.id, { withLoader: false })
             isFirstLoad.current = false
-
-            setActiveOrders(active)
-            setDeliveredOrders(delivered)
-            setIsLoading(false)
 
             // Real-time subscription for new/updated orders
             const channel = supabase
@@ -369,64 +412,21 @@ export default function DriverDashboard() {
                     schema: 'public',
                     table: 'orders'
                 }, async (payload: any) => {
-                    const updated = payload.new
-                    if (!updated) return
-                    const isForThisDriver = updated.shipping_address?.driver?.id === user.id
+                    const nextDriverId = payload.new?.shipping_address?.driver?.id
+                    const previousDriverId = payload.old?.shipping_address?.driver?.id
+                    const affectsThisDriver = nextDriverId === user.id || previousDriverId === user.id
 
-                    if (updated.status === 'delivered' && isForThisDriver) {
-                        // Move to delivered section
-                        setActiveOrders(prev => prev.filter(o => o.id !== updated.id))
-                        setDeliveredOrders(prev => {
-                             if (prev.find(o => o.id === updated.id)) return prev
-                             return [{ ...updated }, ...prev]
-                        })
-                        return
-                    }
+                    if (!affectsThisDriver) return
 
-                    if (!isForThisDriver) return
-
-                    // It's a new active order for this driver via postgres changes 
-                    // To prevent double notifications, we ignore 'pending' assignments here.
-                    // The broadcast event handles 'pending' assignments perfectly.
-                    if (updated.shipping_address?.driver?.acceptance_status === 'pending') {
-                        return; // Let the broadcast handle the ping
-                    }
-
-                    if (!knownOrderIds.current.has(updated.id)) {
-                        knownOrderIds.current.add(updated.id)
-                        if (notificationsAllowed) {
-                            playNotificationSound()
-                        }
-                        setActiveOrders(prev => [updated as DriverOrder, ...prev])
-                    } else {
-                        setActiveOrders(prev => prev.map(o => o.id === updated.id ? { ...o, ...updated } : o))
+                    const { data: { session: liveSession } } = await supabase.auth.getSession()
+                    if (liveSession) {
+                        await refreshDriverOrders(liveSession, user.id, { notifyNewOrders: true, withLoader: false })
                     }
                 })
                 .on('broadcast', { event: 'new-assignment' }, async () => {
-                    // Ping received directly from Admin notify backend
-                    // Re-fetch orders for absolute data consistency
-                    const { data: { session } } = await supabase.auth.getSession()
-                    if (session) {
-                        const freshActive = await fetchOrders(session, user.id)
-                        
-                        // Register all fetched IDs so the fallback doesn't trigger on them later
-                        freshActive.forEach(o => knownOrderIds.current.add(o.id))
-                        
-                        setActiveOrders(freshActive)
-                        
-                        const newPendings = freshActive.filter(o => o.shipping_address?.driver?.acceptance_status === 'pending')
-                        if (newPendings.length > 0) {
-                             const restaurantOrder = getRestaurantOrderSnapshot(newPendings[0].shipping_address)
-                             if (notificationsAllowed) {
-                                 playNotificationSound()
-                             }
-                             toast(
-                                restaurantOrder.isRestaurantOrder
-                                    ? `🛵 طلب جديد من مطعم ${restaurantOrder.restaurantName || 'من في السكة'} بانتظارك!`
-                                    : '🛵 طلب جديد بانتظارك من الإدارة!',
-                                { duration: 6000 }
-                             )
-                        }
+                    const { data: { session: liveSession } } = await supabase.auth.getSession()
+                    if (liveSession) {
+                        await refreshDriverOrders(liveSession, user.id, { notifyNewOrders: true, withLoader: false })
                     }
                 })
                 .subscribe()
@@ -441,7 +441,7 @@ export default function DriverDashboard() {
         } else {
             setPushStatus('unsupported')
         }
-    }, [fetchOrders, fetchDeliveredOrders, notificationsAllowed, router])
+    }, [initializeDriver, refreshDriverOrders, router])
 
     const syncDriverPushSubscription = useCallback(async (subscription: PushSubscription) => {
         const { data: { session } } = await supabase.auth.getSession()
