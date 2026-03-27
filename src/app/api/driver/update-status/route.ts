@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createUserNotificationWithPush } from '@/lib/user-push-server';
+import { createOrderAdminNotificationsWithPush, createUserNotificationWithPush } from '@/lib/user-push-server';
 import { driverSupabaseAdmin, requireDriverApi } from '@/lib/driver-guard';
 
 export async function POST(request: Request) {
@@ -86,6 +86,19 @@ export async function POST(request: Request) {
                     orderId, 
                     driverName: auth.profile.fullName || 'مندوب' 
                 }
+            });
+
+            const customerName =
+                order.shipping_address?.recipient ||
+                order.shipping_address?.recipientName ||
+                order.shipping_address?.full_name ||
+                'العميل';
+
+            await createOrderAdminNotificationsWithPush(driverSupabaseAdmin, {
+                title: 'تم توصيل الطلب بنجاح',
+                message: `شكرًا لكم، تم توصيل طلب ${customerName} بنجاح بواسطة ${auth.profile.fullName || 'المندوب'}.`,
+                link: '/admin/orders',
+                topic: 'admin-order-delivered',
             });
 
             // CREATE IN-APP NOTIFICATION FOR THE CUSTOMER

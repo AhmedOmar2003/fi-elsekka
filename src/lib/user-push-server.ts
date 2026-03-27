@@ -133,3 +133,50 @@ export async function createUserNotificationWithPush(
     push: pushResult,
   };
 }
+
+type OrderAwareAdminProfile = {
+  id: string;
+  role?: string | null;
+  permissions?: string[] | null;
+  disabled?: boolean | null;
+};
+
+function canReceiveOrderAdminNotification(profile: OrderAwareAdminProfile) {
+  if (!profile || profile.disabled === true) return false;
+  if (profile.role === 'super_admin' || profile.role === 'admin') return true;
+  return Array.isArray(profile.permissions) && profile.permissions.includes('view_orders');
+}
+
+export async function createOrderAdminNotificationsWithPush(
+  supabaseAdmin: any,
+  payload: PushNotificationPayload
+) {
+  const { data: adminUsers, error } = await supabaseAdmin
+    .from('users')
+    .select('id, role, permissions, disabled')
+    .in('role', ['super_admin', 'admin', 'operations_manager', 'catalog_manager', 'support_agent']);
+
+  if (error) {
+    console.error('Failed to fetch admin notification recipients:', error);
+    return { success: false, recipients: 0, sent: 0 };
+  }
+
+  const recipients = ((adminUsers || []) as OrderAwareAdminProfile[]).filter(canReceiveOrderAdminNotification);
+  if (recipients.length === 0) {
+    return { success: true, recipients: 0, sent: 0 };
+  }
+
+  let sent = 0;
+  await Promise.all(
+    recipients.map(async (recipient) => {
+      const result = await createUserNotificationWithPush(supabaseAdmin, recipient.id, payload);
+      if (result.success) sent += 1;
+    })
+  );
+
+  return {
+    success: true,
+    recipients: recipients.length,
+    sent,
+  };
+}

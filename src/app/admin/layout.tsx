@@ -15,6 +15,7 @@ import { signOut } from '@/services/authService';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { hasFullAdminAccess, hasPermission } from '@/lib/permissions';
+import { AdminNotificationBell } from '@/components/admin/admin-notification-bell';
 
 // ── Types ────────────────────────────────────────────────────
 interface Notification {
@@ -642,7 +643,7 @@ WHERE email = '${user.email}';`}
                             </Link>
                         )}
                         {/* Realtime Notification Bell */}
-                        <NotificationBell />
+                        <AdminNotificationBell />
                         {canManageSettings && (
                             <Link href="/admin/settings">
                                 <button className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">
