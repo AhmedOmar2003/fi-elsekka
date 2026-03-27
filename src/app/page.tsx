@@ -97,18 +97,20 @@ export default async function Home() {
                     <Zap className="w-5 h-5 text-amber-500" />
                     <span>سريع ومريح</span>
                   </div>
-                  <div className="material-chip text-xs sm:text-sm">
-                    <MapPin className="w-5 h-5 text-primary" />
-                    <span>التوصيل الحالي: قرية ميت العامل فقط</span>
-                  </div>
-                  <div className="material-chip text-xs sm:text-sm">
-                    <Banknote className="w-5 h-5 text-emerald-500" />
-                    <span>مصاريف الشحن الحالية: {CURRENT_DELIVERY_FEE} ج.م</span>
-                  </div>
                 </div>
                 <p className="mt-4 text-xs leading-6 text-gray-500 sm:mt-5 sm:text-sm">
                   لو ملقتش المنتج اللي عاوزه، تقدر تطلبه من زر <span className="font-black text-primary">ملقتش المنتج؟</span> وإحنا نرجعلك بالسعر قبل ما تكمل.
                 </p>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-gray-500 sm:justify-start sm:text-xs">
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    التوصيل الحالي داخل قرية ميت العامل فقط
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Banknote className="h-4 w-4 text-emerald-500" />
+                    الشحن الحالي {CURRENT_DELIVERY_FEE} ج.م
+                  </span>
+                </div>
               </div>
 
               {/* Hero Image Mock */}
@@ -232,18 +234,18 @@ export default async function Home() {
         </section>
 
         {/* Delivery Trust Section */}
-        <section className="relative mt-12 overflow-hidden py-20">
+        <section className="relative mt-12 overflow-hidden py-16">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
           <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px]"></div>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="material-card grid grid-cols-1 gap-12 rounded-[34px] p-10 text-center sm:gap-8 md:grid-cols-3 md:divide-x md:divide-x-reverse md:divide-y-0 lg:p-14 divide-y divide-surface-border/50">
+            <div className="material-card grid grid-cols-1 gap-10 rounded-[34px] p-8 text-center sm:gap-8 md:grid-cols-3 md:divide-x md:divide-x-reverse md:divide-y-0 lg:p-12 divide-y divide-surface-border/50">
 
               <div className="flex flex-col items-center pt-8 md:pt-0 group">
                 <div className="h-20 w-20 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 text-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/5 group-hover:scale-110 transition-transform duration-500">
                   <Banknote className="w-10 h-10" />
                 </div>
                 <h3 className="text-xl font-heading font-bold mb-3 text-foreground drop-shadow-sm">الدفع وقت الاستلام</h3>
-                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">استلم طلبك الأول، واتطمن عليه، وبعدها ادفع كاش وإنت مرتاح.</p>
+                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">استلم طلبك، اتطمن عليه، وبعدها ادفع كاش وإنت مرتاح.</p>
               </div>
 
               <div className="flex flex-col items-center pt-8 md:pt-0 group">
@@ -251,7 +253,7 @@ export default async function Home() {
                   <Clock className="w-10 h-10" />
                 </div>
                 <h3 className="text-xl font-heading font-bold mb-3 text-foreground drop-shadow-sm">توصيل سريع</h3>
-                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">طلباتك بتوصلك بسرعة ومن غير لف كتير، عشان وقتك مهم عندنا.</p>
+                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">طلباتك بتوصلك بسرعة ومن غير لف كتير.</p>
               </div>
 
               <div className="flex flex-col items-center pt-8 md:pt-0 group">
@@ -259,15 +261,14 @@ export default async function Home() {
                   <ShieldCheck className="w-10 h-10" />
                 </div>
                 <h3 className="text-xl font-heading font-bold mb-3 text-foreground drop-shadow-sm">جودة تفرّح</h3>
-                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">بنختار منتجاتنا بعناية علشان اللي يوصلك يبقى نضيف ويستاهل فلوسه فعلًا.</p>
+                <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">بنختار منتجاتنا بعناية علشان اللي يوصلك يبقى نضيف ويستاهل.</p>
               </div>
 
             </div>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-center text-xs text-gray-500">
-              <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">التشغيل الحالي داخل قرية ميت العامل فقط</span>
-              <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">وقريبًا القرى المجاورة</span>
-              <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">الشحن الحالي {CURRENT_DELIVERY_FEE} ج.م</span>
-              <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">لو المنتج مش موجود هنرجعلك بالسعر الأول</span>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-center text-xs text-gray-500">
+              <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">ميت العامل فقط</span>
+              <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">قريبًا القرى المجاورة</span>
+              <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">الشحن {CURRENT_DELIVERY_FEE} ج.م</span>
             </div>
           </div>
         </section>
