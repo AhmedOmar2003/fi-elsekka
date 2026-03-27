@@ -19,6 +19,7 @@ export function MobileNav() {
     pathname.startsWith('/login') ||
     pathname.startsWith('/register') ||
     pathname.startsWith('/driver') ||
+    pathname.startsWith('/restaurant') ||
     pathname.startsWith('/admin') ||
     pathname.startsWith('/system-access');
 
