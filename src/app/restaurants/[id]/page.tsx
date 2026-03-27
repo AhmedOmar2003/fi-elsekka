@@ -74,15 +74,17 @@ export default async function RestaurantPage({
               <div className="space-y-5">
                 <Link
                   href={foodCategory?.id ? `/category/${foodCategory.id}` : "/category/all"}
-                  className="mb-5 inline-flex items-center gap-2 text-sm font-black text-primary"
+                  className="mb-5 hidden items-center gap-2 text-sm font-black text-primary md:inline-flex"
                 >
                   <ArrowRight className="h-4 w-4" />
                   رجوع لقسم الطعام
                 </Link>
-                <div className="inline-flex rounded-full border border-orange-500/15 bg-orange-500/10 px-3 py-1 text-xs font-black text-orange-300">
-                  {restaurant.cuisine || "مطاعم في السكة"}
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="text-3xl font-black text-foreground md:text-5xl">{restaurant.name}</h1>
+                  <div className="inline-flex rounded-full border border-orange-500/15 bg-orange-500/10 px-3 py-1 text-xs font-black text-orange-300">
+                    {restaurant.cuisine || "مطاعم في السكة"}
+                  </div>
                 </div>
-                <h1 className="mt-4 text-3xl font-black text-foreground md:text-5xl">{restaurant.name}</h1>
                 <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-400 md:text-base">
                   {restaurant.description || restaurant.short_description || "منيو مرتب وواضح، والأسعار والعروض كلها قدامك من غير لفة."}
                 </p>
