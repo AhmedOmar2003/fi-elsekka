@@ -80,6 +80,14 @@ function LoginContent() {
       return;
     }
 
+    if (userRole === 'restaurant_manager') {
+      await signOut()
+      setIsLoading(false)
+      setErrorMsg("الحساب ده مخصص لبوابة المطعم فقط. ادخل من بوابة المطاعم وهتظهر لك طلبات مطعمك على طول.")
+      router.push(`/restaurant/login?blocked=1&email=${encodeURIComponent(email)}`)
+      return
+    }
+
     if (userRole && userRole !== 'user' && userRole !== 'super_admin') {
       await signOut()
       setIsLoading(false)

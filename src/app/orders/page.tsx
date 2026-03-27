@@ -11,6 +11,7 @@ import { Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, ChevronDown,
 import { toast } from "sonner"
 import { RequestAttachmentsGallery } from "@/components/orders/request-attachments-gallery"
 import { SearchRequestProgress } from "@/components/orders/search-request-progress"
+import { formatRestaurantEtaWindow, getRestaurantOrderSnapshot } from "@/lib/restaurant-order"
 
 function isAwaitingTextOrderConfirmation(order: Order) {
   const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
@@ -303,6 +304,7 @@ function OrderCard({
   const quotedFinalTotal = Number(order.shipping_address?.quoted_final_total || order.total_amount || 0)
   const pricingUpdatedAt = order.shipping_address?.pricing_updated_at
   const [isSubmittingQuoteResponse, setIsSubmittingQuoteResponse] = useState<null | 'approve' | 'reject'>(null)
+  const restaurantOrder = getRestaurantOrderSnapshot(order.shipping_address)
 
   const handleCancelledOrderDecision = async (decision: 'insist' | 'confirm_cancel') => {
     setIsSubmittingCancelResponse(decision)
@@ -373,6 +375,26 @@ function OrderCard({
         <div className="border-t border-surface-hover p-4 sm:p-5 space-y-5 animate-in slide-in-from-top-2 duration-300">
           
           {/* Estimated Delivery Box */}
+          {restaurantOrder.isRestaurantOrder && (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <p className="text-xs font-bold uppercase mb-1 text-primary/80">طلب من مطعم</p>
+              <p className="font-black text-base text-foreground">
+                {restaurantOrder.restaurantName || 'مطعم من في السكة'}
+              </p>
+              {restaurantOrder.etaStatus === 'submitted' && !order.shipping_address?.estimated_delivery && (
+                <p className="mt-2 text-xs leading-6 text-gray-500">
+                  المطعم حدّد وقتًا مبدئيًا والإدارة بتراجعه الآن قبل ما توصله لك بشكل نهائي.
+                </p>
+              )}
+              {restaurantOrder.etaText && (
+                <p className="mt-2 text-xs text-gray-500">
+                  الموعد المبدئي من المطعم: <span className="font-bold text-foreground">{restaurantOrder.etaText}</span>
+                  <span className="mr-1">({formatRestaurantEtaWindow(restaurantOrder.etaDays, restaurantOrder.etaHours)})</span>
+                </p>
+              )}
+            </div>
+          )}
+
           <div className={`p-4 rounded-xl flex items-center gap-3 ${
             order.shipping_address?.estimated_delivery 
               ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-500' 

@@ -120,6 +120,17 @@ const CATEGORY_TAXONOMIES: CategoryTaxonomyConfig[] = [
     tertiaryLabel: "النوع الأدق",
     options: [
       {
+        value: "restaurants",
+        label: "مطاعم",
+        children: [
+          { value: "pizza", label: "بيتزا" },
+          { value: "grills", label: "مشويات" },
+          { value: "oriental", label: "شرقي" },
+          { value: "burgers", label: "برجر" },
+          { value: "desserts", label: "حلويات" },
+        ],
+      },
+      {
         value: "meals",
         label: "وجبات",
         children: [

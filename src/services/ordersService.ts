@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { CartItem } from './cartService';
 import { Product } from './productsService';
 import { attachOrderEconomics, CURRENT_DELIVERY_FEE, ORDER_ECONOMICS_VERSION } from '@/lib/order-economics';
+import { buildRestaurantOrderSnapshotFromCart } from '@/lib/restaurant-order';
 
 export interface Order {
     id: string;
@@ -35,9 +36,11 @@ export const createOrder = async (
     const hasTextRequestText = !!shippingDetails?.custom_request_text;
     const hasTextRequestImages = Array.isArray(shippingDetails?.custom_request_image_urls) && shippingDetails.custom_request_image_urls.length > 0;
     const isTextRequestOrder = shippingDetails?.request_mode === 'custom_category_text' && (hasTextRequestText || hasTextRequestImages);
+    const restaurantOrderSnapshot = buildRestaurantOrderSnapshotFromCart(cartItems);
     const shippingWithEconomics = isTextRequestOrder
         ? {
             ...(shippingDetails || {}),
+            ...restaurantOrderSnapshot,
             delivery_fee: CURRENT_DELIVERY_FEE,
             subtotal_amount: 0,
             gross_collected: 0,
@@ -55,6 +58,7 @@ export const createOrder = async (
         : attachOrderEconomics(
             {
                 ...(shippingDetails || {}),
+                ...restaurantOrderSnapshot,
                 delivery_fee: CURRENT_DELIVERY_FEE,
                 economics_version: ORDER_ECONOMICS_VERSION,
             },

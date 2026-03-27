@@ -36,6 +36,7 @@ const NAV_ITEMS = [
     { label: 'مركز العمليات', href: '/admin/operations', icon: AlertTriangle, fullAdmin: true },
     { label: 'المندوبين', href: '/admin/drivers', icon: Bike, perm: 'view_drivers' },
     { label: 'المنتجات', href: '/admin/products', icon: Package, perm: 'manage_products' },
+    { label: 'المطاعم', href: '/admin/restaurants', icon: ShoppingBag, perm: 'manage_products' },
     { label: 'الأقسام', href: '/admin/categories', icon: Tag, perm: 'manage_categories' },
     { label: 'المستخدمون', href: '/admin/users', icon: Users, perm: 'manage_users' },
     { label: 'إدارة الطاقم', href: '/admin/staff', icon: ShieldAlert, perm: 'manage_admins' },

@@ -30,6 +30,11 @@ export type ProductCatalogMetadata = {
   material: string;
   sizeGroup: string;
   relatedProductIds: string[];
+  restaurantId: string;
+  restaurantName: string;
+  restaurantItem: boolean;
+  restaurantAvailable: boolean;
+  availabilityMode: string;
 };
 
 export type RelatedProductScore = {
@@ -61,6 +66,11 @@ const METADATA_KEYS = [
   "custom_specs",
   "product_mode",
   "bundle_items",
+  "restaurant_id",
+  "restaurant_name",
+  "restaurant_item",
+  "restaurant_available",
+  "availability_mode",
 ] as const;
 
 const DEFAULT_PROFILE = {
@@ -239,6 +249,11 @@ export function getProductCatalogMetadata(specifications?: Record<string, any> |
     material: normalizeText(specifications?.material),
     sizeGroup: normalizeText(specifications?.size_group),
     relatedProductIds: normalizeStringArray(specifications?.related_product_ids),
+    restaurantId: normalizeText(specifications?.restaurant_id),
+    restaurantName: normalizeText(specifications?.restaurant_name),
+    restaurantItem: specifications?.restaurant_item === true,
+    restaurantAvailable: specifications?.restaurant_available !== false,
+    availabilityMode: normalizeText(specifications?.availability_mode) || "stock",
   };
 }
 
@@ -257,6 +272,11 @@ export function isPublishedProduct(product?: ProductRecordLike | null) {
 export function getManualRelatedProductIds(product?: ProductRecordLike | null) {
   if (!product) return [];
   return getProductCatalogMetadata(product.specifications).relatedProductIds.filter((id) => id !== product.id);
+}
+
+export function isRestaurantProduct(product?: ProductRecordLike | null) {
+  if (!product) return false;
+  return getProductCatalogMetadata(product.specifications).restaurantItem;
 }
 
 export function getSimilarityProfile(categoryName?: string | null) {
@@ -290,6 +310,11 @@ export function scoreRelatedProduct(baseProduct: ProductRecordLike, candidatePro
   if (baseProduct.category_id && candidateProduct.category_id && baseProduct.category_id === candidateProduct.category_id) {
     score += 18;
     reasons.push("نفس القسم");
+  }
+
+  if (baseMeta.restaurantId && candidateMeta.restaurantId && baseMeta.restaurantId === candidateMeta.restaurantId) {
+    score += 36;
+    reasons.push("من نفس المطعم");
   }
 
   if (baseTaxonomy.tertiary && candidateTaxonomy.tertiary && baseTaxonomy.tertiary === candidateTaxonomy.tertiary) {

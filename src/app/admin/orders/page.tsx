@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { getOrderEconomics } from '@/lib/order-economics';
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery';
 import { SearchRequestProgress } from '@/components/orders/search-request-progress';
+import { formatRestaurantEtaWindow, getRestaurantOrderSnapshot } from '@/lib/restaurant-order';
 
 const STATUS_FILTERS = [
     { value: 'pending', label: 'في الانتظار', color: 'text-amber-400  bg-amber-400/10  border-amber-400/20' },
@@ -163,6 +164,11 @@ export default function AdminOrdersPage() {
                 const { orderId, driverName } = payload.payload;
                 import('sonner').then(({ toast }) => toast.success(`تم توصيل الطلب #${orderId.slice(-6).toUpperCase()} بنجاح بواسطة ${driverName} 📦✅`));
                 load(); // Reload orders to show 'delivered' status dynamically
+            })
+            .on('broadcast', { event: 'restaurant-eta-submitted' }, (payload: any) => {
+                const { orderId, restaurantName, etaText } = payload.payload || {};
+                import('sonner').then(({ toast }) => toast.success(`المطعم ${restaurantName || ''} حدّد وقتًا جديدًا للطلب #${String(orderId || '').slice(-6).toUpperCase()}: ${etaText || 'راجع الطلب'}`));
+                load();
             })
             .on('broadcast', { event: 'driver-availability-changed' }, (payload: any) => {
                 const { driverName, isAvailable } = payload.payload;
@@ -465,6 +471,25 @@ export default function AdminOrdersPage() {
     const selectedOrderQuoteResponse = selectedOrder?.shipping_address?.customer_quote_response;
     const selectedOrderQuoteResponseAt = selectedOrder?.shipping_address?.customer_quote_response_at;
     const canAssignSelectedTextOrderDriver = !selectedOrderIsTextRequest || selectedOrderQuoteResponse === 'approve';
+    const selectedOrderRestaurant = getRestaurantOrderSnapshot(selectedOrder?.shipping_address);
+    const canEditDeliveryPlan = selectedOrder
+        ? selectedOrder.shipping_address?.driver?.acceptance_status === 'accepted' || selectedOrderRestaurant.isRestaurantOrder
+        : false;
+
+    const useRestaurantEtaSuggestion = () => {
+        if (!selectedOrderRestaurant.etaText) return;
+        setEstimatedTime(selectedOrderRestaurant.etaText);
+        setEtaHours(selectedOrderRestaurant.etaHours);
+        setEtaDays(selectedOrderRestaurant.etaDays);
+        setDriverNote((prev) => {
+            const restaurantPrefix = selectedOrderRestaurant.restaurantName
+                ? `الطلب من مطعم ${selectedOrderRestaurant.restaurantName}.`
+                : 'الطلب من مطعم.';
+            const etaNote = selectedOrderRestaurant.etaNote ? ` ملاحظة المطعم: ${selectedOrderRestaurant.etaNote}` : '';
+            return `${restaurantPrefix}${etaNote}`.trim() || prev;
+        });
+        toast.success('تم تحميل وقت المطعم داخل خطة التوصيل، راجعه واضغط حفظ');
+    };
 
     return (
         <div className="space-y-5">
@@ -704,12 +729,65 @@ export default function AdminOrdersPage() {
                                     <div>
                                         <p className="text-xs font-bold text-gray-500">خطة التوصيل</p>
                                         <p className="text-[11px] text-gray-500">
-                                            لا تُحسب المهلة إلا بعد ما يؤكد المندوب استلام الطلب ويكون جاهزًا للتوصيل.
+                                            {selectedOrderRestaurant.isRestaurantOrder
+                                                ? 'لو المطعم حدّد موعدًا، تقدر تستخدمه كما هو أو تعدّله قبل ما توصله للعميل والمندوب.'
+                                                : 'لا تُحسب المهلة إلا بعد ما يؤكد المندوب استلام الطلب ويكون جاهزًا للتوصيل.'}
                                         </p>
                                     </div>
                                 </div>
 
-                                {selectedOrder.shipping_address?.driver?.acceptance_status !== 'accepted' ? (
+                                {selectedOrderRestaurant.isRestaurantOrder && (
+                                    <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 px-3 py-3 text-sm text-sky-400 space-y-2">
+                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                            <div>
+                                                <p className="font-black">رد المطعم الحالي</p>
+                                                <p className="mt-1 text-xs text-sky-100/80">
+                                                    {selectedOrderRestaurant.restaurantName
+                                                        ? `المطعم: ${selectedOrderRestaurant.restaurantName}`
+                                                        : 'طلب مطعم'}
+                                                </p>
+                                            </div>
+                                            <span className={`rounded-full border px-3 py-1 text-[11px] font-black ${
+                                                selectedOrderRestaurant.etaStatus === 'approved'
+                                                    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+                                                    : selectedOrderRestaurant.etaStatus === 'submitted'
+                                                        ? 'border-sky-500/20 bg-sky-500/10 text-sky-300'
+                                                        : 'border-amber-400/20 bg-amber-400/10 text-amber-400'
+                                            }`}>
+                                                {selectedOrderRestaurant.etaStatus === 'approved'
+                                                    ? 'اعتمدته الإدارة'
+                                                    : selectedOrderRestaurant.etaStatus === 'submitted'
+                                                        ? 'المطعم رد'
+                                                        : 'بانتظار المطعم'}
+                                            </span>
+                                        </div>
+
+                                        {selectedOrderRestaurant.etaText ? (
+                                            <>
+                                                <p className="font-black text-white">{selectedOrderRestaurant.etaText}</p>
+                                                <p className="text-xs text-sky-100/80">
+                                                    المدة: {formatRestaurantEtaWindow(selectedOrderRestaurant.etaDays, selectedOrderRestaurant.etaHours)}
+                                                </p>
+                                                {selectedOrderRestaurant.etaNote && (
+                                                    <p className="text-xs text-sky-100/80">ملاحظة المطعم: {selectedOrderRestaurant.etaNote}</p>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={useRestaurantEtaSuggestion}
+                                                    className="rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-black text-white transition-colors hover:bg-white/15"
+                                                >
+                                                    استخدم وقت المطعم مباشرة
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <p className="text-xs text-sky-100/80">
+                                                أول ما المطعم يحدد وقت التوصيل، هيظهر لك هنا مباشرة.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {!canEditDeliveryPlan ? (
                                     <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-3 text-xs text-amber-500">
                                         انتظر حتى يؤكد المندوب استلام الطلب. بعدها سيتاح لك تحديد النص + عدد الساعات + عدد الأيام للمحاسبة على التأخير.
                                     </div>
@@ -756,7 +834,7 @@ export default function AdminOrdersPage() {
                                                 value={driverNote}
                                                 onChange={e => setDriverNote(e.target.value)}
                                                 rows={3}
-                                                placeholder="مثال: أمامك 4 ساعات للوصول، لو في تأخير بلغ الإدارة فورًا"
+                                                placeholder={selectedOrderRestaurant.isRestaurantOrder ? "مثال: الطلب من مطعم بيتزا بينز، الموعد المتوقع 45 دقيقة" : "مثال: أمامك 4 ساعات للوصول، لو في تأخير بلغ الإدارة فورًا"}
                                                 className="w-full resize-none bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
                                             />
                                         </div>

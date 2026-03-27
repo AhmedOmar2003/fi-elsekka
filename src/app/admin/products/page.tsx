@@ -25,6 +25,7 @@ import {
 import { getAdminProductPresets, getAdminProductSuggestions } from '@/lib/admin-product-suggestions';
 import { ChipsInput } from '@/components/admin/chips-input';
 import { RelatedProductsPicker } from '@/components/admin/related-products-picker';
+import { fetchAdminRestaurants, type Restaurant } from '@/services/restaurantsService';
 
 type Product = {
     id: string;
@@ -64,6 +65,8 @@ const EMPTY_FORM = {
     color_family: '',
     material: '',
     size_group: '',
+    restaurant_id: '',
+    restaurant_available: true,
     related_product_ids: [] as string[],
     images: ['', '', '', ''],
     image_file: null as File | null,
@@ -111,6 +114,7 @@ export default function AdminProductsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [form, setForm] = useState({ ...EMPTY_FORM });
+    const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const fileInput = useRef<HTMLInputElement>(null);
@@ -121,6 +125,8 @@ export default function AdminProductsPage() {
     const taxonomySecondaryOptions = getTaxonomySecondaryOptions(selectedCategoryName, form.taxonomy_primary);
     const taxonomyTertiaryOptions = getTaxonomyTertiaryOptions(selectedCategoryName, form.taxonomy_primary, form.taxonomy_secondary);
     const taxonomyLabels = getTaxonomyLabel(selectedCategoryName, form.taxonomy_primary, form.taxonomy_secondary, form.taxonomy_tertiary);
+    const isRestaurantMenuProduct = selectedCategoryName === 'طعام' && form.taxonomy_primary === 'restaurants';
+    const selectedRestaurant = restaurants.find((restaurant) => restaurant.id === form.restaurant_id) || null;
     const smartSuggestions = React.useMemo(() => getAdminProductSuggestions({
         name: form.name,
         brand: form.brand,
@@ -177,9 +183,10 @@ export default function AdminProductsPage() {
 
     const load = async () => {
         setIsLoading(true);
-        const [p, c] = await Promise.all([fetchAdminProducts(), fetchAdminCategories()]);
+        const [p, c, r] = await Promise.all([fetchAdminProducts(), fetchAdminCategories(), fetchAdminRestaurants()]);
         setProducts(p as Product[]);
         setCategories(c as Category[]);
+        setRestaurants(r);
         setIsLoading(false);
     };
 
@@ -260,6 +267,8 @@ export default function AdminProductsPage() {
             color_family: metadata.colorFamily,
             material: metadata.material,
             size_group: metadata.sizeGroup,
+            restaurant_id: metadata.restaurantId,
+            restaurant_available: metadata.restaurantAvailable,
             related_product_ids: metadata.relatedProductIds.filter((id) => id !== p.id),
             images: [
                 pImages[0] || '',
@@ -324,6 +333,10 @@ export default function AdminProductsPage() {
             toast.error(`اختار ${taxonomyConfig.tertiaryLabel || 'التصنيف الأدق'} علشان الترشيحات تبقى أذكى`);
             return;
         }
+        if (isRestaurantMenuProduct && !form.restaurant_id) {
+            toast.error('اختار المطعم اللي المنيو دي تابعة له الأول');
+            return;
+        }
         setSaveError(null);
         setSaveSuccess(false);
         setIsSaving(true);
@@ -366,11 +379,14 @@ export default function AdminProductsPage() {
                 }))
                 .filter(item => item.name);
 
+            const normalizedStockQuantity = isRestaurantMenuProduct
+                ? (form.restaurant_available ? 999 : 0)
+                : (parseInt(form.stock_quantity) || 0);
             const payload: Record<string, unknown> = {
                 name: form.name.trim(),
                 description: form.description.trim() || null,
                 price: parseFloat(form.price),
-                stock_quantity: parseInt(form.stock_quantity) || 0,
+                stock_quantity: normalizedStockQuantity,
                 discount_percentage: parseFloat(form.discount_percentage) || 0,
                 category_id: form.category_id || null,
                 image_url: finalImageUrl && !finalImageUrl.startsWith('blob:') ? finalImageUrl : null,
@@ -395,6 +411,11 @@ export default function AdminProductsPage() {
                     color_family: form.color_family.trim(),
                     material: form.material.trim(),
                     size_group: form.size_group.trim(),
+                    restaurant_id: isRestaurantMenuProduct ? form.restaurant_id : "",
+                    restaurant_name: isRestaurantMenuProduct ? (selectedRestaurant?.name || "") : "",
+                    restaurant_item: isRestaurantMenuProduct,
+                    restaurant_available: isRestaurantMenuProduct ? form.restaurant_available : true,
+                    availability_mode: isRestaurantMenuProduct ? "manual" : "stock",
                     related_product_ids: Array.from(new Set(form.related_product_ids.filter(id => id && id !== editingId))),
                     product_mode: form.product_mode,
                     bundle_items: form.product_mode === 'bundle' ? cleanedBundleItems : [],
@@ -776,13 +797,13 @@ export default function AdminProductsPage() {
                                 </div>
                             </div>
 
-                            {[ 
+                            {[
                                 { key: 'name', label: 'اسم المنتج *', placeholder: 'اسم المنتج', type: 'text' },
                                 { key: 'description', label: 'الوصف', placeholder: 'وصف مختصر للمنتج', type: 'textarea' },
                                 { key: 'price', label: 'السعر (ج.م) *', placeholder: '100', type: 'number' },
                                 { key: 'stock_quantity', label: 'الكمية في المخزن', placeholder: '0', type: 'number' },
                                 { key: 'discount_percentage', label: 'الخصم (%)', placeholder: '0', type: 'number' },
-                            ].map(({ key, label, placeholder, type }) => (
+                            ].filter(field => !(isRestaurantMenuProduct && field.key === 'stock_quantity')).map(({ key, label, placeholder, type }) => (
                                 <div key={key}>
                                     <label className={modalSectionLabelClass}>{label}</label>
                                     {type === 'textarea' ? (
@@ -804,6 +825,12 @@ export default function AdminProductsPage() {
                                     )}
                                 </div>
                             ))}
+
+                            {isRestaurantMenuProduct && (
+                                <div className="md:col-span-2 rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-xs text-primary">
+                                    في منتجات المطاعم مش بنسجل مخزون رقمي. حالة التوفر هتتحدد من اختيار <span className="font-black">متاح الآن</span> تحت.
+                                </div>
+                            )}
 
                             <div className="rounded-2xl border border-emerald-400/10 bg-[#101815]/70 p-4 space-y-4">
                                 <div>
@@ -1023,6 +1050,8 @@ export default function AdminProductsPage() {
                                                 taxonomy_primary: nextTaxonomyConfig ? f.taxonomy_primary : '',
                                                 taxonomy_secondary: nextTaxonomyConfig ? f.taxonomy_secondary : '',
                                                 taxonomy_tertiary: nextTaxonomyConfig ? f.taxonomy_tertiary : '',
+                                                restaurant_id: nextCategoryName === 'طعام' ? f.restaurant_id : '',
+                                                restaurant_available: nextCategoryName === 'طعام' ? f.restaurant_available : true,
                                             }));
                                         }}
                                         className={`${modalSelectClass} pr-9 pl-3`}
@@ -1044,7 +1073,14 @@ export default function AdminProductsPage() {
                                             <label className="block text-[11px] font-black text-gray-300 mb-1.5">{taxonomyConfig.primaryLabel}</label>
                                             <select
                                                 value={form.taxonomy_primary}
-                                                onChange={e => setForm(f => ({ ...f, taxonomy_primary: e.target.value, taxonomy_secondary: '', taxonomy_tertiary: '' }))}
+                                                onChange={e => setForm(f => ({
+                                                    ...f,
+                                                    taxonomy_primary: e.target.value,
+                                                    taxonomy_secondary: '',
+                                                    taxonomy_tertiary: '',
+                                                    restaurant_id: e.target.value === 'restaurants' ? f.restaurant_id : '',
+                                                    restaurant_available: e.target.value === 'restaurants' ? f.restaurant_available : true,
+                                                }))}
                                                 className={modalSelectClass}
                                             >
                                                 <option value="">اختار التصنيف الرئيسي</option>
@@ -1168,10 +1204,53 @@ export default function AdminProductsPage() {
                                             ))}
                                         </div>
                                     </div>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="rounded-2xl border border-emerald-400/10 bg-[#101815]/70 p-4 space-y-4">
+                                {isRestaurantMenuProduct && (
+                                    <div className="rounded-2xl border border-orange-500/15 bg-orange-500/5 p-4 space-y-4">
+                                        <div>
+                                            <p className="text-sm font-black text-foreground">ربط المنتج بمطعم</p>
+                                            <p className="mt-1 text-[11px] leading-5 text-gray-500">
+                                                منتجات المطاعم ما بنعتمدش فيها على المخزون التقليدي. أنت بتحدد المطعم، ومن هنا تختار هل الصنف متاح الآن ولا لأ.
+                                            </p>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div>
+                                                <label className={modalSectionLabelClass}>المطعم</label>
+                                                <select
+                                                    value={form.restaurant_id}
+                                                    onChange={e => setForm(f => ({ ...f, restaurant_id: e.target.value }))}
+                                                    className={modalSelectClass}
+                                                >
+                                                    <option value="">اختار المطعم</option>
+                                                    {restaurants.map(restaurant => (
+                                                        <option key={restaurant.id} value={restaurant.id}>{restaurant.name}</option>
+                                                    ))}
+                                                </select>
+                                                <p className="mt-1 text-[10px] text-gray-500">
+                                                    لو المطعم لسه مش موجود، ضيفه أولًا من صفحة المطاعم في لوحة الإدارة.
+                                                </p>
+                                            </div>
+                                            <div className="rounded-2xl border border-surface-hover bg-[#101815] px-4 py-3">
+                                                <label className="flex items-center gap-3 text-sm font-bold text-foreground">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={form.restaurant_available}
+                                                        onChange={e => setForm(f => ({ ...f, restaurant_available: e.target.checked }))}
+                                                        className="accent-primary"
+                                                    />
+                                                    متاح الآن للطلب
+                                                </label>
+                                                <p className="mt-2 text-[11px] leading-5 text-gray-500">
+                                                    لو شلت العلامة، المنتج يفضل ظاهر لكن يبقى واضح إنه غير متاح حاليًا من المطعم.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="rounded-2xl border border-emerald-400/10 bg-[#101815]/70 p-4 space-y-4">
                                 <div>
                                     <label className="block text-sm font-black text-foreground mb-1">حقول التشابه الذكي</label>
                                     <p className="text-[11px] text-gray-500">الحقول دي هي اللي هتخلّي النظام يطلع منتجات مشابهة بذكاء حسب كل قسم.</p>

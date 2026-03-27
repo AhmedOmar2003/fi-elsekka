@@ -7,6 +7,7 @@ import { signOut } from '@/services/authService'
 import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown, ChevronUp, Bell, BellOff, X, AlertCircle, Coffee, Truck } from 'lucide-react'
 import { toast } from 'sonner'
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery'
+import { formatRestaurantEtaWindow, getRestaurantOrderSnapshot } from '@/lib/restaurant-order'
 
 // Helper for VAPID key conversion
 function urlBase64ToUint8Array(base64String: string) {
@@ -70,6 +71,7 @@ function OrderCard({ order, onMarkDelivered, onMarkPickedUp, isUpdating }: {
     ].filter(Boolean).join('، ')
     const driverInstruction = order.shipping_address?.driver_delivery_note?.trim()
     const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
+    const restaurantOrder = getRestaurantOrderSnapshot(order.shipping_address)
     const textRequest = order.shipping_address?.custom_request_text
     const textRequestCategory = order.shipping_address?.custom_request_category_name
     const textRequestImageUrls = Array.isArray(order.shipping_address?.custom_request_image_urls) ? order.shipping_address.custom_request_image_urls : []
@@ -121,6 +123,24 @@ function OrderCard({ order, onMarkDelivered, onMarkPickedUp, isUpdating }: {
             {/* Expanded body */}
             {expanded && (
                 <div className="border-t border-surface-hover p-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                    {restaurantOrder.isRestaurantOrder && (
+                        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
+                            <p className="text-xs font-black text-primary/80">طلب مطعم</p>
+                            <p className="text-sm font-black text-foreground">
+                                استلامك هيكون من مطعم: {restaurantOrder.restaurantName || 'مطعم من في السكة'}
+                            </p>
+                            {order.shipping_address?.estimated_delivery ? (
+                                <p className="text-xs text-gray-500">
+                                    الموعد المعتمد للعميل: {order.shipping_address.estimated_delivery}
+                                </p>
+                            ) : restaurantOrder.etaText ? (
+                                <p className="text-xs text-gray-500">
+                                    المطعم قال: {restaurantOrder.etaText} ({formatRestaurantEtaWindow(restaurantOrder.etaDays, restaurantOrder.etaHours)})
+                                </p>
+                            ) : null}
+                        </div>
+                    )}
+
                     <div className="flex items-start gap-3">
                         <Phone className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
                         <div className="flex-1">

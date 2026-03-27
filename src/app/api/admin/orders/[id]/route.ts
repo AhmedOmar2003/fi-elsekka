@@ -214,7 +214,9 @@ export async function PATCH(request: NextRequest, context: any) {
       return NextResponse.json({ error: 'لا يمكن تعيين موعد توصيل لطلب غير نشط', stage: 'validate.status' }, { status: 400 });
     }
 
-    if (order.shipping_address?.driver?.acceptance_status !== 'accepted') {
+    const isRestaurantOrder = order.shipping_address?.restaurant_order === true || !!order.shipping_address?.restaurant_id;
+
+    if (!isRestaurantOrder && order.shipping_address?.driver?.acceptance_status !== 'accepted') {
       return NextResponse.json({ error: 'انتظر حتى يؤكد المندوب استلام الطلب أولاً', stage: 'validate.driver_acceptance' }, { status: 400 });
     }
 
@@ -230,6 +232,12 @@ export async function PATCH(request: NextRequest, context: any) {
       delivery_eta_set_at: startedAt.toISOString(),
       delivery_deadline_at: deadlineAt.toISOString(),
       delivery_late_buffer_minutes: LATE_BUFFER_MINUTES,
+      ...(isRestaurantOrder
+        ? {
+            restaurant_eta_status: 'approved',
+            restaurant_eta_approved_at: startedAt.toISOString(),
+          }
+        : {}),
     };
 
     const { error: updateError } = await supabaseAdmin

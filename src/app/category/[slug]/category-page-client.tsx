@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { ProductCard } from "@/components/ui/product-card"
+import { RestaurantCard } from "@/components/ui/restaurant-card"
 import { ProductCardSkeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -13,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
 import { Loader2, Search, X } from "lucide-react"
 import { Product, fetchPaginatedProducts } from "@/services/productsService"
+import type { Restaurant } from "@/services/restaurantsService"
 import { useProducts } from "@/contexts/ProductsContext"
 import { isRequestOnlyTextCategory } from "@/lib/text-category-orders"
 import { CategoryRequestPanel } from "@/components/categories/category-request-panel"
@@ -32,6 +34,7 @@ type CategoryPageClientProps = {
   initialCategory?: Category | null
   initialProducts?: Product[]
   initialHasMore?: boolean
+  initialRestaurants?: Restaurant[]
   initialSearchQuery?: string
 }
 
@@ -39,6 +42,7 @@ export default function CategoryPageClient({
   initialCategory = null,
   initialProducts = [],
   initialHasMore = false,
+  initialRestaurants = [],
   initialSearchQuery = "",
 }: CategoryPageClientProps) {
   const params = useParams()
@@ -57,6 +61,7 @@ export default function CategoryPageClient({
   const [isInitialLoading, setIsInitialLoading] = React.useState(isAllPage && initialProducts.length === 0)
 
   const [categoryProducts, setCategoryProducts] = React.useState<Product[]>(!isAllPage ? initialProducts : [])
+  const [restaurants] = React.useState<Restaurant[]>(initialRestaurants)
   const [isCategoryLoading, setIsCategoryLoading] = React.useState(!isAllPage && initialProducts.length === 0)
 
   React.useEffect(() => {
@@ -145,6 +150,7 @@ export default function CategoryPageClient({
   const categoryName = currentCategory?.name || (isAllPage ? "كل المنتجات" : "قسم المنتجات")
   const isRequestOnlyCategoryPage = !!currentCategory && isRequestOnlyTextCategory(currentCategory.name)
   const canShowRequestPageLink = !!currentCategory && !isAllPage
+  const isFoodCategoryPage = currentCategory?.name === "طعام"
   const taxonomyConfig = getCategoryTaxonomyConfig(currentCategory?.name)
   const taxonomyPrimaryOptions = getTaxonomyPrimaryOptions(currentCategory?.name)
   const taxonomySecondaryOptions = getTaxonomySecondaryOptions(currentCategory?.name, taxonomyPrimaryFilter)
@@ -184,8 +190,14 @@ export default function CategoryPageClient({
     availableOnly ||
     offersOnly
 
+  const showRestaurantsView = isFoodCategoryPage && taxonomyPrimaryFilter === "restaurants"
+
   const displayProducts = React.useMemo(() => {
     let filtered = [...allProducts]
+
+    if (isFoodCategoryPage) {
+      filtered = filtered.filter((product) => product.specifications?.restaurant_item !== true)
+    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase()
@@ -261,9 +273,21 @@ export default function CategoryPageClient({
     taxonomySecondaryFilter,
     availableOnly,
     offersOnly,
+    isFoodCategoryPage,
   ])
 
   const productCards = displayProducts.map(toProductCardProps)
+  const restaurantCards = React.useMemo(() => {
+    let filtered = [...restaurants]
+    if (taxonomySecondaryFilter) {
+      filtered = filtered.filter((restaurant) =>
+        String(restaurant.cuisine || "")
+          .toLowerCase()
+          .includes(taxonomySecondaryFilter.toLowerCase())
+      )
+    }
+    return filtered
+  }, [restaurants, taxonomySecondaryFilter])
 
   return (
     <>
@@ -272,15 +296,32 @@ export default function CategoryPageClient({
         <div className="bg-surface border-b border-surface-hover py-6 md:py-10">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl md:text-4xl font-black text-foreground">
-              {searchQuery ? `نتايج البحث: "${searchQuery}"` : categoryName}
+              {searchQuery ? `نتايج البحث: "${searchQuery}"` : showRestaurantsView ? "مطاعم في السكة" : categoryName}
             </h1>
             <p className="mt-2 text-gray-500">
               {searchQuery
                 ? `تم العثور على ${productCards.length} منتج`
+                : showRestaurantsView
+                  ? "اختار المطعم اللي يعجبك، وادخل شوف المنيو والطلبات اللي بيقدمها من مكان واحد."
                 : isRequestOnlyCategoryPage
                   ? "القسم ده بيتطلب بالنص أو بالروشتة، وإحنا هنراجعه معاك خطوة بخطوة."
                                                 : "تصفح المنتجات الأول، ولو ملقتش اللي عاوزه اطلبه من زر ملقتش المنتج؟"}
             </p>
+            {isFoodCategoryPage && restaurants.length > 0 && !showRestaurantsView ? (
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTaxonomyPrimaryFilter("restaurants")
+                    setTaxonomySecondaryFilter("")
+                  }}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-orange-500/20 bg-orange-500/10 px-4 py-3 text-sm font-black text-orange-300 transition-colors hover:bg-orange-500 hover:text-white"
+                >
+                  <Search className="h-4 w-4" />
+                  ادخل على المطاعم
+                </button>
+              </div>
+            ) : null}
             {canShowRequestPageLink && currentCategory ? (
               <div className="mt-4">
                 <Link
@@ -301,7 +342,9 @@ export default function CategoryPageClient({
           ) : (
             <div className="flex flex-col md:flex-row gap-8">
               <div className="flex items-center justify-between mb-4 md:hidden">
-                <span className="text-sm text-gray-500 font-medium">عرض {productCards.length} منتج</span>
+                <span className="text-sm text-gray-500 font-medium">
+                  {showRestaurantsView ? `عرض ${restaurantCards.length} مطعم` : `عرض ${productCards.length} منتج`}
+                </span>
                 <button
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
                   className="flex items-center gap-2 bg-surface border border-surface-hover px-4 py-2.5 rounded-xl text-sm font-bold text-foreground hover:bg-surface-hover active:scale-95 transition-all"
@@ -407,7 +450,9 @@ export default function CategoryPageClient({
 
               <div className="flex-1">
                 <div className="hidden md:flex justify-between items-center mb-6">
-                  <span className="text-sm text-gray-500">عرض {productCards.length} نتيجة</span>
+                  <span className="text-sm text-gray-500">
+                    {showRestaurantsView ? `عرض ${restaurantCards.length} مطعم` : `عرض ${productCards.length} نتيجة`}
+                  </span>
                   {hasActiveFilters && <button onClick={clearAllFilters} className="text-xs font-bold text-rose-500 hover:text-rose-400 transition-colors">مسح الفلاتر</button>}
                 </div>
 
@@ -452,6 +497,30 @@ export default function CategoryPageClient({
                   <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3">
                     {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
                   </div>
+                ) : showRestaurantsView ? (
+                  restaurantCards.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                      <div className="w-20 h-20 bg-surface rounded-2xl flex items-center justify-center mb-4 border border-surface-hover">
+                        <Search className="w-9 h-9 text-gray-400" />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground mb-2">لسه مفيش مطاعم مضافة هنا</h3>
+                      <p className="text-gray-500">أول ما تضيف مطاعم من لوحة الإدارة، هتظهر هنا للعميل بشكل منظم.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3 md:gap-6">
+                      {restaurantCards.map((restaurant) => (
+                        <RestaurantCard
+                          key={restaurant.id}
+                          id={restaurant.id}
+                          name={restaurant.name}
+                          shortDescription={restaurant.short_description}
+                          cuisine={restaurant.cuisine}
+                          imageUrl={restaurant.image_url}
+                          isAvailable={restaurant.is_available}
+                        />
+                      ))}
+                    </div>
+                  )
                 ) : productCards.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
                     <div className="w-20 h-20 bg-surface rounded-2xl flex items-center justify-center mb-4 border border-surface-hover">
@@ -482,7 +551,7 @@ export default function CategoryPageClient({
                       {productCards.map(product => <ProductCard key={product.id} {...product} />)}
                     </div>
 
-                    {hasMore && !hasActiveFilters && (
+                    {hasMore && !hasActiveFilters && !showRestaurantsView && (
                       <div className="flex justify-center mt-10">
                         <button
                           onClick={loadMore}

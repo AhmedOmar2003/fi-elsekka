@@ -5,6 +5,7 @@ import {
   fetchCategoryByIdServer,
   fetchPaginatedProductsServer,
 } from "@/services/serverCatalogService"
+import { fetchRestaurantsServer } from "@/services/serverRestaurantsService"
 import {
   getCategoryTaxonomyConfig,
   getTaxonomyPrimaryOptions,
@@ -22,6 +23,7 @@ const getCategoryPageData = cache(async (slug: string) => {
       category: null,
       products,
       hasMore,
+      restaurants: [],
     }
   }
 
@@ -30,10 +32,16 @@ const getCategoryPageData = cache(async (slug: string) => {
     fetchPaginatedProductsServer(0, PAGE_SIZE, slug),
   ])
 
+  const restaurants =
+    category?.name === "طعام"
+      ? await fetchRestaurantsServer(category.id)
+      : []
+
   return {
     category,
     products: paginatedResult.products,
     hasMore: paginatedResult.hasMore,
+    restaurants,
   }
 })
 
@@ -121,13 +129,14 @@ export default async function CategoryPage({
 }) {
   const { slug } = await params
   const { q } = await searchParams
-  const { category, products, hasMore } = await getCategoryPageData(slug)
+  const { category, products, hasMore, restaurants } = await getCategoryPageData(slug)
 
   return (
     <CategoryPageClient
       initialCategory={category}
       initialProducts={products}
       initialHasMore={hasMore}
+      initialRestaurants={restaurants}
       initialSearchQuery={q?.trim() || ""}
     />
   )

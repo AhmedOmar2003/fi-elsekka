@@ -151,6 +151,7 @@ export function requiredPermissionForPath(pathname: string): Permission | null {
   if (pathname.startsWith('/admin/backup')) return 'manage_settings';
   if (pathname.startsWith('/admin/staff')) return 'manage_admins';
   if (pathname.startsWith('/admin/users')) return 'manage_users';
+  if (pathname.startsWith('/admin/restaurants')) return 'manage_products';
   if (pathname.startsWith('/admin/products')) return 'manage_products';
   if (pathname.startsWith('/admin/categories')) return 'manage_categories';
   if (pathname.startsWith('/admin/promotions')) return 'manage_offers';
