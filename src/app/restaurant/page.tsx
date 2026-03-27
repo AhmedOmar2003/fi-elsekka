@@ -532,7 +532,7 @@ export default function RestaurantPortalPage() {
 
   const activeOrders = orders.filter((order) => !["delivered", "cancelled"].includes(order.status));
   const closedOrders = orders.filter((order) => ["delivered", "cancelled"].includes(order.status));
-  const visibleMobileOrders = mobileTab === "active" ? activeOrders : closedOrders;
+  const visibleOrders = mobileTab === "active" ? activeOrders : closedOrders;
   const summaryCards = [
     {
       label: "إجمالي الطلبات",
@@ -713,9 +713,6 @@ export default function RestaurantPortalPage() {
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-black text-foreground sm:text-xl">طلبات المطعم</h2>
-              <p className="mt-1 hidden text-xs leading-6 text-gray-500 sm:block sm:text-sm">
-                رتبنا الطلبات بشكل أوضح: الشغالة فوق، والمقفولة تحت، وكل طلب تقدر تفتحه وقت ما تحتاج.
-              </p>
             </div>
             <button
               type="button"
@@ -726,7 +723,7 @@ export default function RestaurantPortalPage() {
             </button>
           </div>
 
-          <div className="sticky top-3 z-20 mb-5 rounded-[24px] border border-surface-hover bg-background/80 p-2 shadow-[0_12px_28px_rgba(0,0,0,0.16)] backdrop-blur-xl sm:hidden">
+          <div className="sticky top-3 z-20 mb-5 rounded-[24px] border border-surface-hover bg-background/80 p-2 shadow-[0_12px_28px_rgba(0,0,0,0.16)] backdrop-blur-xl">
             <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -765,83 +762,8 @@ export default function RestaurantPortalPage() {
             </div>
           ) : (
             <div className="space-y-7">
-              <section className="hidden space-y-4 rounded-[28px] border border-amber-400/15 bg-amber-400/[0.035] p-3.5 sm:block sm:p-4 md:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3">
-                  <div>
-                    <h3 className="text-base font-black text-foreground">الطلبات الشغالة</h3>
-                    <p className="mt-1 text-xs text-gray-500">دي الطلبات اللي محتاجة منك متابعة أو رد بوقت التوصيل.</p>
-                  </div>
-                  <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-xs font-black text-amber-400">
-                    {activeOrders.length} طلب شغال
-                  </span>
-                </div>
-
-                {activeOrders.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed border-surface-hover bg-background/50 px-6 py-10 text-center text-sm text-gray-500">
-                    مفيش طلبات شغالة حاليًا، أول ما طلب جديد يدخل هيظهر هنا فوق.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {activeOrders.map((order, index) => (
-                      <RestaurantOrderCard
-                        key={order.id}
-                        order={order}
-                        defaultExpanded={index === 0}
-                        tone="active"
-                        onSaved={(nextShippingAddress) => {
-                          setOrders((prev) =>
-                            prev.map((entry) =>
-                              entry.id === order.id
-                                ? { ...entry, shipping_address: nextShippingAddress }
-                                : entry
-                            )
-                          );
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              <section className="hidden space-y-4 rounded-[28px] border border-emerald-500/15 bg-emerald-500/[0.035] p-3.5 sm:block sm:p-4 md:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
-                  <div>
-                    <h3 className="text-base font-black text-foreground">الطلبات المقفولة</h3>
-                    <p className="mt-1 text-xs text-gray-500">الطلبات اللي اتسلمت أو اتلغت موجودة هنا للرجوع السريع.</p>
-                  </div>
-                  <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-black text-emerald-400">
-                    {closedOrders.length} طلب مقفول
-                  </span>
-                </div>
-
-                {closedOrders.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed border-surface-hover bg-background/50 px-6 py-10 text-center text-sm text-gray-500">
-                    لسه ما عندكش طلبات مقفولة.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {closedOrders.map((order) => (
-                      <RestaurantOrderCard
-                        key={order.id}
-                        order={order}
-                        tone="closed"
-                        onSaved={(nextShippingAddress) => {
-                          setOrders((prev) =>
-                            prev.map((entry) =>
-                              entry.id === order.id
-                                ? { ...entry, shipping_address: nextShippingAddress }
-                                : entry
-                            )
-                          );
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
-
               <section
-                className={`space-y-4 rounded-[28px] border p-4 shadow-sm sm:hidden ${
+                className={`space-y-4 rounded-[28px] border p-4 shadow-sm ${
                   mobileTab === "active"
                     ? "border-amber-400/15 bg-amber-400/[0.035]"
                     : "border-emerald-500/15 bg-emerald-500/[0.035]"
@@ -871,11 +793,11 @@ export default function RestaurantPortalPage() {
                         : "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
                     }`}
                   >
-                    {visibleMobileOrders.length} طلب
+                    {visibleOrders.length} طلب
                   </span>
                 </div>
 
-                {visibleMobileOrders.length === 0 ? (
+                {visibleOrders.length === 0 ? (
                   <div className="rounded-3xl border border-dashed border-surface-hover bg-background/50 px-6 py-10 text-center text-sm text-gray-500">
                     {mobileTab === "active"
                       ? "مفيش طلبات شغالة حاليًا، أول ما طلب جديد يدخل هيظهر هنا فوق."
@@ -883,7 +805,7 @@ export default function RestaurantPortalPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {visibleMobileOrders.map((order, index) => (
+                    {visibleOrders.map((order, index) => (
                       <RestaurantOrderCard
                         key={order.id}
                         order={order}
