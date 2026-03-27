@@ -34,6 +34,7 @@ export function RestaurantNotificationBell() {
   const [pushSetupState, setPushSetupState] = React.useState<PushSetupState>("checking");
   const [isSubscribingPush, setIsSubscribingPush] = React.useState(false);
   const popoverRef = React.useRef<HTMLDivElement>(null);
+  const [isMobileViewport, setIsMobileViewport] = React.useState(false);
 
   const unreadCount = notifications.filter((notification) => !notification.is_read).length;
 
@@ -189,6 +190,22 @@ export function RestaurantNotificationBell() {
   }, [playNotificationSound, user]);
 
   React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const mediaQuery = window.matchMedia("(max-width: 639px)");
+    const syncViewport = () => setIsMobileViewport(mediaQuery.matches);
+    syncViewport();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", syncViewport);
+      return () => mediaQuery.removeEventListener("change", syncViewport);
+    }
+
+    mediaQuery.addListener(syncViewport);
+    return () => mediaQuery.removeListener(syncViewport);
+  }, []);
+
+  React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -233,7 +250,13 @@ export function RestaurantNotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-surface-hover bg-surface shadow-2xl">
+        <div
+          className={
+            isMobileViewport
+              ? "fixed inset-x-3 top-20 bottom-4 z-50 flex flex-col overflow-hidden rounded-[28px] border border-surface-hover bg-surface shadow-2xl"
+              : "absolute left-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-surface-hover bg-surface shadow-2xl"
+          }
+        >
           <div className="border-b border-surface-hover px-4 py-3">
             <h3 className="text-sm font-black text-foreground">إشعارات المطعم</h3>
             <p className="mt-1 text-[11px] text-gray-500">طلبات جديدة وتأكيدات التوصيل من في السكة</p>

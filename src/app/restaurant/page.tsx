@@ -315,25 +315,25 @@ function RestaurantOrderCard({
             )}
           </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
             {summaryItems.map((item) => (
               <div key={item.label} className="rounded-2xl border border-surface-hover bg-surface/70 px-3 py-2.5">
                 <p className="text-[11px] font-black text-gray-500">{item.label}</p>
-                <p className={`mt-1 truncate text-sm font-black ${item.valueClassName}`}>{item.value}</p>
+                <p className={`mt-1 break-words text-sm font-black leading-6 ${item.valueClassName}`}>{item.value}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="grid grid-cols-[1fr_auto] items-stretch gap-3 md:flex md:items-end">
-          <div className="rounded-2xl border border-surface-hover bg-surface px-4 py-3 text-right">
+        <div className="grid grid-cols-1 items-stretch gap-3 md:flex md:items-end">
+          <div className="rounded-2xl border border-surface-hover bg-surface px-4 py-3 text-right md:min-w-[190px]">
             <p className="text-[11px] font-black text-gray-500">إجمالي منتجات مطعمك</p>
             <p className="mt-1 text-2xl font-black text-primary">
               {Number(order.restaurant_total || 0).toLocaleString("ar-EG")} ج.م
             </p>
           </div>
 
-          <span className="inline-flex h-full items-center justify-center gap-2 rounded-2xl border border-surface-hover bg-surface px-3 py-2 text-xs font-black text-gray-300 md:h-auto md:rounded-full">
+          <span className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-surface-hover bg-surface px-3 py-2 text-xs font-black text-gray-300 md:h-auto md:w-auto md:rounded-full">
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             <span className="hidden sm:inline">{expanded ? "إخفاء التفاصيل" : "افتح التفاصيل"}</span>
           </span>
@@ -378,7 +378,7 @@ function RestaurantOrderCard({
                 const unitPrice = Number(item.price_at_purchase || item.products?.price || 0);
                 const quantity = Number(item.quantity || 1);
                 return (
-                  <div key={item.id} className="flex items-center gap-3 rounded-2xl border border-surface-hover bg-surface px-3 py-3">
+                  <div key={item.id} className="flex items-start gap-3 rounded-2xl border border-surface-hover bg-surface px-3 py-3">
                     <div className="relative h-14 w-14 overflow-hidden rounded-2xl border border-surface-hover bg-background">
                       {item.products?.image_url ? (
                         <Image src={item.products.image_url} alt={item.products?.name || "منتج"} fill className="object-cover" />
@@ -389,12 +389,12 @@ function RestaurantOrderCard({
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-black text-foreground">{item.products?.name || "منتج من المطعم"}</p>
+                      <p className="line-clamp-2 text-sm font-black leading-6 text-foreground">{item.products?.name || "منتج من المطعم"}</p>
                       <p className="mt-1 text-xs text-gray-500">
                         {quantity} × {unitPrice.toLocaleString("ar-EG")} ج.م
                       </p>
                     </div>
-                    <p className="shrink-0 text-sm font-black text-primary">
+                    <p className="shrink-0 pt-1 text-sm font-black text-primary">
                       {(unitPrice * quantity).toLocaleString("ar-EG")} ج.م
                     </p>
                   </div>
