@@ -150,7 +150,7 @@ export function CategoryRequestPanel({
               <p className="mt-2 text-sm leading-7 text-gray-500">
                 {isPharmacy
                   ? 'اكتب أسماء الأدوية أو ارفع لحد 3 صور واضحة جدًا للروشتة أو العبوة. إحنا هنراجع الطلب وبعدها نكملك عليه.'
-                  : 'اكتب لنا المنتج اللي مش لاقيه وإحنا هندورلك عليه. أول ما نلاقيه هنبلغك بالسعر وتشوف تحب نكمل ولا لأ.'}
+                  : 'اكتب المنتج اللي محتاجه أو ارفع لحد 3 صور واضحة له، وممكن تجمع بين النص والصور عادي. أول ما نلاقيه هنبلغك بالسعر وتشوف تحب نكمل ولا لأ.'}
               </p>
             </div>
           </div>
@@ -169,9 +169,9 @@ export function CategoryRequestPanel({
                 </>
               ) : (
                 <>
-                  <li>اكتب اسم المنتج والكمية أو الحجم لو تعرفه.</li>
-                  <li>لو عندك بديل مناسب، اكتبه عشان نرجع لك أسرع.</li>
-                  <li>خليك واضح ومباشر عشان نلاقيه لك من غير لخبطة.</li>
+                  <li>اكتب اسم المنتج أو وصفه بشكل واضح، ولو تعرف الماركة أو المقاس اكتبه.</li>
+                  <li>ممكن ترفع صور المنتج من أي زاوية تساعدنا نوصله أسرع.</li>
+                  <li>تقدر تكتب فقط أو ترفع صور فقط أو تستخدم الاثنين معًا.</li>
                 </>
               )}
             </ul>
@@ -189,13 +189,13 @@ export function CategoryRequestPanel({
                 rows={isPharmacy ? 9 : 7}
                 placeholder={isPharmacy
                   ? `مثال:\nأوجمنتين 1 جم - عبوة\nكونجستال - 2 شريط\nلو دواء غير متوفر كلموني قبل الاستبدال`
-                  : `مثال:\nعاوز لبن كامل الدسم 3 علب\nأو شوكولاتة دارك نوع معين\nأو رز 5 كيلو نوع الضحى`}
+                  : `مثال:\nعاوز تيشيرت أسود قطن مقاس L\nأو لعبة تركيب مناسبة لطفل 7 سنين\nأو خلاط يدوي ماركة معروفة`}
                 className="w-full resize-none rounded-[1.5rem] border border-surface-hover bg-background px-4 py-4 text-sm leading-7 text-foreground outline-none transition-colors focus:border-primary/40"
               />
               <p className="mt-2 text-xs text-gray-500">
                 {isPharmacy
                   ? 'حاول تكتب الاسم أو التركيز بشكل واضح عشان نراجع الطلب بسرعة.'
-                  : 'اكتب اللي عاوزه بشكل واضح عشان نعرف نوصله لك من غير لخبطة.'}
+                  : 'لو كتبت الاسم أو الوصف بوضوح هنعرف نوصل للمنتج أسرع.'}
               </p>
             </div>
           )}
@@ -204,14 +204,16 @@ export function CategoryRequestPanel({
             <div className="mt-6">
               <label className="mb-3 flex items-center gap-2 text-sm font-black text-foreground">
                 <ImagePlus className="h-4 w-4 text-primary" />
-                ارفع صورة الروشتة أو الدواء
+                {isPharmacy ? 'ارفع صورة الروشتة أو الدواء' : 'ارفع صور المنتج لو متاحة'}
               </label>
               <div className="rounded-[1.5rem] border border-dashed border-primary/25 bg-background/70 p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-sm font-black text-foreground">حتى 3 صور واضحة جدًا</p>
+                    <p className="text-sm font-black text-foreground">حتى 3 صور واضحة</p>
                     <p className="mt-1 text-xs leading-6 text-gray-500">
-                      صوّر الروشتة كاملة وبوضوح، أو صور عبوة الدواء من الأمام. الصور غير الواضحة ممكن تأخر التنفيذ.
+                      {isPharmacy
+                        ? 'صوّر الروشتة كاملة وبوضوح، أو صور عبوة الدواء من الأمام. الصور غير الواضحة ممكن تأخر التنفيذ.'
+                        : 'ارفع صور المنتج من أي زاوية توضح شكله أو نوعه. الصور الواضحة بتساعدنا نوصل له أسرع.'}
                     </p>
                   </div>
                   <label className="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-black text-primary transition-colors hover:bg-primary hover:text-white">
@@ -288,11 +290,11 @@ export function CategoryRequestPanel({
               </>
             ) : (
               <>
-                عاوز لبن كامل الدسم 3 علب
+                عاوز سماعة بلوتوث لون أسود
                 <br />
-                أو شوكولاتة دارك نوع معين
+                أو تيشيرت رجالي قطن مقاس XL
                 <br />
-                لو مش موجود هاتوا أي بديل قريب
+                أو لعبة تركيب مناسبة لطفل 7 سنين
               </>
             )}
           </div>
@@ -302,7 +304,7 @@ export function CategoryRequestPanel({
             <p className="mt-2 text-sm leading-7 text-gray-500">
               {isPharmacy
                 ? 'اكتب اسم الدواء بوضوح أو ارفع صورًا مقروءة جدًا. أي صورة غير واضحة ممكن تأخر تجهيز الطلب.'
-                : 'بعد ما نلاقي طلبك ونحدد سعره هنكلمك بالسعر الكامل، وساعتها أنت اللي تختار نكمل أو نقفل الطلب.'}
+                : 'بعد ما نلاقي طلبك ونحدد سعره هنرجعلك الأول، وساعتها أنت اللي تختار نكمل أو نقفل الطلب.'}
             </p>
           </div>
         </div>

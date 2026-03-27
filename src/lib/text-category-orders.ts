@@ -5,9 +5,9 @@ export const TEXT_CATEGORY_ORDER_MODE = 'text-category';
 
 const DEFAULT_TEXT_REQUEST_CATEGORY_CONFIG = {
   allowText: true,
-  requireText: true,
-  allowImages: false,
-  maxImages: 0,
+  requireText: false,
+  allowImages: true,
+  maxImages: 3,
   requestOnly: false,
 } as const;
 
