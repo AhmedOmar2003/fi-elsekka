@@ -14,10 +14,12 @@ import {
   Clock3,
   Loader2,
   LogOut,
+  Menu,
   PackageCheck,
   Send,
   Store,
   TimerReset,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatRestaurantEtaWindow, getRestaurantOrderSnapshot } from "@/lib/restaurant-order";
@@ -411,6 +413,8 @@ export default function RestaurantPortalPage() {
   const [loading, setLoading] = React.useState(true);
   const [restaurant, setRestaurant] = React.useState<any>(null);
   const [orders, setOrders] = React.useState<RestaurantPortalOrder[]>([]);
+  const [mobilePanelOpen, setMobilePanelOpen] = React.useState(false);
+  const [mobileTab, setMobileTab] = React.useState<"active" | "closed">("active");
   const ordersRef = React.useRef<RestaurantPortalOrder[]>([]);
   const hasLoadedOnceRef = React.useRef(false);
   const restaurantIdRef = React.useRef<string>("");
@@ -528,6 +532,7 @@ export default function RestaurantPortalPage() {
 
   const activeOrders = orders.filter((order) => !["delivered", "cancelled"].includes(order.status));
   const closedOrders = orders.filter((order) => ["delivered", "cancelled"].includes(order.status));
+  const visibleMobileOrders = mobileTab === "active" ? activeOrders : closedOrders;
   const summaryCards = [
     {
       label: "إجمالي الطلبات",
@@ -574,23 +579,47 @@ export default function RestaurantPortalPage() {
     <main className="min-h-screen bg-background px-3 py-4 sm:px-4 md:px-6">
       <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
         <div className="rounded-3xl border border-surface-hover bg-surface p-4 sm:p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:h-16 sm:w-16">
-              <ChefHat className="h-8 w-8" />
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:h-16 sm:w-16">
+                <ChefHat className="h-8 w-8" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-black text-primary">بوابة المطعم</p>
+                <h1 className="mt-1 text-xl font-black text-foreground sm:text-2xl">
+                  أهلاً يا {getFirstName(restaurant?.manager_name)}
+                </h1>
+                <p className="mt-1 text-xs leading-6 text-gray-500 sm:text-sm">
+                  {restaurant?.name || "مطعم في السكة"} - الطلبات اللي جاية من موقع في السكة هتظهر لك هنا مباشرة.
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-xs font-black text-primary">بوابة المطعم</p>
-              <h1 className="mt-1 text-xl font-black text-foreground sm:text-2xl">
-                أهلاً يا {getFirstName(restaurant?.manager_name)}
-              </h1>
-              <p className="mt-1 text-xs leading-6 text-gray-500 sm:text-sm">
-                {restaurant?.name || "مطعم في السكة"} - الطلبات اللي جاية من موقع في السكة هتظهر لك هنا مباشرة.
-              </p>
-            </div>
-          </div>
 
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex items-center justify-between gap-2 sm:hidden">
+              <button
+                type="button"
+                onClick={() => setMobilePanelOpen(true)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-surface-hover bg-background text-gray-300 transition-colors hover:border-primary hover:text-primary"
+                title="فتح لوحة سريعة"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+
+              <div className="flex items-center gap-2">
+                <RestaurantNotificationBell />
+                <ThemeToggle />
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-500/20 bg-rose-500/10 text-rose-400 transition-colors hover:bg-rose-500 hover:text-white"
+                  title="تسجيل الخروج"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="hidden items-center justify-end gap-2 sm:flex">
               <RestaurantNotificationBell />
               <ThemeToggle />
               <button
@@ -604,7 +633,7 @@ export default function RestaurantPortalPage() {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="mt-4 hidden grid-cols-2 gap-3 sm:grid">
             {summaryCards.map((card) => {
               const Icon = card.icon;
               return (
@@ -621,6 +650,64 @@ export default function RestaurantPortalPage() {
             })}
           </div>
         </div>
+
+        {mobilePanelOpen && (
+          <div className="fixed inset-0 z-50 sm:hidden">
+            <button
+              type="button"
+              aria-label="إغلاق اللوحة السريعة"
+              className="absolute inset-0 bg-background/70 backdrop-blur-sm"
+              onClick={() => setMobilePanelOpen(false)}
+            />
+            <div className="absolute inset-x-3 top-4 bottom-4 overflow-hidden rounded-[28px] border border-surface-hover bg-surface shadow-2xl">
+              <div className="flex items-center justify-between border-b border-surface-hover px-4 py-4">
+                <div>
+                  <p className="text-sm font-black text-foreground">لوحة المطعم السريعة</p>
+                  <p className="mt-1 text-[11px] text-gray-500">ملخص المطعم والإجراءات المهمة في مكان واحد.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMobilePanelOpen(false)}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-surface-hover bg-background text-gray-300"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="h-full overflow-y-auto px-4 pb-6 pt-4">
+                <div className="grid grid-cols-2 gap-3">
+                  {summaryCards.map((card) => {
+                    const Icon = card.icon;
+                    return (
+                      <div key={card.label} className="rounded-2xl border border-surface-hover bg-background/60 p-3.5">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className={`rounded-2xl p-3 ${card.frame}`}>
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <p className="text-[11px] font-black text-gray-500">{card.label}</p>
+                        </div>
+                        <p className={`mt-4 text-lg font-black ${card.accent}`}>{card.value}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-surface-hover bg-background/70 p-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobilePanelOpen(false);
+                      void loadOrders({ withLoader: false });
+                    }}
+                    className="w-full rounded-2xl border border-surface-hover bg-surface px-4 py-3 text-sm font-black text-foreground"
+                  >
+                    تحديث الطلبات الآن
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="rounded-3xl border border-surface-hover bg-surface p-4 sm:p-5">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -639,6 +726,33 @@ export default function RestaurantPortalPage() {
             </button>
           </div>
 
+          <div className="mb-4 grid grid-cols-2 gap-2 rounded-2xl border border-surface-hover bg-background/70 p-1 sm:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileTab("active")}
+              className={`rounded-2xl px-3 py-3 text-sm font-black transition-colors ${
+                mobileTab === "active"
+                  ? "bg-primary text-white shadow-lg shadow-primary/20"
+                  : "text-gray-400"
+              }`}
+            >
+              الشغالة
+              <span className="mr-2 text-[11px] opacity-80">{activeOrders.length}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab("closed")}
+              className={`rounded-2xl px-3 py-3 text-sm font-black transition-colors ${
+                mobileTab === "closed"
+                  ? "bg-primary text-white shadow-lg shadow-primary/20"
+                  : "text-gray-400"
+              }`}
+            >
+              المقفولة
+              <span className="mr-2 text-[11px] opacity-80">{closedOrders.length}</span>
+            </button>
+          </div>
+
           {orders.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-surface-hover bg-background/50 px-6 py-14 text-center">
               <PackageCheck className="mx-auto h-10 w-10 text-gray-600" />
@@ -649,7 +763,7 @@ export default function RestaurantPortalPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              <section className="space-y-4 rounded-[28px] border border-amber-400/15 bg-amber-400/[0.035] p-3.5 sm:p-4 md:p-5">
+              <section className="hidden space-y-4 rounded-[28px] border border-amber-400/15 bg-amber-400/[0.035] p-3.5 sm:block sm:p-4 md:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3">
                   <div>
                     <h3 className="text-base font-black text-foreground">الطلبات الشغالة</h3>
@@ -687,7 +801,7 @@ export default function RestaurantPortalPage() {
                 )}
               </section>
 
-              <section className="space-y-4 rounded-[28px] border border-emerald-500/15 bg-emerald-500/[0.035] p-3.5 sm:p-4 md:p-5">
+              <section className="hidden space-y-4 rounded-[28px] border border-emerald-500/15 bg-emerald-500/[0.035] p-3.5 sm:block sm:p-4 md:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
                   <div>
                     <h3 className="text-base font-black text-foreground">الطلبات المقفولة</h3>
@@ -709,6 +823,70 @@ export default function RestaurantPortalPage() {
                         key={order.id}
                         order={order}
                         tone="closed"
+                        onSaved={(nextShippingAddress) => {
+                          setOrders((prev) =>
+                            prev.map((entry) =>
+                              entry.id === order.id
+                                ? { ...entry, shipping_address: nextShippingAddress }
+                                : entry
+                            )
+                          );
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section
+                className={`space-y-4 rounded-[28px] border p-3.5 sm:hidden ${
+                  mobileTab === "active"
+                    ? "border-amber-400/15 bg-amber-400/[0.035]"
+                    : "border-emerald-500/15 bg-emerald-500/[0.035]"
+                }`}
+              >
+                <div
+                  className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 ${
+                    mobileTab === "active"
+                      ? "border-amber-400/20 bg-amber-400/10"
+                      : "border-emerald-500/20 bg-emerald-500/10"
+                  }`}
+                >
+                  <div>
+                    <h3 className="text-base font-black text-foreground">
+                      {mobileTab === "active" ? "الطلبات الشغالة" : "الطلبات المقفولة"}
+                    </h3>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {mobileTab === "active"
+                        ? "دي الطلبات اللي محتاجة منك متابعة أو رد بوقت التوصيل."
+                        : "الطلبات اللي اتسلمت أو اتلغت موجودة هنا للرجوع السريع."}
+                    </p>
+                  </div>
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-black ${
+                      mobileTab === "active"
+                        ? "border-amber-400/20 bg-amber-400/10 text-amber-400"
+                        : "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                    }`}
+                  >
+                    {visibleMobileOrders.length} طلب
+                  </span>
+                </div>
+
+                {visibleMobileOrders.length === 0 ? (
+                  <div className="rounded-3xl border border-dashed border-surface-hover bg-background/50 px-6 py-10 text-center text-sm text-gray-500">
+                    {mobileTab === "active"
+                      ? "مفيش طلبات شغالة حاليًا، أول ما طلب جديد يدخل هيظهر هنا فوق."
+                      : "لسه ما عندكش طلبات مقفولة."}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {visibleMobileOrders.map((order, index) => (
+                      <RestaurantOrderCard
+                        key={order.id}
+                        order={order}
+                        defaultExpanded={index === 0}
+                        tone={mobileTab === "active" ? "active" : "closed"}
                         onSaved={(nextShippingAddress) => {
                           setOrders((prev) =>
                             prev.map((entry) =>
