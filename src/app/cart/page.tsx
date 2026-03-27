@@ -335,7 +335,7 @@ export default function CartPage() {
             </div>
 
             {items.length > 0 && (
-               <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+               <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
                   <div className="pointer-events-none h-6 bg-gradient-to-t from-background to-transparent" />
                   <div className="border-t border-surface-hover bg-background px-4 pb-[calc(env(safe-area-inset-bottom,0px)+18px)] pt-3 shadow-[0_-12px_40px_rgba(0,0,0,0.24)] backdrop-blur-2xl">
                      <div className="mx-auto flex max-w-lg items-center justify-between gap-3">

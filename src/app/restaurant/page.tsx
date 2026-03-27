@@ -259,6 +259,31 @@ function RestaurantOrderCard({
   const shipping = order.shipping_address || {};
   const restaurantOrderSnapshot = getRestaurantOrderSnapshot(shipping);
   const isClosedTone = tone === "closed";
+  const summaryItems = [
+    {
+      label: "العميل",
+      value: customer?.full_name || "غير معروف",
+      valueClassName: "text-foreground",
+    },
+    {
+      label: "رقم العميل",
+      value: customer?.phone || shipping.phone || "غير متوفر",
+      valueClassName: "text-foreground",
+    },
+    {
+      label: "وقت الطلب",
+      value: `${new Date(order.created_at).toLocaleDateString("ar-EG")} - ${new Date(order.created_at).toLocaleTimeString("ar-EG", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`,
+      valueClassName: "text-foreground",
+    },
+    {
+      label: "أصناف مطعمك",
+      value: String(order.order_items?.length || 0),
+      valueClassName: "text-primary",
+    },
+  ];
 
   return (
     <div
@@ -271,7 +296,7 @@ function RestaurantOrderCard({
       <button
         type="button"
         onClick={() => setExpanded((prev) => !prev)}
-        className={`flex w-full flex-col gap-4 p-4 text-right transition-colors md:flex-row md:items-start md:justify-between ${
+        className={`flex w-full flex-col gap-4 p-4 text-right transition-colors sm:p-5 md:flex-row md:items-start md:justify-between ${
           isClosedTone ? "hover:bg-emerald-500/[0.03]" : "hover:bg-surface/40"
         }`}
       >
@@ -288,27 +313,17 @@ function RestaurantOrderCard({
             )}
           </div>
 
-          <div className="mt-3 grid gap-2 text-sm text-gray-400 sm:grid-cols-2">
-            <p>
-              العميل: <span className="font-bold text-foreground">{customer?.full_name || "غير معروف"}</span>
-            </p>
-            <p>
-              رقم العميل: <span className="font-bold text-foreground">{customer?.phone || shipping.phone || "غير متوفر"}</span>
-            </p>
-            <p>
-              وقت الطلب:{" "}
-              <span className="font-bold text-foreground">
-                {new Date(order.created_at).toLocaleDateString("ar-EG")} -{" "}
-                {new Date(order.created_at).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            </p>
-            <p>
-              أصناف مطعمك: <span className="font-bold text-primary">{order.order_items?.length || 0}</span>
-            </p>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+            {summaryItems.map((item) => (
+              <div key={item.label} className="rounded-2xl border border-surface-hover bg-surface/70 px-3 py-2.5">
+                <p className="text-[11px] font-black text-gray-500">{item.label}</p>
+                <p className={`mt-1 truncate text-sm font-black ${item.valueClassName}`}>{item.value}</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 md:flex-col md:items-end">
+        <div className="grid grid-cols-[1fr_auto] items-stretch gap-3 md:flex md:items-end">
           <div className="rounded-2xl border border-surface-hover bg-surface px-4 py-3 text-right">
             <p className="text-[11px] font-black text-gray-500">إجمالي منتجات مطعمك</p>
             <p className="mt-1 text-2xl font-black text-primary">
@@ -316,15 +331,15 @@ function RestaurantOrderCard({
             </p>
           </div>
 
-          <span className="inline-flex items-center gap-2 rounded-full border border-surface-hover bg-surface px-3 py-2 text-xs font-black text-gray-300">
+          <span className="inline-flex h-full items-center justify-center gap-2 rounded-2xl border border-surface-hover bg-surface px-3 py-2 text-xs font-black text-gray-300 md:h-auto md:rounded-full">
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            {expanded ? "إخفاء التفاصيل" : "افتح التفاصيل"}
+            <span className="hidden sm:inline">{expanded ? "إخفاء التفاصيل" : "افتح التفاصيل"}</span>
           </span>
         </div>
       </button>
 
       {expanded && (
-        <div className="border-t border-surface-hover px-4 pb-4 pt-4">
+        <div className="border-t border-surface-hover px-4 pb-4 pt-4 sm:p-5">
           <div className="grid gap-3 md:grid-cols-2">
             <div className="rounded-2xl border border-surface-hover bg-surface px-4 py-3">
               <p className="text-xs font-black text-gray-500">بيانات العميل</p>
@@ -513,6 +528,36 @@ export default function RestaurantPortalPage() {
 
   const activeOrders = orders.filter((order) => !["delivered", "cancelled"].includes(order.status));
   const closedOrders = orders.filter((order) => ["delivered", "cancelled"].includes(order.status));
+  const summaryCards = [
+    {
+      label: "إجمالي الطلبات",
+      value: orders.length,
+      accent: "text-primary",
+      frame: "bg-primary/10 text-primary",
+      icon: BellRing,
+    },
+    {
+      label: "طلبات شغالة الآن",
+      value: activeOrders.length,
+      accent: "text-amber-400",
+      frame: "bg-amber-400/10 text-amber-400",
+      icon: Clock3,
+    },
+    {
+      label: "طلبات مقفولة",
+      value: closedOrders.length,
+      accent: "text-emerald-400",
+      frame: "bg-emerald-500/10 text-emerald-400",
+      icon: PackageCheck,
+    },
+    {
+      label: "حالة المطعم",
+      value: restaurant?.is_available ? "متاح الآن" : "غير متاح الآن",
+      accent: restaurant?.is_available ? "text-emerald-400" : "text-amber-400",
+      frame: restaurant?.is_available ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-400/10 text-amber-400",
+      icon: Store,
+    },
+  ];
 
   if (loading) {
     return (
@@ -526,88 +571,69 @@ export default function RestaurantPortalPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-5 md:px-6">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <div className="flex flex-col gap-4 rounded-3xl border border-surface-hover bg-surface p-5 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+    <main className="min-h-screen bg-background px-3 py-4 sm:px-4 md:px-6">
+      <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
+        <div className="rounded-3xl border border-surface-hover bg-surface p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:h-16 sm:w-16">
               <ChefHat className="h-8 w-8" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-black text-primary">بوابة المطعم</p>
-              <h1 className="mt-1 text-2xl font-black text-foreground">
+              <h1 className="mt-1 text-xl font-black text-foreground sm:text-2xl">
                 أهلاً يا {getFirstName(restaurant?.manager_name)}
               </h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-xs leading-6 text-gray-500 sm:text-sm">
                 {restaurant?.name || "مطعم في السكة"} - الطلبات اللي جاية من موقع في السكة هتظهر لك هنا مباشرة.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3">
-            <RestaurantNotificationBell />
-            <ThemeToggle />
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-400 transition-colors hover:bg-rose-500 hover:text-white"
-            >
-              <LogOut className="h-4 w-4" />
-              تسجيل الخروج
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              <RestaurantNotificationBell />
+              <ThemeToggle />
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-500/20 bg-rose-500/10 text-rose-400 transition-colors hover:bg-rose-500 hover:text-white"
+                title="تسجيل الخروج"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {summaryCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <div key={card.label} className="rounded-2xl border border-surface-hover bg-background/60 p-3.5 sm:p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className={`rounded-2xl p-3 ${card.frame}`}>
+                      <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </div>
+                    <p className="text-[11px] font-black text-gray-500 sm:text-xs">{card.label}</p>
+                  </div>
+                  <p className={`mt-4 text-lg font-black sm:text-2xl ${card.accent}`}>{card.value}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-3xl border border-surface-hover bg-surface p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-black text-gray-500">إجمالي الطلبات</p>
-                <p className="mt-2 text-3xl font-black text-foreground">{orders.length}</p>
-              </div>
-              <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-                <BellRing className="h-5 w-5" />
-              </div>
-            </div>
-          </div>
-          <div className="rounded-3xl border border-surface-hover bg-surface p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-black text-gray-500">طلبات شغالة الآن</p>
-                <p className="mt-2 text-3xl font-black text-foreground">{activeOrders.length}</p>
-              </div>
-              <div className="rounded-2xl bg-amber-400/10 p-3 text-amber-400">
-                <Clock3 className="h-5 w-5" />
-              </div>
-            </div>
-          </div>
-          <div className="rounded-3xl border border-surface-hover bg-surface p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-black text-gray-500">حالة المطعم</p>
-                <p className={`mt-2 text-xl font-black ${restaurant?.is_available ? "text-emerald-400" : "text-amber-400"}`}>
-                  {restaurant?.is_available ? "متاح الآن" : "غير متاح الآن"}
-                </p>
-              </div>
-              <div className="rounded-2xl bg-emerald-500/10 p-3 text-emerald-400">
-                <Store className="h-5 w-5" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-surface-hover bg-surface p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="rounded-3xl border border-surface-hover bg-surface p-4 sm:p-5">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl font-black text-foreground">طلبات المطعم</h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <h2 className="text-lg font-black text-foreground sm:text-xl">طلبات المطعم</h2>
+              <p className="mt-1 text-xs leading-6 text-gray-500 sm:text-sm">
                 رتبنا الطلبات بشكل أوضح: الشغالة فوق، والمقفولة تحت، وكل طلب تقدر تفتحه وقت ما تحتاج.
               </p>
             </div>
             <button
               type="button"
               onClick={() => loadOrders()}
-              className="rounded-2xl border border-surface-hover bg-background px-4 py-2 text-sm font-bold text-gray-300 transition-colors hover:border-primary hover:text-primary"
+              className="rounded-2xl border border-surface-hover bg-background px-4 py-2.5 text-sm font-bold text-gray-300 transition-colors hover:border-primary hover:text-primary sm:w-auto"
             >
               تحديث الآن
             </button>
@@ -623,7 +649,7 @@ export default function RestaurantPortalPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              <section className="space-y-4 rounded-[28px] border border-amber-400/15 bg-amber-400/[0.035] p-4 md:p-5">
+              <section className="space-y-4 rounded-[28px] border border-amber-400/15 bg-amber-400/[0.035] p-3.5 sm:p-4 md:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3">
                   <div>
                     <h3 className="text-base font-black text-foreground">الطلبات الشغالة</h3>
@@ -661,7 +687,7 @@ export default function RestaurantPortalPage() {
                 )}
               </section>
 
-              <section className="space-y-4 rounded-[28px] border border-emerald-500/15 bg-emerald-500/[0.035] p-4 md:p-5">
+              <section className="space-y-4 rounded-[28px] border border-emerald-500/15 bg-emerald-500/[0.035] p-3.5 sm:p-4 md:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
                   <div>
                     <h3 className="text-base font-black text-foreground">الطلبات المقفولة</h3>
