@@ -11,7 +11,7 @@ import { Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, ChevronDown,
 import { toast } from "sonner"
 import { RequestAttachmentsGallery } from "@/components/orders/request-attachments-gallery"
 import { SearchRequestProgress } from "@/components/orders/search-request-progress"
-import { formatRestaurantEtaWindow, getRestaurantOrderSnapshot } from "@/lib/restaurant-order"
+import { getRestaurantOrderSnapshot } from "@/lib/restaurant-order"
 
 function isAwaitingTextOrderConfirmation(order: Order) {
   const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
@@ -381,15 +381,9 @@ function OrderCard({
               <p className="font-black text-base text-foreground">
                 {restaurantOrder.restaurantName || 'مطعم من في السكة'}
               </p>
-              {restaurantOrder.etaStatus === 'submitted' && !order.shipping_address?.estimated_delivery && (
+              {!order.shipping_address?.estimated_delivery && (
                 <p className="mt-2 text-xs leading-6 text-gray-500">
-                  المطعم حدّد وقتًا مبدئيًا والإدارة بتراجعه الآن قبل ما توصله لك بشكل نهائي.
-                </p>
-              )}
-              {restaurantOrder.etaText && (
-                <p className="mt-2 text-xs text-gray-500">
-                  الموعد المبدئي من المطعم: <span className="font-bold text-foreground">{restaurantOrder.etaText}</span>
-                  <span className="mr-1">({formatRestaurantEtaWindow(restaurantOrder.etaDays, restaurantOrder.etaHours)})</span>
+                  الطلب عند المطعم الآن، وبمجرد ما الإدارة تعتمد الموعد النهائي هيوصلك هنا بشكل واضح.
                 </p>
               )}
             </div>
