@@ -576,7 +576,7 @@ export default function RestaurantPortalPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-3 pb-28 pt-4 sm:px-4 sm:pb-10 md:px-6">
+    <main className="min-h-screen bg-background px-3 pb-6 pt-4 sm:px-4 sm:pb-10 md:px-6">
       <div className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
         <div className="rounded-3xl border border-surface-hover bg-surface p-4 shadow-sm sm:p-5">
           <div className="flex flex-col gap-4">
@@ -908,36 +908,6 @@ export default function RestaurantPortalPage() {
         </div>
       </div>
 
-      <div className="fixed inset-x-3 bottom-3 z-30 sm:hidden">
-        <div className="mx-auto flex max-w-lg items-center gap-2 rounded-[26px] border border-surface-hover bg-surface/92 p-2 shadow-[0_-10px_35px_rgba(0,0,0,0.24)] backdrop-blur-xl">
-          <button
-            type="button"
-            onClick={() => setMobilePanelOpen(true)}
-            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-surface-hover bg-background text-gray-300 transition-colors hover:border-primary hover:text-primary"
-            title="لوحة سريعة"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileTab("active")}
-            className={`flex-1 rounded-2xl px-3 py-3 text-sm font-black transition-colors ${
-              mobileTab === "active" ? "bg-primary text-white" : "text-gray-400"
-            }`}
-          >
-            الشغالة
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileTab("closed")}
-            className={`flex-1 rounded-2xl px-3 py-3 text-sm font-black transition-colors ${
-              mobileTab === "closed" ? "bg-primary text-white" : "text-gray-400"
-            }`}
-          >
-            المقفولة
-          </button>
-        </div>
-      </div>
     </main>
   );
 }
