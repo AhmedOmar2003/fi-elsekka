@@ -308,7 +308,7 @@ function SearchDiscoveryPanel({
         <div className="rounded-2xl border border-primary/10 bg-primary/5 p-4">
           <p className="text-sm font-black text-foreground">ملحوظة سريعة قبل ما تطلب</p>
           <p className="mt-2 text-xs leading-6 text-gray-500">
-            التوصيل الحالي داخل القاهرة والجيزة، ولو ملقتش المنتج اللي عاوزه هتقدر تطلبه من زر
+            التوصيل الحالي داخل قرية ميت العامل فقط، وقريبًا القرى المجاورة. ولو ملقتش المنتج اللي عاوزه هتقدر تطلبه من زر
             <span className="mx-1 font-black text-primary">ملقتش المنتج؟</span>
             ونرجعلك بالسعر قبل التأكيد.
           </p>

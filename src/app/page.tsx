@@ -99,7 +99,7 @@ export default async function Home() {
                   </div>
                   <div className="material-chip text-xs sm:text-sm">
                     <MapPin className="w-5 h-5 text-primary" />
-                    <span>التوصيل الحالي: القاهرة والجيزة</span>
+                    <span>التوصيل الحالي: قرية ميت العامل فقط</span>
                   </div>
                   <div className="material-chip text-xs sm:text-sm">
                     <Banknote className="w-5 h-5 text-emerald-500" />
@@ -264,7 +264,8 @@ export default async function Home() {
 
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-center text-xs text-gray-500">
-              <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">التشغيل الحالي داخل القاهرة والجيزة</span>
+              <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">التشغيل الحالي داخل قرية ميت العامل فقط</span>
+              <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">وقريبًا القرى المجاورة</span>
               <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">الشحن الحالي {CURRENT_DELIVERY_FEE} ج.م</span>
               <span className="inline-flex items-center rounded-full border border-surface-border bg-surface px-4 py-2">لو المنتج مش موجود هنرجعلك بالسعر الأول</span>
             </div>

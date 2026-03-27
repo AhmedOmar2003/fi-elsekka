@@ -372,22 +372,16 @@ function CheckoutContent() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                            <div className="space-y-2">
-                              <Label htmlFor="city">المحافظة</Label>
+                              <Label htmlFor="city">منطقة التوصيل</Label>
                               <Select id="city" value={city} onChange={e => setCity(e.target.value)} required>
-                                 <option value="" disabled>اختر المحافظة...</option>
-                                 <option value="cairo">القاهرة</option>
-                                 <option value="giza">الجيزة</option>
-                                 <option value="alex">الإسكندرية</option>
-                                 <option value="mansura">المنصورة</option>
-                                 <option value="tanta">طنطا</option>
-                                 <option value="assiut">أسيوط</option>
-                                 <option value="luxor">الأقصر</option>
-                                 <option value="aswan">أسوان</option>
+                                 <option value="" disabled>اختر منطقة التوصيل...</option>
+                                 <option value="cairo">قرية ميت العامل</option>
+                                 <option value="giza" disabled>القرى المجاورة (قريبًا)</option>
                               </Select>
                            </div>
                            <div className="space-y-2">
                               <Label htmlFor="area">المنطقة / الحي</Label>
-                              <Input id="area" value={area} onChange={e => setArea(e.target.value)} required placeholder="مثال: المعادي، مدينة نصر..." />
+                              <Input id="area" value={area} onChange={e => setArea(e.target.value)} required placeholder="مثال: ميت العامل أو شارع معروف داخل القرية..." />
                            </div>
                            <div className="space-y-2 md:col-span-2">
                               <Label htmlFor="address">عنوان الشارع بالتفصيل</Label>

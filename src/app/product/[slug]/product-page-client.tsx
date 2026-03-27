@@ -681,7 +681,7 @@ export default function ProductPage({
                     <MapPin className="h-5 w-5" />
                   </div>
                   <p className="text-sm font-black text-foreground">التوصيل الحالي</p>
-                  <p className="mt-1 text-xs leading-6 text-gray-500">بنوصّل حاليًا داخل القاهرة والجيزة.</p>
+                  <p className="mt-1 text-xs leading-6 text-gray-500">بنوصّل حاليًا داخل قرية ميت العامل فقط، وقريبًا القرى المجاورة.</p>
                 </div>
                 <div className="rounded-2xl border border-surface-hover bg-surface/55 p-4">
                   <div className="mb-2 inline-flex rounded-xl bg-emerald-500/10 p-2 text-emerald-500">
