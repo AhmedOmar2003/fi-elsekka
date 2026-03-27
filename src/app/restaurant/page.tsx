@@ -22,25 +22,7 @@ import {
 import { toast } from "sonner";
 import { formatRestaurantEtaWindow, getRestaurantOrderSnapshot } from "@/lib/restaurant-order";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-
-function playRestaurantNotificationSound() {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
-    oscillator.connect(gain);
-    gain.connect(ctx.destination);
-    oscillator.type = "triangle";
-    oscillator.frequency.setValueAtTime(880, ctx.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.2);
-    gain.gain.setValueAtTime(0.35, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + 0.55);
-  } catch (_error) {
-    // Ignore audio errors when browser blocks playback.
-  }
-}
+import { RestaurantNotificationBell } from "@/components/restaurant/restaurant-notification-bell";
 
 type RestaurantPortalOrder = {
   id: string;
@@ -449,23 +431,7 @@ export default function RestaurantPortalPage() {
       ordersRef.current = nextOrders;
 
       if (hasLoadedOnceRef.current && options?.notifyNewOrders && newActiveOrders.length > 0) {
-        const latestOrder = newActiveOrders[0];
-        const customer = orderUser(latestOrder.users);
-        playRestaurantNotificationSound();
-        toast.success(
-          customer?.full_name
-            ? `طلب جديد من العميل ${customer.full_name}`
-            : "فيه طلب جديد واصل للمطعم"
-        );
-
-        if ("Notification" in window && Notification.permission === "granted") {
-          new Notification("طلب جديد من في السكة", {
-            body: customer?.full_name
-              ? `طلب جديد من ${customer.full_name} وصل للمطعم.`
-              : "فيه طلب جديد وصل للمطعم.",
-            silent: false,
-          });
-        }
+        // The notification bell now owns the audible/visual notification.
       }
 
       hasLoadedOnceRef.current = true;
@@ -579,6 +545,7 @@ export default function RestaurantPortalPage() {
           </div>
 
           <div className="flex items-center justify-end gap-3">
+            <RestaurantNotificationBell />
             <ThemeToggle />
             <button
               type="button"

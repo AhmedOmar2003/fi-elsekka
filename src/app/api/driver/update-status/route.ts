@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createOrderAdminNotificationsWithPush, createUserNotificationWithPush } from '@/lib/user-push-server';
+import { createOrderAdminNotificationsWithPush, createRestaurantNotificationsWithPush, createUserNotificationWithPush } from '@/lib/user-push-server';
+import { getRestaurantOrderSnapshot } from '@/lib/restaurant-order';
 import { driverSupabaseAdmin, requireDriverApi } from '@/lib/driver-guard';
 
 export async function POST(request: Request) {
@@ -100,6 +101,16 @@ export async function POST(request: Request) {
                 link: '/admin/orders',
                 topic: 'admin-order-delivered',
             });
+
+            const restaurantOrder = getRestaurantOrderSnapshot(order.shipping_address);
+            if (restaurantOrder.isRestaurantOrder && restaurantOrder.restaurantId) {
+                await createRestaurantNotificationsWithPush(driverSupabaseAdmin, restaurantOrder.restaurantId, {
+                    title: 'تم توصيل الطلب بنجاح',
+                    message: `شكرًا لكم، تم توصيل طلب العميل ${customerName} بنجاح.`,
+                    link: '/restaurant',
+                    topic: 'restaurant-order-delivered',
+                });
+            }
 
             // CREATE IN-APP NOTIFICATION FOR THE CUSTOMER
             if (order.user_id) {

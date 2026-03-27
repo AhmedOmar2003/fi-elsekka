@@ -76,7 +76,6 @@ export async function POST(
   );
 
   return NextResponse.json({
-    success: true,
     restaurantId: restaurantOrder.restaurantId,
     ...result,
   });
