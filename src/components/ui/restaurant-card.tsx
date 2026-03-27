@@ -27,18 +27,18 @@ export function RestaurantCard({
   return (
     <div
       className={cn(
-        "group overflow-hidden rounded-[30px] border border-surface-border bg-surface shadow-[var(--shadow-material-1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-material-2)] md:aspect-square",
+        "group aspect-square overflow-hidden rounded-[30px] border border-surface-border bg-surface shadow-[var(--shadow-material-1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-material-2)]",
         className
       )}
     >
-      <Link href={`/restaurants/${id}`} className="grid h-full grid-rows-[auto_auto] md:grid-rows-[1.08fr_auto]">
-        <div className="relative aspect-[1/1] overflow-hidden bg-surface-container md:aspect-auto">
+      <Link href={`/restaurants/${id}`} className="grid h-full grid-rows-[1.08fr_auto]">
+        <div className="relative overflow-hidden bg-surface-container">
           {imageUrl ? (
             <Image
               src={imageUrl}
               alt={name}
               fill
-              sizes="(max-width: 768px) 50vw, 33vw"
+              sizes="(max-width: 768px) 92vw, 33vw"
               className="object-cover transition-transform duration-500 group-hover:scale-[1.06]"
             />
           ) : (
@@ -68,7 +68,7 @@ export function RestaurantCard({
           </div>
 
           <div className="mt-2 min-h-0">
-            <p className="line-clamp-3 text-[11px] leading-5 text-gray-500 md:line-clamp-2 md:text-xs md:leading-6">
+            <p className="line-clamp-2 text-[11px] leading-5 text-gray-500 md:line-clamp-2 md:text-xs md:leading-6">
               {shortDescription || "منيو مرتب وسهل من داخل في السكة. ادخل شوف الأصناف واطلب مباشرة."}
             </p>
           </div>

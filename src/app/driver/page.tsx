@@ -32,10 +32,6 @@ interface DriverOrder {
     users?: { full_name: string; phone: string; };
 }
 
-function getFirstName(value?: string | null) {
-    return value?.trim()?.split(' ')?.[0] || 'يا بطل'
-}
-
 // --- Minimal sound using Web Audio API (no external file needed) ---
 function playNotificationSound() {
     try {
@@ -724,9 +720,6 @@ export default function DriverDashboard() {
                         </div>
                         <div>
                             <p className="text-xs font-black text-primary">لوحة المندوب</p>
-                            <h1 className="mt-1 text-2xl font-black text-foreground">
-                                أهلاً يا {getFirstName(driverUser?.user_metadata?.full_name || driverUser?.email)}
-                            </h1>
                             <p className="mt-1 text-sm text-gray-500">
                                 الطلبات اللي اتعينت لك هتظهر هنا، ومن هنا تتابع الاستلام والتوصيل بشكل واضح.
                             </p>
@@ -734,7 +727,9 @@ export default function DriverDashboard() {
                     </div>
 
                     <div className="flex items-center justify-end gap-3">
-                        <ThemeToggle />
+                        <div className="shrink-0">
+                            <ThemeToggle />
+                        </div>
                         <button
                             type="button"
                             onClick={handleLogout}
