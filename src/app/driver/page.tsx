@@ -3,12 +3,10 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { signOut } from '@/services/authService'
 import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown, ChevronUp, Bell, BellOff, X, AlertCircle, Coffee, Truck } from 'lucide-react'
 import { toast } from 'sonner'
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery'
 import { getRestaurantOrderSnapshot } from '@/lib/restaurant-order'
-import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 // Helper for VAPID key conversion
 function urlBase64ToUint8Array(base64String: string) {
@@ -658,14 +656,6 @@ export default function DriverDashboard() {
         }
     }
 
-    const handleLogout = async () => {
-        if (typeof window !== 'undefined') {
-            sessionStorage.setItem('driver_logout_flash', '1')
-        }
-        await signOut()
-        window.location.href = '/driver/login?logged_out=1'
-     }
-
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center p-12 space-y-4 min-h-[60vh]">
@@ -712,10 +702,6 @@ export default function DriverDashboard() {
 
     return (
         <div className="space-y-6 pb-8 relative">
-            <div className="flex justify-end">
-                <ThemeToggle />
-            </div>
-
             {/* Full Screen Availability Prompt Modal (After Delivery) */}
             {showAvailabilityPrompt && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
