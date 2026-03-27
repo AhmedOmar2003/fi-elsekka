@@ -713,7 +713,7 @@ export default function RestaurantPortalPage() {
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-black text-foreground sm:text-xl">طلبات المطعم</h2>
-              <p className="mt-1 text-xs leading-6 text-gray-500 sm:text-sm">
+              <p className="mt-1 hidden text-xs leading-6 text-gray-500 sm:block sm:text-sm">
                 رتبنا الطلبات بشكل أوضح: الشغالة فوق، والمقفولة تحت، وكل طلب تقدر تفتحه وقت ما تحتاج.
               </p>
             </div>
