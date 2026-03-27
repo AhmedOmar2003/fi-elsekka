@@ -404,6 +404,7 @@ export default function AdminOrdersPage() {
         if (!selectedOrder) return;
         setIsAssigningDriver(true);
         setSelectedDriverId(driverId);
+        const restaurantOrder = getRestaurantOrderSnapshot(selectedOrder.shipping_address);
         
         const driverObj = driverId ? drivers.find(d => d.id === driverId) : null;
         const driverData = driverObj ? { 
@@ -434,8 +435,12 @@ export default function AdminOrdersPage() {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             driverId,
-                            title: '🛵 طلب جديد بانتظارك!',
-                            body: `رقم الطلب: #${selectedOrder.id.slice(0,6)}`,
+                            title: restaurantOrder.isRestaurantOrder
+                                ? `🛵 طلب جديد من مطعم ${restaurantOrder.restaurantName || ''}`
+                                : '🛵 طلب جديد بانتظارك!',
+                            body: restaurantOrder.isRestaurantOrder
+                                ? `رقم الطلب: #${selectedOrder.id.slice(0,6)} — الاستلام من مطعم ${restaurantOrder.restaurantName || 'من في السكة'}`
+                                : `رقم الطلب: #${selectedOrder.id.slice(0,6)}`,
                             orderId: selectedOrder.id
                         })
                     }).catch(err => console.error('Failed to notify driver:', err));

@@ -102,6 +102,11 @@ function OrderCard({ order, onMarkDelivered, onMarkPickedUp, isUpdating }: {
                         <p className={`font-black text-sm truncate ${isDelivered ? 'text-emerald-600' : 'text-foreground'}`}>
                             {customerName}
                         </p>
+                        {restaurantOrder.isRestaurantOrder && (
+                            <p className="mt-1 text-[11px] font-bold text-primary truncate">
+                                من مطعم: {restaurantOrder.restaurantName || 'مطعم من في السكة'}
+                            </p>
+                        )}
                     </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -421,10 +426,16 @@ export default function DriverDashboard() {
                         
                         const newPendings = freshActive.filter(o => o.shipping_address?.driver?.acceptance_status === 'pending')
                         if (newPendings.length > 0) {
+                             const restaurantOrder = getRestaurantOrderSnapshot(newPendings[0].shipping_address)
                              if (notificationsAllowed) {
                                  playNotificationSound()
                              }
-                             toast('🛵 طلب جديد بانتظارك من الإدارة!', { duration: 6000 })
+                             toast(
+                                restaurantOrder.isRestaurantOrder
+                                    ? `🛵 طلب جديد من مطعم ${restaurantOrder.restaurantName || 'من في السكة'} بانتظارك!`
+                                    : '🛵 طلب جديد بانتظارك من الإدارة!',
+                                { duration: 6000 }
+                             )
                         }
                     }
                 })
@@ -704,6 +715,8 @@ export default function DriverDashboard() {
 
     const pendingOrders = activeOrders.filter(o => o.shipping_address?.driver?.acceptance_status === 'pending')
     const acceptedActiveOrders = activeOrders.filter(o => o.shipping_address?.driver?.acceptance_status !== 'pending')
+    const pendingPrimaryOrder = pendingOrders[0] || null
+    const pendingRestaurantOrder = pendingPrimaryOrder ? getRestaurantOrderSnapshot(pendingPrimaryOrder.shipping_address) : null
 
     return (
         <div className="space-y-6 pb-8 relative">
@@ -750,9 +763,21 @@ export default function DriverDashboard() {
                             <Bell className="w-8 h-8 text-primary" />
                         </div>
                         <h2 className="text-xl font-black text-center text-foreground mb-2">فيه طلب جديد ليك! 🔔</h2>
-                        <p className="text-center text-gray-400 mb-6 text-sm">الإدارة بعتالك طلب جديد، إنت جاهز تمسكه دلوقتي؟</p>
+                        <p className="text-center text-gray-400 mb-6 text-sm">
+                            {pendingRestaurantOrder?.isRestaurantOrder
+                                ? `الإدارة بعتالك طلب من مطعم ${pendingRestaurantOrder.restaurantName || 'من في السكة'}، إنت جاهز تستلمه؟`
+                                : 'الإدارة بعتالك طلب جديد، إنت جاهز تمسكه دلوقتي؟'}
+                        </p>
                         
                         <div className="space-y-3 mb-6 bg-background rounded-2xl p-4 border border-surface-hover">
+                            {pendingRestaurantOrder?.isRestaurantOrder && (
+                                <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-3 text-sm">
+                                    <p className="text-xs font-black text-primary/80">مكان الاستلام</p>
+                                    <p className="mt-1 font-black text-foreground">
+                                        مطعم {pendingRestaurantOrder.restaurantName || 'من في السكة'}
+                                    </p>
+                                </div>
+                            )}
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-gray-500">رقم الطلب</span>
                                 <span className="font-mono font-bold text-foreground">#{pendingOrders[0].id.slice(0, 6)}</span>
