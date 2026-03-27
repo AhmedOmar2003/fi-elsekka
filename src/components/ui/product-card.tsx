@@ -39,6 +39,7 @@ export function ProductCard({
   const { isFavorite, toggleFavorite } = useFavorites()
   const [isAdded, setIsAdded] = React.useState(false)
   const fav = isFavorite(id)
+  const hasVisibleOldPrice = typeof oldPrice === "number" && oldPrice > price
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -120,10 +121,10 @@ export function ProductCard({
             <div className="flex items-center gap-1.5">
               <span className="text-[17px] font-heading font-black tracking-tight text-primary sm:text-xl">{price} <span className="text-[11px] sm:text-sm">ج.م</span></span>
             </div>
-            {oldPrice && (
+            {hasVisibleOldPrice && (
               <span className="text-[11px] font-heading text-gray-500 line-through sm:text-xs">{oldPrice} ج.م</span>
             )}
-            {!oldPrice && <span className="h-1.5 sm:h-2"></span>}
+            {!hasVisibleOldPrice && <span className="h-1.5 sm:h-2"></span>}
           </div>
 
           <Button

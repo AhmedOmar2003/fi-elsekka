@@ -336,7 +336,7 @@ export default function ProductPage({
   const product = dbProduct ? (() => {
     const metadata = getProductCatalogMetadata(dbProduct.specifications)
     let price = dbProduct.price;
-    let oldPrice: number | undefined = metadata.oldPrice || undefined;
+    let oldPrice: number | undefined = metadata.oldPrice && metadata.oldPrice > price ? metadata.oldPrice : undefined;
     let discountAmount = dbProduct.specifications?.discount_badge || undefined;
 
     if (dbProduct.discount_percentage && dbProduct.discount_percentage > 0) {
@@ -421,6 +421,11 @@ export default function ProductPage({
     brand: "",
     sku: "",
   }
+
+  const comparePriceToShow =
+    appliedDiscountPrice !== null
+      ? product.price
+      : (typeof product.oldPrice === "number" && product.oldPrice > product.price ? product.oldPrice : null)
 
   const [activeImage, setActiveImage] = React.useState(0)
 
@@ -739,9 +744,9 @@ export default function ProductPage({
                     {appliedDiscountPrice !== null ? appliedDiscountPrice : product.price} <span className="text-lg font-bold">ج.م</span>
                   </span>
                 </div>
-                {(appliedDiscountPrice !== null || product.oldPrice) && (
+                {comparePriceToShow !== null && (
                   <span className="font-heading text-lg text-gray-500 line-through mb-1">
-                    {appliedDiscountPrice !== null ? product.price : product.oldPrice} ج.م
+                    {comparePriceToShow} ج.م
                   </span>
                 )}
               </div>

@@ -52,7 +52,7 @@ export function getBundleItemCount(specifications?: Record<string, any> | null) 
 export function toProductCardProps(product: Product): ProductCardLike {
   const metadata = getProductCatalogMetadata(product.specifications);
   let price = product.price;
-  let oldPrice: number | undefined = metadata.oldPrice || undefined;
+  let oldPrice: number | undefined = metadata.oldPrice && metadata.oldPrice > price ? metadata.oldPrice : undefined;
   let discountBadge = product.specifications?.discount_badge;
 
   if (product.discount_percentage && product.discount_percentage > 0) {
