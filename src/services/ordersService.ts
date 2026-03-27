@@ -43,6 +43,26 @@ const notifyAdminsAboutOrder = async (orderId: string) => {
     }
 };
 
+const notifyRestaurantAboutOrder = async (orderId: string) => {
+    if (!orderId) return;
+
+    try {
+        const { data } = await supabase.auth.getSession();
+        const accessToken = data.session?.access_token;
+        if (!accessToken) return;
+
+        await fetch(`/api/orders/${orderId}/restaurant-alert`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+    } catch (error) {
+        console.error('Failed to notify restaurant about order:', error);
+    }
+};
+
 export type CancelledOrderDecision = 'insist' | 'confirm_cancel';
 export type QuotedOrderDecision = 'approve' | 'reject';
 type CustomerCancelOrigin = 'grace_period' | 'account';
@@ -143,6 +163,7 @@ export const createOrder = async (
 
     if (shippingDetails?.is_grace_period === false) {
         void notifyAdminsAboutOrder(order.id);
+        void notifyRestaurantAboutOrder(order.id);
     }
 
     return { data: order };
@@ -233,6 +254,7 @@ export const confirmOrderGracePeriod = async (orderId: string) => {
 
     if (!error && data?.id) {
         void notifyAdminsAboutOrder(data.id);
+        void notifyRestaurantAboutOrder(data.id);
     }
 
     return { data, error };

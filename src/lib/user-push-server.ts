@@ -180,3 +180,59 @@ export async function createOrderAdminNotificationsWithPush(
     sent,
   };
 }
+
+export async function createRestaurantNotificationsWithPush(
+  supabaseAdmin: any,
+  restaurantId: string,
+  payload: PushNotificationPayload
+) {
+  if (!supabaseAdmin || !restaurantId) {
+    return { success: false, recipients: 0, sent: 0 };
+  }
+
+  const { data: restaurant, error: restaurantError } = await supabaseAdmin
+    .from('restaurants')
+    .select('manager_email')
+    .eq('id', restaurantId)
+    .maybeSingle();
+
+  if (restaurantError) {
+    console.error('Failed to fetch restaurant notification recipients:', restaurantError);
+    return { success: false, recipients: 0, sent: 0 };
+  }
+
+  const managerEmail = String(restaurant?.manager_email || '').trim().toLowerCase();
+  if (!managerEmail) {
+    return { success: true, recipients: 0, sent: 0 };
+  }
+
+  const { data: managers, error: managersError } = await supabaseAdmin
+    .from('users')
+    .select('id, disabled, role, email')
+    .eq('role', 'restaurant_manager')
+    .ilike('email', managerEmail);
+
+  if (managersError) {
+    console.error('Failed to load restaurant manager accounts for notifications:', managersError);
+    return { success: false, recipients: 0, sent: 0 };
+  }
+
+  const recipients = (managers || []).filter((entry: any) => entry?.disabled !== true && entry?.id);
+  if (recipients.length === 0) {
+    return { success: true, recipients: 0, sent: 0 };
+  }
+
+  let sent = 0;
+  await Promise.all(
+    recipients.map(async (recipient: any) => {
+      const result = await createUserNotificationWithPush(supabaseAdmin, recipient.id, payload);
+      if (result.success) sent += 1;
+    })
+  );
+
+  return {
+    success: true,
+    recipients: recipients.length,
+    sent,
+  };
+}
