@@ -576,9 +576,9 @@ export default function RestaurantPortalPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-3 py-4 sm:px-4 md:px-6">
-      <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
-        <div className="rounded-3xl border border-surface-hover bg-surface p-4 sm:p-5">
+    <main className="min-h-screen bg-background px-3 pb-28 pt-4 sm:px-4 sm:pb-10 md:px-6">
+      <div className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
+        <div className="rounded-3xl border border-surface-hover bg-surface p-4 shadow-sm sm:p-5">
           <div className="flex flex-col gap-4">
             <div className="flex items-start gap-3">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:h-16 sm:w-16">
@@ -710,7 +710,7 @@ export default function RestaurantPortalPage() {
         )}
 
         <div className="rounded-3xl border border-surface-hover bg-surface p-4 sm:p-5">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-black text-foreground sm:text-xl">طلبات المطعم</h2>
               <p className="mt-1 text-xs leading-6 text-gray-500 sm:text-sm">
@@ -726,7 +726,8 @@ export default function RestaurantPortalPage() {
             </button>
           </div>
 
-          <div className="mb-4 grid grid-cols-2 gap-2 rounded-2xl border border-surface-hover bg-background/70 p-1 sm:hidden">
+          <div className="sticky top-3 z-20 mb-5 rounded-[24px] border border-surface-hover bg-background/80 p-2 shadow-[0_12px_28px_rgba(0,0,0,0.16)] backdrop-blur-xl sm:hidden">
+            <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => setMobileTab("active")}
@@ -751,6 +752,7 @@ export default function RestaurantPortalPage() {
               المقفولة
               <span className="mr-2 text-[11px] opacity-80">{closedOrders.length}</span>
             </button>
+            </div>
           </div>
 
           {orders.length === 0 ? (
@@ -762,7 +764,7 @@ export default function RestaurantPortalPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-7">
               <section className="hidden space-y-4 rounded-[28px] border border-amber-400/15 bg-amber-400/[0.035] p-3.5 sm:block sm:p-4 md:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3">
                   <div>
@@ -839,7 +841,7 @@ export default function RestaurantPortalPage() {
               </section>
 
               <section
-                className={`space-y-4 rounded-[28px] border p-3.5 sm:hidden ${
+                className={`space-y-4 rounded-[28px] border p-4 shadow-sm sm:hidden ${
                   mobileTab === "active"
                     ? "border-amber-400/15 bg-amber-400/[0.035]"
                     : "border-emerald-500/15 bg-emerald-500/[0.035]"
@@ -903,6 +905,37 @@ export default function RestaurantPortalPage() {
               </section>
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="fixed inset-x-3 bottom-3 z-30 sm:hidden">
+        <div className="mx-auto flex max-w-lg items-center gap-2 rounded-[26px] border border-surface-hover bg-surface/92 p-2 shadow-[0_-10px_35px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+          <button
+            type="button"
+            onClick={() => setMobilePanelOpen(true)}
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-surface-hover bg-background text-gray-300 transition-colors hover:border-primary hover:text-primary"
+            title="لوحة سريعة"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab("active")}
+            className={`flex-1 rounded-2xl px-3 py-3 text-sm font-black transition-colors ${
+              mobileTab === "active" ? "bg-primary text-white" : "text-gray-400"
+            }`}
+          >
+            الشغالة
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab("closed")}
+            className={`flex-1 rounded-2xl px-3 py-3 text-sm font-black transition-colors ${
+              mobileTab === "closed" ? "bg-primary text-white" : "text-gray-400"
+            }`}
+          >
+            المقفولة
+          </button>
         </div>
       </div>
     </main>
