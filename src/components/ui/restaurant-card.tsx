@@ -31,7 +31,7 @@ export function RestaurantCard({
         className
       )}
     >
-      <Link href={`/restaurants/${id}`} className="grid h-full grid-rows-[1.08fr_auto]">
+      <Link href={`/restaurants/${id}`} className="grid h-full grid-rows-[1.28fr_auto] md:grid-rows-[1.08fr_auto]">
         <div className="relative overflow-hidden bg-surface-container">
           {imageUrl ? (
             <Image
