@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatRestaurantEtaWindow, getRestaurantOrderSnapshot } from "@/lib/restaurant-order";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 type RestaurantPortalOrder = {
   id: string;
@@ -244,23 +245,34 @@ function RestaurantEtaComposer({
 function RestaurantOrderCard({
   order,
   defaultExpanded = false,
+  tone = "active",
   onSaved,
 }: {
   order: RestaurantPortalOrder;
   defaultExpanded?: boolean;
+  tone?: "active" | "closed";
   onSaved: (shippingAddress: Record<string, any>) => void;
 }) {
   const [expanded, setExpanded] = React.useState(defaultExpanded);
   const customer = orderUser(order.users);
   const shipping = order.shipping_address || {};
   const restaurantOrderSnapshot = getRestaurantOrderSnapshot(shipping);
+  const isClosedTone = tone === "closed";
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-surface-hover bg-background/40 transition-colors hover:border-primary/20">
+    <div
+      className={`overflow-hidden rounded-3xl border transition-colors ${
+        isClosedTone
+          ? "border-emerald-500/15 bg-emerald-500/[0.04] hover:border-emerald-500/25"
+          : "border-amber-400/15 bg-background/40 hover:border-primary/20"
+      }`}
+    >
       <button
         type="button"
         onClick={() => setExpanded((prev) => !prev)}
-        className="flex w-full flex-col gap-4 p-4 text-right transition-colors hover:bg-surface/40 md:flex-row md:items-start md:justify-between"
+        className={`flex w-full flex-col gap-4 p-4 text-right transition-colors md:flex-row md:items-start md:justify-between ${
+          isClosedTone ? "hover:bg-emerald-500/[0.03]" : "hover:bg-surface/40"
+        }`}
       >
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -450,14 +462,17 @@ export default function RestaurantPortalPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-400 transition-colors hover:bg-rose-500 hover:text-white"
-          >
-            <LogOut className="h-4 w-4" />
-            تسجيل الخروج
-          </button>
+          <div className="flex items-center justify-end gap-3">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-400 transition-colors hover:bg-rose-500 hover:text-white"
+            >
+              <LogOut className="h-4 w-4" />
+              تسجيل الخروج
+            </button>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -525,8 +540,8 @@ export default function RestaurantPortalPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              <section className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-surface-hover bg-background/60 px-4 py-3">
+              <section className="space-y-4 rounded-[28px] border border-amber-400/15 bg-amber-400/[0.035] p-4 md:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3">
                   <div>
                     <h3 className="text-base font-black text-foreground">الطلبات الشغالة</h3>
                     <p className="mt-1 text-xs text-gray-500">دي الطلبات اللي محتاجة منك متابعة أو رد بوقت التوصيل.</p>
@@ -547,6 +562,7 @@ export default function RestaurantPortalPage() {
                         key={order.id}
                         order={order}
                         defaultExpanded={index === 0}
+                        tone="active"
                         onSaved={(nextShippingAddress) => {
                           setOrders((prev) =>
                             prev.map((entry) =>
@@ -562,13 +578,13 @@ export default function RestaurantPortalPage() {
                 )}
               </section>
 
-              <section className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-surface-hover bg-background/60 px-4 py-3">
+              <section className="space-y-4 rounded-[28px] border border-emerald-500/15 bg-emerald-500/[0.035] p-4 md:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
                   <div>
                     <h3 className="text-base font-black text-foreground">الطلبات المقفولة</h3>
                     <p className="mt-1 text-xs text-gray-500">الطلبات اللي اتسلمت أو اتلغت موجودة هنا للرجوع السريع.</p>
                   </div>
-                  <span className="rounded-full border border-surface-hover bg-surface px-3 py-1 text-xs font-black text-gray-300">
+                  <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-black text-emerald-400">
                     {closedOrders.length} طلب مقفول
                   </span>
                 </div>
@@ -583,6 +599,7 @@ export default function RestaurantPortalPage() {
                       <RestaurantOrderCard
                         key={order.id}
                         order={order}
+                        tone="closed"
                         onSaved={(nextShippingAddress) => {
                           setOrders((prev) =>
                             prev.map((entry) =>

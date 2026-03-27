@@ -4,10 +4,11 @@ import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { signOut } from '@/services/authService'
-import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown, ChevronUp, Bell, BellOff, X, AlertCircle, Coffee, Truck } from 'lucide-react'
+import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown, ChevronUp, Bell, BellOff, X, AlertCircle, Coffee, Truck, LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery'
 import { getRestaurantOrderSnapshot } from '@/lib/restaurant-order'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 // Helper for VAPID key conversion
 function urlBase64ToUint8Array(base64String: string) {
@@ -29,6 +30,10 @@ interface DriverOrder {
     shipping_address: any;
     order_items?: any[];
     users?: { full_name: string; phone: string; };
+}
+
+function getFirstName(value?: string | null) {
+    return value?.trim()?.split(' ')?.[0] || 'يا بطل'
 }
 
 // --- Minimal sound using Web Audio API (no external file needed) ---
@@ -711,6 +716,37 @@ export default function DriverDashboard() {
 
     return (
         <div className="space-y-6 pb-8 relative">
+            <div className="rounded-3xl border border-surface-hover bg-surface p-5">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                            <Truck className="h-7 w-7" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-black text-primary">لوحة المندوب</p>
+                            <h1 className="mt-1 text-2xl font-black text-foreground">
+                                أهلاً يا {getFirstName(driverUser?.user_metadata?.full_name || driverUser?.email)}
+                            </h1>
+                            <p className="mt-1 text-sm text-gray-500">
+                                الطلبات اللي اتعينت لك هتظهر هنا، ومن هنا تتابع الاستلام والتوصيل بشكل واضح.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3">
+                        <ThemeToggle />
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-400 transition-colors hover:bg-rose-500 hover:text-white"
+                        >
+                            <LogOut className="h-4 w-4" />
+                            تسجيل الخروج
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {/* Full Screen Availability Prompt Modal (After Delivery) */}
             {showAvailabilityPrompt && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
