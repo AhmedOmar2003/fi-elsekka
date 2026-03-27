@@ -7,7 +7,7 @@ import { signOut } from '@/services/authService'
 import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown, ChevronUp, Bell, BellOff, X, AlertCircle, Coffee, Truck } from 'lucide-react'
 import { toast } from 'sonner'
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery'
-import { formatRestaurantEtaWindow, getRestaurantOrderSnapshot } from '@/lib/restaurant-order'
+import { getRestaurantOrderSnapshot } from '@/lib/restaurant-order'
 
 // Helper for VAPID key conversion
 function urlBase64ToUint8Array(base64String: string) {
@@ -134,15 +134,6 @@ function OrderCard({ order, onMarkDelivered, onMarkPickedUp, isUpdating }: {
                             <p className="text-sm font-black text-foreground">
                                 استلامك هيكون من مطعم: {restaurantOrder.restaurantName || 'مطعم من في السكة'}
                             </p>
-                            {order.shipping_address?.estimated_delivery ? (
-                                <p className="text-xs text-gray-500">
-                                    الموعد المعتمد للعميل: {order.shipping_address.estimated_delivery}
-                                </p>
-                            ) : restaurantOrder.etaText ? (
-                                <p className="text-xs text-gray-500">
-                                    المطعم قال: {restaurantOrder.etaText} ({formatRestaurantEtaWindow(restaurantOrder.etaDays, restaurantOrder.etaHours)})
-                                </p>
-                            ) : null}
                         </div>
                     )}
 
