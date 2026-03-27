@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -17,6 +17,26 @@ export default function CartPage() {
    const { items, cartTotal, cartOriginalTotal, cartDiscountTotal, isLoading, updateQuantity, removeItem } = useCart();
    const router = useRouter();
    const [updatingItems, setUpdatingItems] = useState<{ [key: string]: boolean }>({});
+   const [showDesktopSummaryCheckout, setShowDesktopSummaryCheckout] = useState(false);
+
+   useEffect(() => {
+      if (typeof window === 'undefined') return;
+
+      const mediaQuery = window.matchMedia('(min-width: 1024px)');
+      const updateVisibility = () => {
+         setShowDesktopSummaryCheckout(mediaQuery.matches);
+      };
+
+      updateVisibility();
+
+      if (typeof mediaQuery.addEventListener === 'function') {
+         mediaQuery.addEventListener('change', updateVisibility);
+         return () => mediaQuery.removeEventListener('change', updateVisibility);
+      }
+
+      mediaQuery.addListener(updateVisibility);
+      return () => mediaQuery.removeListener(updateVisibility);
+   }, []);
 
    // Handler for quantity updates to show local loading state
    const handleUpdateQuantity = async (id: string, newQuantity: number) => {
@@ -314,14 +334,16 @@ export default function CartPage() {
                               </div>
                            </div>
 
-                           <Button
-                              size="lg"
-                              className="hidden lg:flex h-14 w-full rounded-2xl px-6 text-base font-black shadow-primary/20 shadow-lg"
-                              onClick={() => router.push('/checkout')}
-                           >
-                              متابعة الدفع
-                              <ArrowLeft className="mr-2 h-5 w-5" />
-                           </Button>
+                           {showDesktopSummaryCheckout && (
+                              <Button
+                                 size="lg"
+                                 className="h-14 w-full rounded-2xl px-6 text-base font-black shadow-primary/20 shadow-lg"
+                                 onClick={() => router.push('/checkout')}
+                              >
+                                 متابعة الدفع
+                                 <ArrowLeft className="mr-2 h-5 w-5" />
+                              </Button>
+                           )}
 
                            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
                               <ShoppingBag className="w-4 h-4" />
