@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cancelAdminOrder, fetchAdminOrders, fetchOrderDetails, getAdminOrderKind, isCustomerSelfCancelledGraceOrder, isPricedSearchRequestOrder, isSearchRequestOrder, isSearchingRequestOrder, reopenCancelledOrderAfterCustomerRequest, saveAdminOrderDeliveryPlan, saveAdminTextOrderQuote, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
-import { ShoppingCart, ChevronDown, X, Package, Download, Filter, Bike, Clock, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, ChevronDown, X, Package, Download, Filter, Bike, Clock, AlertTriangle, Link2, Check } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -120,6 +120,7 @@ export default function AdminOrdersPage() {
     const [isReopeningOrder, setIsReopeningOrder] = useState(false);
     const [quotedSubtotalInput, setQuotedSubtotalInput] = useState(0);
     const [isSavingTextQuote, setIsSavingTextQuote] = useState(false);
+    const [hasCopiedOrderLink, setHasCopiedOrderLink] = useState(false);
     const requestedOrderId = searchParams.get('order');
 
     // Driver Assignment UI state
@@ -239,6 +240,7 @@ export default function AdminOrdersPage() {
 
     const closeSelectedOrder = () => {
         setSelectedOrder(null);
+        setHasCopiedOrderLink(false);
         if (requestedOrderId) {
             syncOrderQuery(null);
         }
@@ -268,6 +270,24 @@ export default function AdminOrdersPage() {
             const items = await fetchOrderDetails(order.id);
             setOrderItems(items);
             setLoadingDetail(false);
+        }
+        setHasCopiedOrderLink(false);
+    };
+
+    const copySelectedOrderLink = async () => {
+        if (!selectedOrder) return;
+
+        const url = typeof window !== 'undefined'
+            ? `${window.location.origin}/admin/orders?order=${selectedOrder.id}`
+            : `/admin/orders?order=${selectedOrder.id}`;
+
+        try {
+            await navigator.clipboard.writeText(url);
+            setHasCopiedOrderLink(true);
+            toast.success('تم نسخ رابط الطلب');
+            setTimeout(() => setHasCopiedOrderLink(false), 1800);
+        } catch {
+            toast.error('مش قادرين ننسخ الرابط دلوقتي');
         }
     };
 
@@ -583,10 +603,23 @@ export default function AdminOrdersPage() {
                             ) : (
                                 displayedOrders.map((order) => {
                                     const sm = statusMeta(order.status);
+                                    const isSelected = selectedOrder?.id === order.id;
                                     return (
-                                        <tr key={order.id} className="hover:bg-surface-hover transition-colors">
+                                        <tr
+                                            key={order.id}
+                                            className={`transition-colors ${
+                                                isSelected
+                                                    ? 'bg-primary/8 ring-1 ring-inset ring-primary/20'
+                                                    : 'hover:bg-surface-hover'
+                                            }`}
+                                        >
                                             <td className="px-4 py-3">
-                                                <span className="font-mono text-xs text-gray-500">#{order.id.slice(0, 8)}</span>
+                                                <span className={`font-mono text-xs ${isSelected ? 'text-primary font-black' : 'text-gray-500'}`}>#{order.id.slice(0, 8)}</span>
+                                                {isSelected && (
+                                                    <span className="block mt-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 w-fit">
+                                                        مفتوح الآن
+                                                    </span>
+                                                )}
                                                 {order.shipping_address?.is_grace_period === true && (
                                                     <span className="block mt-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20 w-fit">⏳ يُمكن إلغاؤه</span>
                                                 )}
@@ -625,9 +658,9 @@ export default function AdminOrdersPage() {
                                             <td className="px-4 py-3 text-center">
                                                 <button
                                                     onClick={() => handleViewOrder(order)}
-                                                    className="text-xs text-primary hover:text-primary/80 font-bold"
+                                                    className={`text-xs font-bold ${isSelected ? 'text-primary' : 'text-primary hover:text-primary/80'}`}
                                                 >
-                                                    عرض
+                                                    {isSelected ? 'مفتوح' : 'عرض'}
                                                 </button>
                                             </td>
                                         </tr>
@@ -649,9 +682,18 @@ export default function AdminOrdersPage() {
                                 <h2 className="font-heading font-black text-foreground">تفاصيل الطلب</h2>
                                 <p className="text-xs text-gray-500 mt-0.5 font-mono">#{selectedOrder.id.slice(0, 8)}...</p>
                             </div>
-                            <button onClick={closeSelectedOrder} className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">
-                                <X className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={copySelectedOrderLink}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-surface-hover bg-surface-hover px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10"
+                                >
+                                    {hasCopiedOrderLink ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
+                                    {hasCopiedOrderLink ? 'اتنسخ' : 'انسخ الرابط'}
+                                </button>
+                                <button onClick={closeSelectedOrder} className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="p-5 space-y-5 flex-1">
