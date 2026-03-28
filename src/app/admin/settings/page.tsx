@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { DEFAULT_APP_SETTINGS, saveAdminAppSettings, fetchPublicAppSettings } from '@/services/appSettingsService';
 import { signIn, updateAuthPassword } from '@/services/authService';
 import { PasswordInput } from '@/components/ui/password-input';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function AdminSettingsPage() {
@@ -108,13 +109,13 @@ export default function AdminSettingsPage() {
     }) => (
         <div>
             <label className="block text-xs font-bold text-gray-400 mb-1.5">{label}</label>
-            <input
+            <Input
                 type={type}
                 value={value}
                 onChange={e => onChange(e.target.value)}
                 placeholder={placeholder}
                 dir={dir}
-                className={`w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50 ${dir === 'ltr' ? 'text-left' : 'text-right'}`}
+                className={`h-11 bg-surface-hover ${dir === 'ltr' ? 'text-left' : 'text-right'}`}
             />
         </div>
     );
