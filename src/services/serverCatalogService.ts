@@ -106,7 +106,7 @@ export async function fetchPaginatedProductsServer(
   }
 }
 
-export async function fetchBestSellersServer(limit = 4): Promise<Product[]> {
+async function fetchDeliveredBestSellerRankedIds(limit?: number): Promise<string[]> {
   const supabaseAdmin = getServerAdminSupabase()
   if (!supabaseAdmin) return []
 
@@ -144,9 +144,20 @@ export async function fetchBestSellersServer(limit = 4): Promise<Product[]> {
 
   const rankedIds = Array.from(sales.entries())
     .sort((left, right) => right[1] - left[1])
-    .slice(0, limit)
     .map(([productId]) => productId)
 
+  if (typeof limit === 'number') {
+    return rankedIds.slice(0, limit)
+  }
+
+  return rankedIds
+}
+
+export async function fetchBestSellersServer(limit = 4): Promise<Product[]> {
+  const supabaseAdmin = getServerAdminSupabase()
+  if (!supabaseAdmin) return []
+
+  const rankedIds = await fetchDeliveredBestSellerRankedIds(limit)
   if (rankedIds.length === 0) return []
 
   const { data: products, error: productsError } = await supabaseAdmin
@@ -163,4 +174,50 @@ export async function fetchBestSellersServer(limit = 4): Promise<Product[]> {
   return rankedIds
     .map((id) => productMap.get(id))
     .filter((product): product is Product => Boolean(product))
+}
+
+export async function fetchBestSellersPageServer(
+  page = 0,
+  pageSize = 12,
+): Promise<{ products: Product[]; total: number; totalPages: number }> {
+  const supabaseAdmin = getServerAdminSupabase()
+  if (!supabaseAdmin) {
+    return { products: [], total: 0, totalPages: 0 }
+  }
+
+  const rankedIds = await fetchDeliveredBestSellerRankedIds()
+  const total = rankedIds.length
+  const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0
+
+  if (total === 0) {
+    return { products: [], total: 0, totalPages: 0 }
+  }
+
+  const from = page * pageSize
+  const pageIds = rankedIds.slice(from, from + pageSize)
+
+  if (pageIds.length === 0) {
+    return { products: [], total, totalPages }
+  }
+
+  const { data: products, error: productsError } = await supabaseAdmin
+    .from('products')
+    .select(PRODUCT_CARD_FIELDS)
+    .in('id', pageIds)
+
+  if (productsError) {
+    console.error('Error fetching best seller page products on server:', productsError.message)
+    return { products: [], total, totalPages }
+  }
+
+  const productMap = new Map((products || []).map((product) => [product.id, product as Product]))
+  const orderedProducts = pageIds
+    .map((id) => productMap.get(id))
+    .filter((product): product is Product => Boolean(product))
+
+  return {
+    products: orderedProducts,
+    total,
+    totalPages,
+  }
 }

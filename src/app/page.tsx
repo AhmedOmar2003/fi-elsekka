@@ -213,7 +213,7 @@ export default async function Home() {
                 <h2 className="storefront-section-title text-2xl sm:text-3xl text-foreground">الأكتر طلبًا</h2>
                 <p className="storefront-subtle-text mt-2 text-sm">دي الحاجات اللي الناس بتحبها وبتطلبها كتير</p>
               </div>
-              <Link href="/category/all" className="font-heading material-chip whitespace-nowrap text-sm font-semibold text-primary hover:border-primary/20 hover:bg-primary/10">
+              <Link href="/category/all?view=best-sellers&page=1" className="font-heading material-chip whitespace-nowrap text-sm font-semibold text-primary hover:border-primary/20 hover:bg-primary/10">
                 عرض الكل
               </Link>
             </div>

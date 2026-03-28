@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import CategoryPageClient from "./category-page-client"
 import {
   fetchCategoryByIdServer,
+  fetchBestSellersPageServer,
   fetchPaginatedProductsServer,
 } from "@/services/serverCatalogService"
 import { fetchRestaurantsServer } from "@/services/serverRestaurantsService"
@@ -17,7 +18,21 @@ const PAGE_SIZE = 12
 
 export const revalidate = 300
 
-const getCategoryPageData = cache(async (slug: string) => {
+const getCategoryPageData = cache(async (slug: string, view: string, page: number) => {
+  if (slug === "all" && view === "best-sellers") {
+    const bestSellerResult = await fetchBestSellersPageServer(page, PAGE_SIZE)
+    return {
+      category: null,
+      products: bestSellerResult.products,
+      hasMore: page + 1 < bestSellerResult.totalPages,
+      restaurants: [],
+      listingMode: "best-sellers" as const,
+      totalPages: bestSellerResult.totalPages,
+      currentPage: page + 1,
+      totalItems: bestSellerResult.total,
+    }
+  }
+
   if (slug === "all") {
     const { products, hasMore } = await fetchPaginatedProductsServer(0, PAGE_SIZE)
     return {
@@ -25,6 +40,10 @@ const getCategoryPageData = cache(async (slug: string) => {
       products,
       hasMore,
       restaurants: [],
+      listingMode: "all" as const,
+      totalPages: 0,
+      currentPage: 1,
+      totalItems: products.length,
     }
   }
 
@@ -43,6 +62,10 @@ const getCategoryPageData = cache(async (slug: string) => {
     products: paginatedResult.products,
     hasMore: paginatedResult.hasMore,
     restaurants,
+    listingMode: "category" as const,
+    totalPages: 0,
+    currentPage: 1,
+    totalItems: paginatedResult.products.length,
   }
 })
 
@@ -56,22 +79,31 @@ export async function generateMetadata({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<{ q?: string; view?: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const { q } = await searchParams
+  const { q, view } = await searchParams
 
   if (slug === "all") {
     const settings = await fetchPublicAppSettingsServer()
     const siteName = settings.siteName || "في السكة"
     const query = q?.trim()
-    const title = query ? `نتايج البحث عن ${query} | ${siteName}` : `كل المنتجات | ${siteName}`
-    const description = query
+    const isBestSellersView = view === "best-sellers"
+    const title = isBestSellersView
+      ? `الأكثر طلبًا | ${siteName}`
+      : query
+        ? `نتايج البحث عن ${query} | ${siteName}`
+        : `كل المنتجات | ${siteName}`
+    const description = isBestSellersView
+      ? `شوف المنتجات الأكثر طلبًا على ${siteName} مرتبة حسب الطلبات الفعلية من الأعلى للأقل.`
+      : query
       ? `شوف نتايج البحث عن ${query} على ${siteName}، ووصّل اللي يعجبك لحد عندك بسهولة.`
       : `لف في كل منتجات ${siteName} من مكان واحد، واختار اللي يناسبك بسرعة.`
-    const url = query
-      ? `${SITE_URL}/category/all?q=${encodeURIComponent(query)}`
-      : `${SITE_URL}/category/all`
+    const url = isBestSellersView
+      ? `${SITE_URL}/category/all?view=best-sellers`
+      : query
+        ? `${SITE_URL}/category/all?q=${encodeURIComponent(query)}`
+        : `${SITE_URL}/category/all`
 
     return {
       title,
@@ -93,7 +125,7 @@ export async function generateMetadata({
     }
   }
 
-  const { category } = await getCategoryPageData(slug)
+  const { category } = await getCategoryPageData(slug, "", 0)
   const settings = await fetchPublicAppSettingsServer()
   const siteName = settings.siteName || "في السكة"
   const categoryName = category?.name || "قسم المنتجات"
@@ -130,11 +162,12 @@ export default async function CategoryPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<{ q?: string; view?: string; page?: string }>
 }) {
   const { slug } = await params
-  const { q } = await searchParams
-  const { category, products, hasMore, restaurants } = await getCategoryPageData(slug)
+  const { q, view, page } = await searchParams
+  const currentPage = Math.max(1, Number(page || "1") || 1) - 1
+  const { category, products, hasMore, restaurants, listingMode, totalPages, totalItems } = await getCategoryPageData(slug, view || "", currentPage)
 
   return (
     <CategoryPageClient
@@ -143,6 +176,10 @@ export default async function CategoryPage({
       initialHasMore={hasMore}
       initialRestaurants={restaurants}
       initialSearchQuery={q?.trim() || ""}
+      listingMode={listingMode}
+      currentPage={currentPage + 1}
+      totalPages={totalPages}
+      totalItems={totalItems}
     />
   )
 }

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
-import { Loader2, Search, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Loader2, Search, X } from "lucide-react"
 import { Product, fetchPaginatedProducts } from "@/services/productsService"
 import type { Restaurant } from "@/services/restaurantsService"
 import { useProducts } from "@/contexts/ProductsContext"
@@ -36,6 +36,10 @@ type CategoryPageClientProps = {
   initialHasMore?: boolean
   initialRestaurants?: Restaurant[]
   initialSearchQuery?: string
+  listingMode?: "all" | "category" | "best-sellers"
+  currentPage?: number
+  totalPages?: number
+  totalItems?: number
 }
 
 export default function CategoryPageClient({
@@ -44,6 +48,10 @@ export default function CategoryPageClient({
   initialHasMore = false,
   initialRestaurants = [],
   initialSearchQuery = "",
+  listingMode = "all",
+  currentPage = 1,
+  totalPages = 0,
+  totalItems = 0,
 }: CategoryPageClientProps) {
   const params = useParams()
   const searchParams = useSearchParams()
@@ -53,9 +61,10 @@ export default function CategoryPageClient({
   const { categories } = useProducts()
 
   const isAllPage = slug === "all"
+  const isBestSellersView = isAllPage && listingMode === "best-sellers"
 
   const [allPageProducts, setAllPageProducts] = React.useState<Product[]>(isAllPage ? initialProducts : [])
-  const [currentPage, setCurrentPage] = React.useState(initialProducts.length > 0 ? 1 : 0)
+  const [loadedPage, setLoadedPage] = React.useState(initialProducts.length > 0 ? 1 : 0)
   const [hasMore, setHasMore] = React.useState(initialHasMore)
   const [isLoadingMore, setIsLoadingMore] = React.useState(false)
   const [isInitialLoading, setIsInitialLoading] = React.useState(isAllPage && initialProducts.length === 0)
@@ -65,7 +74,7 @@ export default function CategoryPageClient({
   const [isCategoryLoading, setIsCategoryLoading] = React.useState(!isAllPage && initialProducts.length === 0)
 
   React.useEffect(() => {
-    setCurrentPage(initialProducts.length > 0 ? 1 : 0)
+    setLoadedPage(initialProducts.length > 0 ? 1 : 0)
     setHasMore(initialHasMore)
 
     if (isAllPage) {
@@ -85,12 +94,12 @@ export default function CategoryPageClient({
     }
     setIsInitialLoading(true)
     setAllPageProducts([])
-    setCurrentPage(0)
+      setLoadedPage(0)
     setHasMore(true)
 
     fetchPaginatedProducts(0, PAGE_SIZE).then(({ products, hasMore }) => {
       setAllPageProducts(products)
-      setCurrentPage(1)
+      setLoadedPage(1)
       setHasMore(hasMore)
       setIsInitialLoading(false)
     })
@@ -99,7 +108,7 @@ export default function CategoryPageClient({
   const loadMore = React.useCallback(async () => {
     if (isLoadingMore || !hasMore) return
     setIsLoadingMore(true)
-    const { products, hasMore: more } = await fetchPaginatedProducts(currentPage, PAGE_SIZE, isAllPage ? undefined : slug)
+    const { products, hasMore: more } = await fetchPaginatedProducts(loadedPage, PAGE_SIZE, isAllPage ? undefined : slug)
     const mergeProducts = (prev: Product[]) => {
       const ids = new Set(prev.map(p => p.id))
       return [...prev, ...products.filter(p => !ids.has(p.id))]
@@ -110,10 +119,10 @@ export default function CategoryPageClient({
     } else {
       setCategoryProducts(mergeProducts)
     }
-    setCurrentPage(p => p + 1)
+    setLoadedPage(p => p + 1)
     setHasMore(more)
     setIsLoadingMore(false)
-  }, [currentPage, hasMore, isAllPage, isLoadingMore, slug])
+  }, [loadedPage, hasMore, isAllPage, isLoadingMore, slug])
 
   React.useEffect(() => {
     if (isAllPage || initialProducts.length > 0) return
@@ -124,7 +133,7 @@ export default function CategoryPageClient({
     setIsCategoryLoading(true)
     fetchPaginatedProducts(0, PAGE_SIZE, slug).then(({ products, hasMore }) => {
       setCategoryProducts(products)
-      setCurrentPage(1)
+      setLoadedPage(1)
       setHasMore(hasMore)
       setIsCategoryLoading(false)
     })
@@ -147,7 +156,7 @@ export default function CategoryPageClient({
     return categories.find(c => c.id === slug) || initialCategory || null
   }, [categories, slug, isAllPage, initialCategory])
 
-  const categoryName = currentCategory?.name || (isAllPage ? "كل المنتجات" : "قسم المنتجات")
+  const categoryName = isBestSellersView ? "الأكثر طلبًا" : currentCategory?.name || (isAllPage ? "كل المنتجات" : "قسم المنتجات")
   const isRequestOnlyCategoryPage = !!currentCategory && isRequestOnlyTextCategory(currentCategory.name)
   const canShowRequestPageLink = !!currentCategory && !isAllPage
   const isFoodCategoryPage = currentCategory?.name === "طعام"
@@ -194,6 +203,10 @@ export default function CategoryPageClient({
 
   const displayProducts = React.useMemo(() => {
     let filtered = [...allProducts]
+
+    if (isBestSellersView) {
+      return filtered
+    }
 
     if (isFoodCategoryPage) {
       filtered = filtered.filter((product) => product.specifications?.restaurant_item !== true)
@@ -273,6 +286,7 @@ export default function CategoryPageClient({
     taxonomySecondaryFilter,
     availableOnly,
     offersOnly,
+    isBestSellersView,
     isFoodCategoryPage,
   ])
 
@@ -300,7 +314,9 @@ export default function CategoryPageClient({
             </h1>
             <p className="mt-2 text-gray-500">
               {searchQuery
-                ? `تم العثور على ${productCards.length} منتج`
+                    ? `تم العثور على ${productCards.length} منتج`
+                    : isBestSellersView
+                      ? `عرض ${totalItems} منتج من الأكثر طلبًا مرتبة من الأعلى للأقل.`
                 : showRestaurantsView
                   ? "اختار المطعم اللي يعجبك، وادخل شوف المنيو والطلبات اللي بيقدمها من مكان واحد."
                 : isRequestOnlyCategoryPage
@@ -341,9 +357,10 @@ export default function CategoryPageClient({
             currentCategory ? <CategoryRequestPanel category={currentCategory} compact /> : null
           ) : (
             <div className="flex flex-col md:flex-row gap-8">
+              {!isBestSellersView && (
               <div className="flex items-center justify-between mb-4 md:hidden">
                 <span className="text-sm text-gray-500 font-medium">
-                  {showRestaurantsView ? `عرض ${restaurantCards.length} مطعم` : `عرض ${productCards.length} منتج`}
+                  {showRestaurantsView ? `عرض ${restaurantCards.length} مطعم` : isBestSellersView ? `عرض ${productCards.length} من ${totalItems} منتج` : `عرض ${productCards.length} منتج`}
                 </span>
                 <button
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -354,7 +371,9 @@ export default function CategoryPageClient({
                   {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-primary"></span>}
                 </button>
               </div>
+              )}
 
+                {!isBestSellersView && (
                 <aside className={`md:w-64 shrink-0 flex-col gap-8 ${isFilterOpen ? "flex" : "hidden md:flex"}`}>
                   {hasActiveFilters && (
                   <button onClick={clearAllFilters} className="flex items-center gap-1.5 text-xs font-bold text-rose-500 hover:text-rose-400 mb-2 transition-colors">
@@ -447,15 +466,17 @@ export default function CategoryPageClient({
                 )}
                 <Button onClick={() => setIsFilterOpen(false)} className="md:hidden mt-4">عرض {productCards.length} نتيجة</Button>
               </aside>
+                )}
 
               <div className="flex-1">
                 <div className="hidden md:flex justify-between items-center mb-6">
                   <span className="text-sm text-gray-500">
-                    {showRestaurantsView ? `عرض ${restaurantCards.length} مطعم` : `عرض ${productCards.length} نتيجة`}
+                    {showRestaurantsView ? `عرض ${restaurantCards.length} مطعم` : isBestSellersView ? `عرض ${productCards.length} من ${totalItems} منتج` : `عرض ${productCards.length} نتيجة`}
                   </span>
-                  {hasActiveFilters && <button onClick={clearAllFilters} className="text-xs font-bold text-rose-500 hover:text-rose-400 transition-colors">مسح الفلاتر</button>}
+                  {hasActiveFilters && !isBestSellersView && <button onClick={clearAllFilters} className="text-xs font-bold text-rose-500 hover:text-rose-400 transition-colors">مسح الفلاتر</button>}
                 </div>
 
+                {!isBestSellersView && (
                 <div className="mb-6 flex flex-wrap items-center gap-2">
                   <button
                     type="button"
@@ -492,6 +513,7 @@ export default function CategoryPageClient({
                     </button>
                   ) : null}
                 </div>
+                )}
 
                 {isLoading ? (
                   <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3">
@@ -548,11 +570,41 @@ export default function CategoryPageClient({
                         ) : null}
                       </div>
                     )}
-                    <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3">
+                    <div className={`grid grid-cols-2 gap-3 sm:gap-6 ${isBestSellersView ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
                       {productCards.map(product => <ProductCard key={product.id} {...product} />)}
                     </div>
 
-                    {hasMore && !hasActiveFilters && !showRestaurantsView && (
+                    {isBestSellersView && totalPages > 1 ? (
+                      <div className="mt-10 flex items-center justify-center gap-2">
+                        <Link
+                          href={`/category/all?view=best-sellers&page=${Math.max(1, currentPage - 1)}`}
+                          aria-disabled={currentPage <= 1}
+                          className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition-colors ${
+                            currentPage <= 1
+                              ? "pointer-events-none border-surface-hover text-gray-600"
+                              : "border-surface-hover bg-surface text-foreground hover:bg-surface-hover"
+                          }`}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                          السابق
+                        </Link>
+                        <div className="rounded-xl border border-surface-hover bg-surface px-4 py-2.5 text-sm font-black text-foreground">
+                          صفحة {currentPage} من {totalPages}
+                        </div>
+                        <Link
+                          href={`/category/all?view=best-sellers&page=${Math.min(totalPages, currentPage + 1)}`}
+                          aria-disabled={currentPage >= totalPages}
+                          className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition-colors ${
+                            currentPage >= totalPages
+                              ? "pointer-events-none border-surface-hover text-gray-600"
+                              : "border-surface-hover bg-surface text-foreground hover:bg-surface-hover"
+                          }`}
+                        >
+                          التالي
+                          <ChevronLeft className="h-4 w-4" />
+                        </Link>
+                      </div>
+                    ) : hasMore && !hasActiveFilters && !showRestaurantsView && (
                       <div className="flex justify-center mt-10">
                         <button
                           onClick={loadMore}
