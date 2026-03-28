@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cancelAdminOrder, fetchAdminOrders, fetchOrderDetails, getAdminOrderKind, isCustomerSelfCancelledGraceOrder, isPricedSearchRequestOrder, isSearchRequestOrder, isSearchingRequestOrder, reopenCancelledOrderAfterCustomerRequest, saveAdminOrderDeliveryPlan, saveAdminTextOrderQuote, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
 import { ShoppingCart, ChevronDown, X, Package, Download, Filter, Bike, Clock, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
@@ -91,6 +91,7 @@ function exportToCSV(orders: any[], statusFilter: string) {
 
 export default function AdminOrdersPage() {
     const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
     const { profile, isLoading: authLoading } = useAuth();
     const canViewOrders = hasPermission(profile, 'view_orders');
@@ -119,6 +120,7 @@ export default function AdminOrdersPage() {
     const [isReopeningOrder, setIsReopeningOrder] = useState(false);
     const [quotedSubtotalInput, setQuotedSubtotalInput] = useState(0);
     const [isSavingTextQuote, setIsSavingTextQuote] = useState(false);
+    const requestedOrderId = searchParams.get('order');
 
     // Driver Assignment UI state
     const [drivers, setDrivers] = useState<any[]>([]);
@@ -223,7 +225,29 @@ export default function AdminOrdersPage() {
         }
     }, [searchParams]);
 
-    const handleViewOrder = async (order: any) => {
+    const syncOrderQuery = (orderId?: string | null) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (orderId) {
+            params.set('order', orderId);
+        } else {
+            params.delete('order');
+        }
+
+        const query = params.toString();
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    };
+
+    const closeSelectedOrder = () => {
+        setSelectedOrder(null);
+        if (requestedOrderId) {
+            syncOrderQuery(null);
+        }
+    };
+
+    const handleViewOrder = async (order: any, options?: { syncUrl?: boolean }) => {
+        if (options?.syncUrl !== false && requestedOrderId !== order.id) {
+            syncOrderQuery(order.id);
+        }
         setSelectedOrder(order);
         setEstimatedTime(order.shipping_address?.estimated_delivery || '');
         setEtaHours(Number(order.shipping_address?.estimated_delivery_hours || 0));
@@ -246,6 +270,16 @@ export default function AdminOrdersPage() {
             setLoadingDetail(false);
         }
     };
+
+    useEffect(() => {
+        if (!requestedOrderId || isLoading || orders.length === 0) return;
+        if (selectedOrder?.id === requestedOrderId) return;
+
+        const requestedOrder = orders.find((order) => order.id === requestedOrderId);
+        if (requestedOrder) {
+            void handleViewOrder(requestedOrder, { syncUrl: false });
+        }
+    }, [requestedOrderId, isLoading, orders, selectedOrder?.id]);
 
     const handleStatusChange = async (orderId: string, newStatus: string) => {
         if (!canUpdateStatus) return;
@@ -608,14 +642,14 @@ export default function AdminOrdersPage() {
             {/* Order Detail Drawer */}
             {selectedOrder && (
                 <div className="fixed inset-0 z-50 flex items-stretch justify-end">
-                    <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" onClick={() => setSelectedOrder(null)} />
+                    <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" onClick={closeSelectedOrder} />
                     <div className="relative w-full max-w-md bg-surface border-r border-surface-hover flex flex-col h-full shadow-2xl overflow-y-auto">
                         <div className="flex items-center justify-between p-5 border-b border-surface-hover sticky top-0 bg-surface z-10">
                             <div>
                                 <h2 className="font-heading font-black text-foreground">تفاصيل الطلب</h2>
                                 <p className="text-xs text-gray-500 mt-0.5 font-mono">#{selectedOrder.id.slice(0, 8)}...</p>
                             </div>
-                            <button onClick={() => setSelectedOrder(null)} className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">
+                            <button onClick={closeSelectedOrder} className="p-2 rounded-xl text-gray-400 hover:text-foreground hover:bg-surface-hover">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>

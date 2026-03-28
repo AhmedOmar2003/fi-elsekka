@@ -110,6 +110,7 @@ export default function AdminSearchPage() {
       icon: ShoppingCart,
       items: results.orders,
       href: "/admin/orders",
+      getHref: (item: AdminSearchResults["orders"][number]) => `/admin/orders?order=${item.id}`,
       render: (item: AdminSearchResults["orders"][number]) => (
         <div className="space-y-1">
           <p className="font-bold text-foreground">#{item.id.slice(0, 8)} — {item.customer_name}</p>
@@ -199,11 +200,26 @@ export default function AdminSearchPage() {
                   {section.items.length === 0 ? (
                     <div className="px-5 py-8 text-center text-xs text-gray-500">لا توجد نتائج في هذا القسم</div>
                   ) : (
-                    section.items.map((item: any) => (
-                      <div key={item.id} className="px-5 py-4">
-                        {section.render(item)}
-                      </div>
-                    ))
+                    section.items.map((item: any) => {
+                      const itemHref = section.getHref?.(item);
+                      if (itemHref) {
+                        return (
+                          <Link
+                            key={item.id}
+                            href={itemHref}
+                            className="block px-5 py-4 transition-colors hover:bg-surface-hover"
+                          >
+                            {section.render(item)}
+                          </Link>
+                        );
+                      }
+
+                      return (
+                        <div key={item.id} className="px-5 py-4">
+                          {section.render(item)}
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>

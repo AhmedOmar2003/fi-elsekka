@@ -104,7 +104,7 @@ export async function POST(request: Request) {
             await createOrderAdminNotificationsWithPush(driverSupabaseAdmin, {
                 title: 'تم توصيل الطلب بنجاح',
                 message: `شكرًا لكم، تم توصيل طلب ${customerName} بنجاح بواسطة ${auth.profile.fullName || 'المندوب'}.`,
-                link: '/admin/orders',
+                link: `/admin/orders?order=${orderId}`,
                 topic: 'admin-order-delivered',
             });
 

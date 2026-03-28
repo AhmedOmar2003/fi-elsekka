@@ -71,7 +71,7 @@ export async function POST(
       message: restaurantOrder.isRestaurantOrder
         ? `العميل ${customerName} أكد طلبًا جديدًا من مطعم ${restaurantOrder.restaurantName || 'مطعم في السكة'}${totalText}.`
         : `العميل ${customerName} أكد طلبًا جديدًا${totalText}.`,
-      link: '/admin/orders',
+      link: `/admin/orders?order=${orderId}`,
       topic: 'admin-order-created',
     });
 
