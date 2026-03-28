@@ -10,7 +10,6 @@ import { supabase } from "@/lib/supabase"
 import { Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, ChevronDown, ChevronUp, Wifi, Phone, Star, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { RequestAttachmentsGallery } from "@/components/orders/request-attachments-gallery"
-import { SearchRequestProgress } from "@/components/orders/search-request-progress"
 import { getRestaurantOrderSnapshot } from "@/lib/restaurant-order"
 
 function isAwaitingTextOrderConfirmation(order: Order) {
@@ -298,6 +297,7 @@ function OrderCard({
   const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
   const textRequest = order.shipping_address?.custom_request_text
   const textRequestCategory = order.shipping_address?.custom_request_category_name
+  const textRequestLabel = textRequestCategory === 'صيدلية' ? 'طلب صيدلي' : 'طلب بحث عن منتج'
   const textRequestImageUrls = Array.isArray(order.shipping_address?.custom_request_image_urls) ? order.shipping_address.custom_request_image_urls : []
   const pricingPending = order.shipping_address?.pricing_pending === true
   const quotedProductsTotal = Number(order.shipping_address?.quoted_products_total || 0)
@@ -528,7 +528,7 @@ function OrderCard({
           {isTextRequestOrder && (textRequest || textRequestImageUrls.length > 0) && (
             <div className="space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-4">
               <p className="text-xs font-bold text-primary/80 uppercase tracking-wider">
-                {textRequestCategory ? `طلب ${textRequestCategory} النصي` : 'الطلب النصي'}
+                {textRequestLabel}
               </p>
               <p className="text-sm leading-7 text-foreground whitespace-pre-wrap">
                 {textRequest?.trim() || 'اعتمدت هذا الطلب على الصور المرفقة فقط بدون نص إضافي.'}
@@ -540,10 +540,6 @@ function OrderCard({
                 hint="لو رفعت روشتة أو صورة دواء فستظل مرتبطة بالطلب هنا."
               />
             </div>
-          )}
-
-          {isTextRequestOrder && (
-            <SearchRequestProgress order={order} audience="customer" />
           )}
 
           {isTextRequestOrder && pricingPending && (

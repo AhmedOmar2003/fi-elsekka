@@ -133,7 +133,7 @@ export default function AdminRestaurantProductsPage() {
       price: String(product.price || ""),
       discount_percentage: normalizeDiscountFromProduct(product),
       image_url: product.image_url || "",
-      available: metadata.restaurantAvailable !== false && (product.stock_quantity || 0) > 0,
+      available: metadata.restaurantAvailable !== false,
       menu_section: metadata.restaurantSection || "",
       related_product_ids: metadata.relatedProductIds || [],
     });
@@ -317,23 +317,23 @@ export default function AdminRestaurantProductsPage() {
           <div className="rounded-3xl border border-emerald-500/15 bg-emerald-500/5 p-4">
             <p className="text-xs font-black text-gray-500">المتاح الآن</p>
             <p className="mt-2 text-3xl font-black text-emerald-400">
-              {
-                products.filter((product) => {
-                  const metadata = getProductCatalogMetadata(product.specifications);
-                  return metadata.restaurantAvailable !== false && (product.stock_quantity || 0) > 0;
-                }).length
-              }
+                {
+                  products.filter((product) => {
+                    const metadata = getProductCatalogMetadata(product.specifications);
+                    return metadata.restaurantAvailable !== false;
+                  }).length
+                }
             </p>
           </div>
           <div className="rounded-3xl border border-amber-500/15 bg-amber-500/5 p-4">
             <p className="text-xs font-black text-gray-500">غير المتاح الآن</p>
             <p className="mt-2 text-3xl font-black text-amber-400">
-              {
-                products.filter((product) => {
-                  const metadata = getProductCatalogMetadata(product.specifications);
-                  return metadata.restaurantAvailable === false || (product.stock_quantity || 0) <= 0;
-                }).length
-              }
+                {
+                  products.filter((product) => {
+                    const metadata = getProductCatalogMetadata(product.specifications);
+                    return metadata.restaurantAvailable === false;
+                  }).length
+                }
             </p>
           </div>
         </div>
@@ -363,7 +363,7 @@ export default function AdminRestaurantProductsPage() {
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {products.map((product) => {
               const metadata = getProductCatalogMetadata(product.specifications);
-              const isAvailable = metadata.restaurantAvailable !== false && (product.stock_quantity || 0) > 0;
+              const isAvailable = metadata.restaurantAvailable !== false;
               const discountPercentage = typeof product.discount_percentage === "number" ? product.discount_percentage : 0;
 
               return (

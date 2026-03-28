@@ -110,6 +110,11 @@ export default function ProductPage({
 
   const handleBuyNow = async () => {
     if (!dbProduct) return;
+    const metadata = getProductCatalogMetadata(dbProduct.specifications)
+    if (metadata.restaurantItem && metadata.restaurantAvailable === false) {
+      toast.error("المنتج ده غير متوفر حاليًا من المطعم")
+      return
+    }
     const searchParams = new URLSearchParams();
     searchParams.set("buyNow", dbProduct.id);
     searchParams.set("qty", quantity.toString());
@@ -335,6 +340,8 @@ export default function ProductPage({
 
   const product = dbProduct ? (() => {
     const metadata = getProductCatalogMetadata(dbProduct.specifications)
+    const isRestaurantItem = metadata.restaurantItem
+    const isRestaurantAvailable = metadata.restaurantAvailable !== false
     let price = dbProduct.price;
     let oldPrice: number | undefined = metadata.oldPrice && metadata.oldPrice > price ? metadata.oldPrice : undefined;
     let discountAmount = dbProduct.specifications?.discount_badge || undefined;
@@ -358,8 +365,10 @@ export default function ProductPage({
       isBestSeller: !!dbProduct.is_best_seller,
       rating: dbProduct.specifications?.rating || 4.9,
       reviewsCount: dbProduct.specifications?.reviews_count || 120,
-      stock: dbProduct.stock_quantity ? `متوفر ${dbProduct.stock_quantity} قطعة` : (dbProduct.specifications?.stock || "متوفر"),
-      stockQty: dbProduct.stock_quantity ?? null,
+      stock: isRestaurantItem
+        ? (isRestaurantAvailable ? "متاح الآن" : "غير متوفر حاليًا")
+        : (dbProduct.stock_quantity ? `متوفر ${dbProduct.stock_quantity} قطعة` : (dbProduct.specifications?.stock || "متوفر")),
+      stockQty: isRestaurantItem ? null : (dbProduct.stock_quantity ?? null),
       description: dbProduct.description || "لا يوجد وصف متاح لهذا المنتج حالياً.",
       shortDescription: metadata.shortDescription,
       specs: normalizedSpecs.length > 0
@@ -383,6 +392,8 @@ export default function ProductPage({
       category_name: dbProduct.categories?.name || "منتجات",
       brand: metadata.brand,
       sku: metadata.sku,
+      isRestaurantItem,
+      isRestaurantAvailable,
     };
   })() : {
     title: "سماعة بلوتوث لاسلكية عازلة للضوضاء",
@@ -420,6 +431,8 @@ export default function ProductPage({
     category_name: "إلكترونيات",
     brand: "",
     sku: "",
+    isRestaurantItem: false,
+    isRestaurantAvailable: true,
   }
 
   const comparePriceToShow =
@@ -447,7 +460,7 @@ export default function ProductPage({
       items.push("من الأكثر طلبًا في القسم")
     }
 
-    if ((product.stockQty ?? 0) > 0 && (product.stockQty ?? 0) <= 5) {
+    if (!product.isRestaurantItem && (product.stockQty ?? 0) > 0 && (product.stockQty ?? 0) <= 5) {
       items.push(`متبقي ${product.stockQty} قطع فقط`)
     }
     return items.slice(0, 4)
@@ -772,15 +785,17 @@ export default function ProductPage({
               {/* Stock indicator */}
               {(() => {
                 const qty = product.stockQty
+                const isRestaurantUnavailable = product.isRestaurantItem && !product.isRestaurantAvailable
                 const isOutOfStock = qty !== null && qty <= 0
-                const isLowStock = qty !== null && qty > 0 && qty <= 5
-                const isInStock = qty === null || qty > 5
+                const isLowStock = !product.isRestaurantItem && qty !== null && qty > 0 && qty <= 5
 
-                if (isOutOfStock) {
+                if (isRestaurantUnavailable || isOutOfStock) {
                   return (
                     <div className="mb-6 flex items-center gap-2 text-sm font-medium">
                       <span className="relative inline-flex h-3 w-3 rounded-full bg-rose-500" />
-                      <span className="text-rose-500 font-bold">غير متوفر حالياً — نفذت الكمية</span>
+                      <span className="text-rose-500 font-bold">
+                        {product.isRestaurantItem ? "غير متوفر حاليًا من المطعم" : "غير متوفر حالياً — نفذت الكمية"}
+                      </span>
                     </div>
                   )
                 }
@@ -817,7 +832,7 @@ export default function ProductPage({
                     الأكثر طلبًا في القسم
                   </span>
                 ) : null}
-                {(product.stockQty ?? 0) > 0 && (product.stockQty ?? 0) <= 5 ? (
+                {!product.isRestaurantItem && (product.stockQty ?? 0) > 0 && (product.stockQty ?? 0) <= 5 ? (
                   <span className="inline-flex items-center rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1.5 text-xs font-black text-rose-400">
                     متبقي عدد قليل
                   </span>
@@ -886,10 +901,16 @@ export default function ProductPage({
 
                     {/* Buy Now button */}
                     <button
-                      className="w-full h-14 rounded-2xl text-xl font-black text-white bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-600/20 hover:shadow-blue-600/40 transition-all active:scale-95 inline-flex items-center justify-center"
+                      disabled={product.isRestaurantItem && !product.isRestaurantAvailable}
+                      className={[
+                        "w-full h-14 rounded-2xl text-xl font-black text-white shadow-xl transition-all inline-flex items-center justify-center",
+                        product.isRestaurantItem && !product.isRestaurantAvailable
+                          ? "cursor-not-allowed bg-blue-600/45 opacity-60 shadow-blue-600/10"
+                          : "bg-blue-600 hover:bg-blue-700 shadow-blue-600/20 hover:shadow-blue-600/40 active:scale-95",
+                      ].join(" ")}
                       onClick={handleBuyNow}
                     >
-                      اخلص واشتري دلوقتي
+                      {product.isRestaurantItem && !product.isRestaurantAvailable ? "غير متاح الآن" : "اخلص واشتري دلوقتي"}
                     </button>
 
                     <button
@@ -1334,10 +1355,16 @@ export default function ProductPage({
 
             {/* Buy Now — blue */}
             <button
+              disabled={product.isRestaurantItem && !product.isRestaurantAvailable}
               onClick={handleBuyNow}
-              className="h-14 px-5 rounded-2xl font-heading font-black text-base text-white bg-blue-600 hover:bg-blue-700 shadow-[0_6px_24px_rgba(59,130,246,0.35)] active:scale-[0.96] transition-all duration-300"
+              className={[
+                "h-14 px-5 rounded-2xl font-heading font-black text-base text-white shadow-[0_6px_24px_rgba(59,130,246,0.35)] transition-all duration-300",
+                product.isRestaurantItem && !product.isRestaurantAvailable
+                  ? "cursor-not-allowed bg-blue-600/45 opacity-60"
+                  : "bg-blue-600 hover:bg-blue-700 active:scale-[0.96]",
+              ].join(" ")}
             >
-              اشتري ⚡
+              {product.isRestaurantItem && !product.isRestaurantAvailable ? "غير متاح" : "اشتري ⚡"}
             </button>
 
             <button

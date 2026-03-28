@@ -303,7 +303,7 @@ export async function saveRestaurantMenuProduct(payload: SaveRestaurantMenuProdu
     name: payload.name.trim(),
     description: payload.description?.trim() || null,
     price: payload.price,
-    stock_quantity: payload.available === false ? 0 : 999,
+    stock_quantity: payload.available === false ? 0 : 1,
     discount_percentage: payload.discountPercentage || 0,
     category_id: foodCategoryId,
     image_url: finalImageUrl,

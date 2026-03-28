@@ -501,7 +501,7 @@ export default function AccountPage() {
                             ) : searchRequests.map(order => {
                                 const shipping = order.shipping_address || {}
                                 const dateStr = new Date(order.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
-                                const requestTitle = shipping.custom_request_category_name || 'طلب خاص'
+                                const requestTitle = shipping.custom_request_category_name === 'صيدلية' ? 'طلب صيدلي' : 'طلب بحث عن منتج'
                                 const requestText = shipping.custom_request_text || 'الطلب معتمد على التفاصيل اللي كتبتها وقت الإرسال.'
                                 const isSearching = shipping.search_pending === true
                                 const quotedProductsTotal = Number(shipping.quoted_products_total || 0)
