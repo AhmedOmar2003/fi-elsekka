@@ -16,7 +16,7 @@ import {
   updateRestaurant,
   uploadRestaurantImage,
 } from "@/services/restaurantsService";
-import { Loader2, Pencil, Plus, Store, Trash2, Upload, UtensilsCrossed, X } from "lucide-react";
+import { Eye, Loader2, Pencil, Plus, Store, Trash2, Upload, UtensilsCrossed, X } from "lucide-react";
 
 type Category = { id: string; name: string };
 
@@ -309,6 +309,12 @@ export default function AdminRestaurantsPage() {
                 <p className="mt-1 truncate">{restaurant.manager_email || "بدون إيميل متابعة"}</p>
               </div>
               <div className="col-span-2 flex items-center justify-end gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <Link href={`/admin/restaurants/overview/${restaurant.id}`} className="gap-1">
+                    <Eye className="h-3.5 w-3.5" />
+                    صفحة المطعم
+                  </Link>
+                </Button>
                 <Button size="sm" variant="secondary" asChild>
                   <Link href={`/admin/restaurants/${restaurant.id}`} className="gap-1">
                     <UtensilsCrossed className="h-3.5 w-3.5" />

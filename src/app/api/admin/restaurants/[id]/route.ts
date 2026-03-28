@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { requireAdminApi } from '@/lib/admin-guard';
 import { getProductCatalogMetadata } from '@/lib/product-metadata';
+import { getRestaurantOrderSnapshot } from '@/lib/restaurant-order';
 
 const ACTIVE_STATUSES = ['pending', 'processing', 'shipped'];
 
@@ -35,21 +35,21 @@ function getDeliveredTimestamp(order: any) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function getRestaurantOrderItems(order: any, restaurantId: string) {
-  const items = Array.isArray(order?.order_items) ? order.order_items : [];
-  return items.filter((item: any) => {
-    const metadata = getProductCatalogMetadata(item?.products?.specifications);
-    return metadata.restaurantItem && metadata.restaurantId === restaurantId;
-  });
+function getLineTotal(item: any) {
+  const quantity = Math.max(1, Number(item?.quantity || 1));
+  const unitPrice = Number(item?.price || 0);
+  return unitPrice * quantity;
 }
 
-function getRestaurantProductsRevenue(order: any, restaurantId: string) {
-  const relevantItems = getRestaurantOrderItems(order, restaurantId);
-  return relevantItems.reduce((sum: number, item: any) => {
-    const quantity = Number(item?.quantity || 0) || 1;
-    const unitPrice = Number(item?.price_at_purchase || 0) || 0;
-    return sum + quantity * unitPrice;
-  }, 0);
+function getRestaurantSubtotal(order: any, restaurantId: string) {
+  const items = Array.isArray(order?.order_items) ? order.order_items : [];
+  const matchingItems = items.filter((item: any) => {
+    const metadata = getProductCatalogMetadata(item?.products?.specifications);
+    return metadata.restaurantId === restaurantId;
+  });
+
+  const sourceItems = matchingItems.length > 0 ? matchingItems : items;
+  return sourceItems.reduce((sum: number, item: any) => sum + getLineTotal(item), 0);
 }
 
 export async function GET(
@@ -69,13 +69,14 @@ export async function GET(
     return NextResponse.json({ error: 'Missing service configuration' }, { status: 500 });
   }
 
+  const { createClient } = await import('@supabase/supabase-js');
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
   const { data: restaurant, error: restaurantError } = await supabaseAdmin
     .from('restaurants')
-    .select('id, name, short_description, description, cuisine, image_url, manager_name, manager_email, menu_sections, is_active, is_available, created_at, updated_at')
+    .select('id, name, short_description, description, cuisine, image_url, manager_name, manager_email, is_active, is_available, created_at, updated_at')
     .eq('id', id)
     .single();
 
@@ -91,19 +92,15 @@ export async function GET(
     updated_at,
     shipping_address,
     order_items (
+      id,
       quantity,
-      price_at_purchase,
-      products (
-        id,
-        name,
-        image_url,
-        specifications
-      )
+      price,
+      product_id,
+      products ( name, image_url, specifications )
     )
   `;
 
   let orders: any[] = [];
-
   const targetedOrders = await supabaseAdmin
     .from('orders')
     .select(orderSelect)
@@ -123,9 +120,8 @@ export async function GET(
     }
 
     orders = (fallbackOrders.data || []).filter((order: any) => {
-      const shippingRestaurantId = String(order?.shipping_address?.restaurant_id || '').trim();
-      if (shippingRestaurantId === id) return true;
-      return getRestaurantOrderItems(order, id).length > 0;
+      const snapshot = getRestaurantOrderSnapshot(order.shipping_address);
+      return snapshot.restaurantId === id;
     });
   } else {
     orders = targetedOrders.data || [];
@@ -136,37 +132,45 @@ export async function GET(
   const cancelledOrders = orders.filter((order) => order.status === 'cancelled');
 
   const { todayStart, weekStart, monthStart } = getPeriodStarts();
-
-  const revenueEntries = deliveredOrders.map((order) => ({
-    amount: getRestaurantProductsRevenue(order, id),
+  const deliveredWithRevenue = deliveredOrders.map((order) => ({
+    order,
+    restaurantRevenue: getRestaurantSubtotal(order, id),
     deliveredAt: getDeliveredTimestamp(order),
   }));
 
   const earnings = {
-    today: revenueEntries.filter((entry) => entry.deliveredAt >= todayStart).reduce((sum, entry) => sum + entry.amount, 0),
-    week: revenueEntries.filter((entry) => entry.deliveredAt >= weekStart).reduce((sum, entry) => sum + entry.amount, 0),
-    month: revenueEntries.filter((entry) => entry.deliveredAt >= monthStart).reduce((sum, entry) => sum + entry.amount, 0),
-    total: revenueEntries.reduce((sum, entry) => sum + entry.amount, 0),
+    today: deliveredWithRevenue
+      .filter(({ deliveredAt }) => deliveredAt >= todayStart)
+      .reduce((sum, entry) => sum + entry.restaurantRevenue, 0),
+    week: deliveredWithRevenue
+      .filter(({ deliveredAt }) => deliveredAt >= weekStart)
+      .reduce((sum, entry) => sum + entry.restaurantRevenue, 0),
+    month: deliveredWithRevenue
+      .filter(({ deliveredAt }) => deliveredAt >= monthStart)
+      .reduce((sum, entry) => sum + entry.restaurantRevenue, 0),
+    total: deliveredWithRevenue.reduce((sum, entry) => sum + entry.restaurantRevenue, 0),
   };
 
   const recentOrders = orders.slice(0, 12).map((order) => {
-    const restaurantRevenue = getRestaurantProductsRevenue(order, id);
+    const snapshot = getRestaurantOrderSnapshot(order.shipping_address);
     return {
       id: order.id,
       status: order.status,
       created_at: order.created_at,
-      delivered_at: order?.shipping_address?.driver_delivered_at || null,
+      delivered_at: order.shipping_address?.driver_delivered_at || null,
       customer_name:
-        order?.shipping_address?.recipient ||
-        order?.shipping_address?.recipientName ||
-        order?.shipping_address?.full_name ||
+        order.shipping_address?.recipient ||
+        order.shipping_address?.recipientName ||
+        order.shipping_address?.full_name ||
         'عميل',
-      customer_phone:
-        order?.shipping_address?.phone ||
-        order?.shipping_address?.recipientPhone ||
+      phone:
+        order.shipping_address?.phone ||
+        order.shipping_address?.recipientPhone ||
         '',
-      restaurant_total: restaurantRevenue,
-      items_count: getRestaurantOrderItems(order, id).reduce((sum: number, item: any) => sum + (Number(item?.quantity || 0) || 1), 0),
+      items_count: Array.isArray(order.order_items)
+        ? order.order_items.reduce((sum: number, item: any) => sum + Math.max(1, Number(item?.quantity || 1)), 0)
+        : snapshot.restaurantItemsCount || 0,
+      subtotal: getRestaurantSubtotal(order, id),
     };
   });
 
