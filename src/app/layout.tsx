@@ -3,7 +3,6 @@ import { IBM_Plex_Sans_Arabic, Lalezar, Inter, Cairo } from "next/font/google";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Providers } from "@/components/providers";
 import { Toaster } from "sonner";
-import { InstallPrompt } from "@/components/ui/install-prompt";
 import { MaintenanceModeOverlay } from "@/components/system/maintenance-mode-overlay";
 import "./globals.css";
 
@@ -139,7 +138,6 @@ export default function RootLayout({
             {children}
           </div>
           <MobileNav />
-          <InstallPrompt />
           <Toaster className="font-sans" position="top-center" richColors />
         </Providers>
       </body>
