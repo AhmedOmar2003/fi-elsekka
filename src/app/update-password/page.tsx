@@ -12,6 +12,7 @@ import { KeyRound, ShieldCheck, AlertCircle, ArrowRight } from "lucide-react"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase"
 import { PasswordInput } from "@/components/ui/password-input"
+import { generateStrongPassword, validateStrongPassword } from "@/lib/auth-validation"
 
 export default function UpdatePasswordPage() {
   return (
@@ -31,6 +32,7 @@ function UpdatePasswordContent() {
   const [confirmPassword, setConfirmPassword] = React.useState("")
   const [status, setStatus] = React.useState<'checking' | 'idle' | 'loading' | 'success' | 'invalid'>('checking')
   const [errorMsg, setErrorMsg] = React.useState("")
+  const [suggestedPassword, setSuggestedPassword] = React.useState(() => generateStrongPassword())
 
   React.useEffect(() => {
     const initSession = async () => {
@@ -81,8 +83,9 @@ function UpdatePasswordContent() {
       return
     }
 
-    if (password.length < 6) {
-      setErrorMsg("كلمة المرور يجب أن تتكون من 6 أحرف على الأقل.")
+    const passwordValidationError = validateStrongPassword(password)
+    if (passwordValidationError) {
+      setErrorMsg(passwordValidationError)
       return
     }
 
@@ -186,8 +189,11 @@ function UpdatePasswordContent() {
             className="h-12 rounded-xl bg-background border-surface-hover focus-visible:border-primary text-start direction-ltr"
             required
             disabled={status === 'loading'}
-            minLength={6}
+            minLength={8}
           />
+          <p className="px-1 text-xs text-gray-500">
+            لازم تكون 8 حروف أو أكثر، وفيها حرف ورقم ورمز مميز زي @ أو $.
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -199,8 +205,38 @@ function UpdatePasswordContent() {
             className="h-12 rounded-xl bg-background border-surface-hover focus-visible:border-primary text-start direction-ltr"
             required
             disabled={status === 'loading'}
-            minLength={6}
+            minLength={8}
           />
+        </div>
+
+        <div className="rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3">
+          <p className="text-xs font-bold text-foreground">مقترح كلمة مرور قوية</p>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <code className="rounded-xl bg-background px-3 py-2 text-sm font-bold text-primary direction-ltr break-all">
+              {suggestedPassword}
+            </code>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setPassword(suggestedPassword)
+                  setConfirmPassword(suggestedPassword)
+                  setErrorMsg("")
+                }}
+                className="rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary hover:text-white"
+              >
+                استخدمها
+              </button>
+              <button
+                type="button"
+                onClick={() => setSuggestedPassword(generateStrongPassword())}
+                className="rounded-xl border border-surface-hover bg-surface-hover px-3 py-2 text-xs font-bold text-foreground transition-colors hover:border-primary/30"
+              >
+                اقترح غيرها
+              </button>
+            </div>
+          </div>
+          <p className="mt-2 text-[11px] text-gray-500">لو عجبتك، احفظها في مكان آمن قبل ما تكمل.</p>
         </div>
 
         <Button
