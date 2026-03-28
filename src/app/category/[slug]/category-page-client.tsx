@@ -243,6 +243,10 @@ export default function CategoryPageClient({
     }
     return filtered
   }, [restaurants, taxonomySecondaryFilter])
+  const visibleItemsCount = showRestaurantsView ? restaurantCards.length : productCards.length
+  const pageSize = 12
+  const rangeStart = totalItems > 0 ? (currentPage - 1) * pageSize + 1 : 0
+  const rangeEnd = totalItems > 0 ? Math.min((currentPage - 1) * pageSize + visibleItemsCount, totalItems) : 0
 
   return (
     <>
@@ -516,11 +520,15 @@ export default function CategoryPageClient({
                     </div>
 
                     {totalPages > 1 && !showRestaurantsView ? (
-                      <div className="mt-10 flex items-center justify-center gap-2">
+                      <div className="mt-10 space-y-4">
+                        <div className="text-center text-sm font-bold text-gray-400">
+                          عرض {rangeStart} - {rangeEnd} من أصل {totalItems} منتج
+                        </div>
+                        <div className="flex flex-wrap items-center justify-center gap-2">
                         <Link
                           href={buildPageHref(Math.max(1, currentPage - 1))}
                           aria-disabled={currentPage <= 1}
-                          className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition-colors ${
+                          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold transition-colors ${
                             currentPage <= 1
                               ? "pointer-events-none border-surface-hover text-gray-600"
                               : "border-surface-hover bg-surface text-foreground hover:bg-surface-hover"
@@ -529,14 +537,14 @@ export default function CategoryPageClient({
                           <ChevronRight className="h-4 w-4" />
                           السابق
                         </Link>
-                        <div className="rounded-xl border border-surface-hover bg-surface px-4 py-2.5 text-sm font-black text-foreground">
+                        <div className="rounded-xl border border-surface-hover bg-surface px-3 py-2 text-sm font-black text-foreground">
                           صفحة {currentPage} من {totalPages}
                         </div>
                         {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
                           <Link
                             key={pageNumber}
                             href={buildPageHref(pageNumber)}
-                            className={`inline-flex min-w-11 items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-black transition-colors ${
+                            className={`inline-flex min-w-10 items-center justify-center rounded-xl border px-3 py-2 text-sm font-black transition-colors ${
                               pageNumber === currentPage
                                 ? "border-primary bg-primary text-white"
                                 : "border-surface-hover bg-surface text-foreground hover:bg-surface-hover"
@@ -548,7 +556,7 @@ export default function CategoryPageClient({
                         <Link
                           href={buildPageHref(Math.min(totalPages, currentPage + 1))}
                           aria-disabled={currentPage >= totalPages}
-                          className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition-colors ${
+                          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold transition-colors ${
                             currentPage >= totalPages
                               ? "pointer-events-none border-surface-hover text-gray-600"
                               : "border-surface-hover bg-surface text-foreground hover:bg-surface-hover"
@@ -557,6 +565,7 @@ export default function CategoryPageClient({
                           التالي
                           <ChevronLeft className="h-4 w-4" />
                         </Link>
+                      </div>
                       </div>
                     ) : null}
                   </>
