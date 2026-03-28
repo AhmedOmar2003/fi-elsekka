@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireAdminApi } from '@/lib/admin-guard';
 import { recordServerAdminAudit } from '@/lib/admin-audit-server';
-import { attachOrderEconomics, CURRENT_DELIVERY_FEE, getOrderEconomics } from '@/lib/order-economics';
+import { attachOrderEconomics, CURRENT_DELIVERY_FEE } from '@/lib/order-economics';
 import { createUserNotificationWithPush } from '@/lib/user-push-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -327,7 +327,7 @@ export async function PATCH(request: NextRequest, context: any) {
         customer_quote_response_at: null,
       },
       quotedFinalTotal,
-      Number(order.shipping_address?.merchant_discount_amount || 0)
+      0
     );
 
     const { error: updateError } = await supabaseAdmin
@@ -444,11 +444,6 @@ export async function PATCH(request: NextRequest, context: any) {
     const auth = await requireAdminApi(request, ['update_order_status']);
     if (!auth.ok) return auth.response;
 
-    const merchantDiscountAmount = Math.max(0, Number(body?.merchantDiscountAmount || 0));
-    if (!Number.isFinite(merchantDiscountAmount)) {
-      return NextResponse.json({ error: 'قيمة خصم المحل غير صحيحة', stage: 'validate.merchant_discount' }, { status: 400 });
-    }
-
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .select('id, status, total_amount, shipping_address')
@@ -459,15 +454,7 @@ export async function PATCH(request: NextRequest, context: any) {
       return NextResponse.json({ error: 'Order not found', stage: 'db.order' }, { status: 404 });
     }
 
-    const currentEconomics = getOrderEconomics(order);
-    if (merchantDiscountAmount > currentEconomics.subtotalAmount) {
-      return NextResponse.json(
-        { error: 'خصم المحل لا يمكن أن يتجاوز قيمة المنتجات', stage: 'validate.merchant_discount' },
-        { status: 400 }
-      );
-    }
-
-    const updatedShipping = attachOrderEconomics(order.shipping_address || {}, order.total_amount || 0, merchantDiscountAmount);
+    const updatedShipping = attachOrderEconomics(order.shipping_address || {}, order.total_amount || 0, 0);
 
     const { error: updateError } = await supabaseAdmin
       .from('orders')
@@ -486,7 +473,7 @@ export async function PATCH(request: NextRequest, context: any) {
       entityId: id,
       entityLabel: id.slice(0, 8),
       details: {
-        merchant_discount_amount: merchantDiscountAmount,
+        merchant_discount_amount: 0,
         platform_revenue: updatedShipping.platform_revenue,
         driver_revenue: updatedShipping.driver_revenue,
         merchant_settlement: updatedShipping.merchant_settlement,

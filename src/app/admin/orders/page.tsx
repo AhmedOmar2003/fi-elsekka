@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { cancelAdminOrder, fetchAdminOrders, fetchOrderDetails, getAdminOrderKind, isCustomerSelfCancelledGraceOrder, isPricedSearchRequestOrder, isSearchRequestOrder, isSearchingRequestOrder, reopenCancelledOrderAfterCustomerRequest, saveAdminOrderDeliveryPlan, saveAdminOrderEconomics, saveAdminTextOrderQuote, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
+import { cancelAdminOrder, fetchAdminOrders, fetchOrderDetails, getAdminOrderKind, isCustomerSelfCancelledGraceOrder, isPricedSearchRequestOrder, isSearchRequestOrder, isSearchingRequestOrder, reopenCancelledOrderAfterCustomerRequest, saveAdminOrderDeliveryPlan, saveAdminTextOrderQuote, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
 import { ShoppingCart, ChevronDown, X, Package, Download, Filter, Bike, Clock, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
@@ -117,8 +117,6 @@ export default function AdminOrdersPage() {
     const [cancellationMessage, setCancellationMessage] = useState('لو كنت ما زلت تريد هذا الطلب، ادينا فرصة نجهزه على أكمل وجه، ولو أصبح جاهزًا هنرسل لك إشعارًا جديدًا بموعد الوصول المتوقع.');
     const [isCancellingOrder, setIsCancellingOrder] = useState(false);
     const [isReopeningOrder, setIsReopeningOrder] = useState(false);
-    const [merchantDiscountAmount, setMerchantDiscountAmount] = useState(0);
-    const [isSavingEconomics, setIsSavingEconomics] = useState(false);
     const [quotedSubtotalInput, setQuotedSubtotalInput] = useState(0);
     const [isSavingTextQuote, setIsSavingTextQuote] = useState(false);
 
@@ -236,7 +234,6 @@ export default function AdminOrdersPage() {
             order.shipping_address?.cancellation_message ||
             'لو كنت ما زلت تريد هذا الطلب، ادينا فرصة نجهزه على أكمل وجه، ولو أصبح جاهزًا هنرسل لك إشعارًا جديدًا بموعد الوصول المتوقع.'
         );
-        setMerchantDiscountAmount(Number(order.shipping_address?.merchant_discount_amount || 0));
         setQuotedSubtotalInput(Number(order.shipping_address?.quoted_products_total || order.shipping_address?.subtotal_amount || 0));
         setSelectedDriverId(order.shipping_address?.driver?.id || '');
         // Use already-fetched items embedded in the order object (from the enriched query)
@@ -346,28 +343,6 @@ export default function AdminOrdersPage() {
             toast.error(error.message || 'فشل إعادة فتح الطلب');
         } finally {
             setIsReopeningOrder(false);
-        }
-    };
-
-    const handleSaveEconomics = async () => {
-        if (!selectedOrder) return;
-
-        setIsSavingEconomics(true);
-        try {
-            const data = await saveAdminOrderEconomics(selectedOrder.id, merchantDiscountAmount);
-            setOrders(prev => prev.map(o => o.id === selectedOrder.id ? {
-                ...o,
-                shipping_address: data.shipping_address,
-            } : o));
-            setSelectedOrder((prev: any) => ({
-                ...prev,
-                shipping_address: data.shipping_address,
-            }));
-            toast.success('تم تحديث تفصيل الإيراد لهذا الطلب');
-        } catch (error: any) {
-            toast.error(error.message || 'فشل تحديث تفصيل الإيراد');
-        } finally {
-            setIsSavingEconomics(false);
         }
     };
 
@@ -871,7 +846,7 @@ export default function AdminOrdersPage() {
                                     <Package className="w-4 h-4 text-emerald-500" />
                                     <div>
                                         <p className="text-xs font-bold text-emerald-500">تفصيل التحصيل والإيراد</p>
-                                        <p className="text-[11px] text-gray-500">الشحن الآن 20 ج.م: 10 للمنصة و10 للمندوب، وأي خصم من المحل يضاف لنصيب المنصة فقط.</p>
+                                        <p className="text-[11px] text-gray-500">الشحن الآن 20 ج.م: 10 للمنصة و10 للمندوب. أي خصومات أو إعلانات خاصة بالمحل خارج حسبة الموقع.</p>
                                     </div>
                                 </div>
 
@@ -897,33 +872,8 @@ export default function AdminOrdersPage() {
                                             <p className="text-[11px] text-gray-500">المحل يستلم</p>
                                             <p className="mt-1 text-lg font-black text-amber-500">{selectedOrderEconomics.merchantSettlement.toLocaleString()} ج.م</p>
                                         </div>
-                                        <div className="rounded-xl bg-background px-3 py-3">
-                                            <p className="text-[11px] text-gray-500">خصم المحل لك</p>
-                                            <p className="mt-1 text-lg font-black text-emerald-500">{selectedOrderEconomics.merchantDiscountAmount.toLocaleString()} ج.م</p>
-                                        </div>
                                     </div>
                                 )}
-
-                                <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
-                                    <div>
-                                        <p className="text-xs font-bold text-gray-500 mb-2">خصم إضافي من المحل لصالح المنصة</p>
-                                        <input
-                                            type="number"
-                                            min={0}
-                                            value={merchantDiscountAmount}
-                                            onChange={e => setMerchantDiscountAmount(Number(e.target.value || 0))}
-                                            className="w-full rounded-xl border border-surface-hover bg-surface-hover px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-emerald-500/40"
-                                        />
-                                        <p className="mt-1 text-[10px] text-gray-500">هذا الخصم لا يخصم من نصيب المندوب، بل يزيد نصيب المنصة فقط.</p>
-                                    </div>
-                                    <button
-                                        onClick={handleSaveEconomics}
-                                        disabled={isSavingEconomics}
-                                        className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-500 transition-colors hover:bg-emerald-500 hover:text-white disabled:opacity-50"
-                                    >
-                                        {isSavingEconomics ? 'جاري الحفظ...' : 'حفظ'}
-                                    </button>
-                                </div>
                             </div>
 
                             {/* Cancellation */}

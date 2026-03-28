@@ -59,8 +59,8 @@ export async function POST(request: Request) {
                 pricing_updated_by_driver_id: user.id,
                 pricing_updated_by_driver_name: auth.profile.fullName || shipping?.driver?.name || 'مندوب',
             },
-            quotedFinalTotal,
-            Number(shipping?.merchant_discount_amount || 0)
+        quotedFinalTotal,
+        0
         );
 
         const { error: updateError } = await driverSupabaseAdmin

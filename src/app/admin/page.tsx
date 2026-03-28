@@ -394,7 +394,7 @@ export default function AdminPage() {
         {
             label: 'نصيب المنصة اليوم',
             value: `${overview.financeHealth.deliveredRevenueToday.toLocaleString()} ج.م`,
-            helper: `ربح إضافي من خصومات المحلات ${overview.financeHealth.deliveredMerchantDiscountProfitToday.toLocaleString()} ج.م`,
+            helper: 'ثابت 10 ج.م من الشحن لكل طلب تم توصيله',
             icon: TrendingUp,
             tone: 'text-emerald-400 bg-emerald-400/10',
         },
@@ -408,7 +408,7 @@ export default function AdminPage() {
         {
             label: 'مستحقات المحلات اليوم',
             value: `${overview.financeHealth.deliveredMerchantSettlementToday.toLocaleString()} ج.م`,
-            helper: `بعد خصومات المحلات المتفق عليها`,
+            helper: 'قيمة المنتجات بدون أي خصومات محاسبية داخل المنصة',
             icon: Warehouse,
             tone: 'text-violet-400 bg-violet-400/10',
         },

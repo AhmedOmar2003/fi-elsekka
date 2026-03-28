@@ -35,16 +35,11 @@ export type OrderEconomics = {
 
 export function buildOrderEconomicsFromSubtotal(
   subtotalAmount: number,
-  merchantDiscountAmount = 0,
+  _merchantDiscountAmount = 0,
   deliveryFee = CURRENT_DELIVERY_FEE
 ): OrderEconomics {
   const normalizedSubtotal = Math.max(0, safeNumber(subtotalAmount));
   const normalizedDeliveryFee = Math.max(0, safeNumber(deliveryFee, CURRENT_DELIVERY_FEE));
-  const normalizedMerchantDiscount = clamp(
-    Math.max(0, safeNumber(merchantDiscountAmount)),
-    0,
-    normalizedSubtotal
-  );
 
   return {
     deliveryFee: normalizedDeliveryFee,
@@ -52,9 +47,9 @@ export function buildOrderEconomicsFromSubtotal(
     grossCollected: normalizedSubtotal + normalizedDeliveryFee,
     platformBaseRevenue: PLATFORM_BASE_REVENUE,
     driverRevenue: DRIVER_REVENUE,
-    merchantDiscountAmount: normalizedMerchantDiscount,
-    platformRevenue: PLATFORM_BASE_REVENUE + normalizedMerchantDiscount,
-    merchantSettlement: Math.max(0, normalizedSubtotal - normalizedMerchantDiscount),
+    merchantDiscountAmount: 0,
+    platformRevenue: PLATFORM_BASE_REVENUE,
+    merchantSettlement: normalizedSubtotal,
   };
 }
 
@@ -99,34 +94,22 @@ export function getOrderEconomics(order: OrderLike): OrderEconomics {
       })()
     )
   );
-  const merchantDiscountAmount = clamp(
-    Math.max(0, safeNumber(shipping.merchant_discount_amount, 0)),
-    0,
-    subtotalAmount
-  );
-
   return {
     deliveryFee,
     subtotalAmount,
     grossCollected,
-    platformBaseRevenue: Math.max(0, safeNumber(shipping.platform_base_revenue, PLATFORM_BASE_REVENUE)),
-    driverRevenue: Math.max(0, safeNumber(shipping.driver_revenue, DRIVER_REVENUE)),
-    merchantDiscountAmount,
-    platformRevenue: Math.max(
-      0,
-      safeNumber(shipping.platform_revenue, PLATFORM_BASE_REVENUE + merchantDiscountAmount)
-    ),
-    merchantSettlement: Math.max(
-      0,
-      safeNumber(shipping.merchant_settlement, subtotalAmount - merchantDiscountAmount)
-    ),
+    platformBaseRevenue: PLATFORM_BASE_REVENUE,
+    driverRevenue: DRIVER_REVENUE,
+    merchantDiscountAmount: 0,
+    platformRevenue: PLATFORM_BASE_REVENUE,
+    merchantSettlement: subtotalAmount,
   };
 }
 
 export function attachOrderEconomics(
   shippingAddress: Record<string, any> | null | undefined,
   orderTotalAmount: number,
-  merchantDiscountAmount?: number
+  _merchantDiscountAmount?: number
 ) {
   const base = {
     ...(shippingAddress || {}),
@@ -138,7 +121,7 @@ export function attachOrderEconomics(
 
   const next = buildOrderEconomicsFromSubtotal(
     current.subtotalAmount,
-    merchantDiscountAmount ?? current.merchantDiscountAmount,
+    0,
     current.deliveryFee
   );
 
