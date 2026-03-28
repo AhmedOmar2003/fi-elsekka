@@ -4,6 +4,7 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 import { Providers } from "@/components/providers";
 import { Toaster } from "sonner";
 import { MaintenanceModeOverlay } from "@/components/system/maintenance-mode-overlay";
+import { fetchPublicAppSettingsServer } from "@/services/serverAppSettingsService";
 import "./globals.css";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://fi-elsekka.vercel.app";
@@ -34,79 +35,87 @@ const cairo = Cairo({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: {
-    default: "في السكة | اطلب اللي محتاجه ويوصلك لحد عندك",
-    template: "%s | في السكة",
-  },
-  description: "في السكة سوق محلي ذكي في مصر. اطلب من السوبر ماركت والصيدلية والملابس وأكتر، والدفع عند الاستلام والتوصيل لحد باب البيت.",
-  keywords: [
-    "في السكة",
-    "توصيل في مصر",
-    "سوبر ماركت اونلاين",
-    "صيدلية اونلاين",
-    "ملابس اونلاين",
-    "الدفع عند الاستلام",
-  ],
-  manifest: "/manifest.json",
-  applicationName: "في السكة",
-  category: "shopping",
-  icons: {
-    icon: [
-      { url: "/notification-icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/notification-icon-512.png", sizes: "512x512", type: "image/png" },
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await fetchPublicAppSettingsServer();
+  const siteName = settings.siteName || "في السكة";
+  const siteTagline = settings.siteTagline || "اطلب اللي محتاجه ويوصلك لحد عندك";
+  const description = `${siteName} سوق محلي ذكي في مصر. ${siteTagline}`;
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: `${siteName} | ${siteTagline}`,
+      template: `%s | ${siteName}`,
+    },
+    description,
+    keywords: [
+      siteName,
+      siteTagline,
+      "توصيل في مصر",
+      "سوبر ماركت اونلاين",
+      "صيدلية اونلاين",
+      "ملابس اونلاين",
+      "الدفع عند الاستلام",
     ],
-    apple: [
-      { url: "/notification-icon-192.png", sizes: "192x192", type: "image/png" },
-    ],
-    shortcut: ["/notification-icon-192.png"],
-  },
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    type: "website",
-    locale: "ar_EG",
-    url: SITE_URL,
-    siteName: "في السكة",
-    title: "في السكة | اطلب اللي محتاجه ويوصلك لحد عندك",
-    description: "سوبر ماركت وصيدلية وملابس وأكتر، بطلب سهل وتوصيل سريع والدفع عند الاستلام.",
-    images: [
-      {
-        url: "/notification-icon-512.png",
-        width: 512,
-        height: 512,
-        alt: "في السكة",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "في السكة | اطلب اللي محتاجه ويوصلك لحد عندك",
-    description: "سوبر ماركت وصيدلية وملابس وأكتر، بطلب سهل وتوصيل سريع والدفع عند الاستلام.",
-    images: ["/notification-icon-512.png"],
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "في السكة",
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+    manifest: "/manifest.json",
+    applicationName: siteName,
+    category: "shopping",
+    icons: {
+      icon: [
+        { url: "/notification-icon-192.png", sizes: "192x192", type: "image/png" },
+        { url: "/notification-icon-512.png", sizes: "512x512", type: "image/png" },
+      ],
+      apple: [
+        { url: "/notification-icon-192.png", sizes: "192x192", type: "image/png" },
+      ],
+      shortcut: ["/notification-icon-192.png"],
+    },
+    alternates: {
+      canonical: "/",
+    },
+    openGraph: {
+      type: "website",
+      locale: "ar_EG",
+      url: SITE_URL,
+      siteName,
+      title: `${siteName} | ${siteTagline}`,
+      description,
+      images: [
+        {
+          url: "/notification-icon-512.png",
+          width: 512,
+          height: 512,
+          alt: siteName,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${siteName} | ${siteTagline}`,
+      description,
+      images: ["/notification-icon-512.png"],
+    },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: siteName,
+    },
+    robots: {
       index: true,
       follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
     },
-  },
-  formatDetection: {
-    telephone: false,
-  },
-};
+    formatDetection: {
+      telephone: false,
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#10b981",

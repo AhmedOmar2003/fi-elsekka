@@ -10,6 +10,7 @@ import { toProductCardProps } from "@/lib/product-presentation"
 import { getProductCatalogMetadata } from "@/lib/product-metadata"
 import { ArrowRight, Clock3, Sparkles, Store, UtensilsCrossed } from "lucide-react"
 import Link from "next/link"
+import { fetchPublicAppSettingsServer } from "@/services/serverAppSettingsService"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://fi-elsekka.vercel.app"
 
@@ -22,10 +23,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params
   const restaurant = await fetchRestaurantByIdServer(id)
+  const settings = await fetchPublicAppSettingsServer()
+  const siteName = settings.siteName || "في السكة"
 
   if (!restaurant) {
     return {
-      title: "مطعم غير موجود | في السكة",
+      title: `مطعم غير موجود | ${siteName}`,
     }
   }
 
@@ -34,14 +37,14 @@ export async function generateMetadata({
     `شوف منيو ${restaurant.name} على في السكة واطلب اللي يعجبك بسهولة.`
 
   return {
-    title: `${restaurant.name} | مطاعم في السكة`,
+    title: `${restaurant.name} | مطاعم ${siteName}`,
     description,
     alternates: { canonical: `${SITE_URL}/restaurants/${id}` },
     openGraph: {
-      title: `${restaurant.name} | مطاعم في السكة`,
+      title: `${restaurant.name} | مطاعم ${siteName}`,
       description,
       url: `${SITE_URL}/restaurants/${id}`,
-      siteName: "في السكة",
+      siteName,
       locale: "ar_EG",
       type: "website",
       images: restaurant.image_url ? [{ url: restaurant.image_url }] : undefined,

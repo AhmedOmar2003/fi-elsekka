@@ -33,6 +33,9 @@ export async function PUT(request: Request) {
       site_tagline: String(body.siteTagline || DEFAULT_APP_SETTINGS.siteTagline).trim(),
       support_phone: String(body.supportPhone || '').trim(),
       support_email: String(body.supportEmail || '').trim(),
+      support_whatsapp_1: String(body.supportWhatsApp1 || '').trim(),
+      support_whatsapp_2: String(body.supportWhatsApp2 || '').trim(),
+      support_whatsapp_3: String(body.supportWhatsApp3 || '').trim(),
       free_shipping_threshold: Number(body.freeShippingThreshold || 0),
       default_shipping_cost: Number(body.defaultShippingCost || DEFAULT_APP_SETTINGS.defaultShippingCost),
       notify_new_orders: Boolean(body.notifyNewOrders),
@@ -41,11 +44,28 @@ export async function PUT(request: Request) {
       updated_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabaseAdmin
+    let saveResult = await supabaseAdmin
       .from('app_settings')
       .upsert(payload, { onConflict: 'id' })
       .select()
       .single();
+
+    if (saveResult.error && saveResult.error.message.includes('support_whatsapp')) {
+      const {
+        support_whatsapp_1: _unused1,
+        support_whatsapp_2: _unused2,
+        support_whatsapp_3: _unused3,
+        ...fallbackPayload
+      } = payload;
+
+      saveResult = await supabaseAdmin
+        .from('app_settings')
+        .upsert(fallbackPayload, { onConflict: 'id' })
+        .select()
+        .single();
+    }
+
+    const { data, error } = saveResult;
 
     if (error) {
       console.error('Failed to save app settings:', error);
@@ -120,6 +140,9 @@ export async function PUT(request: Request) {
         siteTagline: data.site_tagline,
         supportPhone: data.support_phone,
         supportEmail: data.support_email,
+        supportWhatsApp1: 'support_whatsapp_1' in data ? (data as any).support_whatsapp_1 : '',
+        supportWhatsApp2: 'support_whatsapp_2' in data ? (data as any).support_whatsapp_2 : '',
+        supportWhatsApp3: 'support_whatsapp_3' in data ? (data as any).support_whatsapp_3 : '',
         freeShippingThreshold: String(data.free_shipping_threshold ?? DEFAULT_APP_SETTINGS.freeShippingThreshold),
         defaultShippingCost: String(data.default_shipping_cost ?? DEFAULT_APP_SETTINGS.defaultShippingCost),
         notifyNewOrders: data.notify_new_orders ?? DEFAULT_APP_SETTINGS.notifyNewOrders,

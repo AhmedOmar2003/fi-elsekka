@@ -5,6 +5,9 @@ import Link from "next/link"
 import Image from "next/image"
 import { Banknote } from "lucide-react"
 import { useProducts } from "@/contexts/ProductsContext"
+import { useAppSettings } from "@/contexts/AppSettingsContext"
+import { getSupportWhatsAppEntries } from "@/services/appSettingsService"
+import { WhatsAppIcon } from "@/components/ui/whatsapp-icon"
 
 // Same motorcycle icon as the header
 function MotorcycleIcon({ className }: { className?: string }) {
@@ -24,6 +27,7 @@ function MotorcycleIcon({ className }: { className?: string }) {
 
 export function Footer() {
   const { categories } = useProducts()
+  const { settings } = useAppSettings()
 
   const footerCategoryNames = React.useMemo(
     () => ["ملابس وأزياء", "سوبر ماركت", "طعام", "صيدلية", "أدوات منزلية"],
@@ -33,6 +37,9 @@ export function Footer() {
   const footerCategories = footerCategoryNames
     .map((name) => categories.find((category) => category.name === name))
     .filter((category): category is (typeof categories)[number] => !!category)
+  const whatsappEntries = getSupportWhatsAppEntries(settings)
+  const siteName = settings.siteName || "في السكة"
+  const siteTagline = settings.siteTagline || "صاحبك الجدع في الطلبات."
 
   return (
     <footer className="mt-auto w-full px-2 pb-20 pt-16 md:px-4 md:pb-12">
@@ -46,23 +53,48 @@ export function Footer() {
             <Link href="/" className="mb-4 flex items-center gap-2 group">
               <Image
                 src="/icon-192x192.svg"
-                alt="في السكة Logo" 
+                alt={`${siteName} Logo`} 
                 width={40}
                 height={40}
                 className="rounded-2xl shadow-[var(--shadow-material-2)] group-hover:shadow-[var(--shadow-material-3)] transition-shadow" 
               />
-              <div className="flex items-baseline gap-0 leading-none" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
-                <span className="font-black text-2xl text-white">فِي&nbsp;</span>
-                <span className="font-black text-2xl text-primary">السِّكَّةِ</span>
-              </div>
+              <div className="text-2xl font-black leading-none text-primary" style={{ fontFamily: 'var(--font-lalezar), serif' }}>{siteName}</div>
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-white/64">
-              صاحبك الجدع في الطلبات. كل اللي محتاجه، من البيت لحد باب البيت، وبأسهل طريقة وأروق تجربة.
+              {siteTagline}
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary">توصيل أسرع</span>
               <span className="inline-flex items-center rounded-full border border-white/8 bg-white/6 px-3 py-1.5 text-xs font-bold text-white/82">دفع عند الاستلام</span>
             </div>
+            {(settings.supportEmail || settings.supportPhone || whatsappEntries.length > 0) && (
+              <div className="mt-5 space-y-2 text-sm text-white/70">
+                {settings.supportPhone && (
+                  <a href={`tel:${settings.supportPhone}`} className="flex items-center gap-2 transition-colors hover:text-white">
+                    <span className="font-bold">رقم الدعم:</span>
+                    <span dir="ltr">{settings.supportPhone}</span>
+                  </a>
+                )}
+                {settings.supportEmail && (
+                  <a href={`mailto:${settings.supportEmail}`} className="flex items-center gap-2 transition-colors hover:text-white">
+                    <span className="font-bold">إيميل الدعم:</span>
+                    <span dir="ltr">{settings.supportEmail}</span>
+                  </a>
+                )}
+                {whatsappEntries.map((entry) => (
+                  <a
+                    key={entry.id}
+                    href={entry.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-emerald-200 transition-colors hover:bg-emerald-500/15 hover:text-white"
+                  >
+                    <WhatsAppIcon className="h-4 w-4" />
+                    <span className="font-bold">{entry.label}</span>
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
@@ -106,7 +138,7 @@ export function Footer() {
         </div>
 
         <div className="mt-6 flex flex-col items-center justify-between border-t border-white/8 pb-4 pt-6 text-center text-xs text-white/52 sm:flex-row">
-          <p>© {new Date().getFullYear()} في السكة. كل الحقوق محفوظة.</p>
+          <p>© {new Date().getFullYear()} {siteName}. كل الحقوق محفوظة.</p>
           <div className="mt-4 flex gap-4 sm:mt-0">
              <Link href="/terms" className="hover:text-white transition-colors">الشروط والأحكام</Link>
              <Link href="/privacy" className="hover:text-white transition-colors">سياسة الخصوصية</Link>

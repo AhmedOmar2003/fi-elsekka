@@ -163,7 +163,13 @@ export default function AdminSettingsPage() {
                     <Field label="الشعار التعريفي" value={settings.siteTagline} onChange={v => setSettings(s => ({ ...s, siteTagline: v }))} placeholder="بالسكة الصح" />
                     <Field label="رقم الدعم" value={settings.supportPhone} onChange={v => setSettings(s => ({ ...s, supportPhone: v }))} placeholder="01xxxxxxxxx" type="tel" />
                     <Field label="إيميل الدعم" value={settings.supportEmail} onChange={v => setSettings(s => ({ ...s, supportEmail: v }))} placeholder="support@example.com" type="email" />
+                    <Field label="واتساب 1" value={settings.supportWhatsApp1} onChange={v => setSettings(s => ({ ...s, supportWhatsApp1: v }))} placeholder="اكتب رقم واتساب أو رابط مباشر" />
+                    <Field label="واتساب 2" value={settings.supportWhatsApp2} onChange={v => setSettings(s => ({ ...s, supportWhatsApp2: v }))} placeholder="اختياري" />
+                    <Field label="واتساب 3" value={settings.supportWhatsApp3} onChange={v => setSettings(s => ({ ...s, supportWhatsApp3: v }))} placeholder="اختياري" />
                 </div>
+                <p className="text-xs leading-6 text-gray-500">
+                    أي تعديل هنا هينعكس على اسم الموقع، الشعار التعريفي، وطرق التواصل داخل الموقع مباشرة. وبالنسبة للواتساب، تقدر تكتب رقم أو رابط مباشر.
+                </p>
             </div>
 
             {/* Shipping */}

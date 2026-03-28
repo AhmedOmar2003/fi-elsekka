@@ -11,6 +11,7 @@ import { HomeCategoriesList } from "@/components/ui/home-categories"
 import { PromoBanner } from "@/components/ui/promo-banner"
 import { toProductCardProps } from "@/lib/product-presentation"
 import { CURRENT_DELIVERY_FEE } from "@/lib/order-economics"
+import { fetchPublicAppSettingsServer } from "@/services/serverAppSettingsService"
 
 // Public home page: cache with ISR for strong performance while still refreshing often.
 export const revalidate = 300;
@@ -22,6 +23,9 @@ const MOCK_FEATURED_PRODUCTS = [
   { id: "4", title: "سماعة بلوتوث لاسلكية", price: 450, oldPrice: 600, discountBadge: "عروض جامدة", imageUrl: "https://th.bing.com/th/id/OIG3.C_W_T_P_j_B_k_O_d_J_?pid=ImgGn" },
 ];
 export default async function Home() {
+  const appSettings = await fetchPublicAppSettingsServer()
+  const siteName = appSettings.siteName || "في السكة"
+  const siteTagline = appSettings.siteTagline || "طلباتك رايقة ووصلالك بسرعة"
   // 3 separate lightweight queries — each fetches only relevant items:
   // - fetchHomeProducts: 8 newest products for the featured section
   // - fetchBestSellers: top requested products from real orders
@@ -73,10 +77,10 @@ export default async function Home() {
                 </Badge>
                 <h1 className="mb-3 text-[2rem] font-black leading-[1.08] tracking-[-0.05em] text-foreground sm:mb-5 sm:text-5xl lg:text-7xl">
                   كل طلباتك، <br className="hidden lg:block" />
-                  <span className="text-primary tracking-tighter">في السكة</span> لحد عندك.
+                  <span className="text-primary tracking-tighter">{siteName}</span> لحد عندك.
                 </h1>
                 <p className="storefront-subtle-text mx-auto mb-5 max-w-xl text-sm font-medium leading-7 sm:mx-0 sm:mb-8 sm:text-xl">
-                  من السوبر ماركت للصيدلية، ومن اللبس للإلكترونيات. اختار اللي نفسك فيه وادفع كاش وإنت بتستلم. أسرع، أسهل، وأروق! ✨
+                  {siteTagline} من السوبر ماركت للصيدلية، ومن اللبس للإلكترونيات. اختار اللي نفسك فيه وادفع كاش وإنت بتستلم. ✨
                 </p>
                 <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:justify-start sm:gap-4">
                   <Button size="lg" className="h-12 w-full rounded-full px-6 text-sm shadow-premium sm:h-14 sm:w-auto sm:px-8 sm:text-base" asChild>

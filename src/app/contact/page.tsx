@@ -7,9 +7,14 @@ import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useAppSettings } from "@/contexts/AppSettingsContext"
+import { getSupportWhatsAppEntries } from "@/services/appSettingsService"
+import { WhatsAppIcon } from "@/components/ui/whatsapp-icon"
 
 export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const { settings } = useAppSettings()
+  const whatsappEntries = React.useMemo(() => getSupportWhatsAppEntries(settings), [settings])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,7 +34,7 @@ export default function ContactPage() {
            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
               <h1 className="text-3xl md:text-4xl font-black text-foreground mb-4">كلمنا، إحنا دايماً في الخدمة</h1>
               <p className="text-gray-500 max-w-2xl mx-auto">
-                 عندك استفسار؟ مشكلة في طلبك؟ أو حتى اقتراح لينا؟ ماتترددش تبعتلنا، فريق الدعم موجود عشان يسمعك ויرد عليك.
+                 عندك استفسار؟ مشكلة في طلبك؟ أو حتى اقتراح لينا؟ ماتترددش تبعتلنا، فريق الدعم موجود عشان يسمعك ويرد عليك.
               </p>
            </div>
         </div>
@@ -49,7 +54,13 @@ export default function ContactPage() {
                           </div>
                           <div>
                              <p className="font-semibold text-foreground">البريد الإلكتروني</p>
-                             <p className="text-gray-500 mt-1" dir="ltr">support@fielsekka.com</p>
+                             {settings.supportEmail ? (
+                               <a href={`mailto:${settings.supportEmail}`} className="text-gray-500 mt-1 inline-flex hover:text-primary transition-colors" dir="ltr">
+                                 {settings.supportEmail}
+                               </a>
+                             ) : (
+                               <p className="text-gray-500 mt-1">هنضيف إيميل الدعم هنا أول ما يتفعل.</p>
+                             )}
                           </div>
                        </div>
                        
@@ -58,9 +69,40 @@ export default function ContactPage() {
                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                           </div>
                           <div>
-                             <p className="font-semibold text-foreground">خدمة العملاء (واتساب)</p>
-                             <p className="text-gray-500 mt-1" dir="ltr">+20 100 000 0000</p>
-                             <p className="text-xs text-emerald-500 mt-1">متاحين يومياً من 9 ص لـ 10 م</p>
+                             <p className="font-semibold text-foreground">رقم الدعم</p>
+                             {settings.supportPhone ? (
+                               <a href={`tel:${settings.supportPhone}`} className="text-gray-500 mt-1 inline-flex hover:text-primary transition-colors" dir="ltr">
+                                 {settings.supportPhone}
+                               </a>
+                             ) : (
+                               <p className="text-gray-500 mt-1">لما تضيف رقم الدعم من الإعدادات هيظهر هنا تلقائيًا.</p>
+                             )}
+                             <p className="text-xs text-emerald-500 mt-1">ضيف الرقم وقت ما تكون جاهز، والموقع هيحدث نفسه.</p>
+                          </div>
+                       </div>
+
+                       <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                             <WhatsAppIcon className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-2">
+                             <p className="font-semibold text-foreground">الواتساب</p>
+                             {whatsappEntries.length > 0 ? (
+                               whatsappEntries.map((entry) => (
+                                 <a
+                                   key={entry.id}
+                                   href={entry.href}
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   className="inline-flex items-center gap-2 rounded-full border border-emerald-500/15 bg-emerald-500/8 px-3 py-2 text-sm font-bold text-emerald-500 transition-colors hover:bg-emerald-500/12"
+                                 >
+                                   <WhatsAppIcon className="w-4 h-4" />
+                                   <span>تواصل معنا على الواتساب</span>
+                                 </a>
+                               ))
+                             ) : (
+                               <p className="text-gray-500">لما تضيف أرقام أو روابط الواتساب من الإعدادات هتظهر هنا فورًا.</p>
+                             )}
                           </div>
                        </div>
                     </div>

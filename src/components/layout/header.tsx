@@ -19,6 +19,7 @@ import { useProducts } from "@/contexts/ProductsContext"
 import { signOut } from "@/services/authService"
 import { LogoutModal } from "@/components/ui/logout-modal"
 import { NotificationBell } from "../ui/notification-bell"
+import { useAppSettings } from "@/contexts/AppSettingsContext"
 import { toast } from "sonner"
 
 // ── Motorcycle SVG Logo Icon ──────────────────────────────────────────────────
@@ -324,6 +325,7 @@ export function Header() {
   const { cartCount } = useCart()
   const { user, profile } = useAuth()
   const { categories, ensureCategoriesLoaded } = useProducts()
+  const { settings: appSettings } = useAppSettings()
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
   const [isSearchOpen, setIsSearchOpen] = React.useState(false)
@@ -383,6 +385,8 @@ export function Header() {
 
   const userDisplayName = profile?.full_name || user?.email?.split('@')[0] || "حسابي"
   const userInitial = userDisplayName.trim().charAt(0)
+  const siteName = appSettings.siteName || "في السكة"
+  const siteTagline = appSettings.siteTagline || "طلباتك رايقة ووصلالك بسرعة"
 
   const handleDesktopSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && desktopQuery.trim()) {
@@ -431,7 +435,7 @@ export function Header() {
         <Link href="/" className="flex items-center gap-3 shrink-0 group">
           <Image
             src="/icon-192x192.svg"
-            alt="في السكة Logo"
+            alt={`${siteName} Logo`}
             width={40}
             height={40}
             priority
@@ -439,10 +443,9 @@ export function Header() {
           />
           <div className="hidden sm:flex flex-col leading-none">
             <div className="flex items-baseline gap-0" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
-              <span className="font-black text-2xl text-white">فِي&nbsp;</span>
-              <span className="font-black text-2xl text-primary">السِّكَّةِ</span>
+              <span className="font-black text-2xl text-primary">{siteName}</span>
             </div>
-            <span className="mt-1 text-[10px] font-bold tracking-[0.18em] text-white/45">طلباتك رايقة ووصلالك بسرعة</span>
+            <span className="mt-1 text-[10px] font-bold tracking-[0.12em] text-white/45">{siteTagline}</span>
           </div>
         </Link>
 
@@ -634,14 +637,14 @@ export function Header() {
               <div className="flex items-center gap-2">
                 <Image
                   src="/icon-192x192.svg"
-                  alt="في السكة"
+                  alt={siteName}
                   width={36}
                   height={36}
                   className="rounded-2xl shadow-[var(--shadow-material-2)] ring-1 ring-primary/10"
                 />
                 <div>
-                  <span className="font-heading font-black text-lg text-white">في السكة</span>
-                  <p className="text-[10px] font-bold text-white/45">اختصارات سريعة للمكان اللي محتاجه</p>
+                  <span className="font-heading font-black text-lg text-white">{siteName}</span>
+                  <p className="text-[10px] font-bold text-white/45">{siteTagline}</p>
                 </div>
               </div>
               <button

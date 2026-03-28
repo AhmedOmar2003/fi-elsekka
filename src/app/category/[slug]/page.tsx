@@ -10,6 +10,7 @@ import {
   getCategoryTaxonomyConfig,
   getTaxonomyPrimaryOptions,
 } from "@/lib/category-taxonomy"
+import { fetchPublicAppSettingsServer } from "@/services/serverAppSettingsService"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://fi-elsekka.vercel.app"
 const PAGE_SIZE = 12
@@ -61,11 +62,13 @@ export async function generateMetadata({
   const { q } = await searchParams
 
   if (slug === "all") {
+    const settings = await fetchPublicAppSettingsServer()
+    const siteName = settings.siteName || "في السكة"
     const query = q?.trim()
-    const title = query ? `نتايج البحث عن ${query} | في السكة` : "كل المنتجات | في السكة"
+    const title = query ? `نتايج البحث عن ${query} | ${siteName}` : `كل المنتجات | ${siteName}`
     const description = query
-      ? `شوف نتايج البحث عن ${query} على في السكة، ووصّل اللي يعجبك لحد عندك بسهولة.`
-      : "لف في كل منتجات في السكة من مكان واحد، واختار اللي يناسبك بسرعة."
+      ? `شوف نتايج البحث عن ${query} على ${siteName}، ووصّل اللي يعجبك لحد عندك بسهولة.`
+      : `لف في كل منتجات ${siteName} من مكان واحد، واختار اللي يناسبك بسرعة.`
     const url = query
       ? `${SITE_URL}/category/all?q=${encodeURIComponent(query)}`
       : `${SITE_URL}/category/all`
@@ -78,7 +81,7 @@ export async function generateMetadata({
         title,
         description,
         url,
-        siteName: "في السكة",
+        siteName,
         locale: "ar_EG",
         type: "website",
       },
@@ -91,6 +94,8 @@ export async function generateMetadata({
   }
 
   const { category } = await getCategoryPageData(slug)
+  const settings = await fetchPublicAppSettingsServer()
+  const siteName = settings.siteName || "في السكة"
   const categoryName = category?.name || "قسم المنتجات"
   const description = buildCategoryDescription(categoryName, category?.description)
   const taxonomyConfig = getCategoryTaxonomyConfig(category?.name)
@@ -100,21 +105,21 @@ export async function generateMetadata({
   const url = `${SITE_URL}/category/${slug}`
 
   return {
-    title: `${categoryName} | في السكة`,
+    title: `${categoryName} | ${siteName}`,
     description,
-    keywords: [categoryName, ...taxonomyKeywords, "في السكة", "توصيل", "طلبات"],
+    keywords: [categoryName, ...taxonomyKeywords, siteName, "توصيل", "طلبات"],
     alternates: { canonical: url },
     openGraph: {
-      title: `${categoryName} | في السكة`,
+      title: `${categoryName} | ${siteName}`,
       description,
       url,
-      siteName: "في السكة",
+      siteName,
       locale: "ar_EG",
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${categoryName} | في السكة`,
+      title: `${categoryName} | ${siteName}`,
       description,
     },
   }

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import ProductPageClient from "./product-page-client"
 import { fetchProductDetails, fetchRelatedProducts } from "@/services/productsService"
 import { cache } from "react"
+import { fetchPublicAppSettingsServer } from "@/services/serverAppSettingsService"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://fi-elsekka.vercel.app"
 const getProductForPage = cache((slug: string) => fetchProductDetails(slug))
@@ -21,15 +22,17 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params
   const product = await getProductForPage(slug)
+  const settings = await fetchPublicAppSettingsServer()
+  const siteName = settings.siteName || "في السكة"
 
   if (!product) {
     return {
-      title: "المنتج ده مش متاح دلوقتي | في السكة",
-      description: "شوف منتجات تانية على في السكة، ويمكن تلاقي اللي يناسبك بسهولة.",
+      title: `المنتج ده مش متاح دلوقتي | ${siteName}`,
+      description: `شوف منتجات تانية على ${siteName}، ويمكن تلاقي اللي يناسبك بسهولة.`,
     }
   }
 
-  const title = `${product.name} | في السكة`
+  const title = `${product.name} | ${siteName}`
   const description =
     product.description?.trim() ||
     "شوف تفاصيل المنتج على في السكة واطلبه بسهولة لحد عندك."
@@ -46,7 +49,7 @@ export async function generateMetadata({
       title,
       description,
       url,
-      siteName: "في السكة",
+      siteName,
       locale: "ar_EG",
       type: "website",
       images: [
