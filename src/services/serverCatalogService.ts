@@ -78,11 +78,14 @@ export async function fetchPaginatedProductsServer(
   page = 0,
   pageSize = 20,
   categoryId?: string,
-): Promise<{ products: Product[]; hasMore: boolean }> {
+): Promise<{ products: Product[]; hasMore: boolean; total: number; totalPages: number }> {
   const from = page * pageSize
   const to = from + pageSize - 1
 
   const supabase = getPublicServerSupabase()
+  let countQuery = supabase
+    .from('products')
+    .select('id', { count: 'exact', head: true })
   let query = supabase
     .from('products')
     .select(PRODUCT_CARD_FIELDS)
@@ -90,19 +93,32 @@ export async function fetchPaginatedProductsServer(
     .range(from, to)
 
   if (categoryId && isUUID(categoryId)) {
+    countQuery = countQuery.eq('category_id', categoryId)
     query = query.eq('category_id', categoryId)
   }
 
-  const { data, error } = await query
+  const [{ data, error }, { count, error: countError }] = await Promise.all([
+    query,
+    countQuery,
+  ])
 
   if (error) {
     console.error('Error fetching server paginated products:', error.message)
-    return { products: [], hasMore: false }
+    return { products: [], hasMore: false, total: 0, totalPages: 0 }
   }
+
+  if (countError) {
+    console.error('Error counting server paginated products:', countError.message)
+  }
+
+  const total = count || 0
+  const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0
 
   return {
     products: (data || []) as Product[],
     hasMore: (data?.length || 0) === pageSize,
+    total,
+    totalPages,
   }
 }
 

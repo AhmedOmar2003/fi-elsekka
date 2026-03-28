@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
-import { ChevronLeft, ChevronRight, Loader2, Search, X } from "lucide-react"
-import { Product, fetchPaginatedProducts } from "@/services/productsService"
+import { ChevronLeft, ChevronRight, Search, X } from "lucide-react"
+import { Product } from "@/services/productsService"
 import type { Restaurant } from "@/services/restaurantsService"
 import { useProducts } from "@/contexts/ProductsContext"
 import { isRequestOnlyTextCategory } from "@/lib/text-category-orders"
@@ -27,8 +27,6 @@ import {
   getTaxonomySecondaryOptions,
   matchesProductTaxonomy,
 } from "@/lib/category-taxonomy"
-
-const PAGE_SIZE = 12
 
 type CategoryPageClientProps = {
   initialCategory?: Category | null
@@ -64,84 +62,27 @@ export default function CategoryPageClient({
   const isBestSellersView = isAllPage && listingMode === "best-sellers"
 
   const [allPageProducts, setAllPageProducts] = React.useState<Product[]>(isAllPage ? initialProducts : [])
-  const [loadedPage, setLoadedPage] = React.useState(initialProducts.length > 0 ? 1 : 0)
-  const [hasMore, setHasMore] = React.useState(initialHasMore)
-  const [isLoadingMore, setIsLoadingMore] = React.useState(false)
-  const [isInitialLoading, setIsInitialLoading] = React.useState(isAllPage && initialProducts.length === 0)
-
   const [categoryProducts, setCategoryProducts] = React.useState<Product[]>(!isAllPage ? initialProducts : [])
   const [restaurants] = React.useState<Restaurant[]>(initialRestaurants)
-  const [isCategoryLoading, setIsCategoryLoading] = React.useState(!isAllPage && initialProducts.length === 0)
+  const isLoading = false
 
   React.useEffect(() => {
-    setLoadedPage(initialProducts.length > 0 ? 1 : 0)
-    setHasMore(initialHasMore)
-
     if (isAllPage) {
       setAllPageProducts(initialProducts)
-      setIsInitialLoading(initialProducts.length === 0)
     } else {
       setCategoryProducts(initialProducts)
-      setIsCategoryLoading(initialProducts.length === 0)
     }
-  }, [initialHasMore, initialProducts, isAllPage])
-
-  React.useEffect(() => {
-    if (!isAllPage) return
-    if (initialProducts.length > 0) {
-      setIsInitialLoading(false)
-      return
-    }
-    setIsInitialLoading(true)
-    setAllPageProducts([])
-      setLoadedPage(0)
-    setHasMore(true)
-
-    fetchPaginatedProducts(0, PAGE_SIZE).then(({ products, hasMore }) => {
-      setAllPageProducts(products)
-      setLoadedPage(1)
-      setHasMore(hasMore)
-      setIsInitialLoading(false)
-    })
-  }, [isAllPage])
-
-  const loadMore = React.useCallback(async () => {
-    if (isLoadingMore || !hasMore) return
-    setIsLoadingMore(true)
-    const { products, hasMore: more } = await fetchPaginatedProducts(loadedPage, PAGE_SIZE, isAllPage ? undefined : slug)
-    const mergeProducts = (prev: Product[]) => {
-      const ids = new Set(prev.map(p => p.id))
-      return [...prev, ...products.filter(p => !ids.has(p.id))]
-    }
-
-    if (isAllPage) {
-      setAllPageProducts(mergeProducts)
-    } else {
-      setCategoryProducts(mergeProducts)
-    }
-    setLoadedPage(p => p + 1)
-    setHasMore(more)
-    setIsLoadingMore(false)
-  }, [loadedPage, hasMore, isAllPage, isLoadingMore, slug])
-
-  React.useEffect(() => {
-    if (isAllPage || initialProducts.length > 0) return
-
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
-    if (!isUUID) return
-
-    setIsCategoryLoading(true)
-    fetchPaginatedProducts(0, PAGE_SIZE, slug).then(({ products, hasMore }) => {
-      setCategoryProducts(products)
-      setLoadedPage(1)
-      setHasMore(hasMore)
-      setIsCategoryLoading(false)
-    })
-  }, [slug, isAllPage, initialProducts.length])
+  }, [initialProducts, isAllPage])
 
   const allProducts = isAllPage ? allPageProducts : categoryProducts
-  const isLoading = isAllPage ? isInitialLoading : isCategoryLoading
   const searchQuery = searchParams.get("q") || initialSearchQuery
+  const buildPageHref = React.useCallback((pageNumber: number) => {
+    const params = new URLSearchParams(
+      Object.fromEntries(Array.from(searchParams.entries()).filter(([key]) => key !== "page"))
+    )
+    params.set("page", String(pageNumber))
+    return `/category/${slug}?${params.toString()}`
+  }, [searchParams, slug])
 
   const [sortBy, setSortBy] = React.useState("popular")
   const [priceFilters, setPriceFilters] = React.useState<Set<string>>(new Set())
@@ -360,7 +301,7 @@ export default function CategoryPageClient({
               {!isBestSellersView && (
               <div className="flex items-center justify-between mb-4 md:hidden">
                 <span className="text-sm text-gray-500 font-medium">
-                  {showRestaurantsView ? `عرض ${restaurantCards.length} مطعم` : isBestSellersView ? `عرض ${productCards.length} من ${totalItems} منتج` : `عرض ${productCards.length} منتج`}
+                  {showRestaurantsView ? `عرض ${restaurantCards.length} مطعم` : `عرض ${productCards.length} منتج`}
                 </span>
                 <button
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -574,10 +515,10 @@ export default function CategoryPageClient({
                       {productCards.map(product => <ProductCard key={product.id} {...product} />)}
                     </div>
 
-                    {isBestSellersView && totalPages > 1 ? (
+                    {totalPages > 1 && !showRestaurantsView ? (
                       <div className="mt-10 flex items-center justify-center gap-2">
                         <Link
-                          href={`/category/all?view=best-sellers&page=${Math.max(1, currentPage - 1)}`}
+                          href={buildPageHref(Math.max(1, currentPage - 1))}
                           aria-disabled={currentPage <= 1}
                           className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition-colors ${
                             currentPage <= 1
@@ -591,8 +532,21 @@ export default function CategoryPageClient({
                         <div className="rounded-xl border border-surface-hover bg-surface px-4 py-2.5 text-sm font-black text-foreground">
                           صفحة {currentPage} من {totalPages}
                         </div>
+                        {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+                          <Link
+                            key={pageNumber}
+                            href={buildPageHref(pageNumber)}
+                            className={`inline-flex min-w-11 items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-black transition-colors ${
+                              pageNumber === currentPage
+                                ? "border-primary bg-primary text-white"
+                                : "border-surface-hover bg-surface text-foreground hover:bg-surface-hover"
+                            }`}
+                          >
+                            {pageNumber}
+                          </Link>
+                        ))}
                         <Link
-                          href={`/category/all?view=best-sellers&page=${Math.min(totalPages, currentPage + 1)}`}
+                          href={buildPageHref(Math.min(totalPages, currentPage + 1))}
                           aria-disabled={currentPage >= totalPages}
                           className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition-colors ${
                             currentPage >= totalPages
@@ -604,21 +558,7 @@ export default function CategoryPageClient({
                           <ChevronLeft className="h-4 w-4" />
                         </Link>
                       </div>
-                    ) : hasMore && !hasActiveFilters && !showRestaurantsView && (
-                      <div className="flex justify-center mt-10">
-                        <button
-                          onClick={loadMore}
-                          disabled={isLoadingMore}
-                          className="flex items-center gap-2 bg-surface border border-surface-hover hover:bg-surface-hover text-foreground font-bold px-8 py-3.5 rounded-xl transition-all disabled:opacity-50"
-                        >
-                          {isLoadingMore ? (
-                            <><Loader2 className="w-4 h-4 animate-spin" />جاري التحميل...</>
-                          ) : (
-                            "تحميل المزيد من المنتجات"
-                          )}
-                        </button>
-                      </div>
-                    )}
+                    ) : null}
                   </>
                 )}
               </div>

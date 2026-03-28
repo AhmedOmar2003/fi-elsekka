@@ -34,22 +34,22 @@ const getCategoryPageData = cache(async (slug: string, view: string, page: numbe
   }
 
   if (slug === "all") {
-    const { products, hasMore } = await fetchPaginatedProductsServer(0, PAGE_SIZE)
+    const paginatedResult = await fetchPaginatedProductsServer(page, PAGE_SIZE)
     return {
       category: null,
-      products,
-      hasMore,
+      products: paginatedResult.products,
+      hasMore: paginatedResult.hasMore,
       restaurants: [],
       listingMode: "all" as const,
-      totalPages: 0,
-      currentPage: 1,
-      totalItems: products.length,
+      totalPages: paginatedResult.totalPages,
+      currentPage: page + 1,
+      totalItems: paginatedResult.total,
     }
   }
 
   const [category, paginatedResult] = await Promise.all([
     fetchCategoryByIdServer(slug),
-    fetchPaginatedProductsServer(0, PAGE_SIZE, slug),
+    fetchPaginatedProductsServer(page, PAGE_SIZE, slug),
   ])
 
   const restaurants =
@@ -63,9 +63,9 @@ const getCategoryPageData = cache(async (slug: string, view: string, page: numbe
     hasMore: paginatedResult.hasMore,
     restaurants,
     listingMode: "category" as const,
-    totalPages: 0,
-    currentPage: 1,
-    totalItems: paginatedResult.products.length,
+    totalPages: paginatedResult.totalPages,
+    currentPage: page + 1,
+    totalItems: paginatedResult.total,
   }
 })
 
@@ -79,10 +79,10 @@ export async function generateMetadata({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ q?: string; view?: string }>
+  searchParams: Promise<{ q?: string; view?: string; page?: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const { q, view } = await searchParams
+  const { q, view, page } = await searchParams
 
   if (slug === "all") {
     const settings = await fetchPublicAppSettingsServer()
@@ -99,11 +99,12 @@ export async function generateMetadata({
       : query
       ? `شوف نتايج البحث عن ${query} على ${siteName}، ووصّل اللي يعجبك لحد عندك بسهولة.`
       : `لف في كل منتجات ${siteName} من مكان واحد، واختار اللي يناسبك بسرعة.`
+    const normalizedPage = Math.max(1, Number(page || "1") || 1)
     const url = isBestSellersView
-      ? `${SITE_URL}/category/all?view=best-sellers`
+      ? `${SITE_URL}/category/all?view=best-sellers&page=${normalizedPage}`
       : query
-        ? `${SITE_URL}/category/all?q=${encodeURIComponent(query)}`
-        : `${SITE_URL}/category/all`
+        ? `${SITE_URL}/category/all?q=${encodeURIComponent(query)}&page=${normalizedPage}`
+        : `${SITE_URL}/category/all?page=${normalizedPage}`
 
     return {
       title,
@@ -134,7 +135,8 @@ export async function generateMetadata({
   const taxonomyKeywords = taxonomyConfig
     ? getTaxonomyPrimaryOptions(category?.name).map((option) => option.label)
     : []
-  const url = `${SITE_URL}/category/${slug}`
+  const normalizedPage = Math.max(1, Number(page || "1") || 1)
+  const url = `${SITE_URL}/category/${slug}?page=${normalizedPage}`
 
   return {
     title: `${categoryName} | ${siteName}`,
