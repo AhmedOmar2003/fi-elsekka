@@ -1,0 +1,63 @@
+<svg width="1600" height="2000" viewBox="0 0 1600 2000" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="200" y1="120" x2="1420" y2="1880" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F1714"/>
+      <stop offset="1" stop-color="#101F19"/>
+    </linearGradient>
+    <linearGradient id="card" x1="260" y1="240" x2="1320" y2="1680" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#13211B"/>
+      <stop offset="1" stop-color="#0F1815"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="420" y1="1100" x2="1180" y2="1500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4BC0A1"/>
+      <stop offset="1" stop-color="#0FAE7D"/>
+    </linearGradient>
+    <filter id="soft" x="200" y="180" width="1200" height="1640" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+      <feGaussianBlur stdDeviation="25" result="effect1_foregroundBlur_1_1"/>
+    </filter>
+    <filter id="glow" x="280" y="980" width="1040" height="1040" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+      <feGaussianBlur stdDeviation="32" result="effect1_foregroundBlur_1_1"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="2000" fill="url(#bg)"/>
+  <circle cx="1360" cy="220" r="180" fill="#1A6F5A" fill-opacity="0.18"/>
+  <circle cx="250" cy="1650" r="220" fill="#0FAE7D" fill-opacity="0.10"/>
+  <circle cx="1280" cy="1550" r="260" fill="#E58EAA" fill-opacity="0.06"/>
+
+  <g filter="url(#soft)">
+    <rect x="260" y="220" width="1080" height="1560" rx="56" fill="url(#card)" stroke="#24362E" stroke-width="2"/>
+  </g>
+
+  <rect x="320" y="300" width="960" height="120" rx="60" fill="#12241D" stroke="#214136"/>
+  <text x="800" y="375" text-anchor="middle" fill="#4BC0A1" font-size="42" font-family="Arial, 'IBM Plex Sans Arabic', sans-serif" font-weight="700">
+    حمل تطبيق في السكة
+  </text>
+
+  <image href="/notification-icon-192.png" x="704" y="470" width="192" height="192"/>
+
+  <text x="800" y="760" text-anchor="middle" fill="#F4F7F5" font-size="106" font-family="Arial, 'IBM Plex Sans Arabic', sans-serif" font-weight="700">
+    في السكة
+  </text>
+  <text x="800" y="845" text-anchor="middle" fill="#A8B5AF" font-size="44" font-family="Arial, 'IBM Plex Sans Arabic', sans-serif" font-weight="500">
+    امسح الكود وابدأ التثبيت على موبايلك
+  </text>
+  <text x="800" y="920" text-anchor="middle" fill="#86948E" font-size="34" font-family="Arial, 'IBM Plex Sans Arabic', sans-serif" font-weight="400">
+    تجربة أسرع وأسهل من فتح الموقع كل مرة من المتصفح
+  </text>
+
+  <g filter="url(#glow)">
+    <rect x="420" y="1080" width="760" height="760" rx="56" fill="url(#accent)" fill-opacity="0.18"/>
+  </g>
+  <rect x="470" y="1130" width="660" height="660" rx="44" fill="white"/>
+  <image href="/app-download-qr.png" x="525" y="1185" width="550" height="550"/>
+
+  <rect x="430" y="1860" width="740" height="72" rx="36" fill="#12241D" stroke="#214136"/>
+  <text x="800" y="1906" text-anchor="middle" fill="#D5DDD8" font-size="30" font-family="Arial, 'IBM Plex Sans Arabic', sans-serif" font-weight="500">
+    fi-elsekka.vercel.app/install-app
+  </text>
+</svg>
