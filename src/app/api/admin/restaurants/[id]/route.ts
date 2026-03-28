@@ -4,6 +4,7 @@ import { getProductCatalogMetadata } from '@/lib/product-metadata';
 import { getRestaurantOrderSnapshot } from '@/lib/restaurant-order';
 
 const ACTIVE_STATUSES = ['pending', 'processing', 'shipped'];
+const TREND_DAYS = 7;
 
 function getPeriodStarts() {
   const now = new Date();
@@ -37,7 +38,7 @@ function getDeliveredTimestamp(order: any) {
 
 function getLineTotal(item: any) {
   const quantity = Math.max(1, Number(item?.quantity || 1));
-  const unitPrice = Number(item?.price || 0);
+  const unitPrice = Number(item?.price_at_purchase || item?.products?.price || 0);
   return unitPrice * quantity;
 }
 
@@ -50,6 +51,20 @@ function getRestaurantSubtotal(order: any, restaurantId: string) {
 
   const sourceItems = matchingItems.length > 0 ? matchingItems : items;
   return sourceItems.reduce((sum: number, item: any) => sum + getLineTotal(item), 0);
+}
+
+function buildLastDaysTrend() {
+  return Array.from({ length: TREND_DAYS }).map((_, index) => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - (TREND_DAYS - 1 - index));
+    return {
+      key: date.toISOString().slice(0, 10),
+      label: date.toLocaleDateString('ar-EG', { weekday: 'short' }),
+      revenue: 0,
+      orders: 0,
+    };
+  });
 }
 
 export async function GET(
@@ -94,7 +109,7 @@ export async function GET(
     order_items (
       id,
       quantity,
-      price,
+      price_at_purchase,
       product_id,
       products ( name, image_url, specifications )
     )
@@ -151,7 +166,47 @@ export async function GET(
     total: deliveredWithRevenue.reduce((sum, entry) => sum + entry.restaurantRevenue, 0),
   };
 
-  const recentOrders = orders.slice(0, 12).map((order) => {
+  const trendMap = new Map(buildLastDaysTrend().map((entry) => [entry.key, entry]));
+  for (const entry of deliveredWithRevenue) {
+    const key = new Date(entry.deliveredAt).toISOString().slice(0, 10);
+    const day = trendMap.get(key);
+    if (day) {
+      day.revenue += entry.restaurantRevenue;
+      day.orders += 1;
+    }
+  }
+
+  const topItemsMap = new Map<string, { id: string; name: string; quantity: number; revenue: number }>();
+  for (const order of orders) {
+    const items = Array.isArray(order?.order_items) ? order.order_items : [];
+    for (const item of items) {
+      const metadata = getProductCatalogMetadata(item?.products?.specifications);
+      if (metadata.restaurantId !== id) continue;
+
+      const itemId = String(item?.product_id || item?.id || item?.products?.name || '');
+      const itemName = String(item?.products?.name || 'صنف من المنيو');
+      const quantity = Math.max(1, Number(item?.quantity || 1));
+      const revenue = getLineTotal(item);
+      const current = topItemsMap.get(itemId) || {
+        id: itemId || itemName,
+        name: itemName,
+        quantity: 0,
+        revenue: 0,
+      };
+      current.quantity += quantity;
+      current.revenue += revenue;
+      topItemsMap.set(itemId || itemName, current);
+    }
+  }
+
+  const topItems = Array.from(topItemsMap.values())
+    .sort((left, right) => {
+      if (right.quantity !== left.quantity) return right.quantity - left.quantity;
+      return right.revenue - left.revenue;
+    })
+    .slice(0, 5);
+
+  const recentOrders = orders.slice(0, 30).map((order) => {
     const snapshot = getRestaurantOrderSnapshot(order.shipping_address);
     return {
       id: order.id,
@@ -183,6 +238,8 @@ export async function GET(
       cancelledOrders: cancelledOrders.length,
       earnings,
     },
+    trends: Array.from(trendMap.values()),
+    topItems,
     recentOrders,
   });
 }

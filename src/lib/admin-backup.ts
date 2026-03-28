@@ -6,6 +6,7 @@ export const BACKUP_SCOPES = {
       'app_settings',
       'users',
       'categories',
+      'restaurants',
       'products',
       'product_specifications',
       'promotions',
@@ -28,7 +29,7 @@ export const BACKUP_SCOPES = {
   catalog: {
     label: 'المنتجات والأقسام',
     description: 'المنتجات، الأقسام، المواصفات، العروض، وأكواد الخصم.',
-    tables: ['categories', 'products', 'product_specifications', 'promotions', 'discount_codes'],
+    tables: ['categories', 'restaurants', 'products', 'product_specifications', 'promotions', 'discount_codes'],
   },
   operations: {
     label: 'الطلبات والتشغيل',
@@ -50,6 +51,7 @@ export const BACKUP_TABLE_LABELS: Record<string, string> = {
   app_settings: 'إعدادات التطبيق',
   users: 'المستخدمين',
   categories: 'الأقسام',
+  restaurants: 'المطاعم',
   products: 'المنتجات',
   product_specifications: 'مواصفات المنتجات',
   promotions: 'العروض الترويجية',
@@ -73,6 +75,7 @@ export const BACKUP_RESTORE_ORDER = [
   'app_settings',
   'users',
   'categories',
+  'restaurants',
   'products',
   'product_specifications',
   'promotions',
@@ -91,6 +94,30 @@ export const BACKUP_RESTORE_ORDER = [
   'site_page_views',
   'admin_audit_logs',
 ] as const;
+
+export const BACKUP_TABLE_KEYS: Record<string, string> = {
+  app_settings: 'id',
+  users: 'id',
+  categories: 'id',
+  restaurants: 'id',
+  products: 'id',
+  product_specifications: 'id',
+  promotions: 'id',
+  discount_codes: 'id',
+  orders: 'id',
+  order_items: 'id',
+  delivery_info: 'id',
+  reviews: 'id',
+  driver_reviews: 'id',
+  notifications: 'id',
+  favorites: 'id',
+  cart_items: 'id',
+  driver_subscriptions: 'id',
+  user_subscriptions: 'id',
+  site_visits: 'id',
+  site_page_views: 'id',
+  admin_audit_logs: 'id',
+};
 
 export function isBackupScope(value: string | null | undefined): value is BackupScope {
   return !!value && value in BACKUP_SCOPES;

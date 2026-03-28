@@ -15,6 +15,8 @@ import {
   CalendarDays,
   Mail,
   XCircle,
+  UtensilsCrossed,
+  Activity,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -47,6 +49,18 @@ type RestaurantStatsPayload = {
       total: number;
     };
   };
+  trends: Array<{
+    key: string;
+    label: string;
+    revenue: number;
+    orders: number;
+  }>;
+  topItems: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    revenue: number;
+  }>;
   recentOrders: Array<{
     id: string;
     status: string;
@@ -58,6 +72,8 @@ type RestaurantStatsPayload = {
     subtotal: number;
   }>;
 };
+
+type RangeKey = 'today' | 'week' | 'month' | 'all';
 
 const statusLabelMap: Record<string, string> = {
   pending: 'بانتظار التنفيذ',
@@ -80,6 +96,7 @@ export default function AdminRestaurantOverviewPage() {
   const restaurantId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const [data, setData] = useState<RestaurantStatsPayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeRange, setActiveRange] = useState<RangeKey>('week');
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -140,6 +157,42 @@ export default function AdminRestaurantOverviewPage() {
         tone: 'text-sky-300 bg-sky-400/10',
       },
     ];
+  }, [data]);
+
+  const filteredOrders = useMemo(() => {
+    if (!data) return [];
+    if (activeRange === 'all') return data.recentOrders;
+
+    const rangeStart = new Date();
+    if (activeRange === 'today') {
+      rangeStart.setHours(0, 0, 0, 0);
+    } else if (activeRange === 'week') {
+      rangeStart.setHours(0, 0, 0, 0);
+      const diff = (rangeStart.getDay() + 6) % 7;
+      rangeStart.setDate(rangeStart.getDate() - diff);
+    } else {
+      rangeStart.setDate(1);
+      rangeStart.setHours(0, 0, 0, 0);
+    }
+
+    return data.recentOrders.filter((order) => {
+      const source = order.delivered_at || order.created_at;
+      const value = new Date(source).getTime();
+      return Number.isFinite(value) && value >= rangeStart.getTime();
+    });
+  }, [activeRange, data]);
+
+  const selectedRevenue = useMemo(() => {
+    if (!data) return 0;
+    if (activeRange === 'today') return data.stats.earnings.today;
+    if (activeRange === 'week') return data.stats.earnings.week;
+    if (activeRange === 'month') return data.stats.earnings.month;
+    return data.stats.earnings.total;
+  }, [activeRange, data]);
+
+  const maxTrendRevenue = useMemo(() => {
+    if (!data?.trends?.length) return 1;
+    return Math.max(...data.trends.map((item) => item.revenue), 1);
   }, [data]);
 
   if (isLoading) {
@@ -213,6 +266,109 @@ export default function AdminRestaurantOverviewPage() {
         })}
       </div>
 
+      <div className="rounded-3xl border border-surface-hover bg-surface p-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-lg font-black text-foreground">تحليل أسرع لأداء المطعم</h2>
+            <p className="mt-1 text-sm text-gray-500">من هنا تراجع المدة اللي تهمك وتشوف الأيام الأقوى والأصناف اللي ماشية أكثر.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: 'today', label: 'اليوم' },
+              { key: 'week', label: 'الأسبوع' },
+              { key: 'month', label: 'الشهر' },
+              { key: 'all', label: 'الكل' },
+            ].map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setActiveRange(item.key as RangeKey)}
+                className={`rounded-full border px-4 py-2 text-xs font-black transition ${
+                  activeRange === item.key
+                    ? 'border-primary/30 bg-primary/10 text-primary'
+                    : 'border-surface-hover bg-background text-gray-400 hover:border-primary/20 hover:text-foreground'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
+          <div className="rounded-3xl border border-surface-hover bg-background p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-black text-foreground">أداء آخر 7 أيام</p>
+                <p className="mt-1 text-xs text-gray-500">القيمة هنا من سعر المنتجات فقط، من غير أي جزء خاص بالتوصيل.</p>
+              </div>
+              <div className="rounded-2xl bg-primary/10 p-3 text-primary">
+                <Activity className="h-5 w-5" />
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-7 gap-2">
+              {data.trends.map((item) => {
+                const height = Math.max(16, Math.round((item.revenue / maxTrendRevenue) * 120));
+                return (
+                  <div key={item.key} className="flex flex-col items-center gap-2">
+                    <div className="flex h-36 w-full items-end justify-center rounded-2xl border border-surface-hover bg-surface px-2 py-3">
+                      <div className="w-full rounded-xl bg-primary/80 transition-all" style={{ height }} />
+                    </div>
+                    <p className="text-[11px] font-bold text-gray-400">{item.label}</p>
+                    <p className="text-[11px] font-black text-foreground">{item.revenue.toLocaleString()}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <MiniMetric
+              icon={Wallet}
+              label={`دخل ${activeRange === 'today' ? 'اليوم' : activeRange === 'week' ? 'الأسبوع' : activeRange === 'month' ? 'الشهر' : 'الإجمالي'}`}
+              value={`${selectedRevenue.toLocaleString()} ج.م`}
+              helper="صافي سعر المنتجات فقط"
+              tone="text-primary bg-primary/10"
+            />
+
+            <div className="rounded-3xl border border-surface-hover bg-background p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-foreground">أكثر الأصناف طلبًا</p>
+                  <p className="mt-1 text-xs text-gray-500">أهم 5 أصناف من منيو المطعم بحسب عدد مرات الطلب.</p>
+                </div>
+                <div className="rounded-2xl bg-amber-400/10 p-3 text-amber-300">
+                  <UtensilsCrossed className="h-5 w-5" />
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {data.topItems.length === 0 ? (
+                  <div className="rounded-2xl border border-surface-hover bg-surface px-4 py-6 text-center text-sm text-gray-500">
+                    لسه ما فيش بيانات كفاية علشان نطلع الأصناف الأكثر طلبًا.
+                  </div>
+                ) : (
+                  data.topItems.map((item, index) => (
+                    <div key={item.id} className="flex items-center justify-between gap-3 rounded-2xl border border-surface-hover bg-surface px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-foreground">
+                          {index + 1}. {item.name}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500">{item.revenue.toLocaleString()} ج.م من هذا الصنف</p>
+                      </div>
+                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">
+                        {item.quantity} طلب
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-3xl border border-surface-hover bg-surface p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3 border-b border-surface-hover pb-4">
@@ -223,12 +379,12 @@ export default function AdminRestaurantOverviewPage() {
           </div>
 
           <div className="mt-4 space-y-3">
-            {data.recentOrders.length === 0 ? (
+            {filteredOrders.length === 0 ? (
               <div className="rounded-2xl border border-surface-hover bg-background px-4 py-8 text-center text-sm text-gray-500">
-                لسه المطعم ده ما استقبلش طلبات.
+                مفيش طلبات ظاهرة في المدة اللي اخترتها.
               </div>
             ) : (
-              data.recentOrders.map((order) => (
+              filteredOrders.map((order) => (
                 <div key={order.id} className="rounded-2xl border border-surface-hover bg-background px-4 py-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="space-y-1">

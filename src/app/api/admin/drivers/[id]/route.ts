@@ -56,15 +56,36 @@ export async function GET(
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const { data: driver, error: driverError } = await supabaseAdmin
+  let { data: driver, error: driverError } = await supabaseAdmin
     .from('users')
     .select('id, full_name, email, phone, national_id, created_at, is_available, last_login_at')
     .eq('id', id)
     .eq('role', 'driver')
-    .single();
+    .maybeSingle();
 
-  if (driverError || !driver) {
-    return NextResponse.json({ error: 'Driver not found' }, { status: 404 });
+  if (driverError) {
+    return NextResponse.json({ error: driverError.message }, { status: 500 });
+  }
+
+  if (!driver) {
+    const { data: authLookup, error: authLookupError } = await supabaseAdmin.auth.admin.getUserById(id);
+    const authUser = authLookup?.user;
+    const authRole = authUser?.user_metadata?.role || authUser?.app_metadata?.role;
+
+    if (authLookupError || !authUser || authRole !== 'driver') {
+      return NextResponse.json({ error: 'Driver not found' }, { status: 404 });
+    }
+
+    driver = {
+      id: authUser.id,
+      full_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'مندوب',
+      email: authUser.email || '',
+      phone: authUser.user_metadata?.phone || null,
+      national_id: authUser.user_metadata?.national_id || null,
+      created_at: authUser.created_at || new Date().toISOString(),
+      is_available: true,
+      last_login_at: authUser.last_sign_in_at || null,
+    };
   }
 
   let orders: any[] = [];

@@ -6,6 +6,7 @@ import {
   BACKUP_SCOPE_ORDER,
   BACKUP_SCOPES,
   BACKUP_TABLE_LABELS,
+  BACKUP_TABLE_KEYS,
   type BackupScope,
   isBackupScope,
 } from '@/lib/admin-backup';
@@ -25,29 +26,6 @@ type BackupPayload = {
   scopeLabel?: string;
   tables?: Record<string, any[]>;
   counts?: Record<string, number>;
-};
-
-const TABLE_DELETE_KEYS: Record<string, string> = {
-  app_settings: 'id',
-  users: 'id',
-  categories: 'id',
-  products: 'id',
-  product_specifications: 'id',
-  promotions: 'id',
-  discount_codes: 'id',
-  orders: 'id',
-  order_items: 'id',
-  delivery_info: 'id',
-  reviews: 'id',
-  driver_reviews: 'id',
-  notifications: 'id',
-  favorites: 'id',
-  cart_items: 'id',
-  driver_subscriptions: 'id',
-  user_subscriptions: 'id',
-  site_visits: 'id',
-  site_page_views: 'id',
-  admin_audit_logs: 'id',
 };
 
 function isPlainObject(value: unknown): value is Record<string, any> {
@@ -142,7 +120,7 @@ async function insertRows(tableName: string, rows: any[]) {
 async function deleteTableRows(tableName: string) {
   if (!supabaseAdmin) return 0;
 
-  const key = TABLE_DELETE_KEYS[tableName];
+  const key = BACKUP_TABLE_KEYS[tableName];
   if (!key) {
     throw new Error(`جدول ${tableName} مش متجهز حاليًا للاسترجاع الكامل`);
   }

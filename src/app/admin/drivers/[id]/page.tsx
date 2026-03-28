@@ -79,7 +79,10 @@ export default function AdminDriverDetailsPage() {
 
         const payload = await res.json().catch(() => null)
         if (!res.ok || !payload) {
-          throw new Error(payload?.error || "تعذر تحميل صفحة المندوب")
+          const message = payload?.error === 'Driver not found'
+            ? 'المندوب ده مش ظاهر كامل في البيانات دلوقتي. جرّب تحدث الصفحة أو راجع بياناته من إدارة المندوبين.'
+            : (payload?.error || "تعذر تحميل صفحة المندوب")
+          throw new Error(message)
         }
 
         setData(payload)

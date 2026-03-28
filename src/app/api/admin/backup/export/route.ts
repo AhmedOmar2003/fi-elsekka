@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { requireAdminApi } from '@/lib/admin-guard';
 import {
   BACKUP_SCOPES,
+  BACKUP_TABLE_KEYS,
   type BackupScope,
   buildExcelBackupXml,
   getBackupFileBase,
@@ -33,12 +34,19 @@ async function fetchTableRows(tableName: string) {
   const batchSize = 1000;
   let from = 0;
   const rows: any[] = [];
+  const orderKey = BACKUP_TABLE_KEYS[tableName];
 
   while (true) {
-    const { data, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from(tableName)
       .select('*')
       .range(from, from + batchSize - 1);
+
+    if (orderKey) {
+      query = query.order(orderKey, { ascending: true });
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw new Error(`تعذر تحميل جدول ${tableName}: ${error.message}`);
@@ -54,6 +62,21 @@ async function fetchTableRows(tableName: string) {
   }
 
   return rows;
+}
+
+async function fetchTableEntries(tables: readonly string[]) {
+  const concurrency = 3;
+  const entries: Array<readonly [string, any[]]> = [];
+
+  for (let index = 0; index < tables.length; index += concurrency) {
+    const chunk = tables.slice(index, index + concurrency);
+    const chunkEntries = await Promise.all(
+      chunk.map(async (tableName) => [tableName, await fetchTableRows(tableName)] as const)
+    );
+    entries.push(...chunkEntries);
+  }
+
+  return entries;
 }
 
 export async function GET(request: Request) {
@@ -73,9 +96,7 @@ export async function GET(request: Request) {
   const tables = getBackupTables(scope);
 
   try {
-    const tableEntries = await Promise.all(
-      tables.map(async (tableName) => [tableName, await fetchTableRows(tableName)] as const)
-    );
+    const tableEntries = await fetchTableEntries(tables);
 
     const exportedAt = new Date().toISOString();
     const payload = {
