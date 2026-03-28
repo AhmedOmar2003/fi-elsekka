@@ -38,7 +38,6 @@ export function Footer() {
     .map((name) => categories.find((category) => category.name === name))
     .filter((category): category is (typeof categories)[number] => !!category)
   const whatsappEntries = getSupportWhatsAppEntries(settings)
-  const siteName = settings.siteName || "في السكة"
   const siteTagline = settings.siteTagline || "صاحبك الجدع في الطلبات."
 
   return (
@@ -53,12 +52,15 @@ export function Footer() {
             <Link href="/" className="mb-4 flex items-center gap-2 group">
               <Image
                 src="/icon-192x192.svg"
-                alt={`${siteName} Logo`} 
+                alt="في السكة Logo" 
                 width={40}
                 height={40}
                 className="rounded-2xl shadow-[var(--shadow-material-2)] group-hover:shadow-[var(--shadow-material-3)] transition-shadow" 
               />
-              <div className="text-2xl font-black leading-none text-primary" style={{ fontFamily: 'var(--font-lalezar), serif' }}>{siteName}</div>
+              <div className="flex items-baseline gap-0 leading-none" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
+                <span className="font-black text-2xl text-white">فِي&nbsp;</span>
+                <span className="font-black text-2xl text-primary">السِّكَّةِ</span>
+              </div>
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-white/64">
               {siteTagline}
@@ -138,7 +140,7 @@ export function Footer() {
         </div>
 
         <div className="mt-6 flex flex-col items-center justify-between border-t border-white/8 pb-4 pt-6 text-center text-xs text-white/52 sm:flex-row">
-          <p>© {new Date().getFullYear()} {siteName}. كل الحقوق محفوظة.</p>
+          <p>© {new Date().getFullYear()} في السكة. كل الحقوق محفوظة.</p>
           <div className="mt-4 flex gap-4 sm:mt-0">
              <Link href="/terms" className="hover:text-white transition-colors">الشروط والأحكام</Link>
              <Link href="/privacy" className="hover:text-white transition-colors">سياسة الخصوصية</Link>

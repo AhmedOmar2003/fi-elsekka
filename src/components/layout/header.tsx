@@ -385,7 +385,6 @@ export function Header() {
 
   const userDisplayName = profile?.full_name || user?.email?.split('@')[0] || "حسابي"
   const userInitial = userDisplayName.trim().charAt(0)
-  const siteName = appSettings.siteName || "في السكة"
   const siteTagline = appSettings.siteTagline || "طلباتك رايقة ووصلالك بسرعة"
 
   const handleDesktopSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -435,7 +434,7 @@ export function Header() {
         <Link href="/" className="flex items-center gap-3 shrink-0 group">
           <Image
             src="/icon-192x192.svg"
-            alt={`${siteName} Logo`}
+            alt="في السكة Logo"
             width={40}
             height={40}
             priority
@@ -443,7 +442,8 @@ export function Header() {
           />
           <div className="hidden sm:flex flex-col leading-none">
             <div className="flex items-baseline gap-0" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
-              <span className="font-black text-2xl text-primary">{siteName}</span>
+              <span className="font-black text-2xl text-white">فِي&nbsp;</span>
+              <span className="font-black text-2xl text-primary">السِّكَّةِ</span>
             </div>
             <span className="mt-1 text-[10px] font-bold tracking-[0.12em] text-white/45">{siteTagline}</span>
           </div>
@@ -637,13 +637,16 @@ export function Header() {
               <div className="flex items-center gap-2">
                 <Image
                   src="/icon-192x192.svg"
-                  alt={siteName}
+                  alt="في السكة"
                   width={36}
                   height={36}
                   className="rounded-2xl shadow-[var(--shadow-material-2)] ring-1 ring-primary/10"
                 />
                 <div>
-                  <span className="font-heading font-black text-lg text-white">{siteName}</span>
+                  <div className="flex items-baseline gap-0 leading-none" style={{ fontFamily: 'var(--font-lalezar), serif' }}>
+                    <span className="font-black text-lg text-white">فِي&nbsp;</span>
+                    <span className="font-black text-lg text-primary">السِّكَّةِ</span>
+                  </div>
                   <p className="text-[10px] font-bold text-white/45">{siteTagline}</p>
                 </div>
               </div>
