@@ -50,6 +50,12 @@ export async function POST(request: Request) {
                 driver_picked_up_at: new Date().toISOString(),
                 driver_delivery_state: 'on_the_way_to_customer'
               }
+            : {}),
+          ...(status === 'delivered'
+            ? {
+                driver_delivered_at: new Date().toISOString(),
+                driver_delivery_state: 'delivered',
+              }
             : {})
         }
       })

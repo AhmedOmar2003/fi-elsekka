@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Users, UserPlus, Phone, CreditCard, Mail, Trash2, ShieldCheck, Pencil, Loader2, X, AlertTriangle, Star } from "lucide-react"
+import Link from 'next/link'
+import { Users, UserPlus, Phone, CreditCard, Mail, Trash2, ShieldCheck, Pencil, Loader2, X, AlertTriangle, Star, Eye } from "lucide-react"
 import { supabase } from '@/lib/supabase'
 import { logError } from '@/services/adminService'
 import { toast } from 'sonner'
@@ -273,6 +274,13 @@ export default function AdminDriversPage() {
                                         </td>
                                         <td className="px-5 py-4 text-left">
                                             <div className="flex items-center gap-1 justify-end">
+                                                <Link
+                                                    href={`/admin/drivers/${driver.id}`}
+                                                    className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                                    title="عرض صفحة المندوب"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </Link>
                                                 <button
                                                     onClick={() => openEditModal(driver)}
                                                     className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
