@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   type AppNotification,
+  deleteAllNotifications,
+  emitNotificationsSync,
   fetchUserNotifications,
   markAllNotificationsAsRead,
   markNotificationAsRead,
@@ -33,6 +35,7 @@ export function AdminNotificationBell() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [pushSetupState, setPushSetupState] = React.useState<PushSetupState>("checking");
   const [isSubscribingPush, setIsSubscribingPush] = React.useState(false);
+  const [isClearingNotifications, setIsClearingNotifications] = React.useState(false);
   const popoverRef = React.useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((notification) => !notification.is_read).length;
@@ -215,6 +218,28 @@ export function AdminNotificationBell() {
     router.push(notification.link || "/admin/orders");
   };
 
+  const clearAllNotifications = async () => {
+    if (!user || notifications.length === 0 || isClearingNotifications) return;
+
+    setIsClearingNotifications(true);
+    const previous = notifications;
+    setNotifications([]);
+    emitNotificationsSync({ type: "delete-all", userId: user.id });
+
+    const ok = await deleteAllNotifications(user.id);
+    if (ok) {
+      toast.success("تم مسح كل الإشعارات");
+    } else {
+      setNotifications(previous);
+      for (const notification of previous) {
+        emitNotificationsSync({ type: "upsert", userId: user.id, notification });
+      }
+      toast.error("مش قادرين نمسح الإشعارات دلوقتي");
+    }
+
+    setIsClearingNotifications(false);
+  };
+
   if (!user) return null;
 
   return (
@@ -235,8 +260,21 @@ export function AdminNotificationBell() {
       {isOpen && (
         <div className="absolute left-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-surface-hover bg-surface shadow-2xl">
           <div className="border-b border-surface-hover px-4 py-3">
-            <h3 className="text-sm font-black text-foreground">إشعارات لوحة التحكم</h3>
-            <p className="mt-1 text-[11px] text-gray-500">طلبات جديدة وتحديثات التسليم المهمة</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-black text-foreground">إشعارات لوحة التحكم</h3>
+                <p className="mt-1 text-[11px] text-gray-500">طلبات جديدة وتحديثات التسليم المهمة</p>
+              </div>
+              {notifications.length > 0 && (
+                <button
+                  onClick={() => void clearAllNotifications()}
+                  disabled={isClearingNotifications}
+                  className="shrink-0 rounded-xl border border-surface-hover bg-surface-hover px-3 py-1.5 text-[11px] font-bold text-gray-400 transition-colors hover:text-foreground hover:bg-background disabled:opacity-60"
+                >
+                  {isClearingNotifications ? "جارٍ المسح..." : "مسح الكل"}
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="border-b border-surface-hover/70 p-2.5 md:hidden">
