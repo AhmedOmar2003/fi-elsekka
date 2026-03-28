@@ -6,12 +6,13 @@ import { Footer } from "@/components/layout/footer"
 import Link from "next/link"
 import Image from "next/image"
 import { ShieldCheck, Zap, Banknote, Clock, MapPin } from "lucide-react"
-import { fetchHomeProducts, fetchOffers, fetchBestSellers } from "@/services/productsService"
+import { fetchHomeProducts, fetchOffers } from "@/services/productsService"
 import { HomeCategoriesList } from "@/components/ui/home-categories"
 import { PromoBanner } from "@/components/ui/promo-banner"
 import { toProductCardProps } from "@/lib/product-presentation"
 import { CURRENT_DELIVERY_FEE } from "@/lib/order-economics"
 import { fetchPublicAppSettingsServer } from "@/services/serverAppSettingsService"
+import { fetchBestSellersServer } from "@/services/serverCatalogService"
 
 // Public home page: cache with ISR for strong performance while still refreshing often.
 export const revalidate = 300;
@@ -32,7 +33,7 @@ export default async function Home() {
   // - fetchOffers: DB-filtered show_in_offers=true
   const [dbProducts, bestSellerProducts, offerProducts] = await Promise.all([
     fetchHomeProducts(),
-    fetchBestSellers(),
+    fetchBestSellersServer(),
     fetchOffers(),
   ]);
 
