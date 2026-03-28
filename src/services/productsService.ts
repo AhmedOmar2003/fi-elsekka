@@ -88,17 +88,36 @@ export const fetchProducts = async (categoryId?: string): Promise<Product[]> => 
  */
 export const fetchBestSellers = async (): Promise<Product[]> => {
     try {
-        // 1. Try to fetch sales data from order_items
+        const { data: deliveredOrders, error: deliveredOrdersError } = await supabase
+            .from('orders')
+            .select('id')
+            .eq('status', 'delivered')
+            .order('created_at', { ascending: false })
+            .limit(5000);
+
+        if (deliveredOrdersError) {
+            console.error('Error fetching delivered orders for best sellers:', deliveredOrdersError.message);
+            return [];
+        }
+
+        const deliveredOrderIds = (deliveredOrders || [])
+            .map((order) => order.id)
+            .filter(Boolean);
+
+        if (deliveredOrderIds.length === 0) {
+            return [];
+        }
+
+        // 1. Fetch sales data only from delivered orders
         const { data: orderItems, error: itemsError } = await supabase
             .from('order_items')
-            .select('product_id, quantity, orders(status)');
+            .select('product_id, quantity')
+            .in('order_id', deliveredOrderIds);
 
         let salesRank: string[] = [];
         if (!itemsError && orderItems && orderItems.length > 0) {
             const sales: Record<string, number> = {};
             for (const item of orderItems) {
-                const relatedOrder = Array.isArray((item as any).orders) ? (item as any).orders[0] : (item as any).orders;
-                if (relatedOrder?.status !== 'delivered') continue;
                 if (item.product_id) {
                     sales[item.product_id] = (sales[item.product_id] || 0) + (item.quantity || 1);
                 }
