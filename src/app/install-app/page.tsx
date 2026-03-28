@@ -11,6 +11,8 @@ type DeferredInstallPrompt = Event & {
 
 export default function InstallAppPage() {
   const [isIOS, setIsIOS] = React.useState(false)
+  const [isAndroid, setIsAndroid] = React.useState(false)
+  const [isMobile, setIsMobile] = React.useState(false)
   const [isStandalone, setIsStandalone] = React.useState(false)
   const [isInstallReady, setIsInstallReady] = React.useState(false)
   const [isInstalling, setIsInstalling] = React.useState(false)
@@ -28,6 +30,8 @@ export default function InstallAppPage() {
 
     setIsStandalone(modeStandalone)
     setIsIOS(/iphone|ipad|ipod/.test(userAgent))
+    setIsAndroid(/android/.test(userAgent))
+    setIsMobile(/iphone|ipad|ipod|android|mobile/.test(userAgent))
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault()
@@ -112,6 +116,21 @@ export default function InstallAppPage() {
                 <b> تثبيت التطبيق</b> أو <b>إضافة إلى الشاشة الرئيسية</b>.
               </p>
 
+              {!isMobile && (
+                <div className="mt-4 rounded-2xl border border-amber-500/15 bg-amber-500/5 px-4 py-3 text-xs leading-6 text-amber-300">
+                  افتح هذه الصفحة من موبايل Android أو اعمل Scan للـ QR من هاتفك، لأن التثبيت لا يظهر على الديسكتوب.
+                </div>
+              )}
+
+              {isAndroid && !isInstallReady && (
+                <div className="mt-4 rounded-2xl border border-surface-hover bg-background/60 px-4 py-3 text-xs leading-6 text-gray-500">
+                  لو الزر تحت طالع معطّل، افتح قائمة المتصفح ثم اختر:
+                  <b className="text-foreground"> تثبيت التطبيق</b>
+                  {" "}أو
+                  <b className="text-foreground"> إضافة إلى الشاشة الرئيسية</b>.
+                </div>
+              )}
+
               <button
                 onClick={handleInstall}
                 disabled={!isInstallReady || isInstalling || installSucceeded}
@@ -124,7 +143,9 @@ export default function InstallAppPage() {
                     ? "جارٍ التثبيت..."
                     : isInstallReady
                       ? "تثبيت التطبيق"
-                      : "افتح الصفحة من الهاتف أولًا"}
+                      : isAndroid
+                        ? "استخدم خيار تثبيت التطبيق من المتصفح"
+                        : "التثبيت متاح من الهاتف فقط"}
               </button>
             </div>
           )}
