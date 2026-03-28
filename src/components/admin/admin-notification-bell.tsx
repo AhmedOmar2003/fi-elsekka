@@ -239,30 +239,30 @@ export function AdminNotificationBell() {
             <p className="mt-1 text-[11px] text-gray-500">طلبات جديدة وتحديثات التسليم المهمة</p>
           </div>
 
-          <div className="border-b border-surface-hover/70 p-3">
+          <div className="border-b border-surface-hover/70 p-2.5 md:hidden">
             {pushSetupState === "enabled" ? (
-              <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/15 bg-emerald-500/5 px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2 rounded-2xl border border-emerald-500/15 bg-emerald-500/5 px-3 py-2">
                 <div>
-                  <p className="text-sm font-black text-foreground">إشعارات الهاتف</p>
-                  <p className="mt-0.5 text-[11px] text-gray-500">مفعلة وتوصلك حتى لو اللوحة مقفولة</p>
+                  <p className="text-xs font-black text-foreground">إشعارات الهاتف</p>
+                  <p className="mt-0.5 text-[10px] text-gray-500">مفعلة وتوصلك حتى لو اللوحة مقفولة</p>
                 </div>
-                <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-black text-emerald-500">
+                <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black text-emerald-500">
                   مفعلة
                 </span>
               </div>
             ) : (
               <div className="rounded-2xl border border-primary/15 bg-primary/5 p-3">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-sm font-black text-foreground">فعّل إشعارات الهاتف</p>
-                    <p className="mt-1 text-xs leading-6 text-gray-500">
+                    <p className="text-xs font-black text-foreground">فعّل إشعارات الهاتف</p>
+                    <p className="mt-1 text-[10px] leading-5 text-gray-500">
                       علشان أول ما يدخل طلب جديد أو يوصل طلب، الإشعار يوصلك فورًا على الجهاز.
                     </p>
                   </div>
                   <button
                     onClick={() => void subscribeToPhoneNotifications(true)}
                     disabled={isSubscribingPush || pushSetupState === "unsupported"}
-                    className="shrink-0 rounded-2xl bg-primary px-3 py-2 text-xs font-black text-white transition-colors hover:bg-primary/90 disabled:opacity-60"
+                    className="shrink-0 rounded-2xl bg-primary px-3 py-2 text-[11px] font-black text-white transition-colors hover:bg-primary/90 disabled:opacity-60"
                   >
                     {isSubscribingPush ? "جارٍ التفعيل..." : "فعّلها"}
                   </button>
