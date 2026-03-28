@@ -112,6 +112,7 @@ export default function AdminSettingsPage() {
                 type={type}
                 value={value}
                 onChange={e => onChange(e.target.value)}
+                placeholder={placeholder}
                 dir={dir}
                 className={`w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50 ${dir === 'ltr' ? 'text-left' : 'text-right'}`}
             />
