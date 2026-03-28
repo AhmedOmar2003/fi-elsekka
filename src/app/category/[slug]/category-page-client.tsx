@@ -247,6 +247,30 @@ export default function CategoryPageClient({
   const pageSize = 12
   const rangeStart = totalItems > 0 ? (currentPage - 1) * pageSize + 1 : 0
   const rangeEnd = totalItems > 0 ? Math.min((currentPage - 1) * pageSize + visibleItemsCount, totalItems) : 0
+  const paginationItems = React.useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1)
+    }
+
+    const items: Array<number | string> = [1]
+    const start = Math.max(2, currentPage - 1)
+    const end = Math.min(totalPages - 1, currentPage + 1)
+
+    if (start > 2) {
+      items.push("start-ellipsis")
+    }
+
+    for (let pageNumber = start; pageNumber <= end; pageNumber += 1) {
+      items.push(pageNumber)
+    }
+
+    if (end < totalPages - 1) {
+      items.push("end-ellipsis")
+    }
+
+    items.push(totalPages)
+    return items
+  }, [currentPage, totalPages])
 
   return (
     <>
@@ -540,19 +564,28 @@ export default function CategoryPageClient({
                         <div className="rounded-xl border border-surface-hover bg-surface px-3 py-2 text-sm font-black text-foreground">
                           صفحة {currentPage} من {totalPages}
                         </div>
-                        {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-                          <Link
-                            key={pageNumber}
-                            href={buildPageHref(pageNumber)}
-                            className={`inline-flex min-w-10 items-center justify-center rounded-xl border px-3 py-2 text-sm font-black transition-colors ${
-                              pageNumber === currentPage
-                                ? "border-primary bg-primary text-white"
-                                : "border-surface-hover bg-surface text-foreground hover:bg-surface-hover"
-                            }`}
-                          >
-                            {pageNumber}
-                          </Link>
-                        ))}
+                        {paginationItems.map((item, index) =>
+                          typeof item === "number" ? (
+                            <Link
+                              key={item}
+                              href={buildPageHref(item)}
+                              className={`inline-flex min-w-10 items-center justify-center rounded-xl border px-3 py-2 text-sm font-black transition-colors ${
+                                item === currentPage
+                                  ? "border-primary bg-primary text-white"
+                                  : "border-surface-hover bg-surface text-foreground hover:bg-surface-hover"
+                              }`}
+                            >
+                              {item}
+                            </Link>
+                          ) : (
+                            <span
+                              key={`${item}-${index}`}
+                              className="inline-flex min-w-10 items-center justify-center px-1 text-sm font-black text-gray-500"
+                            >
+                              ...
+                            </span>
+                          )
+                        )}
                         <Link
                           href={buildPageHref(Math.min(totalPages, currentPage + 1))}
                           aria-disabled={currentPage >= totalPages}
