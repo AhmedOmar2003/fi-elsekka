@@ -103,8 +103,8 @@ export default function AdminSettingsPage() {
         }
     };
 
-    const Field = ({ label, value, onChange, type = 'text', placeholder = '' }: {
-        label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string;
+    const Field = ({ label, value, onChange, type = 'text', placeholder = '', dir = 'rtl' }: {
+        label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; dir?: 'rtl' | 'ltr';
     }) => (
         <div>
             <label className="block text-xs font-bold text-gray-400 mb-1.5">{label}</label>
@@ -112,7 +112,8 @@ export default function AdminSettingsPage() {
                 type={type}
                 value={value}
                 onChange={e => onChange(e.target.value)}
-                className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                dir={dir}
+                className={`w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50 ${dir === 'ltr' ? 'text-left' : 'text-right'}`}
             />
         </div>
     );
@@ -161,11 +162,11 @@ export default function AdminSettingsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="اسم الموقع" value={settings.siteName} onChange={v => setSettings(s => ({ ...s, siteName: v }))} placeholder="في السكة" />
                     <Field label="الشعار التعريفي" value={settings.siteTagline} onChange={v => setSettings(s => ({ ...s, siteTagline: v }))} placeholder="بالسكة الصح" />
-                    <Field label="رقم الدعم" value={settings.supportPhone} onChange={v => setSettings(s => ({ ...s, supportPhone: v }))} placeholder="01xxxxxxxxx" type="tel" />
-                    <Field label="إيميل الدعم" value={settings.supportEmail} onChange={v => setSettings(s => ({ ...s, supportEmail: v }))} placeholder="support@example.com" type="email" />
-                    <Field label="واتساب 1" value={settings.supportWhatsApp1} onChange={v => setSettings(s => ({ ...s, supportWhatsApp1: v }))} placeholder="اكتب رقم واتساب أو رابط مباشر" />
-                    <Field label="واتساب 2" value={settings.supportWhatsApp2} onChange={v => setSettings(s => ({ ...s, supportWhatsApp2: v }))} placeholder="اختياري" />
-                    <Field label="واتساب 3" value={settings.supportWhatsApp3} onChange={v => setSettings(s => ({ ...s, supportWhatsApp3: v }))} placeholder="اختياري" />
+                    <Field label="رقم الدعم" value={settings.supportPhone} onChange={v => setSettings(s => ({ ...s, supportPhone: v }))} placeholder="01xxxxxxxxx" type="tel" dir="ltr" />
+                    <Field label="إيميل الدعم" value={settings.supportEmail} onChange={v => setSettings(s => ({ ...s, supportEmail: v }))} placeholder="support@example.com" type="email" dir="ltr" />
+                    <Field label="واتساب 1" value={settings.supportWhatsApp1} onChange={v => setSettings(s => ({ ...s, supportWhatsApp1: v }))} placeholder="اكتب رقم واتساب أو رابط مباشر" dir="ltr" />
+                    <Field label="واتساب 2" value={settings.supportWhatsApp2} onChange={v => setSettings(s => ({ ...s, supportWhatsApp2: v }))} placeholder="اختياري" dir="ltr" />
+                    <Field label="واتساب 3" value={settings.supportWhatsApp3} onChange={v => setSettings(s => ({ ...s, supportWhatsApp3: v }))} placeholder="اختياري" dir="ltr" />
                 </div>
                 <p className="text-xs leading-6 text-gray-500">
                     أي تعديل هنا هينعكس على اسم الموقع، الشعار التعريفي، وطرق التواصل داخل الموقع مباشرة. وبالنسبة للواتساب، تقدر تكتب رقم أو رابط مباشر.
