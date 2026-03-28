@@ -14,6 +14,7 @@ export interface ProductCardProps {
   price: number;
   oldPrice?: number;
   discountBadge?: string;
+  infoBadge?: string;
   imageUrl: string;
   rating?: number;
   reviewsCount?: number;
@@ -28,6 +29,7 @@ export function ProductCard({
   price,
   oldPrice,
   discountBadge,
+  infoBadge,
   imageUrl,
   rating,
   reviewsCount,
@@ -79,6 +81,11 @@ export function ProductCard({
           {discountBadge && (
             <span className="inline-flex items-center rounded-full border border-secondary/10 bg-secondary px-3 py-1 text-[11px] font-black tracking-wide text-white shadow-[var(--shadow-material-1)]">
               {discountBadge}
+            </span>
+          )}
+          {infoBadge && (
+            <span className="inline-flex items-center rounded-full border border-primary/10 bg-primary/90 px-3 py-1 text-[11px] font-black tracking-wide text-white shadow-[var(--shadow-material-1)]">
+              {infoBadge}
             </span>
           )}
         </div>

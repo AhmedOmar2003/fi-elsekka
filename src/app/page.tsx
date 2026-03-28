@@ -51,13 +51,10 @@ export default async function Home() {
   const displayBestSellers = bestSellerProducts.length > 0
     ? bestSellerProducts.slice(0, 4).map(p => ({
         ...toProductCardProps(p),
+        infoBadge: "الأكثر طلبًا",
         imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
       }))
-    // Fallback: show newer products if there are still no real orders
-    : dbProducts.slice(4, 9).map(p => ({
-        ...toProductCardProps(p),
-        imageUrl: p.image_url || p.specifications?.image_url || "https://th.bing.com/th/id/OIG2.u.R6D_r_N7J7L0_W0_x_?pid=ImgGn"
-      }));
+    : [];
 
   return (
     <>
@@ -220,20 +217,28 @@ export default async function Home() {
               </Link>
             </div>
 
-            <div className="sm:hidden -mx-1 overflow-x-auto pb-2 no-scrollbar">
-              <div className="flex gap-4 px-1 snap-x snap-mandatory">
-                {displayBestSellers.map((product) => (
-                  <div key={product.id} className="snap-start min-w-[46vw] max-w-[46vw]">
-                    <ProductCard {...product} />
+            {displayBestSellers.length > 0 ? (
+              <>
+                <div className="sm:hidden -mx-1 overflow-x-auto pb-2 no-scrollbar">
+                  <div className="flex gap-4 px-1 snap-x snap-mandatory">
+                    {displayBestSellers.map((product) => (
+                      <div key={product.id} className="snap-start min-w-[46vw] max-w-[46vw]">
+                        <ProductCard {...product} />
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+                <div className="hidden sm:grid grid-cols-2 gap-6 lg:grid-cols-4">
+                  {displayBestSellers.map((product) => (
+                    <ProductCard key={product.id} {...product} />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-surface-border bg-surface px-6 py-10 text-center text-sm text-gray-500">
+                لسه ما فيش منتجات عليها طلبات كفاية علشان تظهر هنا.
               </div>
-            </div>
-            <div className="hidden sm:grid grid-cols-2 gap-6 lg:grid-cols-4">
-              {displayBestSellers.map((product) => (
-                <ProductCard key={product.id} {...product} />
-              ))}
-            </div>
+            )}
           </div>
         </section>
 

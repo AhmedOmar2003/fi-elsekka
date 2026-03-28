@@ -82,9 +82,9 @@ export const fetchProducts = async (categoryId?: string): Promise<Product[]> => 
  * Fetches the most requested products using actual order volume only.
  * Logic:
  * 1. Calculate total ordered quantity per product from `order_items`.
- * 2. Ignore cancelled orders completely.
+ * 2. Count delivered orders only so the section reflects completed demand.
  * 3. Return the top 4 in exact ranking order.
- * 4. If there are no real orders yet, fallback to newest 4 products.
+ * 4. Never fallback to newest products — this section must reflect real demand only.
  */
 export const fetchBestSellers = async (): Promise<Product[]> => {
     try {
@@ -98,7 +98,7 @@ export const fetchBestSellers = async (): Promise<Product[]> => {
             const sales: Record<string, number> = {};
             for (const item of orderItems) {
                 const relatedOrder = Array.isArray((item as any).orders) ? (item as any).orders[0] : (item as any).orders;
-                if (relatedOrder?.status === 'cancelled') continue;
+                if (relatedOrder?.status !== 'delivered') continue;
                 if (item.product_id) {
                     sales[item.product_id] = (sales[item.product_id] || 0) + (item.quantity || 1);
                 }
@@ -127,14 +127,7 @@ export const fetchBestSellers = async (): Promise<Product[]> => {
             }
         }
 
-        // 2. Final fallback: newest products if there are no real orders yet
-        const { data: newest } = await supabase
-            .from('products')
-            .select(PRODUCT_CARD_FIELDS)
-            .order('created_at', { ascending: false })
-            .limit(4);
-
-        return (newest || []) as Product[];
+        return [];
     } catch (err) {
         console.error('Error in fetchBestSellers:', err);
         return [];

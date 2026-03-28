@@ -15,6 +15,7 @@ type ProductCardLike = {
   price: number;
   oldPrice?: number;
   discountBadge?: string;
+  infoBadge?: string;
   rating?: number;
   reviewsCount?: number;
   imageUrl: string;
