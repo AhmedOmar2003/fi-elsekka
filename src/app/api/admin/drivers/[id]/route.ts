@@ -58,7 +58,7 @@ export async function GET(
 
   let { data: driver, error: driverError } = await supabaseAdmin
     .from('users')
-    .select('id, full_name, email, phone, national_id, created_at, is_available, last_login_at')
+    .select('id, full_name, email, phone, created_at, is_available, last_login_at')
     .eq('id', id)
     .eq('role', 'driver')
     .maybeSingle();
@@ -81,7 +81,6 @@ export async function GET(
       full_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'مندوب',
       email: authUser.email || '',
       phone: authUser.user_metadata?.phone || null,
-      national_id: authUser.user_metadata?.national_id || null,
       created_at: authUser.created_at || new Date().toISOString(),
       is_available: true,
       last_login_at: authUser.last_sign_in_at || null,
