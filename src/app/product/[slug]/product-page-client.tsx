@@ -744,32 +744,6 @@ export default function ProductPage({
                 </div>
               )}
 
-              <div className="mb-5 flex items-center justify-between gap-2 md:hidden">
-                {!activeGroupOrderCode ? (
-                  <button
-                    type="button"
-                    onClick={handleCreateGroupOrder}
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-primary/15 bg-primary/5 px-4 text-xs font-black text-primary transition-colors active:scale-[0.97]"
-                  >
-                    <Users className="h-4 w-4" />
-                    طلب جماعي
-                  </button>
-                ) : (
-                  <span className="inline-flex h-10 items-center rounded-2xl border border-primary/15 bg-primary/5 px-4 text-xs font-black text-primary">
-                    الطلب الجماعي شغال
-                  </span>
-                )}
-
-                <button
-                  type="button"
-                  onClick={handleNativeShare}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/5 text-primary transition-colors active:scale-[0.97]"
-                  aria-label="شارك المنتج"
-                >
-                  <Share2 className="h-4.5 w-4.5" />
-                </button>
-              </div>
-
               <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-surface-hover bg-surface/55 p-4">
                   <div className="mb-2 inline-flex rounded-xl bg-primary/10 p-2 text-primary">
