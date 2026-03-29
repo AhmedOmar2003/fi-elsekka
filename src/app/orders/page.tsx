@@ -299,6 +299,7 @@ function OrderCard({
   const textRequestCategory = order.shipping_address?.custom_request_category_name
   const textRequestLabel = textRequestCategory === 'صيدلية' ? 'طلب صيدلي' : 'طلب بحث عن منتج'
   const textRequestImageUrls = Array.isArray(order.shipping_address?.custom_request_image_urls) ? order.shipping_address.custom_request_image_urls : []
+  const isGroupOrder = order.shipping_address?.group_order === true
   const pricingPending = order.shipping_address?.pricing_pending === true
   const quotedProductsTotal = Number(order.shipping_address?.quoted_products_total || 0)
   const quotedFinalTotal = Number(order.shipping_address?.quoted_final_total || order.total_amount || 0)
@@ -358,6 +359,13 @@ function OrderCard({
         <div className="flex-1 min-w-0">
           <p className="font-bold text-foreground text-sm">طلب #{order.id.slice(-8).toUpperCase()}</p>
           <p className="text-xs text-gray-500 mt-0.5">{date}</p>
+          {isGroupOrder && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-black text-primary">
+                طلب جماعي
+              </span>
+            </div>
+          )}
         </div>
         <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${status.color} shrink-0`}>
           {status.icon}
@@ -375,6 +383,15 @@ function OrderCard({
         <div className="border-t border-surface-hover p-4 sm:p-5 space-y-5 animate-in slide-in-from-top-2 duration-300">
           
           {/* Estimated Delivery Box */}
+          {isGroupOrder && (
+            <div className="rounded-xl border border-primary/15 bg-primary/5 p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-primary/80">طلب جماعي</p>
+              <p className="mt-1 text-sm leading-7 text-gray-500">
+                أنت شاركت في الطلب ده مع أصحابك، وبتقدر تتابع حالته من هنا بشكل طبيعي لحد ما يوصل.
+              </p>
+            </div>
+          )}
+
           {restaurantOrder.isRestaurantOrder && (
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
               <p className="text-xs font-bold uppercase mb-1 text-primary/80">طلب من مطعم</p>
