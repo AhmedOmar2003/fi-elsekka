@@ -273,12 +273,6 @@ export async function PATCH(request: NextRequest, context: any) {
       return NextResponse.json({ error: updateError.message, stage: 'db.update' }, { status: 500 });
     }
 
-    try {
-      await restoreOrderInventory(supabaseAdmin, id, 'search_request_unavailable');
-    } catch (inventoryError: any) {
-      console.error('restoreOrderInventory(search unavailable) error:', inventoryError?.message || inventoryError);
-    }
-
     if (order.user_id) {
       const humanWindow = etaDays > 0 && etaHours > 0
         ? `${etaDays} يوم و${etaHours} ساعة`
