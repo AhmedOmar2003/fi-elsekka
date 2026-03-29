@@ -19,6 +19,7 @@ import { getBundleItems, getBundleSummary, getProductMode, toProductCardProps } 
 import { getTaxonomyLabel, getTaxonomySelection } from "@/lib/category-taxonomy"
 import { getProductCatalogMetadata } from "@/lib/product-metadata"
 import { CURRENT_DELIVERY_FEE } from "@/lib/order-economics"
+import { formatNumberLatin } from "@/lib/formatters"
 import { addGroupOrderItem, createGroupOrder } from "@/services/groupOrdersService"
 import { getStoredGroupParticipant, saveStoredGroupParticipant } from "@/lib/group-order-session"
 
@@ -481,13 +482,7 @@ export default function ProductPage({
   const effectiveUnitPrice = appliedDiscountPrice !== null ? appliedDiscountPrice : product.price
   const liveTotalPrice = effectiveUnitPrice * quantity
   const liveComparePrice = comparePriceToShow !== null ? comparePriceToShow * quantity : null
-  const formatPrice = React.useCallback((value: number) => {
-    if (Number.isInteger(value)) return value.toLocaleString("ar-EG")
-    return value.toLocaleString("ar-EG", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })
-  }, [])
+  const formatPrice = React.useCallback((value: number) => formatNumberLatin(value), [])
 
   const [activeImage, setActiveImage] = React.useState(0)
 
