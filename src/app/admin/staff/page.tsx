@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { clearExperimentalAdminData } from "@/services/adminService";
 import { getPermissionMeta, getRoleMeta, hasFullAdminAccess, hasPermission } from "@/lib/permissions";
 import { toast } from "sonner";
 import {
@@ -122,6 +123,7 @@ export default function StaffPage() {
   });
   const [permissionsOpen, setPermissionsOpen] = useState(true);
   const [previewOpen, setPreviewOpen] = useState(true);
+  const [isClearingAllStaff, setIsClearingAllStaff] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -288,6 +290,25 @@ export default function StaffPage() {
     }
   };
 
+  const handleClearAllStaff = async () => {
+    const confirmed = window.confirm("هيمسح كل الطاقم التجريبي ويترك السوبر أدمن فقط. متأكد؟");
+    if (!confirmed) return;
+
+    setIsClearingAllStaff(true);
+    try {
+      const result = await clearExperimentalAdminData("staff");
+      const deletedStaff = Number(result?.summary?.deletedStaff || 0);
+      toast.success(
+        deletedStaff > 0 ? `تم مسح ${deletedStaff} حساب من الطاقم` : "تم تنظيف الطاقم التجريبي"
+      );
+      await loadStaff();
+    } catch (e: any) {
+      toast.error(e.message || "فشل مسح الطاقم");
+    } finally {
+      setIsClearingAllStaff(false);
+    }
+  };
+
   const roleLabel = useMemo(() => (value: string) => getRoleMeta(value).label, []);
 
   const protectedStaff = useMemo(
@@ -335,15 +356,27 @@ export default function StaffPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black text-foreground">إدارة الطاقم</h1>
           <p className="text-gray-500 text-sm">إضافة، تعديل، تعطيل، وصلاحيات الموظفين</p>
         </div>
-        <Button onClick={openAdd} className="gap-2">
-          <Plus className="w-4 h-4" />
-          إضافة موظف
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClearAllStaff}
+            disabled={isClearingAllStaff}
+            className="gap-2 border-rose-500/30 bg-rose-500/5 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300"
+          >
+            {isClearingAllStaff ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            مسح الكل
+          </Button>
+          <Button onClick={openAdd} className="gap-2">
+            <Plus className="w-4 h-4" />
+            إضافة موظف
+          </Button>
+        </div>
       </div>
 
       {protectedStaff.length > 0 && (

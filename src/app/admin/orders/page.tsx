@@ -2,8 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { cancelAdminOrder, fetchAdminOrders, fetchOrderDetails, getAdminOrderKind, isCustomerSelfCancelledGraceOrder, isPricedSearchRequestOrder, isSearchRequestOrder, isSearchingRequestOrder, reopenCancelledOrderAfterCustomerRequest, saveAdminOrderDeliveryPlan, saveAdminTextOrderQuote, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
-import { ShoppingCart, ChevronDown, X, Package, Download, Filter, Bike, Clock, AlertTriangle, Link2, Check } from 'lucide-react';
+import { cancelAdminOrder, clearExperimentalAdminData, fetchAdminOrders, fetchOrderDetails, getAdminOrderKind, isCustomerSelfCancelledGraceOrder, isPricedSearchRequestOrder, isSearchRequestOrder, isSearchingRequestOrder, reopenCancelledOrderAfterCustomerRequest, saveAdminOrderDeliveryPlan, saveAdminTextOrderQuote, updateOrderStatus, updateOrderDriver } from '@/services/adminService';
+import { ShoppingCart, ChevronDown, X, Package, Download, Filter, Bike, Clock, AlertTriangle, Link2, Check, Trash2, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -123,6 +123,7 @@ export default function AdminOrdersPage() {
     const [quotedSubtotalInput, setQuotedSubtotalInput] = useState(0);
     const [isSavingTextQuote, setIsSavingTextQuote] = useState(false);
     const [hasCopiedOrderLink, setHasCopiedOrderLink] = useState(false);
+    const [isClearingAllOrders, setIsClearingAllOrders] = useState(false);
     const requestedOrderId = searchParams.get('order');
     const queuedLoadTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -263,6 +264,24 @@ export default function AdminOrdersPage() {
         setHasCopiedOrderLink(false);
         if (requestedOrderId) {
             syncOrderQuery(null);
+        }
+    };
+
+    const handleClearAllOrders = async () => {
+        const confirmed = window.confirm('هيمسح كل الطلبات والإشعارات التشغيلية المرتبطة بها. متأكد؟');
+        if (!confirmed) return;
+
+        setIsClearingAllOrders(true);
+        try {
+            const result = await clearExperimentalAdminData('orders');
+            const deletedOrders = Number(result?.summary?.deletedOrders || 0);
+            closeSelectedOrder();
+            toast.success(deletedOrders > 0 ? `تم مسح ${deletedOrders} طلب` : 'تم مسح الطلبات التجريبية');
+            await load();
+        } catch (error: any) {
+            toast.error(error.message || 'فشل مسح الطلبات');
+        } finally {
+            setIsClearingAllOrders(false);
         }
     };
 
@@ -571,6 +590,16 @@ export default function AdminOrdersPage() {
                     </div>
 
                     {/* Export Button */}
+                    <button
+                        type="button"
+                        onClick={handleClearAllOrders}
+                        disabled={isClearingAllOrders}
+                        className="flex items-center gap-2 border border-rose-500/20 bg-rose-500/5 px-4 py-2 rounded-xl text-sm font-bold text-rose-400 hover:bg-rose-500/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        {isClearingAllOrders ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        مسح الكل
+                    </button>
+
                     <div className="relative">
                         <button
                             onClick={() => setIsExportMenuOpen(v => !v)}

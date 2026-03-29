@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChipsInput } from "@/components/admin/chips-input";
 import { toast } from "sonner";
-import { fetchAdminCategories } from "@/services/adminService";
+import { clearExperimentalAdminData, fetchAdminCategories } from "@/services/adminService";
 import {
   Restaurant,
   createRestaurant,
@@ -45,6 +45,7 @@ export default function AdminRestaurantsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isClearingAllRestaurants, setIsClearingAllRestaurants] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const foodCategory = useMemo(
@@ -209,6 +210,23 @@ export default function AdminRestaurantsPage() {
     await loadData();
   };
 
+  const handleClearAllRestaurants = async () => {
+    const confirmed = window.confirm('هيمسح كل المطاعم التجريبية ومنيوهاتها. لو عندك طلبات مطاعم، امسح الطلبات الأول. متأكد؟');
+    if (!confirmed) return;
+
+    setIsClearingAllRestaurants(true);
+    try {
+      const result = await clearExperimentalAdminData('restaurants');
+      const deletedRestaurants = Number(result?.summary?.deletedRestaurants || 0);
+      toast.success(deletedRestaurants > 0 ? `تم مسح ${deletedRestaurants} مطعم تجريبي` : 'تم مسح المطاعم التجريبية');
+      await loadData();
+    } catch (error: any) {
+      toast.error(error.message || 'فشل مسح المطاعم التجريبية');
+    } finally {
+      setIsClearingAllRestaurants(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
@@ -218,10 +236,22 @@ export default function AdminRestaurantsPage() {
             من هنا تضيف المطعم وتجهز بياناته، وبعدها تدخل مباشرة على صفحة منتجات المطعم وتضيف المنيو من هناك.
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2">
-          <Plus className="h-4 w-4" />
-          إضافة مطعم
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClearAllRestaurants}
+            disabled={isClearingAllRestaurants}
+            className="gap-2 border-rose-500/20 text-rose-500 hover:bg-rose-500/10 hover:text-rose-500"
+          >
+            {isClearingAllRestaurants ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            مسح الكل
+          </Button>
+          <Button onClick={openCreate} className="gap-2">
+            <Plus className="h-4 w-4" />
+            إضافة مطعم
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-surface-hover bg-surface p-4 md:p-5">

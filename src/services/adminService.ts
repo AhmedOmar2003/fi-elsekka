@@ -1685,3 +1685,26 @@ export async function broadcastOfferNotification(title: string, message: string,
         failedPushCount: payload?.failedPushCount || 0,
     };
 }
+
+export async function clearExperimentalAdminData(target: 'orders' | 'products' | 'restaurants' | 'drivers' | 'staff') {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+        throw new Error('سجّل دخولك من جديد علشان نكمل المسح التجريبي.');
+    }
+
+    const res = await fetch('/api/admin/experimental/clear-all', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ target }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data?.error || 'فشل المسح التجريبي');
+    }
+
+    return data;
+}

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Users, UserPlus, Phone, CreditCard, Mail, Trash2, ShieldCheck, Pencil, Loader2, X, AlertTriangle, Star, Eye } from "lucide-react"
 import { supabase } from '@/lib/supabase'
-import { logError } from '@/services/adminService'
+import { clearExperimentalAdminData, logError } from '@/services/adminService'
 import { toast } from 'sonner'
 
 interface Driver {
@@ -21,6 +21,7 @@ export default function AdminDriversPage() {
     const [drivers, setDrivers] = useState<Driver[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+    const [isClearingAllDrivers, setIsClearingAllDrivers] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [driverRatings, setDriverRatings] = useState<Record<string, number>>({})
 
@@ -189,6 +190,23 @@ export default function AdminDriversPage() {
         }
     }
 
+    const handleClearAllDrivers = async () => {
+        const confirmed = window.confirm('هيمسح كل المندوبين التجريبيين وحسابات دخولهم. متأكد؟');
+        if (!confirmed) return;
+
+        setIsClearingAllDrivers(true)
+        try {
+            const result = await clearExperimentalAdminData('drivers')
+            const deletedDrivers = Number(result?.summary?.deletedDrivers || 0)
+            toast.success(deletedDrivers > 0 ? `تم مسح ${deletedDrivers} مندوب` : 'تم مسح المندوبين التجريبيين')
+            fetchDrivers()
+        } catch (error: any) {
+            toast.error(error.message || 'فشل مسح المندوبين')
+        } finally {
+            setIsClearingAllDrivers(false)
+        }
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -198,13 +216,23 @@ export default function AdminDriversPage() {
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">تتبع فريق التوصيل وإضافة مندوبين جدد</p>
                 </div>
-                <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="shrink-0 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-primary/20"
-                >
-                    <UserPlus className="w-5 h-5" />
-                    إضافة مندوب جديد
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                    <button
+                        onClick={handleClearAllDrivers}
+                        disabled={isClearingAllDrivers}
+                        className="shrink-0 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm font-bold text-rose-400 transition-all hover:bg-rose-500/20 disabled:opacity-60 flex items-center gap-2"
+                    >
+                        {isClearingAllDrivers ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        مسح الكل
+                    </button>
+                    <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="shrink-0 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-primary/20"
+                    >
+                        <UserPlus className="w-5 h-5" />
+                        إضافة مندوب جديد
+                    </button>
+                </div>
             </div>
 
             {/* Content Table */}

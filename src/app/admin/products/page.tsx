@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import {
     fetchAdminProducts, fetchAdminCategories, createProduct,
-    updateProduct, deleteProduct, uploadProductImage, saveProductSpecifications
+    updateProduct, deleteProduct, uploadProductImage, saveProductSpecifications, clearExperimentalAdminData
 } from '@/services/adminService';
 import { Plus, Pencil, Trash2, Search, X, Upload, Loader2, ImageOff, Tag } from 'lucide-react';
 import { toast } from 'sonner';
@@ -117,6 +117,7 @@ export default function AdminProductsPage() {
     const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isClearingAllProducts, setIsClearingAllProducts] = useState(false);
     const fileInput = useRef<HTMLInputElement>(null);
 
     const selectedCategoryName = categories.find(category => category.id === form.category_id)?.name || '';
@@ -497,6 +498,23 @@ export default function AdminProductsPage() {
         load();
     };
 
+    const handleClearAllProducts = async () => {
+        const confirmed = window.confirm('هيمسح كل المنتجات التجريبية. لو عندك طلبات قديمة مرتبطة بمنتجات، امسح الطلبات الأول. متأكد؟');
+        if (!confirmed) return;
+
+        setIsClearingAllProducts(true);
+        try {
+            const result = await clearExperimentalAdminData('products');
+            const deletedProducts = Number(result?.summary?.deletedProducts || 0);
+            toast.success(deletedProducts > 0 ? `تم مسح ${deletedProducts} منتج تجريبي` : 'تم مسح المنتجات التجريبية');
+            await load();
+        } catch (error: any) {
+            toast.error(error.message || 'فشل مسح المنتجات التجريبية');
+        } finally {
+            setIsClearingAllProducts(false);
+        }
+    };
+
     const filtered = products.filter(p => {
         const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
         if (!matchesSearch) return false;
@@ -512,12 +530,22 @@ export default function AdminProductsPage() {
                     <h1 className="text-2xl font-heading font-black text-foreground">المنتجات</h1>
                     <p className="text-sm text-gray-400 mt-0.5">{products.length} منتج في المتجر</p>
                 </div>
-                <button
-                    onClick={openNew}
-                    className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
-                >
-                    <Plus className="w-4 h-4" /> إضافة منتج
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                    <button
+                        onClick={handleClearAllProducts}
+                        disabled={isClearingAllProducts}
+                        className="flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm font-bold text-rose-400 transition-all hover:bg-rose-500/20 disabled:opacity-60"
+                    >
+                        {isClearingAllProducts ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        مسح الكل
+                    </button>
+                    <button
+                        onClick={openNew}
+                        className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+                    >
+                        <Plus className="w-4 h-4" /> إضافة منتج
+                    </button>
+                </div>
             </div>
 
             {/* Search + Filter */}
