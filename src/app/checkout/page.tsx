@@ -34,6 +34,7 @@ import { RequestAttachmentsGallery } from "@/components/orders/request-attachmen
 import { getBundleItemCount, getBundleItems } from "@/lib/product-presentation"
 import { fetchGroupOrder, finalizeGroupOrder, type GroupOrderView } from "@/services/groupOrdersService"
 import { clearStoredGroupParticipant, getStoredGroupParticipant } from "@/lib/group-order-session"
+import { getSelectedVariantLabel, normalizeSelectedVariant, resolveVariantUnitPrice, type SelectedVariantJson } from "@/lib/product-variants"
 
 function CheckoutContent() {
    const router = useRouter()
@@ -42,6 +43,7 @@ function CheckoutContent() {
    const buyNowId = searchParams.get("buyNow")
    const buyNowQtyRaw = searchParams.get("qty")
    const buyNowPriceRaw = searchParams.get("price")
+   const buyNowVariantRaw = searchParams.get("variant")
    const requestMode = searchParams.get("requestMode")
    const textCategoryId = searchParams.get("categoryId")
    const groupOrderCode = searchParams.get("groupOrder")
@@ -52,6 +54,14 @@ function CheckoutContent() {
    const [isTextRequestLoading, setIsTextRequestLoading] = React.useState(requestMode === TEXT_CATEGORY_ORDER_MODE)
    const [groupOrder, setGroupOrder] = React.useState<GroupOrderView | null>(null)
    const [isGroupOrderLoading, setIsGroupOrderLoading] = React.useState(!!groupOrderCode)
+   const buyNowSelectedVariant = React.useMemo<SelectedVariantJson>(() => {
+      if (!buyNowVariantRaw) return null
+      try {
+         return normalizeSelectedVariant(JSON.parse(buyNowVariantRaw))
+      } catch {
+         return null
+      }
+   }, [buyNowVariantRaw])
 
    React.useEffect(() => {
       if (buyNowId) {
@@ -135,6 +145,7 @@ function CheckoutContent() {
             product_id: item.productId,
             quantity: item.quantity,
             applied_price: item.unitPrice,
+            selected_variant_json: item.selectedVariantJson || null,
             participantName: group.displayName,
             product: item.product
                ? {
@@ -154,6 +165,8 @@ function CheckoutContent() {
       id: "override-item",
       product_id: overrideProduct.id,
       quantity: parseInt(buyNowQtyRaw || "1", 10),
+      applied_price: buyNowPriceRaw ? parseFloat(buyNowPriceRaw) : null,
+      selected_variant_json: buyNowSelectedVariant,
       product: overrideProduct
    }] : isTextRequestCheckout ? [] : cart.items;
 
@@ -165,13 +178,13 @@ function CheckoutContent() {
       displayCartTotal = groupOrder.totalAmount;
       displayCartOriginal = groupOrder.itemGroups.reduce(
          (sum, group) =>
-            sum + group.items.reduce((groupSum, item) => groupSum + (Number(item.product?.price || item.unitPrice) * item.quantity), 0),
+            sum + group.items.reduce((groupSum, item) => groupSum + (resolveVariantUnitPrice(item.product || { price: item.unitPrice }, item.selectedVariantJson) * item.quantity), 0),
          0
       );
       displayDiscount = Math.max(0, displayCartOriginal - displayCartTotal);
    } else if (isUsingOverride && overrideProduct) {
       const qty = parseInt(buyNowQtyRaw || "1", 10)
-      displayCartOriginal = overrideProduct.price * qty;
+      displayCartOriginal = resolveVariantUnitPrice(overrideProduct, buyNowSelectedVariant) * qty;
       
       let naturalPrice = overrideProduct.price;
       if (overrideProduct.discount_percentage && overrideProduct.discount_percentage > 0) {
@@ -581,6 +594,11 @@ function CheckoutContent() {
                                        {'participantName' in item && item.participantName ? (
                                           <p className="mt-1 text-[11px] font-black text-primary">إضافة: {item.participantName}</p>
                                        ) : null}
+                                       {getSelectedVariantLabel((item as any).selected_variant_json) ? (
+                                          <p className="mt-1 text-[11px] font-bold text-gray-400">
+                                             {getSelectedVariantLabel((item as any).selected_variant_json)}
+                                          </p>
+                                       ) : null}
                                        {getBundleItemCount(item.product?.specifications) > 0 && (
                                           <div className="mt-1 space-y-1.5">
                                              <div className="flex flex-wrap items-center gap-2">
@@ -614,6 +632,10 @@ function CheckoutContent() {
                                     <span className="font-heading font-bold text-foreground">
                                        {(() => {
                                           const p = item.product;
+                                          const unitPrice = Number((item as any).applied_price ?? 0)
+                                          if (unitPrice > 0) {
+                                             return unitPrice * item.quantity;
+                                          }
                                           if (!p) return 0;
                                           if (p.discount_percentage && p.discount_percentage > 0) {
                                              return Math.round(p.price * (1 - p.discount_percentage / 100)) * item.quantity;

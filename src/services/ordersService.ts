@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Product } from './productsService';
+import type { SelectedVariantJson } from '@/lib/product-variants';
 
 export interface Order {
     id: string;
@@ -17,6 +18,7 @@ export interface OrderItem {
     product_id: string;
     quantity: number;
     price_at_purchase: number;
+    selected_variant_json?: SelectedVariantJson;
     product?: Product; // joined details
 }
 

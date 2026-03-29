@@ -28,6 +28,7 @@ import {
 } from "@/services/restaurantsService";
 import type { Product } from "@/services/productsService";
 import { getProductCatalogMetadata } from "@/lib/product-metadata";
+import { getRestaurantSizeOptions } from "@/lib/product-variants";
 
 type MenuFormState = {
   name: string;
@@ -39,6 +40,7 @@ type MenuFormState = {
   available: boolean;
   menu_section: string;
   related_product_ids: string[];
+  size_options: { id: string; label: string; price: string }[];
   custom_specs: { label: string; value: string }[];
 };
 
@@ -52,8 +54,15 @@ const EMPTY_FORM: MenuFormState = {
   available: true,
   menu_section: "",
   related_product_ids: [],
+  size_options: [],
   custom_specs: [],
 };
+
+const PIZZA_SIZE_PRESET = [
+  { id: "large", label: "كبيرة", price: "" },
+  { id: "medium", label: "متوسطة", price: "" },
+  { id: "small", label: "صغيرة", price: "" },
+];
 
 function extractRestaurantCustomSpecs(product: Product) {
   if (Array.isArray(product.product_specifications) && product.product_specifications.length > 0) {
@@ -160,6 +169,11 @@ export default function AdminRestaurantProductsPage() {
       available: metadata.restaurantAvailable !== false,
       menu_section: metadata.restaurantSection || "",
       related_product_ids: metadata.relatedProductIds || [],
+      size_options: getRestaurantSizeOptions(product.specifications).map((option) => ({
+        id: option.id,
+        label: option.label,
+        price: String(option.price),
+      })),
       custom_specs: extractRestaurantCustomSpecs(product),
     });
     setModalOpen(true);
@@ -185,7 +199,14 @@ export default function AdminRestaurantProductsPage() {
     const name = form.name.trim();
     const shortDescription = form.short_description.trim();
     const description = form.description.trim();
-    const price = Number(form.price);
+    const sizeOptions = form.size_options
+      .map((option, index) => ({
+        id: option.id || `size-${index + 1}`,
+        label: option.label.trim(),
+        price: Number(option.price || 0),
+      }))
+      .filter((option) => option.label && Number.isFinite(option.price) && option.price > 0);
+    const price = sizeOptions[0]?.price || Number(form.price);
     const discountPercentage = Number(form.discount_percentage || 0);
 
     if (!name) {
@@ -198,7 +219,7 @@ export default function AdminRestaurantProductsPage() {
       return;
     }
 
-    if (!Number.isFinite(price) || price <= 0) {
+    if (!sizeOptions.length && (!Number.isFinite(price) || price <= 0)) {
       toast.error("اكتب سعر صحيح للمنتج");
       return;
     }
@@ -228,6 +249,7 @@ export default function AdminRestaurantProductsPage() {
         available: form.available,
         menuSection: form.menu_section,
         relatedProductIds: form.related_product_ids,
+        sizeOptions,
         specs: form.custom_specs
           .map((spec) => ({
             label: spec.label.trim(),
@@ -519,7 +541,20 @@ export default function AdminRestaurantProductsPage() {
                       <label className="text-xs font-black text-gray-400">تصنيف المنيو</label>
                       <select
                         value={form.menu_section}
-                        onChange={(e) => setForm((prev) => ({ ...prev, menu_section: e.target.value }))}
+                        onChange={(e) =>
+                          setForm((prev) => {
+                            const nextSection = e.target.value
+                            const shouldSeedPizzaSizes =
+                              nextSection === "بيتزا" &&
+                              prev.size_options.length === 0
+
+                            return {
+                              ...prev,
+                              menu_section: nextSection,
+                              size_options: shouldSeedPizzaSizes ? PIZZA_SIZE_PRESET : prev.size_options,
+                            }
+                          })
+                        }
                         className="w-full rounded-2xl border border-surface-hover bg-background px-4 py-3 text-sm text-foreground outline-none transition-colors focus:border-primary"
                       >
                         <option value="">بدون تصنيف محدد</option>
@@ -532,6 +567,85 @@ export default function AdminRestaurantProductsPage() {
                       <p className="text-[11px] text-gray-500">
                         لو اخترت تصنيف، المنتج هيظهر تحت التبويب المناسب في صفحة المطعم.
                       </p>
+                    </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <label className="text-xs font-black text-gray-400">الأسعار حسب الحجم</label>
+                      <div className="rounded-2xl border border-surface-hover bg-background/60 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-black text-foreground">اختيارات الحجم للعميل</p>
+                            <p className="mt-1 text-[11px] leading-6 text-gray-500">
+                              لو المنتج له أحجام مثل بيتزا أو كريب، اكتب كل حجم مع سعره. أول حجم صحيح هنا هو اللي هيظهر كسعر البداية.
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="gap-2"
+                            onClick={() =>
+                              setForm((prev) => ({
+                                ...prev,
+                                size_options: [...prev.size_options, { id: `size-${Date.now()}`, label: "", price: "" }],
+                              }))
+                            }
+                          >
+                            <Plus className="h-4 w-4" />
+                            أضف حجم
+                          </Button>
+                        </div>
+
+                        {form.size_options.length === 0 ? (
+                          <div className="mt-4 rounded-2xl border border-dashed border-surface-hover px-4 py-5 text-center text-xs text-gray-500">
+                            لو المنتج بسعر واحد فقط، سيب الجزء ده فاضي واستخدم السعر الحالي فوق.
+                          </div>
+                        ) : (
+                          <div className="mt-4 space-y-3">
+                            {form.size_options.map((option, index) => (
+                              <div key={option.id || index} className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+                                <Input
+                                  value={option.label}
+                                  onChange={(e) =>
+                                    setForm((prev) => ({
+                                      ...prev,
+                                      size_options: prev.size_options.map((item, itemIndex) =>
+                                        itemIndex === index ? { ...item, label: e.target.value } : item
+                                      ),
+                                    }))
+                                  }
+                                  placeholder="الحجم: كبيرة"
+                                />
+                                <Input
+                                  type="number"
+                                  value={option.price}
+                                  onChange={(e) =>
+                                    setForm((prev) => ({
+                                      ...prev,
+                                      size_options: prev.size_options.map((item, itemIndex) =>
+                                        itemIndex === index ? { ...item, price: e.target.value } : item
+                                      ),
+                                    }))
+                                  }
+                                  placeholder="السعر: 320"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="gap-2 border-rose-500/20 text-rose-500 hover:bg-rose-500/10 hover:text-rose-500"
+                                  onClick={() =>
+                                    setForm((prev) => ({
+                                      ...prev,
+                                      size_options: prev.size_options.filter((_, itemIndex) => itemIndex !== index),
+                                    }))
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  حذف
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="space-y-1.5 md:col-span-2">
                       <label className="text-xs font-black text-gray-400">وصف قصير</label>

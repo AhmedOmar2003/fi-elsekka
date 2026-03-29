@@ -18,6 +18,7 @@ export async function GET(request: Request) {
       product_id,
       quantity,
       price_at_purchase,
+      selected_variant_json,
       product:products (name, price)
     )
   `

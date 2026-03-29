@@ -1,11 +1,13 @@
 import { supabase } from '@/lib/supabase';
 import { Product } from './productsService';
+import { isSameSelectedVariant, normalizeSelectedVariant, type SelectedVariantJson } from '@/lib/product-variants';
 
 export interface CartItem {
     id: string;
     product_id: string;
     quantity: number;
     applied_price?: number | null;
+    selected_variant_json?: SelectedVariantJson;
     product?: Product;
 }
 
@@ -18,6 +20,7 @@ export const fetchUserCart = async (userId: string): Promise<CartItem[]> => {
             product_id,
             quantity,
             applied_price,
+            selected_variant_json,
             product:products (
                 id,
                 name,
@@ -42,20 +45,34 @@ export const fetchUserCart = async (userId: string): Promise<CartItem[]> => {
     return (data || []) as unknown as CartItem[];
 };
 
-export const addToCart = async (userId: string, productId: string, quantity: number = 1, appliedPrice?: number | null) => {
+export const addToCart = async (
+    userId: string,
+    productId: string,
+    quantity: number = 1,
+    appliedPrice?: number | null,
+    selectedVariantJson?: SelectedVariantJson,
+) => {
+    const normalizedVariant = normalizeSelectedVariant(selectedVariantJson);
     // Upsert logic: If item exists, we should ideally increment quantity instead of inserting new.
     // Let's first check if it exists
-    const { data: existing } = await supabase
+    const { data: existingItems } = await supabase
         .from('cart_items')
-        .select('id, quantity')
+        .select('id, quantity, applied_price, selected_variant_json')
         .eq('user_id', userId)
-        .eq('product_id', productId)
-        .maybeSingle();
+        .eq('product_id', productId);
+
+    const existing = (existingItems || []).find((item) =>
+        isSameSelectedVariant(item.selected_variant_json, normalizedVariant)
+    );
 
     if (existing) {
         const { data, error } = await supabase
             .from('cart_items')
-            .update({ quantity: existing.quantity + quantity })
+            .update({
+                quantity: existing.quantity + quantity,
+                applied_price: appliedPrice ?? existing.applied_price ?? null,
+                selected_variant_json: normalizedVariant,
+            })
             .eq('id', existing.id)
             .select()
             .single();
@@ -67,7 +84,8 @@ export const addToCart = async (userId: string, productId: string, quantity: num
                 user_id: userId,
                 product_id: productId,
                 quantity,
-                applied_price: appliedPrice || null
+                applied_price: appliedPrice || null,
+                selected_variant_json: normalizedVariant,
             })
             .select()
             .single();

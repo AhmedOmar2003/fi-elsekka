@@ -283,6 +283,7 @@ type SaveRestaurantMenuProductPayload = {
   available?: boolean;
   menuSection?: string | null;
   relatedProductIds?: string[];
+  sizeOptions?: { id?: string; label: string; price: number }[];
   specs?: { id?: string; label: string; description: string }[];
 };
 
@@ -299,10 +300,23 @@ export async function saveRestaurantMenuProduct(payload: SaveRestaurantMenuProdu
 
   const menuSection = payload.menuSection?.trim() || '';
   const menuSectionTag = menuSection ? [menuSection] : [];
+  const normalizedSizeOptions = (payload.sizeOptions || [])
+    .map((option, index) => {
+      const label = String(option.label || '').trim();
+      const price = Number(option.price || 0);
+      if (!label || !Number.isFinite(price) || price <= 0) return null;
+      return {
+        id: String(option.id || '').trim() || `size-${index + 1}`,
+        label,
+        price,
+      };
+    })
+    .filter((option): option is { id: string; label: string; price: number } => Boolean(option));
+  const effectivePrice = normalizedSizeOptions[0]?.price || payload.price;
   const productPayload: Record<string, unknown> = {
     name: payload.name.trim(),
     description: payload.description?.trim() || null,
-    price: payload.price,
+    price: effectivePrice,
     stock_quantity: payload.available === false ? 0 : 1,
     discount_percentage: payload.discountPercentage || 0,
     category_id: foodCategoryId,
@@ -323,6 +337,7 @@ export async function saveRestaurantMenuProduct(payload: SaveRestaurantMenuProdu
       restaurant_item: true,
       restaurant_available: payload.available !== false,
       restaurant_section: menuSection,
+      restaurant_size_options: normalizedSizeOptions,
       availability_mode: 'manual',
       category_taxonomy: {
         primary: 'restaurants',

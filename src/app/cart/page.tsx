@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { CURRENT_DELIVERY_FEE } from '@/lib/order-economics';
 import { createGroupOrder } from '@/services/groupOrdersService';
 import { saveStoredGroupParticipant } from '@/lib/group-order-session';
+import { getSelectedVariantLabel } from '@/lib/product-variants';
 import { toast } from 'sonner';
 import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -83,6 +84,8 @@ export default function CartPage() {
             items.map((item) => ({
                productId: item.product_id,
                quantity: item.quantity,
+               selectedVariantJson: (item as any).selected_variant_json || null,
+               unitPrice: item.applied_price ?? item.product?.price ?? 0,
             }))
          );
 
@@ -224,10 +227,15 @@ export default function CartPage() {
                                     <div className="flex justify-between items-start gap-4 mb-4 sm:mb-0">
                                        <div>
                                           <Link href={`/product/${item.product?.slug || item.product_id}`} className="block">
-                                             <h3 className="font-bold text-lg text-foreground hover:text-primary transition-colors line-clamp-2 leading-snug">
-                                                {item.product?.name}
-                                             </h3>
-                                          </Link>
+                                          <h3 className="font-bold text-lg text-foreground hover:text-primary transition-colors line-clamp-2 leading-snug">
+                                             {item.product?.name}
+                                          </h3>
+                                         </Link>
+                                          {getSelectedVariantLabel((item as any).selected_variant_json) ? (
+                                             <p className="mt-1 text-xs font-black text-primary">
+                                                {getSelectedVariantLabel((item as any).selected_variant_json)}
+                                             </p>
+                                          ) : null}
                                           {getBundleItemCount(item.product?.specifications) > 0 && (
                                              <div className="mt-2 space-y-2">
                                                 <div className="flex flex-wrap items-center gap-2">

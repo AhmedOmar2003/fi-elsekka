@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase"
+import type { SelectedVariantJson } from "@/lib/product-variants"
 
 export type GroupOrderView = {
   groupOrder: {
@@ -61,7 +62,14 @@ async function parseResponse<T>(response: Response): Promise<T> {
   return data as T
 }
 
-export async function createGroupOrder(seedItems: Array<{ productId: string; quantity: number }> = []) {
+export async function createGroupOrder(
+  seedItems: Array<{
+    productId: string
+    quantity: number
+    selectedVariantJson?: SelectedVariantJson
+    unitPrice?: number | null
+  }> = []
+) {
   const headers = await getAuthHeader()
   const response = await fetch("/api/group-orders", {
     method: "POST",
@@ -114,7 +122,16 @@ export async function joinGroupOrder(code: string, displayName: string, particip
   }>(response)
 }
 
-export async function addGroupOrderItem(code: string, participantKey: string, productId: string, quantity = 1) {
+export async function addGroupOrderItem(
+  code: string,
+  participantKey: string,
+  productId: string,
+  quantity = 1,
+  options?: {
+    selectedVariantJson?: SelectedVariantJson
+    unitPrice?: number | null
+  }
+) {
   const headers = await getAuthHeader()
   const response = await fetch(`/api/group-orders/${encodeURIComponent(code)}/items`, {
     method: "POST",
@@ -122,7 +139,13 @@ export async function addGroupOrderItem(code: string, participantKey: string, pr
       "Content-Type": "application/json",
       ...headers,
     },
-    body: JSON.stringify({ participantKey, productId, quantity }),
+    body: JSON.stringify({
+      participantKey,
+      productId,
+      quantity,
+      selectedVariantJson: options?.selectedVariantJson || null,
+      unitPrice: options?.unitPrice ?? null,
+    }),
   })
 
   return parseResponse<{ success: true }>(response)

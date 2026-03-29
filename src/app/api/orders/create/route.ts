@@ -124,6 +124,7 @@ export async function POST(request: NextRequest) {
           product_id: item.product_id,
           quantity: item.quantity,
           price_at_purchase: finalPrice,
+          selected_variant_json: item.selected_variant_json || null,
         };
       });
 

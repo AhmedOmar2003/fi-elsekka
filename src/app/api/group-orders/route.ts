@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
 import {
   generateUniqueGroupOrderCode,
-  getEffectiveProductPrice,
   groupOrdersAdmin,
   requireRequestUser,
 } from "@/lib/group-orders-server"
+import { normalizeSelectedVariant, resolveVariantUnitPrice } from "@/lib/product-variants"
 
 export async function POST(request: Request) {
   if (!groupOrdersAdmin) {
@@ -63,18 +63,27 @@ export async function POST(request: Request) {
   }
 
   if (seedItems.length > 0) {
-    const normalizedSeedItems: Array<{ productId: string; quantity: number }> = seedItems
+    type NormalizedSeedItem = {
+      productId: string
+      quantity: number
+      selectedVariantJson: Record<string, any> | null
+      unitPrice: number | null
+    }
+
+    const normalizedSeedItems: NormalizedSeedItem[] = seedItems
       .map((item: any) => ({
         productId: String(item?.productId || "").trim(),
         quantity: Math.max(1, Number(item?.quantity || 1)),
+        selectedVariantJson: normalizeSelectedVariant(item?.selectedVariantJson),
+        unitPrice: Number.isFinite(Number(item?.unitPrice)) ? Number(item.unitPrice) : null,
       }))
-      .filter((item: { productId: string; quantity: number }) => item.productId)
+      .filter((item: NormalizedSeedItem) => Boolean(item.productId))
 
-    const productIds = Array.from(new Set(normalizedSeedItems.map((item: { productId: string; quantity: number }) => item.productId)))
+    const productIds = Array.from(new Set(normalizedSeedItems.map((item) => item.productId)))
     if (productIds.length > 0) {
       const { data: products, error: productsError } = await groupOrdersAdmin
         .from("products")
-        .select("id, price, discount_percentage")
+        .select("id, price, discount_percentage, specifications")
         .in("id", productIds)
 
       if (!productsError && products) {
@@ -88,7 +97,11 @@ export async function POST(request: Request) {
               participant_id: participant.id,
               product_id: item.productId,
               quantity: item.quantity,
-              unit_price: getEffectiveProductPrice(product),
+              selected_variant_json: item.selectedVariantJson,
+              unit_price:
+                item.unitPrice && item.unitPrice > 0
+                  ? item.unitPrice
+                  : resolveVariantUnitPrice(product, item.selectedVariantJson),
             }
           })
           .filter(Boolean)

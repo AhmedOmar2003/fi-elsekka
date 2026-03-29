@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchUserCart, addToCart, removeFromCart, updateCartItemQuantity, clearUserCart, CartItem } from '@/services/cartService';
 import { fetchProductById } from '@/services/productsService';
+import { isSameSelectedVariant, normalizeSelectedVariant, type SelectedVariantJson } from '@/lib/product-variants';
 import { toast } from 'sonner';
 
 // ─── Guest cart item (has full product embedded) ───────────────────────────
@@ -13,6 +14,7 @@ export interface GuestCartItem {
     product_id: string;
     quantity: number;
     applied_price?: number | null;
+    selected_variant_json?: SelectedVariantJson;
     product: {
         id: string;
         name: string;
@@ -31,7 +33,12 @@ interface CartContextType {
     cartOriginalTotal: number;
     cartDiscountTotal: number;
     isLoading: boolean;
-    addItem: (productId: string, quantity?: number, appliedPrice?: number | null) => Promise<void>;
+    addItem: (
+        productId: string,
+        quantity?: number,
+        appliedPrice?: number | null,
+        selectedVariantJson?: SelectedVariantJson
+    ) => Promise<void>;
     removeItem: (cartItemId: string) => Promise<void>;
     updateQuantity: (cartItemId: string, quantity: number) => Promise<void>;
     clearCart: () => Promise<void>;
@@ -96,7 +103,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         const guestItems = readGuestCart();
         if (guestItems.length > 0) {
             await Promise.all(
-                guestItems.map(item => addToCart(user.id, item.product_id, item.quantity, item.applied_price))
+                guestItems.map(item => addToCart(user.id, item.product_id, item.quantity, item.applied_price, item.selected_variant_json))
             );
             clearGuestCart();
         }
@@ -128,21 +135,32 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }, [user, loadCart]);
 
     // ── Add item ──────────────────────────────────────────────────────────
-    const addItem = async (productId: string, quantity: number = 1, appliedPrice?: number | null) => {
+    const addItem = async (
+        productId: string,
+        quantity: number = 1,
+        appliedPrice?: number | null,
+        selectedVariantJson?: SelectedVariantJson
+    ) => {
         const product = await fetchProductById(productId);
         if (!product) {
             toast.error('عذراً، لم نتمكن من العثور على المنتج.');
             return;
         }
 
+        const normalizedVariant = normalizeSelectedVariant(selectedVariantJson);
+
         if (!user) {
             // Guest: fetch product details so we can display them in cart
             const guestItems = readGuestCart();
-            const existing = guestItems.find(i => i.product_id === productId);
+            const existing = guestItems.find(
+                i => i.product_id === productId && isSameSelectedVariant(i.selected_variant_json, normalizedVariant)
+            );
 
             if (existing) {
                 const updated = guestItems.map(i =>
-                    i.product_id === productId ? { ...i, quantity: i.quantity + quantity } : i
+                    i.product_id === productId && isSameSelectedVariant(i.selected_variant_json, normalizedVariant)
+                        ? { ...i, quantity: i.quantity + quantity, applied_price: appliedPrice ?? i.applied_price ?? null }
+                        : i
                 );
                 writeGuestCart(updated);
                 setItems(updated);
@@ -152,6 +170,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
                     product_id: productId,
                     quantity,
                     applied_price: appliedPrice || null,
+                    selected_variant_json: normalizedVariant,
                     product: {
                         id: productId,
                         name: product.name || 'منتج',
@@ -172,12 +191,16 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
         // Logged-in: Optimistic update
         setItems(prev => {
-            const existingIndex = prev.findIndex(i => i.product_id === productId);
+            const existingIndex = prev.findIndex(
+                i => i.product_id === productId && isSameSelectedVariant((i as any).selected_variant_json, normalizedVariant)
+            );
             if (existingIndex >= 0) {
                 const updated = [...prev];
                 updated[existingIndex] = {
                     ...updated[existingIndex],
-                    quantity: updated[existingIndex].quantity + quantity
+                    quantity: updated[existingIndex].quantity + quantity,
+                    applied_price: appliedPrice ?? (updated[existingIndex] as any).applied_price ?? null,
+                    selected_variant_json: normalizedVariant,
                 };
                 return updated;
             } else {
@@ -186,6 +209,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
                     product_id: productId,
                     quantity,
                     applied_price: appliedPrice || null,
+                    selected_variant_json: normalizedVariant,
                     product: {
                         id: productId,
                         name: product.name,
@@ -204,7 +228,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         toast.success(`تم إضافة "${product.name}" بنجاح!`);
 
         // Write to DB, let realtime/loadCart update state
-        const { error } = await addToCart(user.id, productId, quantity, appliedPrice);
+        const { error } = await addToCart(user.id, productId, quantity, appliedPrice, normalizedVariant);
         if (error) {
             console.error('Failed to add item to cart:', error);
             setItems(optimisticSnapshot);

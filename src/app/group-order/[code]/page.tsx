@@ -19,6 +19,7 @@ import {
   getStoredGroupParticipant,
   saveStoredGroupParticipant,
 } from "@/lib/group-order-session"
+import { getSelectedVariantLabel } from "@/lib/product-variants"
 import { toast } from "sonner"
 import { Copy, Plus, Minus, Share2, Users, ShoppingCart, Lock, ArrowLeft } from "lucide-react"
 
@@ -313,6 +314,11 @@ export default function GroupOrderPage() {
                                 <p className="mt-1 text-xs text-gray-500">
                                   {item.unitPrice.toLocaleString()} ج.م للوحدة
                                 </p>
+                                {getSelectedVariantLabel(item.selectedVariantJson) ? (
+                                  <p className="mt-1 text-[11px] font-bold text-gray-400">
+                                    {getSelectedVariantLabel(item.selectedVariantJson)}
+                                  </p>
+                                ) : null}
                               </div>
                               <div className="flex flex-col items-end gap-2">
                                 {groupOrder.groupOrder.status === "open" && isOwnGroup ? (

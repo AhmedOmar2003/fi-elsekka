@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server"
 import {
   fetchGroupOrderGraphByCode,
-  getEffectiveProductPrice,
   getOptionalRequestUser,
   groupOrdersAdmin,
 } from "@/lib/group-orders-server"
+import {
+  isSameSelectedVariant,
+  normalizeSelectedVariant,
+  resolveVariantUnitPrice,
+} from "@/lib/product-variants"
 
 export async function POST(
   request: Request,
@@ -19,6 +23,8 @@ export async function POST(
   const participantKey = String(body?.participantKey || "").trim()
   const productId = String(body?.productId || "").trim()
   const quantity = Math.max(1, Number(body?.quantity || 1))
+  const selectedVariantJson = normalizeSelectedVariant(body?.selectedVariantJson)
+  const requestedUnitPrice = Number.isFinite(Number(body?.unitPrice)) ? Number(body.unitPrice) : null
 
   if (!participantKey || !productId) {
     return NextResponse.json({ error: "بيانات الإضافة ناقصة" }, { status: 400 })
@@ -46,7 +52,7 @@ export async function POST(
 
   const { data: product, error: productError } = await groupOrdersAdmin
     .from("products")
-    .select("id, price, discount_percentage, name")
+    .select("id, price, discount_percentage, name, specifications")
     .eq("id", productId)
     .maybeSingle()
 
@@ -54,21 +60,27 @@ export async function POST(
     return NextResponse.json({ error: "المنتج ده غير متاح دلوقتي" }, { status: 404 })
   }
 
-  const { data: existingItem } = await groupOrdersAdmin
+  const { data: existingItems } = await groupOrdersAdmin
     .from("group_order_items")
-    .select("id, quantity")
+    .select("id, quantity, selected_variant_json")
     .eq("group_order_id", graph.groupOrder.id)
     .eq("participant_id", participant.id)
     .eq("product_id", productId)
-    .is("selected_variant_json", null)
-    .maybeSingle()
+  const existingItem = (existingItems || []).find((item) =>
+    isSameSelectedVariant(item.selected_variant_json, selectedVariantJson)
+  )
+  const effectiveUnitPrice =
+    requestedUnitPrice && requestedUnitPrice > 0
+      ? requestedUnitPrice
+      : resolveVariantUnitPrice(product, selectedVariantJson)
 
   if (existingItem) {
     const { error } = await groupOrdersAdmin
       .from("group_order_items")
       .update({
         quantity: Number(existingItem.quantity || 0) + quantity,
-        unit_price: getEffectiveProductPrice(product),
+        unit_price: effectiveUnitPrice,
+        selected_variant_json: selectedVariantJson,
       })
       .eq("id", existingItem.id)
 
@@ -83,8 +95,8 @@ export async function POST(
         participant_id: participant.id,
         product_id: productId,
         quantity,
-        unit_price: getEffectiveProductPrice(product),
-        selected_variant_json: null,
+        unit_price: effectiveUnitPrice,
+        selected_variant_json: selectedVariantJson,
       })
 
     if (error) {

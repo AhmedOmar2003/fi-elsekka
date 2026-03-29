@@ -11,6 +11,7 @@ import { Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, ChevronDown,
 import { toast } from "sonner"
 import { RequestAttachmentsGallery } from "@/components/orders/request-attachments-gallery"
 import { getRestaurantOrderSnapshot } from "@/lib/restaurant-order"
+import { getSelectedVariantLabel } from "@/lib/product-variants"
 
 function isAwaitingTextOrderConfirmation(order: Order) {
   const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
@@ -644,7 +645,14 @@ function OrderCard({
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">المنتجات</p>
               {order.order_items.map((item: any) => (
                 <div key={item.id} className="flex items-center justify-between text-sm">
-                  <span className="text-foreground font-medium truncate flex-1 ml-2">{item.product?.name || "منتج"}</span>
+                  <div className="flex-1 ml-2 min-w-0">
+                    <span className="text-foreground font-medium truncate block">{item.product?.name || "منتج"}</span>
+                    {getSelectedVariantLabel(item.selected_variant_json) ? (
+                      <span className="mt-1 block text-[11px] font-bold text-gray-400">
+                        {getSelectedVariantLabel(item.selected_variant_json)}
+                      </span>
+                    ) : null}
+                  </div>
                   <span className="text-gray-500 shrink-0">x{item.quantity}</span>
                   <span className="text-primary font-bold shrink-0 mr-4">{item.price_at_purchase?.toLocaleString()} ج.م</span>
                 </div>

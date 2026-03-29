@@ -18,6 +18,7 @@ import { toast } from "sonner"
 import { getBundleItems, getBundleSummary, getProductMode, toProductCardProps } from "@/lib/product-presentation"
 import { getTaxonomyLabel, getTaxonomySelection } from "@/lib/category-taxonomy"
 import { getProductCatalogMetadata } from "@/lib/product-metadata"
+import { buildRestaurantSizeVariant, getRestaurantSizeOptions, resolveVariantUnitPrice, type RestaurantSizeOption } from "@/lib/product-variants"
 import { CURRENT_DELIVERY_FEE } from "@/lib/order-economics"
 import { formatNumberLatin } from "@/lib/formatters"
 import { addGroupOrderItem, createGroupOrder } from "@/services/groupOrdersService"
@@ -93,6 +94,7 @@ export default function ProductPage({
   
   const [appliedDiscountPrice, setAppliedDiscountPrice] = React.useState<number | null>(null)
   const [appliedDiscountLabel, setAppliedDiscountLabel] = React.useState<string | null>(null)
+  const [selectedRestaurantSizeId, setSelectedRestaurantSizeId] = React.useState("")
 
   React.useEffect(() => {
     const t = setTimeout(() => setIsMounted(true), 80)
@@ -107,6 +109,7 @@ export default function ProductPage({
 
   const handleAddToCart = async () => {
     if (dbProduct) {
+      const cartAppliedPrice = selectedVariantJson ? effectiveUnitPrice : appliedDiscountPrice
       if (activeGroupOrderCode) {
         const participant = getStoredGroupParticipant(activeGroupOrderCode)
         if (!participant?.participantKey) {
@@ -115,10 +118,13 @@ export default function ProductPage({
           return
         }
 
-        await addGroupOrderItem(activeGroupOrderCode, participant.participantKey, dbProduct.id, quantity)
+        await addGroupOrderItem(activeGroupOrderCode, participant.participantKey, dbProduct.id, quantity, {
+          selectedVariantJson,
+          unitPrice: effectiveUnitPrice,
+        })
         toast.success(`اتضاف "${dbProduct.name}" في الطلب الجماعي`)
       } else {
-        await addItem(dbProduct.id, quantity, appliedDiscountPrice)
+        await addItem(dbProduct.id, quantity, cartAppliedPrice, selectedVariantJson)
       }
     }
     setIsAdded(true)
@@ -134,7 +140,12 @@ export default function ProductPage({
     }
 
     try {
-      const result = await createGroupOrder([{ productId: dbProduct.id, quantity }])
+      const result = await createGroupOrder([{
+        productId: dbProduct.id,
+        quantity,
+        selectedVariantJson,
+        unitPrice: effectiveUnitPrice,
+      }])
       saveStoredGroupParticipant(result.code, {
         participantKey: result.participantKey,
         displayName: result.displayName,
@@ -158,6 +169,11 @@ export default function ProductPage({
     searchParams.set("qty", quantity.toString());
     if (appliedDiscountPrice !== null) {
       searchParams.set("price", appliedDiscountPrice.toString());
+    } else if (selectedVariantJson) {
+      searchParams.set("price", effectiveUnitPrice.toString());
+    }
+    if (selectedVariantJson) {
+      searchParams.set("variant", JSON.stringify(selectedVariantJson));
     }
     router.push(`/checkout?${searchParams.toString()}`);
   }
@@ -187,6 +203,33 @@ export default function ProductPage({
   const [dbProduct, setDbProduct] = React.useState<Product | null>(initialProduct)
   const [relatedProducts, setRelatedProducts] = React.useState<Product[]>(initialRelatedProducts)
   const [isLoading, setIsLoading] = React.useState(!initialProduct)
+  const restaurantSizeOptions = React.useMemo(
+    () => getRestaurantSizeOptions(dbProduct?.specifications),
+    [dbProduct?.specifications]
+  )
+  const selectedRestaurantSize = React.useMemo<RestaurantSizeOption | null>(() => {
+    if (restaurantSizeOptions.length === 0) return null
+    return restaurantSizeOptions.find((option) => option.id === selectedRestaurantSizeId) || restaurantSizeOptions[0]
+  }, [restaurantSizeOptions, selectedRestaurantSizeId])
+  const selectedVariantJson = React.useMemo(
+    () => buildRestaurantSizeVariant(selectedRestaurantSize),
+    [selectedRestaurantSize]
+  )
+
+  React.useEffect(() => {
+    if (restaurantSizeOptions.length === 0) {
+      setSelectedRestaurantSizeId("")
+      return
+    }
+
+    setSelectedRestaurantSizeId((currentId) => {
+      if (restaurantSizeOptions.some((option) => option.id === currentId)) {
+        return currentId
+      }
+      return restaurantSizeOptions[0].id
+    })
+  }, [restaurantSizeOptions])
+
   const normalizedSpecs = React.useMemo(() => {
     if (!dbProduct) return []
 
@@ -374,11 +417,14 @@ export default function ProductPage({
     const metadata = getProductCatalogMetadata(dbProduct.specifications)
     const isRestaurantItem = metadata.restaurantItem
     const isRestaurantAvailable = metadata.restaurantAvailable !== false
-    let price = dbProduct.price;
+    let price = selectedRestaurantSize ? resolveVariantUnitPrice(dbProduct, selectedVariantJson) : dbProduct.price;
     let oldPrice: number | undefined = metadata.oldPrice && metadata.oldPrice > price ? metadata.oldPrice : undefined;
     let discountAmount = dbProduct.specifications?.discount_badge || undefined;
 
-    if (dbProduct.discount_percentage && dbProduct.discount_percentage > 0) {
+    if (dbProduct.discount_percentage && dbProduct.discount_percentage > 0 && selectedRestaurantSize) {
+      oldPrice = Math.round((selectedRestaurantSize.price / (1 - dbProduct.discount_percentage / 100)) * 100) / 100;
+      discountAmount = `وفر ${formatNumberLatin(Math.max(0, Math.round(oldPrice - selectedRestaurantSize.price)))} ج.م`;
+    } else if (dbProduct.discount_percentage && dbProduct.discount_percentage > 0) {
       price = Math.round(dbProduct.price * (1 - dbProduct.discount_percentage / 100));
       oldPrice = dbProduct.price;
       discountAmount = `وفر ${dbProduct.price - price} ج.م`;
@@ -433,6 +479,7 @@ export default function ProductPage({
       sku: metadata.sku,
       isRestaurantItem,
       isRestaurantAvailable,
+      restaurantSizeOptions,
     };
   })() : {
     title: "سماعة بلوتوث لاسلكية عازلة للضوضاء",
@@ -472,6 +519,7 @@ export default function ProductPage({
     sku: "",
     isRestaurantItem: false,
     isRestaurantAvailable: true,
+    restaurantSizeOptions: [],
   }
 
   const comparePriceToShow =
@@ -792,6 +840,38 @@ export default function ProductPage({
                       SKU: {product.sku}
                     </span>
                   )}
+                </div>
+              )}
+
+              {product.restaurantSizeOptions.length > 0 && (
+                <div className="mb-6">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-sm font-black text-foreground">اختار الحجم</p>
+                    <p className="text-xs text-gray-500">السعر بيتغير تلقائي حسب الحجم اللي تختاره</p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {product.restaurantSizeOptions.map((option) => {
+                      const isActive = selectedRestaurantSize?.id === option.id
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setSelectedRestaurantSizeId(option.id)}
+                          className={[
+                            "rounded-2xl border px-4 py-3 text-right transition-all",
+                            isActive
+                              ? "border-primary bg-primary/10 shadow-[0_0_0_1px_rgba(16,185,129,0.15)]"
+                              : "border-surface-hover bg-surface hover:border-primary/40",
+                          ].join(" ")}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-sm font-black text-foreground">{option.label}</span>
+                            <span className="text-sm font-black text-primary">{formatPrice(option.price)} ج.م</span>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               )}
 

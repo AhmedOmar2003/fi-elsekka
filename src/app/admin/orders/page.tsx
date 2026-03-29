@@ -13,6 +13,7 @@ import { getOrderEconomics } from '@/lib/order-economics';
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery';
 import { SearchRequestProgress } from '@/components/orders/search-request-progress';
 import { formatRestaurantEtaWindow, getRestaurantOrderSnapshot } from '@/lib/restaurant-order';
+import { getSelectedVariantLabel } from '@/lib/product-variants';
 
 const STATUS_FILTERS = [
     { value: 'pending', label: 'في الانتظار', color: 'text-amber-400  bg-amber-400/10  border-amber-400/20' },
@@ -1183,10 +1184,15 @@ export default function AdminOrdersPage() {
                                                 )}
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-sm font-bold text-foreground truncate">{item.products?.name}</p>
-                                                    <p className="text-xs text-gray-500">{item.quantity} × {item.products?.price} ج.م</p>
+                                                    <p className="text-xs text-gray-500">{item.quantity} × {(item.price_at_purchase || item.products?.price || 0)} ج.م</p>
+                                                    {getSelectedVariantLabel(item.selected_variant_json) ? (
+                                                        <p className="mt-1 text-[11px] font-bold text-gray-400">
+                                                            {getSelectedVariantLabel(item.selected_variant_json)}
+                                                        </p>
+                                                    ) : null}
                                                 </div>
                                                 <p className="text-sm font-black text-primary shrink-0">
-                                                    {((item.quantity || 1) * (item.products?.price || 0)).toFixed(0)} ج.م
+                                                    {((item.quantity || 1) * (item.price_at_purchase || item.products?.price || 0)).toFixed(0)} ج.م
                                                 </p>
                                             </div>
                                         ))}

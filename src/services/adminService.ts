@@ -1400,7 +1400,7 @@ export async function fetchAdminOrders() {
             *,
             users(full_name, email),
             order_items(
-                id, product_id, quantity, price_at_purchase,
+                id, product_id, quantity, price_at_purchase, selected_variant_json,
                 products(name, price, image_url)
             )
         `)
