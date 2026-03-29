@@ -88,56 +88,36 @@ export const fetchProducts = async (categoryId?: string): Promise<Product[]> => 
  */
 export const fetchBestSellers = async (): Promise<Product[]> => {
     try {
-        const { data: deliveredOrders, error: deliveredOrdersError } = await supabase
-            .from('orders')
-            .select('id')
-            .eq('status', 'delivered')
-            .order('created_at', { ascending: false })
-            .limit(5000);
-
-        if (deliveredOrdersError) {
-            console.error('Error fetching delivered orders for best sellers:', deliveredOrdersError.message);
-            return [];
-        }
-
-        const deliveredOrderIds = (deliveredOrders || [])
-            .map((order) => order.id)
-            .filter(Boolean);
-
-        if (deliveredOrderIds.length === 0) {
-            return [];
-        }
-
-        // 1. Fetch sales data only from delivered orders
         const { data: orderItems, error: itemsError } = await supabase
             .from('order_items')
-            .select('product_id, quantity')
-            .in('order_id', deliveredOrderIds);
+            .select('product_id, quantity, orders!inner(status)')
+            .eq('orders.status', 'delivered')
+            .limit(10000);
 
-        let salesRank: string[] = [];
-        if (!itemsError && orderItems && orderItems.length > 0) {
-            const sales: Record<string, number> = {};
-            for (const item of orderItems) {
-                if (item.product_id) {
-                    sales[item.product_id] = (sales[item.product_id] || 0) + (item.quantity || 1);
-                }
-            }
-            // Sort by total quantity descending
-            salesRank = Object.entries(sales)
-                .sort((a, b) => b[1] - a[1])
-                .map(e => e[0]);
+        if (itemsError) {
+            console.error('Error fetching delivered order items for best sellers:', itemsError.message);
+            return [];
         }
 
-        // If we have top selling products by actual sales
-        if (salesRank.length > 0) {
-            const topIds = salesRank.slice(0, 4);
+        const sales: Record<string, number> = {};
+        for (const item of orderItems || []) {
+            if (item.product_id) {
+                sales[item.product_id] = (sales[item.product_id] || 0) + (item.quantity || 1);
+            }
+        }
+
+        const topIds = Object.entries(sales)
+            .sort((a, b) => b[1] - a[1])
+            .map(([productId]) => productId)
+            .slice(0, 4);
+
+        if (topIds.length > 0) {
             const { data: topProducts } = await supabase
                 .from('products')
                 .select(PRODUCT_CARD_FIELDS)
                 .in('id', topIds);
 
             if (topProducts && topProducts.length > 0) {
-                // Sort to match the exact sales rank order
                 const ordered = topIds
                     .map(id => topProducts.find(p => p.id === id))
                     .filter(Boolean) as Product[];

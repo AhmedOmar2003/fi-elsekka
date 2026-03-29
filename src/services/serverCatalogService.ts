@@ -126,25 +126,11 @@ async function fetchDeliveredBestSellerRankedIds(limit?: number): Promise<string
   const supabaseAdmin = getServerAdminSupabase()
   if (!supabaseAdmin) return []
 
-  const { data: deliveredOrders, error: deliveredOrdersError } = await supabaseAdmin
-    .from('orders')
-    .select('id')
-    .eq('status', 'delivered')
-    .order('created_at', { ascending: false })
-    .limit(5000)
-
-  if (deliveredOrdersError) {
-    console.error('Error fetching delivered orders on server:', deliveredOrdersError.message)
-    return []
-  }
-
-  const deliveredOrderIds = (deliveredOrders || []).map((order) => order.id).filter(Boolean)
-  if (deliveredOrderIds.length === 0) return []
-
   const { data: orderItems, error: orderItemsError } = await supabaseAdmin
     .from('order_items')
-    .select('product_id, quantity')
-    .in('order_id', deliveredOrderIds)
+    .select('product_id, quantity, orders!inner(status)')
+    .eq('orders.status', 'delivered')
+    .limit(10000)
 
   if (orderItemsError) {
     console.error('Error fetching delivered order items on server:', orderItemsError.message)

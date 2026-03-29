@@ -11,6 +11,7 @@ import { useFavorites } from "@/contexts/FavoritesContext"
 import { addGroupOrderItem } from "@/services/groupOrdersService"
 import { getStoredGroupParticipant } from "@/lib/group-order-session"
 import { toast } from "sonner"
+import { formatMoney } from "@/lib/formatters"
 
 export interface ProductCardProps {
   id: string;
@@ -161,10 +162,10 @@ export function ProductCard({
         <div className="mt-1 flex items-end justify-between gap-2 border-t material-divider pt-1">
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-1.5">
-              <span className="text-[17px] font-heading font-black tracking-tight text-primary sm:text-xl">{price} <span className="text-[11px] sm:text-sm">ج.م</span></span>
+              <span className="text-[17px] font-heading font-black tracking-tight text-primary sm:text-xl">{formatMoney(price)}</span>
             </div>
             {hasVisibleOldPrice && (
-              <span className="text-[11px] font-heading text-gray-500 line-through sm:text-xs">{oldPrice} ج.م</span>
+              <span className="text-[11px] font-heading text-gray-500 line-through sm:text-xs">{formatMoney(oldPrice)}</span>
             )}
             {!hasVisibleOldPrice && <span className="h-1.5 sm:h-2"></span>}
           </div>
