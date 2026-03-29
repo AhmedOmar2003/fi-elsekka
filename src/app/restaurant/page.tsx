@@ -87,10 +87,6 @@ function orderUser(users: RestaurantPortalOrder["users"]) {
   return Array.isArray(users) ? users[0] : users;
 }
 
-function getFirstName(value?: string | null) {
-  return value?.trim()?.split(" ")?.[0] || "بيكم";
-}
-
 function RestaurantEtaComposer({
   order,
   onSaved,
@@ -610,10 +606,10 @@ export default function RestaurantPortalPage() {
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-black text-primary">بوابة المطعم</p>
                 <h1 className="mt-1 text-xl font-black text-foreground sm:text-2xl">
-                  أهلاً يا {getFirstName(restaurant?.manager_name)}
+                  {restaurant?.name || "مطعم في السكة"}
                 </h1>
                 <p className="mt-1 text-xs leading-6 text-gray-500 sm:text-sm">
-                  {restaurant?.name || "مطعم في السكة"} - الطلبات اللي جاية من موقع في السكة هتظهر لك هنا مباشرة.
+                  الطلبات اللي جاية من موقع في السكة هتظهر لك هنا مباشرة.
                 </p>
               </div>
             </div>
