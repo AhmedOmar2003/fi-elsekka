@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { extractAccessToken } from '@/lib/admin-guard';
+import { restoreOrderInventory } from '@/lib/order-inventory';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || '';
@@ -110,6 +111,14 @@ export async function POST(request: NextRequest, context: any) {
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message, stage: 'db.update' }, { status: 500 });
+  }
+
+  if (decision === 'reject') {
+    try {
+      await restoreOrderInventory(supabaseAdmin, id, 'customer_rejected_quote');
+    } catch (inventoryError: any) {
+      console.error('restoreOrderInventory(quote reject) error:', inventoryError?.message || inventoryError);
+    }
   }
 
   try {

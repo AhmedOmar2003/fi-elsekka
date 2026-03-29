@@ -39,6 +39,7 @@ type MenuFormState = {
   available: boolean;
   menu_section: string;
   related_product_ids: string[];
+  custom_specs: { label: string; value: string }[];
 };
 
 const EMPTY_FORM: MenuFormState = {
@@ -51,7 +52,30 @@ const EMPTY_FORM: MenuFormState = {
   available: true,
   menu_section: "",
   related_product_ids: [],
+  custom_specs: [],
 };
+
+function extractRestaurantCustomSpecs(product: Product) {
+  if (Array.isArray(product.product_specifications) && product.product_specifications.length > 0) {
+    return product.product_specifications
+      .filter((spec) => spec?.label?.trim() && spec?.description?.trim())
+      .map((spec) => ({
+        label: spec.label.trim(),
+        value: spec.description.trim(),
+      }));
+  }
+
+  const fallbackSpecs = Array.isArray(product.specifications?.custom_specs)
+    ? product.specifications.custom_specs
+    : [];
+
+  return fallbackSpecs
+    .filter((spec: any) => spec?.label?.trim() && (spec?.description || spec?.value || "").trim())
+    .map((spec: any) => ({
+      label: spec.label.trim(),
+      value: String(spec.description || spec.value).trim(),
+    }));
+}
 
 function normalizeDiscountFromProduct(product: Product) {
   const metadata = getProductCatalogMetadata(product.specifications);
@@ -136,6 +160,7 @@ export default function AdminRestaurantProductsPage() {
       available: metadata.restaurantAvailable !== false,
       menu_section: metadata.restaurantSection || "",
       related_product_ids: metadata.relatedProductIds || [],
+      custom_specs: extractRestaurantCustomSpecs(product),
     });
     setModalOpen(true);
   };
@@ -203,7 +228,12 @@ export default function AdminRestaurantProductsPage() {
         available: form.available,
         menuSection: form.menu_section,
         relatedProductIds: form.related_product_ids,
-        specs: [],
+        specs: form.custom_specs
+          .map((spec) => ({
+            label: spec.label.trim(),
+            description: spec.value.trim(),
+          }))
+          .filter((spec) => spec.label && spec.description),
       });
 
       toast.success(editingProduct ? "تم تحديث منتج المطعم" : "تمت إضافة منتج جديد للمطعم");
@@ -583,6 +613,82 @@ export default function AdminRestaurantProductsPage() {
                     <p className="mt-2 text-xs text-gray-500">
                       لو شلت العلامة، المنتج يفضل موجود في المنيو لكن العميل هيشوفه غير متاح حاليًا.
                     </p>
+                  </div>
+
+                  <div className="rounded-3xl border border-surface-hover bg-background/60 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-black text-foreground">مواصفات بسيطة للمنتج</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          لو الوجبة أو المنتج له تفاصيل زي الحجم، الحشو، أو عدد القطع، اكتبها هنا كاسم وقيمة.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() =>
+                          setForm((prev) => ({
+                            ...prev,
+                            custom_specs: [...prev.custom_specs, { label: "", value: "" }],
+                          }))
+                        }
+                      >
+                        <Plus className="h-4 w-4" />
+                        إضافة مواصفة
+                      </Button>
+                    </div>
+
+                    {form.custom_specs.length === 0 ? (
+                      <div className="mt-4 rounded-2xl border border-dashed border-surface-hover px-4 py-5 text-center text-xs text-gray-500">
+                        لو المنتج ملوش مواصفات إضافية، سيب الجزء ده فاضي عادي.
+                      </div>
+                    ) : (
+                      <div className="mt-4 space-y-3">
+                        {form.custom_specs.map((spec, index) => (
+                          <div key={`${index}-${spec.label}-${spec.value}`} className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+                            <Input
+                              value={spec.label}
+                              onChange={(e) =>
+                                setForm((prev) => ({
+                                  ...prev,
+                                  custom_specs: prev.custom_specs.map((item, itemIndex) =>
+                                    itemIndex === index ? { ...item, label: e.target.value } : item
+                                  ),
+                                }))
+                              }
+                              placeholder="اسم المواصفة: الحجم"
+                            />
+                            <Input
+                              value={spec.value}
+                              onChange={(e) =>
+                                setForm((prev) => ({
+                                  ...prev,
+                                  custom_specs: prev.custom_specs.map((item, itemIndex) =>
+                                    itemIndex === index ? { ...item, value: e.target.value } : item
+                                  ),
+                                }))
+                              }
+                              placeholder="القيمة: كبير"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="gap-2 border-rose-500/20 text-rose-500 hover:bg-rose-500/10 hover:text-rose-500"
+                              onClick={() =>
+                                setForm((prev) => ({
+                                  ...prev,
+                                  custom_specs: prev.custom_specs.filter((_, itemIndex) => itemIndex !== index),
+                                }))
+                              }
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              حذف
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 

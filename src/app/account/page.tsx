@@ -26,15 +26,7 @@ import { LogoutModal } from "@/components/ui/logout-modal"
 import { toast } from "sonner"
 import { toProductCardProps } from "@/lib/product-presentation"
 
-type Tab = "orders" | "search_requests" | "favorites" | "addresses" | "settings"
-
-const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-    pending: { label: "قيد المراجعة", color: "text-yellow-500 bg-yellow-500/10", icon: <Clock className="w-4 h-4" /> },
-    processing: { label: "جاري التجهيز", color: "text-blue-500 bg-blue-500/10", icon: <Package className="w-4 h-4" /> },
-    shipped: { label: "في الطريق", color: "text-primary bg-primary/10", icon: <Truck className="w-4 h-4" /> },
-    delivered: { label: "تم التوصيل", color: "text-emerald-500 bg-emerald-500/10", icon: <CheckCircle className="w-4 h-4" /> },
-    cancelled: { label: "ملغي", color: "text-rose-500 bg-rose-500/10", icon: <XCircle className="w-4 h-4" /> },
-}
+type Tab = "search_requests" | "favorites" | "addresses" | "settings"
 
 export default function AccountPage() {
     const router = useRouter()
@@ -340,8 +332,6 @@ export default function AccountPage() {
                 (shipping.search_pending !== true && !shipping.customer_quote_response && order.status !== 'cancelled')
             )
     })
-    const visibleRegularOrders = orders.filter(order => !searchRequests.some(request => request.id === order.id))
-
     return (
         <>
             <Header />
@@ -392,9 +382,12 @@ export default function AccountPage() {
 
                     {/* Tabs */}
                     <div className="flex gap-2 bg-surface border border-surface-hover p-1.5 rounded-2xl mb-6 w-fit flex-wrap">
-                        <button onClick={() => setActiveTab("orders")} className={`hidden md:flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "orders" ? "bg-primary text-white shadow-lg" : "text-gray-500 hover:text-foreground"}`}>
+                        <Link
+                            href="/orders"
+                            className="hidden md:flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-gray-500 transition-all hover:bg-primary/10 hover:text-primary"
+                        >
                             <ShoppingBag className="w-4 h-4" /> طلباتي
-                        </button>
+                        </Link>
                         <button onClick={() => setActiveTab("search_requests")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "search_requests" ? "bg-primary text-white shadow-lg" : "text-gray-500 hover:text-foreground"}`}>
                             <Clock className="w-4 h-4" /> حاجات بندور عليها
                         </button>
@@ -408,78 +401,6 @@ export default function AccountPage() {
                             <Settings className="w-4 h-4" /> الإعدادات
                         </button>
                     </div>
-
-                    {/* Orders Tab */}
-                    {activeTab === "orders" && (
-                        <div className="space-y-4">
-                            {ordersLoading ? (
-                                <div className="flex items-center justify-center min-h-48">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                                </div>
-                            ) : visibleRegularOrders.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-16 text-center">
-                                    <div className="w-20 h-20 bg-surface rounded-2xl flex items-center justify-center mb-4 border border-surface-hover">
-                                        <ShoppingBag className="w-9 h-9 text-gray-500" />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-foreground mb-2">مفيش طلبات لحد دلوقتي</h3>
-                                    <p className="text-gray-500 mb-6">ابدأ التسوق وهيبان طلباتك هنا!</p>
-                                    <Button asChild className="rounded-xl px-8">
-                                        <Link href="/categories">اكتشف المنتجات</Link>
-                                    </Button>
-                                </div>
-                            ) : visibleRegularOrders.map(order => {
-                                const status = statusConfig[order.status] || statusConfig.pending
-                                const dateStr = new Date(order.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
-                                return (
-                                    <div key={order.id} className="bg-surface border border-surface-hover rounded-3xl p-5 md:p-6 transition-all hover:border-primary/30">
-                                        {/* Order Header */}
-                                        <div className="flex items-start justify-between gap-4 mb-4">
-                                            <div>
-                                                <p className="text-xs text-gray-500 mb-0.5">رقم الطلب</p>
-                                                <p className="font-mono text-sm text-foreground font-bold">{order.id.split('-')[0].toUpperCase()}</p>
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-xs text-gray-500 mb-0.5">التاريخ</p>
-                                                <p className="text-sm text-foreground">{dateStr}</p>
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-xs text-gray-500 mb-0.5">الإجمالي</p>
-                                                <p className="font-heading font-black text-primary">{order.total_amount} ج.م</p>
-                                            </div>
-                                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${status.color}`}>
-                                                {status.icon}
-                                                {status.label}
-                                            </div>
-                                        </div>
-
-                                        {/* Items */}
-                                        {order.order_items && order.order_items.length > 0 && (
-                                            <div className="border-t border-surface-hover pt-4 mb-4 space-y-2">
-                                                {order.order_items.map(item => (
-                                                    <div key={item.id} className="flex justify-between text-sm text-foreground">
-                                                        <span>{(item as any).product?.name || "منتج"} <span className="text-gray-500">x{item.quantity}</span></span>
-                                                        <span className="font-bold text-foreground">{(item.price_at_purchase * item.quantity).toFixed(0)} ج.م</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        {order.status === 'pending' && (
-                                            <div className="flex items-center gap-3 pt-4 border-t border-surface-hover">
-                                                <button
-                                                    onClick={() => handleCancelOrder(order.id)}
-                                                    className="text-sm text-rose-500 hover:text-rose-400 font-bold flex items-center gap-1.5 transition-colors"
-                                                >
-                                                    <XCircle className="w-4 h-4" />
-                                                    إلغاء الطلب
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
 
                     {activeTab === "search_requests" && (
                         <div className="space-y-4">

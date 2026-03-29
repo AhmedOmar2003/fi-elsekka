@@ -1,0 +1,193 @@
+import { isRestaurantProduct } from "@/lib/product-metadata";
+
+type SupabaseLike = any;
+
+type OrderInventoryProduct = {
+  id: string;
+  name?: string | null;
+  stock_quantity?: number | null;
+  specifications?: Record<string, any> | null;
+};
+
+type OrderInventoryItem = {
+  id: string;
+  product_id: string;
+  quantity: number;
+  product?: OrderInventoryProduct | OrderInventoryProduct[] | null;
+};
+
+type OrderInventoryOrder = {
+  id: string;
+  shipping_address?: Record<string, any> | null;
+  order_items?: OrderInventoryItem[] | null;
+};
+
+const INVENTORY_ORDER_SELECT = `
+  id,
+  shipping_address,
+  order_items (
+    id,
+    product_id,
+    quantity,
+    product:products (
+      id,
+      name,
+      stock_quantity,
+      specifications
+    )
+  )
+`;
+
+function getSingleProduct(product: OrderInventoryItem["product"]) {
+  if (!product) return null;
+  return Array.isArray(product) ? product[0] || null : product;
+}
+
+function getManagedItems(order: OrderInventoryOrder) {
+  return (order.order_items || [])
+    .map((item) => {
+      const product = getSingleProduct(item.product);
+      return {
+        item,
+        product,
+      };
+    })
+    .filter(({ item, product }) => {
+      if (!product?.id || !item.product_id) return false;
+      if (isRestaurantProduct(product)) return false;
+      return Number.isFinite(Number(product.stock_quantity));
+    });
+}
+
+export async function fetchOrderInventorySnapshot(supabaseAdmin: SupabaseLike, orderId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("orders")
+    .select(INVENTORY_ORDER_SELECT)
+    .eq("id", orderId)
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message || "Order not found");
+  }
+
+  return data as OrderInventoryOrder;
+}
+
+export async function reserveOrderInventory(
+  supabaseAdmin: SupabaseLike,
+  orderId: string,
+  reason: string = "order_created"
+) {
+  const order = await fetchOrderInventorySnapshot(supabaseAdmin, orderId);
+  const shipping = order.shipping_address || {};
+
+  if (shipping.inventory_reservation_state === "reserved") {
+    return { success: true, state: "reserved", alreadyApplied: true };
+  }
+
+  const managedItems = getManagedItems(order);
+
+  if (managedItems.length === 0) {
+    await supabaseAdmin
+      .from("orders")
+      .update({
+        shipping_address: {
+          ...shipping,
+          inventory_reservation_state: "not_required",
+          inventory_reservation_reason: reason,
+        },
+      })
+      .eq("id", orderId);
+
+    return { success: true, state: "not_required" };
+  }
+
+  for (const { item, product } of managedItems) {
+    if (!product) continue;
+    const currentStock = Number(product?.stock_quantity || 0);
+    const requestedQty = Math.max(0, Number(item.quantity || 0));
+    if (requestedQty <= 0) continue;
+
+    if (currentStock < requestedQty) {
+      throw new Error(`الكمية المتاحة من "${product?.name || "المنتج"}" ما تكفيش الطلب الحالي`);
+    }
+  }
+
+  for (const { item, product } of managedItems) {
+    if (!product) continue;
+    const currentStock = Number(product?.stock_quantity || 0);
+    const requestedQty = Math.max(0, Number(item.quantity || 0));
+    const nextStock = Math.max(0, currentStock - requestedQty);
+
+    const { error } = await supabaseAdmin
+      .from("products")
+      .update({ stock_quantity: nextStock })
+      .eq("id", product.id);
+
+    if (error) {
+      throw new Error(error.message || "Failed to reserve stock");
+    }
+  }
+
+  const nowIso = new Date().toISOString();
+  await supabaseAdmin
+    .from("orders")
+    .update({
+      shipping_address: {
+        ...shipping,
+        inventory_reservation_state: "reserved",
+        inventory_reserved_at: nowIso,
+        inventory_restored_at: null,
+        inventory_restore_reason: null,
+        inventory_reservation_reason: reason,
+      },
+    })
+    .eq("id", orderId);
+
+  return { success: true, state: "reserved" };
+}
+
+export async function restoreOrderInventory(
+  supabaseAdmin: SupabaseLike,
+  orderId: string,
+  reason: string = "order_cancelled"
+) {
+  const order = await fetchOrderInventorySnapshot(supabaseAdmin, orderId);
+  const shipping = order.shipping_address || {};
+
+  if (shipping.inventory_reservation_state !== "reserved") {
+    return { success: true, state: shipping.inventory_reservation_state || "not_required", alreadyApplied: true };
+  }
+
+  const managedItems = getManagedItems(order);
+
+  for (const { item, product } of managedItems) {
+    if (!product) continue;
+    const currentStock = Number(product?.stock_quantity || 0);
+    const returnedQty = Math.max(0, Number(item.quantity || 0));
+    const nextStock = currentStock + returnedQty;
+
+    const { error } = await supabaseAdmin
+      .from("products")
+      .update({ stock_quantity: nextStock })
+      .eq("id", product.id);
+
+    if (error) {
+      throw new Error(error.message || "Failed to restore stock");
+    }
+  }
+
+  await supabaseAdmin
+    .from("orders")
+    .update({
+      shipping_address: {
+        ...shipping,
+        inventory_reservation_state: "released",
+        inventory_restored_at: new Date().toISOString(),
+        inventory_restore_reason: reason,
+      },
+    })
+    .eq("id", orderId);
+
+  return { success: true, state: "released" };
+}

@@ -1,8 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { CartItem } from './cartService';
 import { Product } from './productsService';
-import { attachOrderEconomics, CURRENT_DELIVERY_FEE, ORDER_ECONOMICS_VERSION } from '@/lib/order-economics';
-import { buildRestaurantOrderSnapshotFromCart } from '@/lib/restaurant-order';
 
 export interface Order {
     id: string;
@@ -23,7 +20,7 @@ export interface OrderItem {
     product?: Product; // joined details
 }
 
-const notifyAdminsAboutOrder = async (orderId: string) => {
+const dispatchOrderNotifications = async (orderId: string) => {
     if (!orderId) return;
 
     try {
@@ -31,35 +28,24 @@ const notifyAdminsAboutOrder = async (orderId: string) => {
         const accessToken = data.session?.access_token;
         if (!accessToken) return;
 
-        await fetch(`/api/orders/${orderId}/admin-alert`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${accessToken}`,
-            },
-        });
+        await Promise.allSettled([
+            fetch(`/api/orders/${orderId}/admin-alert`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            }),
+            fetch(`/api/orders/${orderId}/restaurant-alert`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            }),
+        ]);
     } catch (error) {
-        console.error('Failed to notify admins about order:', error);
-    }
-};
-
-const notifyRestaurantAboutOrder = async (orderId: string) => {
-    if (!orderId) return;
-
-    try {
-        const { data } = await supabase.auth.getSession();
-        const accessToken = data.session?.access_token;
-        if (!accessToken) return;
-
-        await fetch(`/api/orders/${orderId}/restaurant-alert`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${accessToken}`,
-            },
-        });
-    } catch (error) {
-        console.error('Failed to notify restaurant about order:', error);
+        console.error('Failed to dispatch order notifications:', error);
     }
 };
 
@@ -77,102 +63,33 @@ export const createOrder = async (
     }
 ) => {
     const clearCartAfterOrder = options?.clearCartAfterOrder ?? true
-    const hasTextRequestText = !!shippingDetails?.custom_request_text;
-    const hasTextRequestImages = Array.isArray(shippingDetails?.custom_request_image_urls) && shippingDetails.custom_request_image_urls.length > 0;
-    const isTextRequestOrder = shippingDetails?.request_mode === 'custom_category_text' && (hasTextRequestText || hasTextRequestImages);
-    const restaurantOrderSnapshot = buildRestaurantOrderSnapshotFromCart(cartItems);
-    const shippingWithEconomics = isTextRequestOrder
-        ? {
-            ...(shippingDetails || {}),
-            ...restaurantOrderSnapshot,
-            delivery_fee: CURRENT_DELIVERY_FEE,
-            subtotal_amount: 0,
-            gross_collected: 0,
-            platform_base_revenue: 0,
-            driver_revenue: 0,
-            merchant_discount_amount: 0,
-            platform_revenue: 0,
-            merchant_settlement: 0,
-            economics_version: ORDER_ECONOMICS_VERSION,
-            search_pending: true,
-            search_status: 'searching',
-            search_requested_at: new Date().toISOString(),
-            pricing_pending: true,
-        }
-        : attachOrderEconomics(
-            {
-                ...(shippingDetails || {}),
-                ...restaurantOrderSnapshot,
-                delivery_fee: CURRENT_DELIVERY_FEE,
-                economics_version: ORDER_ECONOMICS_VERSION,
-            },
-            subtotalAmount + CURRENT_DELIVERY_FEE,
-            0
-        );
-
-    const orderTotalAmount = isTextRequestOrder ? 0 : shippingWithEconomics.gross_collected;
-
-    // 1. Create the Order
-    const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-            user_id: userId,
-            status: 'pending',
-            total_amount: orderTotalAmount,
-            shipping_address: shippingWithEconomics
-        })
-        .select()
-        .single();
-
-    if (orderError || !order) {
-        console.error('Error creating order:', orderError?.message || orderError);
-        return { error: orderError };
+    const { data } = await supabase.auth.getSession();
+    const accessToken = data.session?.access_token;
+    if (!accessToken) {
+        return { error: new Error('لازم تكون مسجل دخول قبل ما تأكد الطلب') };
     }
 
-    // 2. Prepare Order Items
-    if (cartItems.length > 0) {
-        const orderItems = cartItems.map(item => {
-            let finalPrice = item.applied_price ?? item.product?.price ?? 0;
-            if (item.applied_price == null && item.product?.discount_percentage && item.product.discount_percentage > 0) {
-                finalPrice = Math.round(finalPrice * (1 - item.product.discount_percentage / 100));
-            }
-            return {
-                order_id: order.id,
-                product_id: item.product_id,
-                quantity: item.quantity,
-                price_at_purchase: finalPrice
-            };
-        });
+    const res = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+            userId,
+            cartItems,
+            shippingDetails,
+            subtotalAmount,
+            clearCartAfterOrder,
+        }),
+    });
 
-        // 3. Insert Order Items
-        const { error: itemsError } = await supabase
-            .from('order_items')
-            .insert(orderItems);
-
-        if (itemsError) {
-            console.error('Error creating order items:', itemsError?.message || itemsError);
-            return { error: itemsError };
-        }
-
-        // 4. Clear the cart when this checkout actually came from the regular cart flow
-        if (clearCartAfterOrder) {
-            const { error: clearError } = await supabase
-                .from('cart_items')
-                .delete()
-                .eq('user_id', userId);
-
-            if (clearError) {
-                console.error('Failed to clear cart after order:', clearError?.message);
-            }
-        }
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        return { error: new Error(payload?.error || 'في حاجة عطلتنا وإحنا بنأكد الطلب') };
     }
 
-    if (shippingDetails?.is_grace_period === false) {
-        void notifyAdminsAboutOrder(order.id);
-        void notifyRestaurantAboutOrder(order.id);
-    }
-
-    return { data: order };
+    return { data: payload.data };
 };
 
 export const fetchUserOrders = async (userId: string): Promise<Order[]> => {
@@ -208,39 +125,27 @@ export const updateOrderStatus = async (orderId: string, status: string) => {
 };
 
 export const cancelOrderByCustomer = async (orderId: string, origin: CustomerCancelOrigin = 'grace_period') => {
-    const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .select('shipping_address')
-        .eq('id', orderId)
-        .single();
-
-    if (orderError || !order) {
-        return { data: null, error: orderError || new Error("Order not found") };
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) {
+        return { data: null, error: new Error("Unauthorized") };
     }
 
-    const currentShipping = order.shipping_address || {};
-    const now = new Date().toISOString();
-    const duringGracePeriod = currentShipping.is_grace_period === true;
-    const nextShipping = {
-        ...currentShipping,
-        customer_cancelled_order: true,
-        customer_cancelled_during_grace_period: duringGracePeriod,
-        customer_cancel_origin: origin,
-        customer_cancelled_at: now,
-        customer_cancelled_reason: duringGracePeriod ? 'cancelled_by_customer_within_grace_period' : 'cancelled_by_customer',
-    };
+    const res = await fetch(`/api/orders/${orderId}/cancel`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ origin }),
+    });
 
-    const { data, error } = await supabase
-        .from('orders')
-        .update({
-            status: 'cancelled',
-            shipping_address: nextShipping,
-        })
-        .eq('id', orderId)
-        .select()
-        .single();
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        return { data: null, error: new Error(payload?.error || "تعذر إلغاء الطلب") };
+    }
 
-    return { data, error };
+    return { data: payload.data, error: null };
 };
 
 export const confirmOrderGracePeriod = async (orderId: string) => {
@@ -259,8 +164,7 @@ export const confirmOrderGracePeriod = async (orderId: string) => {
         .single();
 
     if (!error && data?.id) {
-        void notifyAdminsAboutOrder(data.id);
-        void notifyRestaurantAboutOrder(data.id);
+        void dispatchOrderNotifications(data.id);
     }
 
     return { data, error };

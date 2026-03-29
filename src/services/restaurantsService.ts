@@ -332,7 +332,12 @@ export async function saveRestaurantMenuProduct(payload: SaveRestaurantMenuProdu
         secondary_label: payload.restaurant.cuisine || '',
         tertiary_label: menuSection,
       },
-      custom_specs: [],
+      custom_specs: (payload.specs || [])
+        .filter((spec) => spec.label?.trim() && spec.description?.trim())
+        .map((spec) => ({
+          label: spec.label.trim(),
+          description: spec.description.trim(),
+        })),
     },
   };
 

@@ -9,7 +9,7 @@ import { ProductCard } from "@/components/ui/product-card"
 import Link from "next/link"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Tag, Camera, Send, MessageSquare, X, Share2, Copy, MapPin, Banknote, Clock3, Users } from "lucide-react"
-import { fetchProductDetails, fetchProductPurchaseCount, fetchRelatedProducts, Product } from "@/services/productsService"
+import { fetchProductDetails, fetchRelatedProducts, Product } from "@/services/productsService"
 import { fetchProductReviews, calcReviewStats, createReview, updateReview, fetchUserProductReview, checkUserPurchased, checkUserReviewed, uploadReviewImage, Review, ReviewStats } from "@/services/reviewsService"
 import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
@@ -186,8 +186,6 @@ export default function ProductPage({
   const [dbProduct, setDbProduct] = React.useState<Product | null>(initialProduct)
   const [relatedProducts, setRelatedProducts] = React.useState<Product[]>(initialRelatedProducts)
   const [isLoading, setIsLoading] = React.useState(!initialProduct)
-  const [purchaseCount, setPurchaseCount] = React.useState(0)
-
   const normalizedSpecs = React.useMemo(() => {
     if (!dbProduct) return []
 
@@ -213,14 +211,12 @@ export default function ProductPage({
   React.useEffect(() => {
     const loadProduct = async () => {
       setIsLoading(true)
-      const [data, related, purchases] = await Promise.all([
+      const [data, related] = await Promise.all([
         fetchProductDetails(slugOrId),
         fetchRelatedProducts(slugOrId, 8),
-        fetchProductPurchaseCount(slugOrId),
       ])
       setDbProduct(data)
       setRelatedProducts(related)
-      setPurchaseCount(purchases)
       setIsLoading(false)
     }
 
@@ -228,7 +224,6 @@ export default function ProductPage({
       if (initialProduct?.id === slugOrId) {
         setDbProduct(initialProduct)
         setRelatedProducts(initialRelatedProducts)
-        fetchProductPurchaseCount(slugOrId).then(setPurchaseCount)
         setIsLoading(false)
       } else {
         loadProduct()
@@ -236,7 +231,6 @@ export default function ProductPage({
     } else {
       setIsLoading(false)
       setRelatedProducts([])
-      setPurchaseCount(0)
     }
   }, [slugOrId, initialProduct, initialRelatedProducts])
 
@@ -411,7 +405,7 @@ export default function ProductPage({
       specs: normalizedSpecs.length > 0
         ? normalizedSpecs
         : [
-          { label: "الماركة", value: metadata.brand || dbProduct.categories?.name || "عام" },
+          { label: "النوع", value: dbProduct.categories?.name || metadata.productType || "عام" },
         ],
       features: dbProduct.specifications?.features || [
         "جودة عالية ومضمونة",
@@ -422,10 +416,17 @@ export default function ProductPage({
       bundleItems,
       bundleSummary: getBundleSummary(bundleItems),
       taxonomyLabel,
-      images: [
-        dbProduct.image_url,
-        ...(dbProduct.images || [])
-      ].filter(Boolean) as string[],
+      images: Array.from(
+        new Set(
+          [
+            dbProduct.image_url,
+            ...(dbProduct.images || []),
+          ]
+            .filter(Boolean)
+            .map((image) => String(image).trim())
+            .filter(Boolean)
+        )
+      ),
       category_name: dbProduct.categories?.name || "منتجات",
       brand: metadata.brand,
       sku: metadata.sku,
@@ -485,10 +486,6 @@ export default function ProductPage({
       "دفع كاش وقت الاستلام",
     ]
 
-    if (purchaseCount > 0) {
-      items.push(`تم شراء المنتج ${purchaseCount} مرة`)
-    }
-
     if (reviewStats.totalReviews > 0) {
       items.push(`عليه ${reviewStats.totalReviews} تقييم من العملاء`)
     }
@@ -501,7 +498,7 @@ export default function ProductPage({
       items.push(`متبقي ${product.stockQty} قطع فقط`)
     }
     return items.slice(0, 4)
-  }, [product.isBestSeller, product.stockQty, purchaseCount, reviewStats.totalReviews])
+  }, [product.isBestSeller, product.stockQty, reviewStats.totalReviews])
 
   const shareTitle = React.useMemo(() => `شوف ${dbProduct?.name || "المنتج ده"} على في السكة`, [dbProduct?.name])
   const shareMessage = React.useMemo(
@@ -865,11 +862,6 @@ export default function ProductPage({
               })()}
 
               <div className="mb-7 flex flex-wrap items-center gap-2">
-                {purchaseCount > 0 ? (
-                  <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-black text-primary">
-                    تم شراءه {purchaseCount} مرة
-                  </span>
-                ) : null}
                 {product.isBestSeller ? (
                   <span className="inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs font-black text-amber-400">
                     الأكثر طلبًا في القسم

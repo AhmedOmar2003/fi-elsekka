@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { requireAdminApi } from '@/lib/admin-guard';
 import { recordServerAdminAudit } from '@/lib/admin-audit-server';
 import { attachOrderEconomics, CURRENT_DELIVERY_FEE } from '@/lib/order-economics';
+import { reserveOrderInventory, restoreOrderInventory } from '@/lib/order-inventory';
 import { createUserNotificationWithPush } from '@/lib/user-push-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -88,6 +89,12 @@ export async function PATCH(request: NextRequest, context: any) {
       return NextResponse.json({ error: updateError.message, stage: 'db.update' }, { status: 500 });
     }
 
+    try {
+      await restoreOrderInventory(supabaseAdmin, id, 'admin_cancelled');
+    } catch (inventoryError: any) {
+      console.error('restoreOrderInventory(admin cancel) error:', inventoryError?.message || inventoryError);
+    }
+
     if (order.user_id) {
       await createUserNotificationWithPush(supabaseAdmin, order.user_id, {
         title: 'تم إلغاء طلبك',
@@ -147,6 +154,14 @@ export async function PATCH(request: NextRequest, context: any) {
       reopened_after_customer_request_at: nowIso,
     };
 
+    let reservedForReopen = false;
+    try {
+      await reserveOrderInventory(supabaseAdmin, id, 'reopened_after_customer_request');
+      reservedForReopen = true;
+    } catch (inventoryError: any) {
+      return NextResponse.json({ error: inventoryError?.message || 'تعذر حجز المخزون من جديد', stage: 'inventory.reserve' }, { status: 400 });
+    }
+
     const { error: updateError } = await supabaseAdmin
       .from('orders')
       .update({
@@ -156,6 +171,13 @@ export async function PATCH(request: NextRequest, context: any) {
       .eq('id', id);
 
     if (updateError) {
+      if (reservedForReopen) {
+        try {
+          await restoreOrderInventory(supabaseAdmin, id, 'reopen_failed');
+        } catch (inventoryRollbackError) {
+          console.error('restoreOrderInventory(reopen rollback) error:', inventoryRollbackError);
+        }
+      }
       return NextResponse.json({ error: updateError.message, stage: 'db.update' }, { status: 500 });
     }
 
@@ -249,6 +271,12 @@ export async function PATCH(request: NextRequest, context: any) {
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message, stage: 'db.update' }, { status: 500 });
+    }
+
+    try {
+      await restoreOrderInventory(supabaseAdmin, id, 'search_request_unavailable');
+    } catch (inventoryError: any) {
+      console.error('restoreOrderInventory(search unavailable) error:', inventoryError?.message || inventoryError);
     }
 
     if (order.user_id) {
