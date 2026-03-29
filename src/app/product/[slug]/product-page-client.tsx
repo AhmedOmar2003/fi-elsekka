@@ -1411,34 +1411,61 @@ export default function ProductPage({
 
           {/* Action buttons */}
             <div className="space-y-2.5">
-              <button
-                onClick={handleAddToCart}
-                className={[
-                "relative flex h-14 w-full rounded-2xl font-heading font-black text-base overflow-hidden transition-all duration-300 active:scale-[0.96] text-white",
-                isAdded
-                  ? "bg-emerald-600 shadow-lg shadow-emerald-600/30"
-                  : "bg-primary shadow-[0_6px_24px_rgba(16,185,129,0.4)]",
-              ].join(" ")}
-            >
-              <span className="flex w-full items-center justify-center gap-2">
-                {isAdded ? <Check className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
-                {isAdded ? "تمت الإضافة ✔" : "أضف للسلة"}
-              </span>
-            </button>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  onClick={handleAddToCart}
+                  className={[
+                    "relative flex h-14 w-full rounded-2xl font-heading font-black text-base overflow-hidden transition-all duration-300 active:scale-[0.96] text-white",
+                    isAdded
+                      ? "bg-emerald-600 shadow-lg shadow-emerald-600/30"
+                      : "bg-primary shadow-[0_6px_24px_rgba(16,185,129,0.4)]",
+                  ].join(" ")}
+                >
+                  <span className="flex w-full items-center justify-center gap-2">
+                    {isAdded ? <Check className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
+                    {isAdded ? "تمت الإضافة ✔" : "أضف للسلة"}
+                  </span>
+                </button>
 
-              <button
-                disabled={product.isRestaurantItem && !product.isRestaurantAvailable}
-                onClick={handleBuyNow}
-                className={[
-                "h-14 w-full rounded-2xl font-heading font-black text-base text-white shadow-[0_6px_24px_rgba(59,130,246,0.35)] transition-all duration-300",
-                product.isRestaurantItem && !product.isRestaurantAvailable
-                  ? "cursor-not-allowed bg-blue-600/45 opacity-60"
-                  : "bg-blue-600 hover:bg-blue-700 active:scale-[0.96]",
-              ].join(" ")}
-            >
-                {product.isRestaurantItem && !product.isRestaurantAvailable ? "غير متاح" : "اخلص واشتري دلوقتي"}
-              </button>
+                <button
+                  disabled={product.isRestaurantItem && !product.isRestaurantAvailable}
+                  onClick={handleBuyNow}
+                  className={[
+                    "h-14 w-full rounded-2xl font-heading font-black text-base text-white shadow-[0_6px_24px_rgba(59,130,246,0.35)] transition-all duration-300",
+                    product.isRestaurantItem && !product.isRestaurantAvailable
+                      ? "cursor-not-allowed bg-blue-600/45 opacity-60"
+                      : "bg-blue-600 hover:bg-blue-700 active:scale-[0.96]",
+                  ].join(" ")}
+                >
+                  {product.isRestaurantItem && !product.isRestaurantAvailable ? "غير متاح" : "اخلص واشتري دلوقتي"}
+                </button>
+              </div>
 
+              <div className="flex items-center justify-between gap-2">
+                {!activeGroupOrderCode ? (
+                  <button
+                    type="button"
+                    onClick={handleCreateGroupOrder}
+                    className="flex-1 h-10 rounded-2xl border border-primary/15 bg-primary/5 px-4 text-xs font-black text-primary inline-flex items-center justify-center gap-2 active:scale-[0.96] transition-all duration-300"
+                  >
+                    <Users className="w-4.5 h-4.5" />
+                    طلب جماعي
+                  </button>
+                ) : (
+                  <div className="flex-1 h-10 rounded-2xl border border-primary/15 bg-primary/5 px-4 text-xs font-black text-primary inline-flex items-center justify-center">
+                    الطلب الجماعي شغال
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleNativeShare}
+                  className="h-10 w-10 shrink-0 rounded-2xl border border-primary/15 bg-primary/5 text-primary inline-flex items-center justify-center active:scale-[0.96] transition-all duration-300"
+                  aria-label="شارك المنتج"
+                >
+                  <Share2 className="w-4.5 h-4.5" />
+                </button>
+              </div>
             </div>
 
         </div>
