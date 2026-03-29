@@ -509,14 +509,14 @@ function CheckoutContent() {
                               />
                               <p className="text-xs text-gray-400">التوصيل متاح حاليًا داخل ميت العامل فقط.</p>
                            </div>
-                           <div className="space-y-2">
-                              <Label htmlFor="area">المنطقة / الناحية</Label>
-                              <Input id="area" value={area} onChange={e => setArea(e.target.value)} required placeholder="مثال: حوض كذا، عزبة كذا، أو ناحية معروفة داخل ميت العامل..." />
-                           </div>
-                           <div className="space-y-2 md:col-span-2">
+                            <div className="space-y-2">
+                              <Label htmlFor="area">اسم المنطقة</Label>
+                              <Input id="area" value={area} onChange={e => setArea(e.target.value)} required placeholder="مثال: بوابة العرب" />
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
                               <Label htmlFor="address">عنوان الشارع بالتفصيل</Label>
-                              <Input id="address" value={address} onChange={e => setAddress(e.target.value)} required placeholder="اسم الشارع، رقم البيت أو العمارة، وأقرب وصف واضح" />
-                           </div>
+                              <Input id="address" value={address} onChange={e => setAddress(e.target.value)} required placeholder="مثال: بوابة العرب بجوار صيدلية ميسرة" />
+                            </div>
                            <div className="space-y-2 md:col-span-2">
                               <Label htmlFor="notes">علامة مميزة لو تحب</Label>
                               <Input id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="مثال: جنب المسجد الكبير، قبل المدرسة، قدام السوبر ماركت..." />
