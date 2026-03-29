@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatRestaurantEtaWindow, getRestaurantOrderSnapshot } from "@/lib/restaurant-order";
+import { getSelectedVariantLabel } from "@/lib/product-variants";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { RestaurantNotificationBell } from "@/components/restaurant/restaurant-notification-bell";
 
@@ -38,6 +39,7 @@ type RestaurantPortalOrder = {
     id: string;
     quantity: number;
     price_at_purchase?: number | null;
+    selected_variant_json?: Record<string, any> | null;
     products?: {
       id: string;
       name: string;
@@ -390,6 +392,11 @@ function RestaurantOrderCard({
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-2 text-sm font-black leading-6 text-foreground">{item.products?.name || "منتج من المطعم"}</p>
+                      {getSelectedVariantLabel(item.selected_variant_json) ? (
+                        <p className="mt-1 text-[11px] font-bold text-primary">
+                          {getSelectedVariantLabel(item.selected_variant_json)}
+                        </p>
+                      ) : null}
                       <p className="mt-1 text-xs text-gray-500">
                         {quantity} × {unitPrice.toLocaleString("ar-EG")} ج.م
                       </p>

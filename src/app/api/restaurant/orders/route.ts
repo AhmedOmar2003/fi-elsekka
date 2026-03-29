@@ -19,6 +19,7 @@ export async function GET(request: Request) {
         product_id,
         quantity,
         price_at_purchase,
+        selected_variant_json,
         products(id, name, price, image_url, specifications)
       )
     `;

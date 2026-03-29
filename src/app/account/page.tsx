@@ -25,6 +25,7 @@ import {
 import { LogoutModal } from "@/components/ui/logout-modal"
 import { toast } from "sonner"
 import { toProductCardProps } from "@/lib/product-presentation"
+import { normalizeDisplayCity } from "@/lib/delivery-location"
 
 type Tab = "search_requests" | "favorites" | "addresses" | "settings"
 
@@ -570,7 +571,7 @@ export default function AccountPage() {
                                                     {addr.is_default && <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-lg flex items-center gap-1"><Star className="w-3 h-3" /> افتراضي</span>}
                                                 </div>
                                                 <p className="font-bold text-foreground text-sm">{addr.address}</p>
-                                                <p className="text-gray-500 text-sm">{addr.area && `${addr.area}، `}{addr.city}</p>
+                                                <p className="text-gray-500 text-sm">{addr.area && `${addr.area}، `}{normalizeDisplayCity(addr.city)}</p>
                                                 {addr.phone_number && <p className="text-gray-500 text-xs mt-1" dir="ltr">{addr.phone_number}</p>}
                                             </div>
                                             <div className="flex sm:flex-col gap-2 shrink-0">
@@ -587,7 +588,7 @@ export default function AccountPage() {
                                             <h3 className="font-bold text-foreground">عنوان جديد</h3>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <input value={addrLabel} onChange={e => setAddrLabel(e.target.value)} placeholder="التسمية (المنزل، العمل...)" className="col-span-2 bg-background border border-surface-hover rounded-xl px-4 py-2.5 text-sm text-foreground focus:border-primary outline-none" />
-                                                <input value={addrCity} onChange={e => setAddrCity(e.target.value)} placeholder="المدينة *" className="bg-background border border-surface-hover rounded-xl px-4 py-2.5 text-sm text-foreground focus:border-primary outline-none" />
+                                                <input value={addrCity} onChange={e => setAddrCity(e.target.value)} placeholder="المحافظة *" className="bg-background border border-surface-hover rounded-xl px-4 py-2.5 text-sm text-foreground focus:border-primary outline-none" />
                                                 <input value={addrArea} onChange={e => setAddrArea(e.target.value)} placeholder="المنطقة" className="bg-background border border-surface-hover rounded-xl px-4 py-2.5 text-sm text-foreground focus:border-primary outline-none" />
                                                 <input value={addrStreet} onChange={e => setAddrStreet(e.target.value)} placeholder="عنوان الشارع *" className="col-span-2 bg-background border border-surface-hover rounded-xl px-4 py-2.5 text-sm text-foreground focus:border-primary outline-none" />
                                                 <input value={addrPhone} onChange={e => setAddrPhone(e.target.value)} placeholder="رقم الموبايل" dir="ltr" className="col-span-2 bg-background border border-surface-hover rounded-xl px-4 py-2.5 text-sm text-foreground focus:border-primary outline-none text-right" />

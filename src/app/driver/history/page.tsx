@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { CheckCircle2, Loader2, Star, MessageSquare, Package } from 'lucide-react'
+import { normalizeDisplayCity } from '@/lib/delivery-location'
 
 interface DeliveredOrder {
     id: string;
@@ -112,7 +113,7 @@ export default function DriverHistoryPage() {
                     <h2 className="font-black text-base text-foreground">الطلبات السابقة ({totalCount})</h2>
                     {orders.map(order => {
                         const address = [
-                            order.shipping_address?.city,
+                            normalizeDisplayCity(order.shipping_address?.city),
                             order.shipping_address?.area,
                         ].filter(Boolean).join('، ')
 

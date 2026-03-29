@@ -7,6 +7,7 @@ import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown,
 import { toast } from 'sonner'
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery'
 import { getRestaurantOrderSnapshot } from '@/lib/restaurant-order'
+import { normalizeDisplayCity } from '@/lib/delivery-location'
 
 // Helper for VAPID key conversion
 function urlBase64ToUint8Array(base64String: string) {
@@ -64,7 +65,7 @@ function OrderCard({ order, onMarkDelivered, onMarkPickedUp, isUpdating }: {
     const customerName = order.users?.full_name || 'غير معروف'
     const phone = order.shipping_address?.phone || order.users?.phone || 'لا يوجد رقم'
     const address = [
-        order.shipping_address?.city,
+        normalizeDisplayCity(order.shipping_address?.city),
         order.shipping_address?.area,
         order.shipping_address?.street || order.shipping_address?.address
     ].filter(Boolean).join('، ')

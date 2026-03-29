@@ -14,6 +14,7 @@ import { RequestAttachmentsGallery } from '@/components/orders/request-attachmen
 import { SearchRequestProgress } from '@/components/orders/search-request-progress';
 import { formatRestaurantEtaWindow, getRestaurantOrderSnapshot } from '@/lib/restaurant-order';
 import { getSelectedVariantLabel } from '@/lib/product-variants';
+import { normalizeDisplayCity } from '@/lib/delivery-location';
 
 const STATUS_FILTERS = [
     { value: 'pending', label: 'في الانتظار', color: 'text-amber-400  bg-amber-400/10  border-amber-400/20' },
@@ -706,7 +707,7 @@ export default function AdminOrdersPage() {
                                 <p className="text-xs text-gray-500">{selectedOrder.users?.email}</p>
                                 {selectedOrder.shipping_address?.city && (
                                     <p className="text-xs text-gray-500">
-                                        {selectedOrder.shipping_address.city}
+                                        {normalizeDisplayCity(selectedOrder.shipping_address.city)}
                                         {selectedOrder.shipping_address.area ? ` — ${selectedOrder.shipping_address.area}` : ''}
                                         {selectedOrder.shipping_address.street ? ` — ${selectedOrder.shipping_address.street}` : ''}
                                     </p>
