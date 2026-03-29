@@ -13,7 +13,7 @@ type OrderInventoryItem = {
   id: string;
   product_id: string;
   quantity: number;
-  product?: OrderInventoryProduct | OrderInventoryProduct[] | null;
+  product?: OrderInventoryProduct | null;
 };
 
 type OrderInventoryOrder = {
@@ -22,36 +22,12 @@ type OrderInventoryOrder = {
   order_items?: OrderInventoryItem[] | null;
 };
 
-const INVENTORY_ORDER_SELECT = `
-  id,
-  shipping_address,
-  order_items (
-    id,
-    product_id,
-    quantity,
-    product:products (
-      id,
-      name,
-      stock_quantity,
-      specifications
-    )
-  )
-`;
-
-function getSingleProduct(product: OrderInventoryItem["product"]) {
-  if (!product) return null;
-  return Array.isArray(product) ? product[0] || null : product;
-}
-
 function getManagedItems(order: OrderInventoryOrder) {
   return (order.order_items || [])
-    .map((item) => {
-      const product = getSingleProduct(item.product);
-      return {
-        item,
-        product,
-      };
-    })
+    .map((item) => ({
+      item,
+      product: item.product || null,
+    }))
     .filter(({ item, product }) => {
       if (!product?.id || !item.product_id) return false;
       if (isRestaurantProduct(product)) return false;
@@ -60,17 +36,57 @@ function getManagedItems(order: OrderInventoryOrder) {
 }
 
 export async function fetchOrderInventorySnapshot(supabaseAdmin: SupabaseLike, orderId: string) {
-  const { data, error } = await supabaseAdmin
+  const { data: order, error: orderError } = await supabaseAdmin
     .from("orders")
-    .select(INVENTORY_ORDER_SELECT)
+    .select("id, shipping_address")
     .eq("id", orderId)
     .single();
 
-  if (error || !data) {
-    throw new Error(error?.message || "Order not found");
+  if (orderError || !order) {
+    throw new Error(orderError?.message || "Order not found");
   }
 
-  return data as OrderInventoryOrder;
+  const { data: items, error: itemsError } = await supabaseAdmin
+    .from("order_items")
+    .select("id, product_id, quantity")
+    .eq("order_id", orderId);
+
+  if (itemsError) {
+    throw new Error(itemsError.message || "Failed to load order items");
+  }
+
+  const productIds = Array.from(
+    new Set(
+      (items || [])
+        .map((item: any) => item.product_id)
+        .filter((productId: string | null | undefined) => typeof productId === "string" && productId.trim() !== "")
+    )
+  );
+
+  let productMap = new Map<string, OrderInventoryProduct>();
+
+  if (productIds.length > 0) {
+    const { data: products, error: productsError } = await supabaseAdmin
+      .from("products")
+      .select("id, name, stock_quantity, specifications")
+      .in("id", productIds);
+
+    if (productsError) {
+      throw new Error(productsError.message || "Failed to load products");
+    }
+
+    productMap = new Map(
+      (products || []).map((product: OrderInventoryProduct) => [product.id, product])
+    );
+  }
+
+  return {
+    ...(order as OrderInventoryOrder),
+    order_items: (items || []).map((item: any) => ({
+      ...item,
+      product: productMap.get(item.product_id) || null,
+    })),
+  } as OrderInventoryOrder;
 }
 
 export async function reserveOrderInventory(
