@@ -124,13 +124,14 @@ export default function AdminOrdersPage() {
     const [isSavingTextQuote, setIsSavingTextQuote] = useState(false);
     const [hasCopiedOrderLink, setHasCopiedOrderLink] = useState(false);
     const requestedOrderId = searchParams.get('order');
+    const queuedLoadTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Driver Assignment UI state
     const [drivers, setDrivers] = useState<any[]>([]);
     const [selectedDriverId, setSelectedDriverId] = useState<string>('');
     const [isAssigningDriver, setIsAssigningDriver] = useState(false);
 
-    const load = async () => {
+    const load = React.useCallback(async () => {
         setIsLoading(true);
         const data = await fetchAdminOrders();
         setOrders(data);
@@ -142,7 +143,18 @@ export default function AdminOrdersPage() {
         }
         
         setIsLoading(false);
-    };
+    }, [canViewDrivers]);
+
+    const queueLoad = React.useCallback(() => {
+        if (queuedLoadTimeoutRef.current) {
+            clearTimeout(queuedLoadTimeoutRef.current);
+        }
+
+        queuedLoadTimeoutRef.current = setTimeout(() => {
+            queuedLoadTimeoutRef.current = null;
+            void load();
+        }, 200);
+    }, [load]);
 
     useEffect(() => { 
         if (authLoading) return;
@@ -161,17 +173,17 @@ export default function AdminOrdersPage() {
                 } else {
                    import('sonner').then(({ toast }) => toast.error(`المندوب ${driverName} اعتذر عن الطلب #${orderId.slice(-6).toUpperCase()} ❌`));
                 }
-                load(); // Reload orders to show updated status
+                queueLoad(); // Reload orders to show updated status
             })
             .on('broadcast', { event: 'order-delivered' }, (payload: any) => {
                 const { orderId, driverName } = payload.payload;
                 import('sonner').then(({ toast }) => toast.success(`تم توصيل الطلب #${orderId.slice(-6).toUpperCase()} بنجاح بواسطة ${driverName} 📦✅`));
-                load(); // Reload orders to show 'delivered' status dynamically
+                queueLoad(); // Reload orders to show 'delivered' status dynamically
             })
             .on('broadcast', { event: 'restaurant-eta-submitted' }, (payload: any) => {
                 const { orderId, restaurantName, etaText } = payload.payload || {};
                 import('sonner').then(({ toast }) => toast.success(`المطعم ${restaurantName || ''} حدّد وقتًا جديدًا للطلب #${String(orderId || '').slice(-6).toUpperCase()}: ${etaText || 'راجع الطلب'}`));
-                load();
+                queueLoad();
             })
             .on('broadcast', { event: 'driver-availability-changed' }, (payload: any) => {
                 const { driverName, isAvailable } = payload.payload;
@@ -218,8 +230,14 @@ export default function AdminOrdersPage() {
             })
             .subscribe();
 
-        return () => { supabase.removeChannel(channel); };
-    }, [authLoading, canViewOrders, canViewDrivers, router]);
+        return () => {
+            if (queuedLoadTimeoutRef.current) {
+                clearTimeout(queuedLoadTimeoutRef.current);
+                queuedLoadTimeoutRef.current = null;
+            }
+            supabase.removeChannel(channel);
+        };
+    }, [authLoading, canViewOrders, canViewDrivers, queueLoad, router]);
 
     useEffect(() => {
         const requestedKind = searchParams.get('kind');

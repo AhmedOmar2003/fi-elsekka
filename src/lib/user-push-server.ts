@@ -78,7 +78,7 @@ export async function sendPushToUserDevices(
     uniqueSubscriptions.map(async (subscriptionRecord: any) => {
       try {
         await webpush.sendNotification(subscriptionRecord.subscription, pushPayload, {
-          TTL: 60,
+          TTL: 30,
           urgency: 'high',
           topic: payload.topic || 'customer-notification',
         });

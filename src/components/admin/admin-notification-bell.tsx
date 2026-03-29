@@ -15,6 +15,7 @@ import {
   mergeNotificationIntoList,
 } from "@/services/notificationsService";
 import { supabase } from "@/lib/supabase";
+import { showInstantDeviceNotification } from "@/lib/device-notifications";
 
 const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_KEY || "";
 
@@ -166,6 +167,12 @@ export function AdminNotificationBell() {
           const notification = payload.new as AppNotification;
           setNotifications((prev) => mergeNotificationIntoList(prev, notification));
           playNotificationSound();
+          void showInstantDeviceNotification({
+            title: notification.title,
+            body: notification.message,
+            url: notification.link || "/admin/orders",
+            tag: `${notification.link || "/admin/orders"}::${notification.title}`,
+          });
           toast.success(notification.title, {
             description: notification.message,
           });

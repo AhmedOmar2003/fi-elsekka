@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery'
 import { getRestaurantOrderSnapshot } from '@/lib/restaurant-order'
 import { normalizeDisplayCity } from '@/lib/delivery-location'
+import { showInstantDeviceNotification } from '@/lib/device-notifications'
 
 // Helper for VAPID key conversion
 function urlBase64ToUint8Array(base64String: string) {
@@ -283,10 +284,16 @@ export default function DriverDashboard() {
             })
             if (!res.ok) throw new Error('Failed to fetch orders')
             const data = await res.json()
-            return (data.orders || []) as DriverOrder[]
+            return {
+                activeOrders: (data.orders || []) as DriverOrder[],
+                deliveredOrders: (data.deliveredOrders || []) as DriverOrder[],
+            }
         } catch (err) {
             console.error('Driver fetch error:', err)
-            return []
+            return {
+                activeOrders: [],
+                deliveredOrders: [],
+            }
         }
     }, [])
 
@@ -310,32 +317,6 @@ export default function DriverDashboard() {
         }
     }, [])
 
-    // Also fetch "recently" delivered orders for the driver to review (last 24h)
-    const fetchDeliveredOrders = useCallback(async (userId: string) => {
-        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        let result = await supabase
-            .from('orders')
-            .select('*')
-            .contains('shipping_address', { driver: { id: userId } })
-            .gte('created_at', yesterday)
-            .eq('status', 'delivered')
-            .order('created_at', { ascending: false })
-
-        if (result.error) {
-            result = await supabase
-                .from('orders')
-                .select('*')
-                .gte('created_at', yesterday)
-                .eq('status', 'delivered')
-                .order('created_at', { ascending: false })
-        }
-
-        if (result.data) {
-            return result.data.filter((o: any) => o.shipping_address?.driver?.id === userId)
-        }
-        return []
-    }, [])
-
     useEffect(() => {
         activeOrdersRef.current = activeOrders
     }, [activeOrders])
@@ -354,10 +335,7 @@ export default function DriverDashboard() {
             setIsLoading(true)
         }
 
-        const [nextActiveOrders, nextDeliveredOrders] = await Promise.all([
-            fetchOrders(session, userId),
-            fetchDeliveredOrders(userId),
-        ])
+        const { activeOrders: nextActiveOrders, deliveredOrders: nextDeliveredOrders } = await fetchOrders(session, userId)
 
         const previousActiveIds = new Set(activeOrdersRef.current.map((order) => order.id))
         const newPendingOrders = nextActiveOrders.filter(
@@ -377,6 +355,16 @@ export default function DriverDashboard() {
             if (notificationsAllowedRef.current) {
                 playNotificationSound()
             }
+            void showInstantDeviceNotification({
+                title: restaurantOrder.isRestaurantOrder
+                    ? `طلب جديد من مطعم ${restaurantOrder.restaurantName || 'من في السكة'}`
+                    : 'طلب جديد بانتظارك',
+                body: restaurantOrder.isRestaurantOrder
+                    ? 'فيه طلب مطعم جديد وصل لك الآن من الإدارة. افتحه وشوف التفاصيل بسرعة.'
+                    : 'الإدارة بعتت لك طلب جديد الآن. افتحه وشوف التفاصيل بسرعة.',
+                url: `/driver?order=${primaryPendingOrder.id}`,
+                tag: `/driver?order=${primaryPendingOrder.id}::driver-assignment`,
+            })
             toast(
                 restaurantOrder.isRestaurantOrder
                     ? `🛵 طلب جديد من مطعم ${restaurantOrder.restaurantName || 'من في السكة'} بانتظارك!`
@@ -387,7 +375,7 @@ export default function DriverDashboard() {
 
         activeOrdersRef.current = nextActiveOrders
         setIsLoading(false)
-    }, [fetchDeliveredOrders, fetchOrders])
+    }, [fetchOrders])
 
     useEffect(() => {
         const init = async () => {
