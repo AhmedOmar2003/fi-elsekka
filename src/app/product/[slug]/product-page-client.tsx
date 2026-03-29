@@ -478,6 +478,17 @@ export default function ProductPage({
       ? product.price
       : (typeof product.oldPrice === "number" && product.oldPrice > product.price ? product.oldPrice : null)
 
+  const effectiveUnitPrice = appliedDiscountPrice !== null ? appliedDiscountPrice : product.price
+  const liveTotalPrice = effectiveUnitPrice * quantity
+  const liveComparePrice = comparePriceToShow !== null ? comparePriceToShow * quantity : null
+  const formatPrice = React.useCallback((value: number) => {
+    if (Number.isInteger(value)) return value.toLocaleString("ar-EG")
+    return value.toLocaleString("ar-EG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  }, [])
+
   const [activeImage, setActiveImage] = React.useState(0)
 
   const trustHighlights = React.useMemo(() => {
@@ -818,14 +829,21 @@ export default function ProductPage({
               {/* Price block */}
               <div className="flex items-end gap-3 mb-6 p-5 rounded-2xl bg-surface-light border border-surface-hover shadow-sm">
                 <div className="flex flex-col">
-                  <span className="text-gray-500 text-sm font-medium mb-1">السعر الحالي</span>
-                  <span className="font-heading text-4xl font-black text-primary tracking-tight">
-                    {appliedDiscountPrice !== null ? appliedDiscountPrice : product.price} <span className="text-lg font-bold">ج.م</span>
+                  <span className="text-gray-500 text-sm font-medium mb-1">
+                    {quantity > 1 ? `إجمالي ${quantity} قطع` : "السعر الحالي"}
                   </span>
+                  <span className="font-heading text-4xl font-black text-primary tracking-tight">
+                    {formatPrice(liveTotalPrice)} <span className="text-lg font-bold">ج.م</span>
+                  </span>
+                  {quantity > 1 && (
+                    <span className="mt-1 text-xs font-bold text-gray-500">
+                      سعر القطعة {formatPrice(effectiveUnitPrice)} ج.م
+                    </span>
+                  )}
                 </div>
-                {comparePriceToShow !== null && (
+                {liveComparePrice !== null && (
                   <span className="font-heading text-lg text-gray-500 line-through mb-1">
-                    {comparePriceToShow} ج.م
+                    {formatPrice(liveComparePrice)} ج.م
                   </span>
                 )}
               </div>
@@ -1383,21 +1401,28 @@ export default function ProductPage({
         <div className="bg-background backdrop-blur-2xl border-t border-surface-hover px-4 pt-3 pb-5 shadow-[0_-12px_40px_rgba(0,0,0,0.5)]">
 
           {/* Price + qty row */}
-          <div className="flex items-center justify-between mb-3 px-1">
-            <div className="flex flex-col">
-              <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">سعر الوحدة</span>
-              <div className="flex items-baseline gap-2">
-                <span className="font-heading font-black text-primary text-2xl leading-none">
-                  {appliedDiscountPrice !== null ? appliedDiscountPrice : product.price} <span className="text-sm font-bold">ج.م</span>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <div className="flex flex-col">
+                <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+                  {quantity > 1 ? "الإجمالي الحالي" : "سعر الوحدة"}
                 </span>
-                {appliedDiscountPrice !== null && (
-                  <span className="text-sm text-gray-500 line-through">{product.price} ج.م</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-heading font-black text-primary text-2xl leading-none">
+                    {formatPrice(liveTotalPrice)} <span className="text-sm font-bold">ج.م</span>
+                  </span>
+                  {liveComparePrice !== null && (
+                    <span className="text-sm text-gray-500 line-through">{formatPrice(liveComparePrice)} ج.م</span>
+                  )}
+                </div>
+                {quantity > 1 && (
+                  <span className="text-[10px] text-gray-500 font-bold mt-0.5">
+                    سعر القطعة {formatPrice(effectiveUnitPrice)} ج.م
+                  </span>
+                )}
+                {appliedDiscountLabel && (
+                  <span className="text-[10px] text-primary font-bold mt-0.5">✅ {appliedDiscountLabel}</span>
                 )}
               </div>
-              {appliedDiscountLabel && (
-                <span className="text-[10px] text-primary font-bold mt-0.5">✅ {appliedDiscountLabel}</span>
-              )}
-            </div>
             <div className="flex items-center rounded-2xl border border-surface-hover bg-surface h-11 shadow-inner">
               <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 h-full text-gray-500 hover:text-foreground hover:bg-surface-hover rounded-e-2xl active:scale-90 transition-all">
                 <Minus className="w-4 h-4" />
