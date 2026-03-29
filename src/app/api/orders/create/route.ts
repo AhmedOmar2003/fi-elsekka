@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { extractAccessToken } from "@/lib/admin-guard";
 import { attachOrderEconomics, CURRENT_DELIVERY_FEE, ORDER_ECONOMICS_VERSION } from "@/lib/order-economics";
 import { buildRestaurantOrderSnapshotFromCart } from "@/lib/restaurant-order";
-import { reserveOrderInventory } from "@/lib/order-inventory";
+import { reserveInventoryForItems } from "@/lib/order-inventory";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const serviceRoleKey = process.env.SUPABASE_SERVICE_KEY || "";
@@ -136,7 +136,16 @@ export async function POST(request: NextRequest) {
       }
 
       if (!isTextRequestOrder) {
-        await reserveOrderInventory(supabaseAdmin, order.id, "order_created");
+        await reserveInventoryForItems(
+          supabaseAdmin,
+          order.id,
+          orderItems.map((item: { product_id: string; quantity: number }) => ({
+            product_id: item.product_id,
+            quantity: item.quantity,
+          })),
+          shippingWithEconomics,
+          "order_created"
+        );
       }
 
       if (clearCartAfterOrder) {
