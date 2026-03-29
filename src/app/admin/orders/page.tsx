@@ -14,7 +14,7 @@ import { RequestAttachmentsGallery } from '@/components/orders/request-attachmen
 import { SearchRequestProgress } from '@/components/orders/search-request-progress';
 import { formatRestaurantEtaWindow, getRestaurantOrderSnapshot } from '@/lib/restaurant-order';
 import { getSelectedVariantLabel } from '@/lib/product-variants';
-import { normalizeDisplayCity } from '@/lib/delivery-location';
+import { formatDeliveryAddressLines, normalizeDisplayCity } from '@/lib/delivery-location';
 
 const STATUS_FILTERS = [
     { value: 'pending', label: 'في الانتظار', color: 'text-amber-400  bg-amber-400/10  border-amber-400/20' },
@@ -723,13 +723,21 @@ export default function AdminOrdersPage() {
                                 <p className="font-bold text-foreground">{selectedOrder.users?.full_name || 'غير معروف'}</p>
                                 <p className="text-xs text-gray-500 font-mono">{selectedOrder.shipping_address?.phone || selectedOrder.users?.phone || 'لا يوجد رقم'}</p>
                                 <p className="text-xs text-gray-500">{selectedOrder.users?.email}</p>
-                                {selectedOrder.shipping_address?.city && (
-                                    <p className="text-xs text-gray-500">
-                                        {normalizeDisplayCity(selectedOrder.shipping_address.city)}
-                                        {selectedOrder.shipping_address.area ? ` — ${selectedOrder.shipping_address.area}` : ''}
-                                        {selectedOrder.shipping_address.street ? ` — ${selectedOrder.shipping_address.street}` : ''}
-                                    </p>
-                                )}
+                                {selectedOrder.shipping_address?.city && (() => {
+                                    const addressLines = formatDeliveryAddressLines(selectedOrder.shipping_address)
+                                    return (
+                                        <div className="text-xs text-gray-500 space-y-1">
+                                            <p>
+                                                {addressLines.zone}
+                                                {addressLines.secondary ? ` — ${addressLines.secondary}` : ''}
+                                                {addressLines.street ? ` — ${addressLines.street}` : ''}
+                                            </p>
+                                            {addressLines.landmark ? (
+                                                <p>علامة مميزة: {addressLines.landmark}</p>
+                                            ) : null}
+                                        </div>
+                                    )
+                                })()}
                             </div>
 
                             {/* Status */}

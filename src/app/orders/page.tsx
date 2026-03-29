@@ -12,7 +12,7 @@ import { toast } from "sonner"
 import { RequestAttachmentsGallery } from "@/components/orders/request-attachments-gallery"
 import { getRestaurantOrderSnapshot } from "@/lib/restaurant-order"
 import { getSelectedVariantLabel } from "@/lib/product-variants"
-import { normalizeDisplayCity } from "@/lib/delivery-location"
+import { formatDeliveryAddressLines } from "@/lib/delivery-location"
 
 function isAwaitingTextOrderConfirmation(order: Order) {
   const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
@@ -664,13 +664,23 @@ function OrderCard({
           {/* Shipping info */}
           {order.shipping_address && (
             <div className="bg-surface-hover/50 rounded-xl p-3 space-y-1">
+              {(() => {
+                const addressLines = formatDeliveryAddressLines(order.shipping_address)
+                return (
+                  <>
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">عنوان التوصيل</p>
               <p className="text-sm text-foreground">{order.shipping_address.recipient || order.shipping_address.recipientName}</p>
-              <p className="text-sm text-gray-500">{normalizeDisplayCity(order.shipping_address.city)} - {order.shipping_address.area}</p>
-              <p className="text-sm text-gray-500">{order.shipping_address.street || order.shipping_address.address}</p>
+              <p className="text-sm text-gray-500">{addressLines.zone}{addressLines.secondary ? ` — ${addressLines.secondary}` : ""}</p>
+              <p className="text-sm text-gray-500">{addressLines.street || "العنوان هيتحدد معاك وقت التأكيد"}</p>
+              {addressLines.landmark ? (
+                <p className="text-sm text-gray-500">علامة مميزة: {addressLines.landmark}</p>
+              ) : null}
               {order.shipping_address.phone && (
                 <p className="text-sm text-primary font-bold">📞 {order.shipping_address.phone}</p>
               )}
+                  </>
+                )
+              })()}
             </div>
           )}
 

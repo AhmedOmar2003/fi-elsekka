@@ -206,7 +206,7 @@ function CheckoutContent() {
    const [firstName, setFirstName] = React.useState("")
    const [lastName, setLastName] = React.useState("")
    const [phone, setPhone] = React.useState("")
-   const [city, setCity] = React.useState("")
+   const [city, setCity] = React.useState("ميت العامل")
    const [area, setArea] = React.useState("")
    const [address, setAddress] = React.useState("")
    const [notes, setNotes] = React.useState("")
@@ -500,24 +500,26 @@ function CheckoutContent() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                            <div className="space-y-2">
-                              <Label htmlFor="city">المحافظة</Label>
-                              <Select id="city" value={city} onChange={e => setCity(e.target.value)} required>
-                                 <option value="" disabled>اختر المحافظة...</option>
-                                 <option value="الدقهلية">الدقهلية</option>
-                                 <option value="القرى المجاورة" disabled>القرى المجاورة (قريبًا)</option>
-                              </Select>
+                              <Label htmlFor="city">منطقة التوصيل</Label>
+                              <Input
+                                 id="city"
+                                 value="ميت العامل"
+                                 readOnly
+                                 className="cursor-not-allowed opacity-80"
+                              />
+                              <p className="text-xs text-gray-400">التوصيل متاح حاليًا داخل ميت العامل فقط.</p>
                            </div>
                            <div className="space-y-2">
-                              <Label htmlFor="area">المنطقة / الحي</Label>
-                              <Input id="area" value={area} onChange={e => setArea(e.target.value)} required placeholder="مثال: قرية ميت العامل أو شارع معروف داخل القرية..." />
+                              <Label htmlFor="area">المنطقة / الناحية</Label>
+                              <Input id="area" value={area} onChange={e => setArea(e.target.value)} required placeholder="مثال: حوض كذا، عزبة كذا، أو ناحية معروفة داخل ميت العامل..." />
                            </div>
                            <div className="space-y-2 md:col-span-2">
                               <Label htmlFor="address">عنوان الشارع بالتفصيل</Label>
-                              <Input id="address" value={address} onChange={e => setAddress(e.target.value)} required placeholder="اسم الشارع، رقم العمارة، رقم الشقة" />
+                              <Input id="address" value={address} onChange={e => setAddress(e.target.value)} required placeholder="اسم الشارع، رقم البيت أو العمارة، وأقرب وصف واضح" />
                            </div>
                            <div className="space-y-2 md:col-span-2">
                               <Label htmlFor="notes">علامة مميزة لو تحب</Label>
-                              <Input id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="بجوار صيدلية، أمام مدرسة..." />
+                              <Input id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="مثال: جنب المسجد الكبير، قبل المدرسة، قدام السوبر ماركت..." />
                            </div>
                         </div>
                      </div>

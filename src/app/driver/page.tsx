@@ -7,7 +7,7 @@ import { MapPin, Phone, Package, Navigation, CheckCircle2, Loader2, ChevronDown,
 import { toast } from 'sonner'
 import { RequestAttachmentsGallery } from '@/components/orders/request-attachments-gallery'
 import { getRestaurantOrderSnapshot } from '@/lib/restaurant-order'
-import { normalizeDisplayCity } from '@/lib/delivery-location'
+import { formatDeliveryAddressLines } from '@/lib/delivery-location'
 import { showInstantDeviceNotification } from '@/lib/device-notifications'
 
 // Helper for VAPID key conversion
@@ -65,10 +65,11 @@ function OrderCard({ order, onMarkDelivered, onMarkPickedUp, isUpdating }: {
 
     const customerName = order.users?.full_name || 'غير معروف'
     const phone = order.shipping_address?.phone || order.users?.phone || 'لا يوجد رقم'
+    const deliveryAddress = formatDeliveryAddressLines(order.shipping_address)
     const address = [
-        normalizeDisplayCity(order.shipping_address?.city),
-        order.shipping_address?.area,
-        order.shipping_address?.street || order.shipping_address?.address
+        deliveryAddress.zone,
+        deliveryAddress.secondary,
+        deliveryAddress.street
     ].filter(Boolean).join('، ')
     const driverInstruction = order.shipping_address?.driver_delivery_note?.trim()
     const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
