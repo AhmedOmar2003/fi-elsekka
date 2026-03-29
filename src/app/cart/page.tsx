@@ -14,7 +14,7 @@ import { createGroupOrder } from '@/services/groupOrdersService';
 import { saveStoredGroupParticipant } from '@/lib/group-order-session';
 import { getSelectedVariantLabel } from '@/lib/product-variants';
 import { toast } from 'sonner';
-import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft } from 'lucide-react';
+import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getBundleItemCount, getBundleItems } from '@/lib/product-presentation';
 
@@ -396,11 +396,12 @@ export default function CartPage() {
                                  <Button
                                     size="lg"
                                     variant="outline"
-                                    className="h-12 w-full rounded-2xl px-6 text-sm font-black"
+                                    className="h-12 w-full rounded-2xl border border-primary/20 bg-primary/5 px-6 text-sm font-black text-primary hover:bg-primary/10"
                                     onClick={handleCreateGroupOrder}
                                     disabled={isCreatingGroupOrder}
                                  >
-                                    {isCreatingGroupOrder ? 'بنجهز الرابط...' : 'اطلب مع أصدقائك'}
+                                    <Users className="ml-2 h-4.5 w-4.5" />
+                                    {isCreatingGroupOrder ? 'بنجهز الرابط...' : 'طلب جماعي'}
                                  </Button>
                               </div>
                            )}
@@ -440,11 +441,12 @@ export default function CartPage() {
                         <Button
                            size="lg"
                            variant="outline"
-                           className="h-12 w-full rounded-2xl px-6 text-sm font-black"
+                           className="h-12 w-full rounded-2xl border border-primary/20 bg-primary/5 px-6 text-sm font-black text-primary hover:bg-primary/10"
                            onClick={handleCreateGroupOrder}
                            disabled={isCreatingGroupOrder}
                         >
-                           {isCreatingGroupOrder ? 'بنجهز الرابط...' : 'اطلب مع أصدقائك'}
+                           <Users className="ml-2 h-4.5 w-4.5" />
+                           {isCreatingGroupOrder ? 'بنجهز الرابط...' : 'طلب جماعي'}
                         </Button>
                      </div>
                   </div>

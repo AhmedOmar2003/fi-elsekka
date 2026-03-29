@@ -1049,7 +1049,7 @@ export default function ProductPage({
                           className="h-11 rounded-2xl border border-primary/20 bg-primary/5 px-4 text-sm font-bold text-primary inline-flex items-center justify-center gap-2 hover:bg-primary/10 transition-colors"
                         >
                           <Users className="w-4.5 h-4.5" />
-                          اطلب مع أصدقائك
+                          طلب جماعي
                         </button>
                       )}
 
