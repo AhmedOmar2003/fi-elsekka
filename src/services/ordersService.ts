@@ -93,24 +93,28 @@ export const createOrder = async (
 };
 
 export const fetchUserOrders = async (userId: string): Promise<Order[]> => {
-    const { data, error } = await supabase
-        .from('orders')
-        .select(`
-            *,
-            order_items (
-                id, product_id, quantity, price_at_purchase,
-                product:products (name, price)
-            )
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        console.error('Error fetching user orders:', error?.message || error);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) {
         return [];
     }
 
-    return (data || []) as unknown as Order[];
+    const res = await fetch('/api/orders/user', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+        },
+        cache: 'no-store',
+    });
+
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        console.error('Error fetching user orders:', payload?.error || res.statusText);
+        return [];
+    }
+
+    return (payload?.data || []) as Order[];
 };
 
 export const updateOrderStatus = async (orderId: string, status: string) => {
