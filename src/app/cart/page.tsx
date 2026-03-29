@@ -5,19 +5,25 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Button } from '@/components/ui/button';
 import { CURRENT_DELIVERY_FEE } from '@/lib/order-economics';
+import { createGroupOrder } from '@/services/groupOrdersService';
+import { saveStoredGroupParticipant } from '@/lib/group-order-session';
+import { toast } from 'sonner';
 import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getBundleItemCount, getBundleItems } from '@/lib/product-presentation';
 
 export default function CartPage() {
    const { items, cartTotal, cartOriginalTotal, cartDiscountTotal, isLoading, updateQuantity, removeItem } = useCart();
+   const { user } = useAuth();
    const router = useRouter();
    const [updatingItems, setUpdatingItems] = useState<{ [key: string]: boolean }>({});
    const [showDesktopSummaryCheckout, setShowDesktopSummaryCheckout] = useState(false);
+   const [isCreatingGroupOrder, setIsCreatingGroupOrder] = useState(false);
 
    useEffect(() => {
       if (typeof window === 'undefined') return;
@@ -58,6 +64,41 @@ export default function CartPage() {
 
    const shippingCost: number = CURRENT_DELIVERY_FEE;
    const grandTotal = cartTotal + shippingCost;
+
+   const handleCreateGroupOrder = async () => {
+      if (items.length === 0) {
+         toast.error('حط منتجات في السلة الأول قبل ما تبدأ طلب جماعي.');
+         return;
+      }
+
+      if (!user) {
+         toast.error('سجل دخول الأول علشان تنشئ طلب جماعي.');
+         router.push('/login?redirect=/cart');
+         return;
+      }
+
+      setIsCreatingGroupOrder(true);
+      try {
+         const result = await createGroupOrder(
+            items.map((item) => ({
+               productId: item.product_id,
+               quantity: item.quantity,
+            }))
+         );
+
+         saveStoredGroupParticipant(result.code, {
+            participantKey: result.participantKey,
+            displayName: result.displayName,
+         });
+
+         toast.success('جهزنا رابط الطلب الجماعي، ابعته وابدأوا تضيفوا عليه.');
+         router.push(`/group-order/${result.code}`);
+      } catch (error) {
+         toast.error(error instanceof Error ? error.message : 'مقدرتش أنشئ الطلب الجماعي دلوقتي.');
+      } finally {
+         setIsCreatingGroupOrder(false);
+      }
+   };
 
    if (isLoading) {
       return (
@@ -335,14 +376,25 @@ export default function CartPage() {
                            </div>
 
                            {showDesktopSummaryCheckout && (
-                              <Button
-                                 size="lg"
-                                 className="h-14 w-full rounded-2xl px-6 text-base font-black shadow-primary/20 shadow-lg"
-                                 onClick={() => router.push('/checkout')}
-                              >
-                                 متابعة الدفع
-                                 <ArrowLeft className="mr-2 h-5 w-5" />
-                              </Button>
+                              <div className="space-y-3">
+                                 <Button
+                                    size="lg"
+                                    className="h-14 w-full rounded-2xl px-6 text-base font-black shadow-primary/20 shadow-lg"
+                                    onClick={() => router.push('/checkout')}
+                                 >
+                                    متابعة الدفع
+                                    <ArrowLeft className="mr-2 h-5 w-5" />
+                                 </Button>
+                                 <Button
+                                    size="lg"
+                                    variant="outline"
+                                    className="h-12 w-full rounded-2xl px-6 text-sm font-black"
+                                    onClick={handleCreateGroupOrder}
+                                    disabled={isCreatingGroupOrder}
+                                 >
+                                    {isCreatingGroupOrder ? 'بنجهز الرابط...' : 'اطلب مع أصدقائك'}
+                                 </Button>
+                              </div>
                            )}
 
                            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
@@ -360,20 +412,31 @@ export default function CartPage() {
                <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
                   <div className="pointer-events-none h-6 bg-gradient-to-t from-background to-transparent" />
                   <div className="border-t border-surface-hover bg-background px-4 pb-[calc(env(safe-area-inset-bottom,0px)+18px)] pt-3 shadow-[0_-12px_40px_rgba(0,0,0,0.24)] backdrop-blur-2xl">
-                     <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
-                        <div className="min-w-0 flex flex-col px-1">
-                           <span className="text-[11px] font-medium tracking-wide text-gray-500">الإجمالي الكلي</span>
-                           <span className="mt-1 font-heading text-2xl font-black leading-none text-primary">
-                              {grandTotal.toLocaleString()} <span className="text-sm font-bold">ج.م</span>
-                           </span>
+                     <div className="mx-auto max-w-lg space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                           <div className="min-w-0 flex flex-col px-1">
+                              <span className="text-[11px] font-medium tracking-wide text-gray-500">الإجمالي الكلي</span>
+                              <span className="mt-1 font-heading text-2xl font-black leading-none text-primary">
+                                 {grandTotal.toLocaleString()} <span className="text-sm font-bold">ج.م</span>
+                              </span>
+                           </div>
+                           <Button
+                              size="lg"
+                              className="h-14 min-w-[190px] rounded-2xl px-6 text-base font-black shadow-primary/20 shadow-lg"
+                              onClick={() => router.push('/checkout')}
+                           >
+                              متابعة الدفع
+                              <ArrowLeft className="mr-2 h-5 w-5" />
+                           </Button>
                         </div>
                         <Button
                            size="lg"
-                           className="h-14 min-w-[190px] rounded-2xl px-6 text-base font-black shadow-primary/20 shadow-lg"
-                           onClick={() => router.push('/checkout')}
+                           variant="outline"
+                           className="h-12 w-full rounded-2xl px-6 text-sm font-black"
+                           onClick={handleCreateGroupOrder}
+                           disabled={isCreatingGroupOrder}
                         >
-                           متابعة الدفع
-                           <ArrowLeft className="mr-2 h-5 w-5" />
+                           {isCreatingGroupOrder ? 'بنجهز الرابط...' : 'اطلب مع أصدقائك'}
                         </Button>
                      </div>
                   </div>

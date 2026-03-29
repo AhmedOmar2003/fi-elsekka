@@ -71,8 +71,12 @@ export const createOrder = async (
     userId: string,
     cartItems: any[], // Allows CartItem or GuestCartItem union from CartContext
     shippingDetails: any,
-    subtotalAmount: number
+    subtotalAmount: number,
+    options?: {
+        clearCartAfterOrder?: boolean
+    }
 ) => {
+    const clearCartAfterOrder = options?.clearCartAfterOrder ?? true
     const hasTextRequestText = !!shippingDetails?.custom_request_text;
     const hasTextRequestImages = Array.isArray(shippingDetails?.custom_request_image_urls) && shippingDetails.custom_request_image_urls.length > 0;
     const isTextRequestOrder = shippingDetails?.request_mode === 'custom_category_text' && (hasTextRequestText || hasTextRequestImages);
@@ -128,8 +132,8 @@ export const createOrder = async (
     // 2. Prepare Order Items
     if (cartItems.length > 0) {
         const orderItems = cartItems.map(item => {
-            let finalPrice = item.product?.price || 0;
-            if (item.product?.discount_percentage && item.product.discount_percentage > 0) {
+            let finalPrice = item.applied_price ?? item.product?.price ?? 0;
+            if (item.applied_price == null && item.product?.discount_percentage && item.product.discount_percentage > 0) {
                 finalPrice = Math.round(finalPrice * (1 - item.product.discount_percentage / 100));
             }
             return {
@@ -150,14 +154,16 @@ export const createOrder = async (
             return { error: itemsError };
         }
 
-        // 4. Clear the cart
-        const { error: clearError } = await supabase
-            .from('cart_items')
-            .delete()
-            .eq('user_id', userId);
+        // 4. Clear the cart when this checkout actually came from the regular cart flow
+        if (clearCartAfterOrder) {
+            const { error: clearError } = await supabase
+                .from('cart_items')
+                .delete()
+                .eq('user_id', userId);
 
-        if (clearError) {
-            console.error('Failed to clear cart after order:', clearError?.message);
+            if (clearError) {
+                console.error('Failed to clear cart after order:', clearError?.message);
+            }
         }
     }
 

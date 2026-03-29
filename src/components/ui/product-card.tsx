@@ -3,10 +3,14 @@
 import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { Button, cn } from "./button"
 import { Heart, Star, ShoppingCart, Check } from "lucide-react"
 import { useCart } from "@/contexts/CartContext"
 import { useFavorites } from "@/contexts/FavoritesContext"
+import { addGroupOrderItem } from "@/services/groupOrdersService"
+import { getStoredGroupParticipant } from "@/lib/group-order-session"
+import { toast } from "sonner"
 
 export interface ProductCardProps {
   id: string;
@@ -39,13 +43,44 @@ export function ProductCard({
 }: ProductCardProps) {
   const { addItem } = useCart()
   const { isFavorite, toggleFavorite } = useFavorites()
+  const router = useRouter()
   const [isAdded, setIsAdded] = React.useState(false)
+  const [groupOrderCode, setGroupOrderCode] = React.useState<string | null>(null)
   const fav = isFavorite(id)
   const hasVisibleOldPrice = typeof oldPrice === "number" && oldPrice > price
+  const productHref = groupOrderCode ? `/product/${id}?groupOrder=${groupOrderCode}` : `/product/${id}`
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return
+    const syncGroupOrderCode = () => {
+      const params = new URLSearchParams(window.location.search)
+      setGroupOrderCode(params.get("groupOrder"))
+    }
+
+    syncGroupOrderCode()
+    window.addEventListener("popstate", syncGroupOrderCode)
+
+    return () => {
+      window.removeEventListener("popstate", syncGroupOrderCode)
+    }
+  }, [])
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault()
-    await addItem(id, 1)
+    if (groupOrderCode) {
+      const participant = getStoredGroupParticipant(groupOrderCode)
+      if (!participant?.participantKey) {
+        toast.error("اكتب اسمك الأول داخل الطلب الجماعي قبل ما تضيف منتجات")
+        router.push(`/group-order/${groupOrderCode}`)
+        return
+      }
+
+      await addGroupOrderItem(groupOrderCode, participant.participantKey, id, 1)
+      toast.success(`اتضاف "${title}" في الطلب الجماعي`)
+    } else {
+      await addItem(id, 1)
+    }
+
     setIsAdded(true)
     setTimeout(() => setIsAdded(false), 2000)
   }
@@ -59,7 +94,7 @@ export function ProductCard({
   const isBundle = productMode === "bundle"
   return (
     <div className={cn("group relative flex h-full flex-col overflow-hidden rounded-[24px] border border-surface-border/80 bg-surface shadow-[var(--shadow-material-1)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[var(--shadow-material-2)] hover:border-surface-border touch-manipulation sm:min-h-[320px] sm:rounded-[28px]", className)}>
-      <Link href={`/product/${id}`} className="relative aspect-[4/3] sm:aspect-[4/3] w-full overflow-hidden bg-surface-container">
+      <Link href={productHref} className="relative aspect-[4/3] sm:aspect-[4/3] w-full overflow-hidden bg-surface-container">
 
         <div className="absolute inset-0 flex items-center justify-center">
           <Image
@@ -117,7 +152,7 @@ export function ProductCard({
           </div>
         )}
 
-        <Link href={`/product/${id}`} className="mb-0.5 block h-[33px] sm:h-[42px]">
+        <Link href={productHref} className="mb-0.5 block h-[33px] sm:h-[42px]">
           <h3 className="line-clamp-2 text-[12.5px] font-heading font-semibold leading-[1.35] text-foreground transition-colors group-hover:text-primary sm:text-base">
             {title}
           </h3>

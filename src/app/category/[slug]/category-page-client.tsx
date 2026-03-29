@@ -76,6 +76,7 @@ export default function CategoryPageClient({
 
   const allProducts = isAllPage ? allPageProducts : categoryProducts
   const searchQuery = searchParams.get("q") || initialSearchQuery
+  const activeGroupOrderCode = searchParams.get("groupOrder")
   const buildPageHref = React.useCallback((pageNumber: number) => {
     const params = new URLSearchParams(
       Object.fromEntries(Array.from(searchParams.entries()).filter(([key]) => key !== "page"))
@@ -316,6 +317,11 @@ export default function CategoryPageClient({
                   <Search className="h-4 w-4" />
                   {isRequestOnlyCategoryPage ? "افتح صفحة الطلب" : "ملقتش المنتج؟ اطلبه من هنا"}
                 </Link>
+              </div>
+            ) : null}
+            {activeGroupOrderCode ? (
+              <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-black text-primary">
+                أنت تضيف الآن إلى طلب جماعي. أي منتج هتختاره هنا هيروح لنفس الرابط اللي شاركته مع أصحابك.
               </div>
             ) : null}
           </div>

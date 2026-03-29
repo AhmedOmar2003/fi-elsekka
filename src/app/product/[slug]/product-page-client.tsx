@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ProductCard } from "@/components/ui/product-card"
 import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
-import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Tag, Camera, Send, MessageSquare, X, Share2, Copy, MapPin, Banknote, Clock3 } from "lucide-react"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Tag, Camera, Send, MessageSquare, X, Share2, Copy, MapPin, Banknote, Clock3, Users } from "lucide-react"
 import { fetchProductDetails, fetchProductPurchaseCount, fetchRelatedProducts, Product } from "@/services/productsService"
 import { fetchProductReviews, calcReviewStats, createReview, updateReview, fetchUserProductReview, checkUserPurchased, checkUserReviewed, uploadReviewImage, Review, ReviewStats } from "@/services/reviewsService"
 import { useCart } from "@/contexts/CartContext"
@@ -19,6 +19,8 @@ import { getBundleItems, getBundleSummary, getProductMode, toProductCardProps } 
 import { getTaxonomyLabel, getTaxonomySelection } from "@/lib/category-taxonomy"
 import { getProductCatalogMetadata } from "@/lib/product-metadata"
 import { CURRENT_DELIVERY_FEE } from "@/lib/order-economics"
+import { addGroupOrderItem, createGroupOrder } from "@/services/groupOrdersService"
+import { getStoredGroupParticipant, saveStoredGroupParticipant } from "@/lib/group-order-session"
 
 function WhatsAppIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -77,8 +79,10 @@ export default function ProductPage({
 }) {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { addItem } = useCart()
   const { user } = useAuth()
+  const activeGroupOrderCode = searchParams.get("groupOrder")
 
   const [quantity, setQuantity] = React.useState(1)
   const [isAdded, setIsAdded] = React.useState(false)
@@ -102,10 +106,43 @@ export default function ProductPage({
 
   const handleAddToCart = async () => {
     if (dbProduct) {
-      await addItem(dbProduct.id, quantity, appliedDiscountPrice)
+      if (activeGroupOrderCode) {
+        const participant = getStoredGroupParticipant(activeGroupOrderCode)
+        if (!participant?.participantKey) {
+          toast.error("اكتب اسمك الأول داخل الطلب الجماعي قبل ما تضيف منتجات")
+          router.push(`/group-order/${activeGroupOrderCode}`)
+          return
+        }
+
+        await addGroupOrderItem(activeGroupOrderCode, participant.participantKey, dbProduct.id, quantity)
+        toast.success(`اتضاف "${dbProduct.name}" في الطلب الجماعي`)
+      } else {
+        await addItem(dbProduct.id, quantity, appliedDiscountPrice)
+      }
     }
     setIsAdded(true)
     setTimeout(() => setIsAdded(false), 2000)
+  }
+
+  const handleCreateGroupOrder = async () => {
+    if (!dbProduct) return
+    if (!user) {
+      toast.error("سجّل دخول الأول علشان تنشئ طلب جماعي")
+      router.push(`/login?redirect=${encodeURIComponent(`/product/${slugOrId}`)}`)
+      return
+    }
+
+    try {
+      const result = await createGroupOrder([{ productId: dbProduct.id, quantity }])
+      saveStoredGroupParticipant(result.code, {
+        participantKey: result.participantKey,
+        displayName: result.displayName,
+      })
+      toast.success("جهزنا لك رابط الطلب الجماعي، ابعته لأصحابك")
+      router.push(`/group-order/${result.code}`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "مقدرتش أنشئ الطلب الجماعي دلوقتي")
+    }
   }
 
   const handleBuyNow = async () => {
@@ -693,6 +730,12 @@ export default function ProductPage({
                 </p>
               )}
 
+              {activeGroupOrderCode && (
+                <div className="mb-5 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-black text-primary">
+                  أنت تضيف الآن إلى طلب جماعي، وكل إضافة هنا هتروح لنفس الرابط اللي شاركته مع أصحابك.
+                </div>
+              )}
+
               <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-surface-hover bg-surface/55 p-4">
                   <div className="mb-2 inline-flex rounded-xl bg-primary/10 p-2 text-primary">
@@ -913,14 +956,27 @@ export default function ProductPage({
                       {product.isRestaurantItem && !product.isRestaurantAvailable ? "غير متاح الآن" : "اخلص واشتري دلوقتي"}
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setIsShareSheetOpen(true)}
-                      className="mt-3 w-full h-12 rounded-2xl border border-primary/20 bg-primary/5 text-primary font-bold inline-flex items-center justify-center gap-2 hover:bg-primary/10 transition-colors"
-                    >
-                      <Share2 className="w-5 h-5" />
-                      شارك المنتج مع صحابك
-                    </button>
+                    <div className="mt-3 flex items-center gap-3">
+                      {!activeGroupOrderCode && (
+                        <button
+                          type="button"
+                          onClick={handleCreateGroupOrder}
+                          className="h-11 rounded-2xl border border-primary/20 bg-primary/5 px-4 text-sm font-bold text-primary inline-flex items-center justify-center gap-2 hover:bg-primary/10 transition-colors"
+                        >
+                          <Users className="w-4.5 h-4.5" />
+                          اطلب مع أصدقائك
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setIsShareSheetOpen(true)}
+                        className="h-11 w-11 shrink-0 rounded-2xl border border-primary/20 bg-primary/5 text-primary inline-flex items-center justify-center hover:bg-primary/10 transition-colors"
+                        aria-label="شارك المنتج"
+                      >
+                        <Share2 className="w-4.5 h-4.5" />
+                      </button>
+                    </div>
 
                     {/* Trust note */}
                     <p className="mt-4 text-center text-xs text-gray-500 flex items-center justify-center gap-1.5">
@@ -1336,45 +1392,56 @@ export default function ProductPage({
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-3">
-            {/* Add to Cart — green */}
+          <div className="space-y-3">
             <button
               onClick={handleAddToCart}
               className={[
-                "relative flex-1 h-14 rounded-2xl font-heading font-black text-base overflow-hidden transition-all duration-300 active:scale-[0.96] text-white",
+                "relative flex h-14 w-full rounded-2xl font-heading font-black text-base overflow-hidden transition-all duration-300 active:scale-[0.96] text-white",
                 isAdded
                   ? "bg-emerald-600 shadow-lg shadow-emerald-600/30"
                   : "bg-primary shadow-[0_6px_24px_rgba(16,185,129,0.4)]",
               ].join(" ")}
             >
-              <span className="flex items-center justify-center gap-2">
+              <span className="flex w-full items-center justify-center gap-2">
                 {isAdded ? <Check className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
                 {isAdded ? "تمت الإضافة ✔" : "أضف للسلة"}
               </span>
             </button>
 
-            {/* Buy Now — blue */}
             <button
               disabled={product.isRestaurantItem && !product.isRestaurantAvailable}
               onClick={handleBuyNow}
               className={[
-                "h-14 px-5 rounded-2xl font-heading font-black text-base text-white shadow-[0_6px_24px_rgba(59,130,246,0.35)] transition-all duration-300",
+                "h-14 w-full rounded-2xl font-heading font-black text-base text-white shadow-[0_6px_24px_rgba(59,130,246,0.35)] transition-all duration-300",
                 product.isRestaurantItem && !product.isRestaurantAvailable
                   ? "cursor-not-allowed bg-blue-600/45 opacity-60"
                   : "bg-blue-600 hover:bg-blue-700 active:scale-[0.96]",
               ].join(" ")}
             >
-              {product.isRestaurantItem && !product.isRestaurantAvailable ? "غير متاح" : "اشتري ⚡"}
+              {product.isRestaurantItem && !product.isRestaurantAvailable ? "غير متاح" : "اخلص واشتري دلوقتي"}
             </button>
 
-            <button
-              type="button"
-              onClick={() => setIsShareSheetOpen(true)}
-              className="h-14 w-14 shrink-0 rounded-2xl border border-primary/20 bg-primary/5 text-primary inline-flex items-center justify-center shadow-[0_6px_24px_rgba(16,185,129,0.12)] active:scale-[0.96] transition-all duration-300"
-              aria-label="شارك المنتج"
-            >
-              <Share2 className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-3">
+              {!activeGroupOrderCode && (
+                <button
+                  type="button"
+                  onClick={handleCreateGroupOrder}
+                  className="flex-1 h-11 rounded-2xl border border-primary/20 bg-primary/5 px-4 text-sm font-black text-primary inline-flex items-center justify-center gap-2 shadow-[0_6px_24px_rgba(16,185,129,0.12)] active:scale-[0.96] transition-all duration-300"
+                >
+                  <Users className="w-4.5 h-4.5" />
+                  اطلب مع أصدقائك
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={handleNativeShare}
+                className="h-11 w-11 shrink-0 rounded-2xl border border-primary/20 bg-primary/5 text-primary inline-flex items-center justify-center shadow-[0_6px_24px_rgba(16,185,129,0.12)] active:scale-[0.96] transition-all duration-300"
+                aria-label="شارك المنتج"
+              >
+                <Share2 className="w-4.5 h-4.5" />
+              </button>
+            </div>
           </div>
 
         </div>

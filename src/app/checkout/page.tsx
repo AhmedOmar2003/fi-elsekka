@@ -32,6 +32,8 @@ import {
 } from "@/lib/text-category-orders"
 import { RequestAttachmentsGallery } from "@/components/orders/request-attachments-gallery"
 import { getBundleItemCount, getBundleItems } from "@/lib/product-presentation"
+import { fetchGroupOrder, finalizeGroupOrder, type GroupOrderView } from "@/services/groupOrdersService"
+import { clearStoredGroupParticipant, getStoredGroupParticipant } from "@/lib/group-order-session"
 
 function CheckoutContent() {
    const router = useRouter()
@@ -42,11 +44,14 @@ function CheckoutContent() {
    const buyNowPriceRaw = searchParams.get("price")
    const requestMode = searchParams.get("requestMode")
    const textCategoryId = searchParams.get("categoryId")
+   const groupOrderCode = searchParams.get("groupOrder")
 
    const [overrideProduct, setOverrideProduct] = React.useState<Product | null>(null)
    const [isOverrideLoading, setIsOverrideLoading] = React.useState(!!buyNowId)
    const [textRequestDraft, setTextRequestDraft] = React.useState<TextCategoryOrderDraft | null>(null)
    const [isTextRequestLoading, setIsTextRequestLoading] = React.useState(requestMode === TEXT_CATEGORY_ORDER_MODE)
+   const [groupOrder, setGroupOrder] = React.useState<GroupOrderView | null>(null)
+   const [isGroupOrderLoading, setIsGroupOrderLoading] = React.useState(!!groupOrderCode)
 
    React.useEffect(() => {
       if (buyNowId) {
@@ -68,11 +73,44 @@ function CheckoutContent() {
       setIsTextRequestLoading(false)
    }, [requestMode, textCategoryId])
 
+   React.useEffect(() => {
+      if (!groupOrderCode) {
+         setGroupOrder(null)
+         setIsGroupOrderLoading(false)
+         return
+      }
+
+      let isActive = true
+      setIsGroupOrderLoading(true)
+
+      fetchGroupOrder(groupOrderCode, getStoredGroupParticipant(groupOrderCode)?.participantKey)
+         .then((data) => {
+            if (isActive) {
+               setGroupOrder(data)
+            }
+         })
+         .catch((error) => {
+            if (isActive) {
+               setErrorMsg(error instanceof Error ? error.message : "مقدرناش نجهز الطلب الجماعي دلوقتي.")
+            }
+         })
+         .finally(() => {
+            if (isActive) {
+               setIsGroupOrderLoading(false)
+            }
+         })
+
+      return () => {
+         isActive = false
+      }
+   }, [groupOrderCode])
+
    const { user, profile, isLoading: isAuthLoading } = useAuth()
    const cart = useCart()
    
    const isUsingOverride = !!(buyNowId && overrideProduct)
    const isTextRequestCheckout = requestMode === TEXT_CATEGORY_ORDER_MODE
+   const isGroupOrderCheckout = !!groupOrderCode
    const textRequestCategoryConfig = React.useMemo(
       () => getTextRequestCategoryConfig(textRequestDraft?.categoryName),
       [textRequestDraft?.categoryName]
@@ -89,7 +127,30 @@ function CheckoutContent() {
          : (textRequestHasText || textRequestHasImages)
    }, [isTextRequestCheckout, textRequestCategoryConfig, textRequestDraft?.requestText, textRequestHasImages, textRequestHasText])
 
-   const displayItems = isUsingOverride ? [{
+   const groupOrderDisplayItems = React.useMemo(() => {
+      if (!groupOrder) return []
+      return groupOrder.itemGroups.flatMap((group) =>
+         group.items.map((item) => ({
+            id: item.id,
+            product_id: item.productId,
+            quantity: item.quantity,
+            applied_price: item.unitPrice,
+            participantName: group.displayName,
+            product: item.product
+               ? {
+                  id: item.product.id,
+                  name: item.product.name,
+                  price: item.product.price,
+                  image_url: item.product.image_url || undefined,
+                  discount_percentage: item.product.discount_percentage || undefined,
+                  specifications: item.product.specifications || undefined,
+               }
+               : undefined,
+         }))
+      )
+   }, [groupOrder])
+
+   const displayItems = isGroupOrderCheckout ? groupOrderDisplayItems : isUsingOverride ? [{
       id: "override-item",
       product_id: overrideProduct.id,
       quantity: parseInt(buyNowQtyRaw || "1", 10),
@@ -100,7 +161,15 @@ function CheckoutContent() {
    let displayCartOriginal = cart.cartOriginalTotal;
    let displayDiscount = cart.cartDiscountTotal;
 
-   if (isUsingOverride && overrideProduct) {
+   if (isGroupOrderCheckout && groupOrder) {
+      displayCartTotal = groupOrder.totalAmount;
+      displayCartOriginal = groupOrder.itemGroups.reduce(
+         (sum, group) =>
+            sum + group.items.reduce((groupSum, item) => groupSum + (Number(item.product?.price || item.unitPrice) * item.quantity), 0),
+         0
+      );
+      displayDiscount = Math.max(0, displayCartOriginal - displayCartTotal);
+   } else if (isUsingOverride && overrideProduct) {
       const qty = parseInt(buyNowQtyRaw || "1", 10)
       displayCartOriginal = overrideProduct.price * qty;
       
@@ -114,7 +183,7 @@ function CheckoutContent() {
       displayDiscount = displayCartOriginal - displayCartTotal;
    }
 
-   const isCartLoading = (isTextRequestCheckout ? false : cart.isLoading) || isOverrideLoading || isTextRequestLoading
+   const isCartLoading = (isTextRequestCheckout || isGroupOrderCheckout ? false : cart.isLoading) || isOverrideLoading || isTextRequestLoading || isGroupOrderLoading
 
    const [isSubmitting, setIsSubmitting] = React.useState(false)
    const [errorMsg, setErrorMsg] = React.useState("")
@@ -159,6 +228,19 @@ function CheckoutContent() {
    const submitOrder = async () => {
       if (!user) return
       if (!isTextRequestCheckout && displayItems.length === 0) return
+      if (isGroupOrderCheckout && !groupOrder) {
+         setErrorMsg("مقدرناش نجهز الطلب الجماعي دلوقتي، جرّب تفتح الرابط مرة تانية.")
+         return
+      }
+      const activeGroupOrder = groupOrder
+      if (isGroupOrderCheckout && !activeGroupOrder?.viewer.isHost) {
+         setErrorMsg("صاحب الطلب فقط هو اللي يقدر يؤكد الطلب الجماعي.")
+         return
+      }
+      if (isGroupOrderCheckout && activeGroupOrder?.groupOrder.status !== "open") {
+         setErrorMsg("الطلب الجماعي ده متأكد بالفعل ومبقاش متاح للتعديل.")
+         return
+      }
       if (isTextRequestCheckout && !canSubmitTextRequest) {
          setErrorMsg("كمّل طلبك الأول بالنص أو الصور وبعدين ابعته.")
          return
@@ -169,7 +251,17 @@ function CheckoutContent() {
       const shippingDetails = {
          recipient: `${firstName} ${lastName}`,
          phone, city, area, street: address, notes,
-         is_grace_period: !isTextRequestCheckout,
+         is_grace_period: !isTextRequestCheckout && !isGroupOrderCheckout,
+         ...(isGroupOrderCheckout ? {
+            group_order: true,
+            group_order_code: activeGroupOrder?.groupOrder.code,
+            group_order_participants: activeGroupOrder?.participants.map((participant) => ({
+               id: participant.id,
+               display_name: participant.displayName,
+               is_host: participant.isHost,
+            })) || [],
+            group_order_items_count: activeGroupOrder?.totalItems || 0,
+         } : {}),
          ...(isTextRequestCheckout ? {
             request_mode: 'custom_category_text',
             custom_request_text: textRequestDraft?.requestText?.trim(),
@@ -183,7 +275,9 @@ function CheckoutContent() {
          } : {}),
       }
 
-      const { data: newOrder, error } = await createOrder(user.id, displayItems, shippingDetails, displayCartTotal)
+      const { data: newOrder, error } = await createOrder(user.id, displayItems, shippingDetails, displayCartTotal, {
+         clearCartAfterOrder: !isUsingOverride && !isTextRequestCheckout && !isGroupOrderCheckout,
+      })
       setIsSubmitting(false)
 
       if (error) {
@@ -193,6 +287,15 @@ function CheckoutContent() {
 
       if (isTextRequestCheckout && textCategoryId) {
          clearTextCategoryOrderDraft(textCategoryId)
+      }
+
+      if (isGroupOrderCheckout && groupOrderCode && newOrder?.id) {
+         try {
+            await finalizeGroupOrder(groupOrderCode, newOrder.id)
+            clearStoredGroupParticipant(groupOrderCode)
+         } catch (groupOrderError) {
+            console.error('Failed to finalize group order:', groupOrderError)
+         }
       }
 
       // Save or update their delivery address for next time
@@ -208,12 +311,14 @@ function CheckoutContent() {
       const orderedProductIds = Array.from(
          new Set(displayItems.map((item) => item.product_id).filter((productId): productId is string => !!productId))
       )
-      const appliedCodes = getAppliedDiscountCodesForProducts(orderedProductIds)
-      if (appliedCodes.length > 0 && user) {
-         await Promise.all(appliedCodes.map((appliedCode) => incrementDiscountCodeUsage(appliedCode, user.id)))
-         clearAppliedDiscountCodesForProducts(orderedProductIds)
-      } else {
-         clearLegacyAppliedDiscountCode()
+      if (!isGroupOrderCheckout) {
+         const appliedCodes = getAppliedDiscountCodesForProducts(orderedProductIds)
+         if (appliedCodes.length > 0 && user) {
+            await Promise.all(appliedCodes.map((appliedCode) => incrementDiscountCodeUsage(appliedCode, user.id)))
+            clearAppliedDiscountCodesForProducts(orderedProductIds)
+         } else {
+            clearLegacyAppliedDiscountCode()
+         }
       }
 
       if (isSearchRequestCheckout) {
@@ -263,10 +368,10 @@ function CheckoutContent() {
                <p className="text-gray-400 max-w-sm mb-8">علشان تكمّل طلبك وتحفظ عناوينك، ادخل بحسابك الأول.</p>
                <div className="flex flex-col sm:flex-row gap-3">
                   <Button size="lg" className="rounded-xl px-10 font-bold text-lg shadow-primary/20 shadow-lg" asChild>
-                     <Link href="/login?redirect=/checkout">تسجيل الدخول</Link>
+                     <Link href={`/login?redirect=${encodeURIComponent(groupOrderCode ? `/checkout?groupOrder=${groupOrderCode}` : '/checkout')}`}>تسجيل الدخول</Link>
                   </Button>
                   <Button size="lg" variant="outline" className="rounded-xl px-10 font-bold text-lg" asChild>
-                     <Link href="/register?redirect=/checkout">إنشاء حساب</Link>
+                     <Link href={`/register?redirect=${encodeURIComponent(groupOrderCode ? `/checkout?groupOrder=${groupOrderCode}` : '/checkout')}`}>إنشاء حساب</Link>
                   </Button>
                </div>
             </main>
@@ -326,6 +431,16 @@ function CheckoutContent() {
             <div className="bg-surface border-b border-surface-hover py-4 md:py-6">
                <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
                   <h1 className="text-xl md:text-2xl font-black text-foreground">كمّل طلبك</h1>
+                  {isGroupOrderCheckout && groupOrder && (
+                     <p className="mt-2 text-sm font-bold text-primary">
+                        أنت بتأكد الآن طلبًا جماعيًا شارك فيه {groupOrder.participants.length} أشخاص.
+                     </p>
+                  )}
+                  {isGroupOrderCheckout && groupOrder && !groupOrder.viewer.isHost && (
+                     <p className="mt-2 text-sm font-bold text-amber-500">
+                        أنت مشارك فقط، وصاحب الطلب هو الوحيد اللي يقدر يكمل التأكيد النهائي.
+                     </p>
+                  )}
                </div>
             </div>
 
@@ -463,6 +578,9 @@ function CheckoutContent() {
                                     <span className="font-heading font-black text-gray-500 w-5 pt-0.5">{item.quantity}x</span>
                                     <div>
                                        <span className="text-foreground line-clamp-1 font-medium">{item.product?.name || "منتج"}</span>
+                                       {'participantName' in item && item.participantName ? (
+                                          <p className="mt-1 text-[11px] font-black text-primary">إضافة: {item.participantName}</p>
+                                       ) : null}
                                        {getBundleItemCount(item.product?.specifications) > 0 && (
                                           <div className="mt-1 space-y-1.5">
                                              <div className="flex flex-wrap items-center gap-2">
@@ -566,14 +684,14 @@ function CheckoutContent() {
                               type="submit"
                               size="lg"
                               className="h-14 w-full rounded-xl text-lg font-bold"
-                              disabled={isSubmitting || (!isTextRequestCheckout && displayItems.length === 0) || (isTextRequestCheckout && !canSubmitTextRequest)}
+                              disabled={isSubmitting || (!isTextRequestCheckout && displayItems.length === 0) || (isTextRequestCheckout && !canSubmitTextRequest) || (isGroupOrderCheckout && !groupOrder?.viewer.isHost)}
                            >
                               {isSubmitting ? (
                                  <div className="flex items-center gap-2">
                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                     {isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'بنبعت طلب التسعير...' : 'بنبعت طلب البحث...') : 'بنكمل التأكيد...'}
                                  </div>
-                              ) : (isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'إرسال طلب التسعير' : 'ابعت طلب بحث') : 'تأكيد الطلب')}
+                              ) : (isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'إرسال طلب التسعير' : 'ابعت طلب بحث') : (isGroupOrderCheckout ? 'تأكيد الطلب الجماعي' : 'تأكيد الطلب'))}
                            </Button>
 
                            <p className="mt-4 text-xs text-center text-gray-500">
@@ -581,7 +699,9 @@ function CheckoutContent() {
                                  ? (isPharmacyTextRequestCheckout
                                     ? 'بمجرد ما تبعت طلب الصيدلية، هنراجعه ونبعتلك السعر وبعدها أنت اللي تقرر.'
                                     : 'بمجرد ما تبعت طلب البحث، هنبدأ ندور عليه ونبلغك من صفحة حسابك أول ما نلاقيه.')
-                                 : 'بمجرد ما تضغط تأكيد الطلب، إحنا هنبدأ نجهزهولك على طول.'}
+                                 : (isGroupOrderCheckout
+                                    ? 'بمجرد ما تؤكد الطلب الجماعي، هيتحول لطلب واحد ويتقفل الرابط على أي تعديل جديد.'
+                                    : 'بمجرد ما تضغط تأكيد الطلب، إحنا هنبدأ نجهزهولك على طول.')}
                            </p>
                         </div>
                      </div>
@@ -611,20 +731,20 @@ function CheckoutContent() {
                   </p>
                </div>
 
-               <Button
-                  form="checkout-form"
-                  type="submit"
-                  size="lg"
-                  className="h-14 w-full rounded-2xl text-base font-black shadow-primary/20 shadow-lg"
-                  disabled={isSubmitting || (!isTextRequestCheckout && displayItems.length === 0) || (isTextRequestCheckout && !canSubmitTextRequest)}
-               >
-                  {isSubmitting ? (
-                     <div className="flex items-center gap-2">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
-                        {isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'بنبعت طلب التسعير...' : 'بنبعت طلب البحث...') : 'بنكمل التأكيد...'}
-                     </div>
-                  ) : (isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'إرسال طلب التسعير' : 'ابعت طلب بحث') : 'تأكيد الطلب')}
-               </Button>
+                <Button
+                   form="checkout-form"
+                   type="submit"
+                   size="lg"
+                   className="h-14 w-full rounded-2xl text-base font-black shadow-primary/20 shadow-lg"
+                   disabled={isSubmitting || (!isTextRequestCheckout && displayItems.length === 0) || (isTextRequestCheckout && !canSubmitTextRequest) || (isGroupOrderCheckout && !groupOrder?.viewer.isHost)}
+                >
+                   {isSubmitting ? (
+                      <div className="flex items-center gap-2">
+                         <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+                         {isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'بنبعت طلب التسعير...' : 'بنبعت طلب البحث...') : 'بنكمل التأكيد...'}
+                      </div>
+                   ) : (isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'إرسال طلب التسعير' : 'ابعت طلب بحث') : (isGroupOrderCheckout ? 'تأكيد الطلب الجماعي' : 'تأكيد الطلب'))}
+                </Button>
             </div>
          </div>
          <Footer />
