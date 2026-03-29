@@ -21,7 +21,7 @@ export const APP_SETTINGS_UPDATED_EVENT = 'fi-elsekka:app-settings-updated';
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   siteName: 'في السكة',
-  siteTagline: 'بالسكة الصح',
+  siteTagline: 'طلباتك ماشية معاك من غير لف',
   supportPhone: '',
   supportEmail: '',
   supportWhatsApp1: '',
@@ -86,7 +86,7 @@ export function getSupportWhatsAppEntries(settings?: Partial<AppSettings> | null
 
       return {
         id: `whatsapp-${index + 1}`,
-        label: index === 0 ? 'تواصل معنا على الواتساب' : `واتساب إضافي ${index}`,
+        label: index === 0 ? 'كلمنا على الواتساب' : `واتساب إضافي ${index}`,
         value: toWhatsAppDisplayValue(trimmed),
         href: toWhatsAppHref(trimmed),
       };

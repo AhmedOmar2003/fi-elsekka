@@ -49,7 +49,7 @@ export default function GroupOrderPage() {
         clearStoredGroupParticipant(code)
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "تعذر تحميل الطلب الجماعي")
+      toast.error(error instanceof Error ? error.message : "مقدرناش نفتح الطلب الجماعي دلوقتي")
     } finally {
       setIsLoading(false)
     }
@@ -106,7 +106,7 @@ export default function GroupOrderPage() {
     event.preventDefault()
     if (!code) return
     if (!displayName.trim()) {
-      toast.error("اكتب اسمك الأول علشان نميز إضافاتك في الطلب")
+      toast.error("اكتب اسمك علشان نعرف المنتجات دي بتاعة مين")
       return
     }
 
@@ -118,7 +118,7 @@ export default function GroupOrderPage() {
         displayName: result.displayName,
       })
       setDisplayName(result.displayName)
-      toast.success(`أهلاً يا ${result.displayName}، الطلب الجماعي بقى جاهز ليك`)
+      toast.success(`أهلاً يا ${result.displayName}، تقدر تضيف طلبك دلوقتي`)
       await loadGroupOrder()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "مقدرتش أدخلك الطلب الجماعي دلوقتي")
@@ -132,7 +132,7 @@ export default function GroupOrderPage() {
     setCopying(true)
     try {
       await navigator.clipboard.writeText(shareUrl)
-      toast.success("تم نسخ الرابط، ابعته لأصحابك بسهولة")
+      toast.success("اتنسخ الرابط، ابعته لأصحابك على طول")
     } catch {
       toast.error("مقدرتش أنسخ الرابط دلوقتي")
     } finally {
@@ -150,7 +150,7 @@ export default function GroupOrderPage() {
         router.push(`/category/all?groupOrder=${code}`)
       })
       .catch((error) => {
-        toast.error(error instanceof Error ? error.message : "مقدرتش أجهز الإضافة للطلب الجماعي")
+          toast.error(error instanceof Error ? error.message : "مقدرتش أجهز الإضافة للطلب الجماعي دلوقتي")
       })
   }
 
@@ -191,7 +191,7 @@ export default function GroupOrderPage() {
                 <div>
                   <h1 className="text-3xl font-black text-foreground">اطلب مع أصدقائك</h1>
                   <p className="mt-2 max-w-2xl text-sm leading-7 text-gray-400">
-                    أنشئ رابط وشاركه، وكل شخص يضيف طلبه بسهولة، وفي الآخر صاحب الطلب بس هو اللي يؤكد الطلب النهائي.
+                    اعمل رابط وابعتُه لأصحابك، وكل واحد يضيف طلبه بسهولة، وفي الآخر صاحب الطلب بس هو اللي يأكد الطلب كله.
                   </p>
                 </div>
               </div>
@@ -199,7 +199,7 @@ export default function GroupOrderPage() {
               {groupOrder ? (
                 <div className="inline-flex items-center rounded-full border border-surface-hover bg-background px-4 py-2 text-sm font-black text-foreground">
                   {groupOrder.groupOrder.status === "open"
-                    ? "الطلب مفتوح للإضافة"
+                    ? "الطلب لسه مفتوح للإضافة"
                     : groupOrder.groupOrder.status === "confirmed"
                       ? "تم تأكيد الطلب"
                       : "تم إلغاء الطلب"}
@@ -209,10 +209,10 @@ export default function GroupOrderPage() {
 
             <div className="mt-6 grid gap-4 lg:grid-cols-[1.3fr,0.9fr]">
               <div className="rounded-[1.75rem] border border-surface-hover bg-background/70 p-5">
-                <p className="text-sm font-black text-foreground">رابط المشاركة</p>
+                <p className="text-sm font-black text-foreground">رابط الطلب</p>
                 <div className="mt-3 flex flex-col gap-3 sm:flex-row">
                   <div className="flex-1 rounded-2xl border border-surface-hover bg-surface px-4 py-3 text-sm font-medium text-gray-300">
-                    {shareUrl || "جارٍ تجهيز الرابط..."}
+                    {shareUrl || "بنجهز الرابط..."}
                   </div>
                   <Button type="button" className="h-12 rounded-2xl px-5 font-black" onClick={handleCopy}>
                     {copying ? (
@@ -220,7 +220,7 @@ export default function GroupOrderPage() {
                     ) : (
                       <>
                         <Copy className="ml-2 h-4 w-4" />
-                        انسخ الرابط وشاركه
+                        انسخ الرابط وابعتُه
                       </>
                     )}
                   </Button>
@@ -241,7 +241,7 @@ export default function GroupOrderPage() {
                       </span>
                     ))
                   ) : (
-                    <span className="text-sm text-gray-500">لسه مفيش مشاركين غيرك</span>
+                    <span className="text-sm text-gray-500">لسه محدش دخل غيرك</span>
                   )}
                 </div>
               </div>
@@ -258,7 +258,7 @@ export default function GroupOrderPage() {
                       className="h-12 rounded-2xl bg-surface"
                     />
                     <Button type="submit" className="h-12 rounded-2xl px-5 font-black" disabled={isJoining}>
-                      {isJoining ? "جارٍ الدخول..." : "ابدأ الإضافة"}
+                      {isJoining ? "بندخلك دلوقتي..." : "ابدأ الإضافة"}
                     </Button>
                   </div>
                 </LabelBlock>
@@ -267,7 +267,7 @@ export default function GroupOrderPage() {
 
             {groupOrder?.groupOrder.status === "confirmed" ? (
               <div className="mt-6 rounded-[1.75rem] border border-primary/20 bg-primary/10 p-5 text-sm font-bold text-primary">
-                تم تأكيد هذا الطلب، ولم يعد متاحًا للتعديل.
+                الطلب ده اتأكد خلاص، ومبقاش متاح يتعدل.
                 {groupOrder.groupOrder.finalOrderId ? (
                   <Link href={`/order-success?orderId=${groupOrder.groupOrder.finalOrderId}`} className="mr-2 underline">
                     شوف الطلب النهائي
@@ -280,7 +280,7 @@ export default function GroupOrderPage() {
               <div className="space-y-4">
                 {isLoading ? (
                   <div className="rounded-[1.75rem] border border-surface-hover bg-background/70 p-8 text-center text-gray-500">
-                    جارٍ تحميل الطلب الجماعي...
+                    بنحمّل الطلب الجماعي...
                   </div>
                 ) : groupOrder && groupOrder.itemGroups.length > 0 ? (
                   groupOrder.itemGroups.map((group) => (
@@ -352,7 +352,7 @@ export default function GroupOrderPage() {
                   <div className="rounded-[1.75rem] border border-dashed border-surface-hover bg-background/70 p-8 text-center">
                     <ShoppingCart className="mx-auto h-8 w-8 text-gray-500" />
                     <p className="mt-3 text-base font-black text-foreground">لسه الطلب الجماعي فاضي</p>
-                    <p className="mt-2 text-sm text-gray-500">شارك الرابط أو ابدأ أنت وأضاف أول منتجات.</p>
+                    <p className="mt-2 text-sm text-gray-500">ابعت الرابط لصحابك أو ابدأ أنت وضيف أول منتجات.</p>
                   </div>
                 )}
               </div>
@@ -391,14 +391,14 @@ export default function GroupOrderPage() {
                       </Button>
                     ) : (
                       <div className="rounded-2xl border border-surface-hover bg-surface px-4 py-3 text-sm font-bold text-gray-400">
-                        صاحب الطلب فقط هو اللي يقدر يؤكد الطلب النهائي.
+                        صاحب الطلب بس هو اللي يقدر يأكد الطلب النهائي.
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="rounded-[1.75rem] border border-primary/20 bg-primary/10 p-5 text-sm font-bold text-primary">
                     <Lock className="mb-3 h-5 w-5" />
-                    تم قفل الطلب الجماعي بعد التأكيد.
+                    الطلب الجماعي اتقفل بعد التأكيد.
                   </div>
                 )}
               </div>

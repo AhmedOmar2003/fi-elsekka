@@ -21,7 +21,7 @@ export default function ContactPage() {
     setIsSubmitting(true)
     setTimeout(() => {
       setIsSubmitting(false)
-      alert("تم إرسال رسالتك بنجاح! هنتواصل معاك في أقرب وقت.")
+      alert("وصلتنا رسالتك، وهنرد عليك في أقرب وقت.")
     }, 1500)
   }
 
@@ -32,9 +32,9 @@ export default function ContactPage() {
         
         <div className="bg-surface border-b border-surface-hover py-12 md:py-16">
            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-              <h1 className="text-3xl md:text-4xl font-black text-foreground mb-4">كلمنا، إحنا دايماً في الخدمة</h1>
+              <h1 className="text-3xl md:text-4xl font-black text-foreground mb-4">كلمنا، وإحنا معاك</h1>
               <p className="text-gray-500 max-w-2xl mx-auto">
-                 عندك استفسار؟ مشكلة في طلبك؟ أو حتى اقتراح لينا؟ ماتترددش تبعتلنا، فريق الدعم موجود عشان يسمعك ويرد عليك.
+                 عندك سؤال؟ في حاجة واقفة معاك في الطلب؟ أو حتى عندك اقتراح؟ ابعتلنا على طول، وإحنا هنسمعك ونرد عليك.
               </p>
            </div>
         </div>
@@ -59,7 +59,7 @@ export default function ContactPage() {
                                  {settings.supportEmail}
                                </a>
                              ) : (
-                               <p className="text-gray-500 mt-1">هنضيف إيميل الدعم هنا أول ما يتفعل.</p>
+                             <p className="text-gray-500 mt-1">أول ما نفعّل إيميل الدعم هتلاقيه ظاهر هنا.</p>
                              )}
                           </div>
                        </div>
@@ -75,9 +75,9 @@ export default function ContactPage() {
                                  {settings.supportPhone}
                                </a>
                              ) : (
-                               <p className="text-gray-500 mt-1">لما تضيف رقم الدعم من الإعدادات هيظهر هنا تلقائيًا.</p>
+                               <p className="text-gray-500 mt-1">أول ما تضيف رقم الدعم من الإعدادات هيظهر هنا على طول.</p>
                              )}
-                             <p className="text-xs text-emerald-500 mt-1">ضيف الرقم وقت ما تكون جاهز، والموقع هيحدث نفسه.</p>
+                             <p className="text-xs text-emerald-500 mt-1">ضيف الرقم وقت ما تحب، والموقع هيتحدّث لوحده.</p>
                           </div>
                        </div>
 
@@ -97,11 +97,11 @@ export default function ContactPage() {
                                    className="inline-flex items-center gap-2 rounded-full border border-emerald-500/15 bg-emerald-500/8 px-3 py-2 text-sm font-bold text-emerald-500 transition-colors hover:bg-emerald-500/12"
                                  >
                                    <WhatsAppIcon className="w-4 h-4" />
-                                   <span>تواصل معنا على الواتساب</span>
+                                   <span>كلمنا على الواتساب</span>
                                  </a>
                                ))
                              ) : (
-                               <p className="text-gray-500">لما تضيف أرقام أو روابط الواتساب من الإعدادات هتظهر هنا فورًا.</p>
+                               <p className="text-gray-500">أول ما تضيف أرقام أو روابط الواتساب من الإعدادات هتظهر هنا فورًا.</p>
                              )}
                           </div>
                        </div>
@@ -109,8 +109,8 @@ export default function ContactPage() {
                  </div>
 
                  <div className="bg-surface border border-surface-hover rounded-3xl p-6">
-                    <h3 className="font-bold text-foreground mb-2">عندك سؤال سريع؟</h3>
-                    <p className="text-sm text-gray-500 mb-4">ممكن تلاقي إجابة سؤالك جاهزة في صفحة الأسئلة الشائعة، من غير ما تستنى.</p>
+                    <h3 className="font-bold text-foreground mb-2">عاوز إجابة سريعة؟</h3>
+                    <p className="text-sm text-gray-500 mb-4">ممكن تلاقي إجابة سؤالك جاهزة في صفحة الأسئلة الشائعة من غير ما تستنى رد.</p>
                     <Button variant="outline" className="w-full" asChild>
                        <Link href="/faq">
                           شوف الأسئلة الشائعة
@@ -121,7 +121,7 @@ export default function ContactPage() {
 
               {/* Contact Form */}
               <div className="bg-surface border border-surface-hover rounded-3xl p-8 shadow-xl">
-                 <h2 className="text-2xl font-bold text-foreground mb-6">ابعتلنا رسالة</h2>
+                 <h2 className="text-2xl font-bold text-foreground mb-6">ابعتلنا رسالتك</h2>
                  <form onSubmit={handleSubmit} className="space-y-5">
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -141,18 +141,18 @@ export default function ContactPage() {
                     </div>
                     
                     <div className="space-y-2">
-                       <Label htmlFor="message">رسالتك بتفصيل</Label>
+                      <Label htmlFor="message">اكتب اللي حابب تقوله</Label>
                        <textarea 
                          id="message" 
                          required 
                          rows={5} 
                          className="flex w-full rounded-xl border border-surface-hover bg-surface px-4 py-3 text-sm text-foreground transition-colors placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-transparent custom-scrollbar resize-none"
-                         placeholder="اكتب رسالتك أو مشكلتك هنا بوضوح..."
+                         placeholder="اكتب مشكلتك أو سؤالك هنا براحتك..."
                        ></textarea>
                     </div>
 
                     <Button type="submit" size="lg" className="w-full text-lg font-bold rounded-xl mt-4 h-14" isLoading={isSubmitting}>
-                       إرسال الرسالة
+                       ابعت الرسالة
                     </Button>
                  </form>
               </div>

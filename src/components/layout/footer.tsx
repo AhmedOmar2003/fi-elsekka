@@ -38,7 +38,7 @@ export function Footer() {
     .map((name) => categories.find((category) => category.name === name))
     .filter((category): category is (typeof categories)[number] => !!category)
   const whatsappEntries = getSupportWhatsAppEntries(settings)
-  const siteTagline = settings.siteTagline || "صاحبك الجدع في الطلبات."
+  const siteTagline = settings.siteTagline || "طلباتك ماشية معاك من غير لف."
 
   return (
     <footer className="mt-auto w-full px-2 pb-20 pt-16 md:px-4 md:pb-12">
@@ -66,8 +66,8 @@ export function Footer() {
               {siteTagline}
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary">توصيل أسرع</span>
-              <span className="inline-flex items-center rounded-full border border-white/8 bg-white/6 px-3 py-1.5 text-xs font-bold text-white/82">دفع عند الاستلام</span>
+              <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary">توصيل سريع</span>
+              <span className="inline-flex items-center rounded-full border border-white/8 bg-white/6 px-3 py-1.5 text-xs font-bold text-white/82">ادفع وقت الاستلام</span>
             </div>
             {(settings.supportEmail || settings.supportPhone || whatsappEntries.length > 0) && (
               <div className="mt-5 space-y-2 text-sm text-white/70">
@@ -113,7 +113,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-4 text-base font-black text-white">خلينا في ظهرك</h4>
+            <h4 className="mb-4 text-base font-black text-white">خليك مطمن</h4>
             <ul className="font-heading space-y-2 text-sm text-white/62">
               <li><Link href="/about" className="inline-flex rounded-full px-2 py-1 hover:bg-white/6 hover:text-white transition-colors">احنا مين</Link></li>
               <li><Link href="/faq" className="inline-flex rounded-full px-2 py-1 hover:bg-white/6 hover:text-white transition-colors">الأسئلة الشائعة</Link></li>
@@ -124,7 +124,7 @@ export function Footer() {
           </div>
 
           <div className="md:col-span-1">
-             <h4 className="mb-4 text-base font-black text-white">الدفع عند الاستلام</h4>
+             <h4 className="mb-4 text-base font-black text-white">ادفع وقت الاستلام</h4>
              <div className="rounded-[28px] border border-white/8 bg-white/[0.04] p-4 shadow-[var(--shadow-material-2)] backdrop-blur-sm">
                <div className="flex items-center gap-3">
                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary">
@@ -132,7 +132,7 @@ export function Footer() {
                </div>
                <div>
                   <p className="font-heading text-sm font-bold text-white">ادفع وإنت مطمن</p>
-                  <p className="text-xs text-white/58">كل طلباتنا بتدفعها كاش وقت الاستلام</p>
+                  <p className="text-xs text-white/58">كل طلباتنا بتدفعها كاش وقت ما تستلم</p>
                </div>
                </div>
              </div>
