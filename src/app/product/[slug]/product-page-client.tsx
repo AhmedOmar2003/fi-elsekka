@@ -733,6 +733,32 @@ export default function ProductPage({
                 </div>
               )}
 
+              <div className="mb-5 flex items-center justify-between gap-2 md:hidden">
+                {!activeGroupOrderCode ? (
+                  <button
+                    type="button"
+                    onClick={handleCreateGroupOrder}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-primary/15 bg-primary/5 px-4 text-xs font-black text-primary transition-colors active:scale-[0.97]"
+                  >
+                    <Users className="h-4 w-4" />
+                    طلب جماعي
+                  </button>
+                ) : (
+                  <span className="inline-flex h-10 items-center rounded-2xl border border-primary/15 bg-primary/5 px-4 text-xs font-black text-primary">
+                    الطلب الجماعي شغال
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleNativeShare}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/5 text-primary transition-colors active:scale-[0.97]"
+                  aria-label="شارك المنتج"
+                >
+                  <Share2 className="h-4.5 w-4.5" />
+                </button>
+              </div>
+
               <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-surface-hover bg-surface/55 p-4">
                   <div className="mb-2 inline-flex rounded-xl bg-primary/10 p-2 text-primary">
@@ -1354,7 +1380,7 @@ export default function ProductPage({
         {/* Gradient depth */}
         <div className="h-6 bg-gradient-to-t from-background to-transparent pointer-events-none" />
 
-        <div className="bg-background backdrop-blur-2xl border-t border-surface-hover px-4 pt-3 pb-7 shadow-[0_-12px_40px_rgba(0,0,0,0.5)]">
+        <div className="bg-background backdrop-blur-2xl border-t border-surface-hover px-4 pt-3 pb-5 shadow-[0_-12px_40px_rgba(0,0,0,0.5)]">
 
           {/* Price + qty row */}
           <div className="flex items-center justify-between mb-3 px-1">
@@ -1413,29 +1439,6 @@ export default function ProductPage({
                 {product.isRestaurantItem && !product.isRestaurantAvailable ? "غير متاح" : "اخلص واشتري دلوقتي"}
               </button>
 
-              <div className="flex items-center justify-between gap-2 pt-1">
-                {!activeGroupOrderCode && (
-                  <button
-                    type="button"
-                    onClick={handleCreateGroupOrder}
-                    className="h-10 rounded-2xl border border-primary/15 bg-primary/5 px-4 text-xs font-black text-primary inline-flex items-center justify-center gap-2 active:scale-[0.96] transition-all duration-300"
-                  >
-                    <Users className="w-4.5 h-4.5" />
-                    طلب جماعي
-                  </button>
-                )}
-
-                <div className="ms-auto flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleNativeShare}
-                    className="h-10 w-10 shrink-0 rounded-2xl border border-primary/15 bg-primary/5 text-primary inline-flex items-center justify-center active:scale-[0.96] transition-all duration-300"
-                    aria-label="شارك المنتج"
-                  >
-                    <Share2 className="w-4.5 h-4.5" />
-                  </button>
-                </div>
-              </div>
             </div>
 
         </div>

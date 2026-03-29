@@ -386,6 +386,7 @@ export function Header() {
   const userDisplayName = profile?.full_name || user?.email?.split('@')[0] || "حسابي"
   const userInitial = userDisplayName.trim().charAt(0)
   const siteTagline = appSettings.siteTagline || "طلباتك رايقة ووصلالك بسرعة"
+  const hideMobileInlineSearch = pathname?.startsWith("/product/")
 
   const handleDesktopSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && desktopQuery.trim()) {
@@ -566,16 +567,18 @@ export function Header() {
       </div>
 
       {/* ── Mobile inline search bar ── */}
-      <div className="md:hidden border-t border-white/8 bg-[#101816] px-3 pb-3 pt-2">
-        <button
-          onClick={() => setIsSearchOpen(true)}
-          className="flex h-12 w-full items-center gap-3 rounded-[24px] border border-white/8 bg-white/6 px-4 text-start text-sm text-white/55 shadow-[var(--shadow-material-1)] transition-colors hover:bg-white/8"
-          aria-label="ابحث عن منتج"
-        >
-          <Search className="h-4 w-4 shrink-0" />
-          <span>بتدوّر على إيه؟ اكتب هنا...</span>
-        </button>
-      </div>
+      {!hideMobileInlineSearch && (
+        <div className="md:hidden border-t border-white/8 bg-[#101816] px-3 pb-3 pt-2">
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="flex h-12 w-full items-center gap-3 rounded-[24px] border border-white/8 bg-white/6 px-4 text-start text-sm text-white/55 shadow-[var(--shadow-material-1)] transition-colors hover:bg-white/8"
+            aria-label="ابحث عن منتج"
+          >
+            <Search className="h-4 w-4 shrink-0" />
+            <span>بتدوّر على إيه؟ اكتب هنا...</span>
+          </button>
+        </div>
+      )}
 
       {/* ── SEARCH OVERLAY (full-screen mobile) ───────────────────────────────────── */}
       {isSearchOpen && isClient && createPortal((
