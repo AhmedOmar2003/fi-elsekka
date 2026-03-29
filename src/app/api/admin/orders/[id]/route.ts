@@ -34,6 +34,39 @@ function resolveOrderId(request: NextRequest, context: any) {
   return rawId ? decodeURIComponent(rawId) : undefined;
 }
 
+export async function GET(request: NextRequest, context: any) {
+  const id = resolveOrderId(request, context);
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: 'Server misconfigured', stage: 'config' }, { status: 500 });
+  }
+  if (!id || !UUID_REGEX.test(id)) {
+    return NextResponse.json({ error: 'Invalid order id', stage: 'validate.id' }, { status: 400 });
+  }
+
+  const auth = await requireAdminApi(request, 'view_orders');
+  if (!auth.ok) return auth.response;
+
+  const { data, error } = await supabaseAdmin
+    .from('order_items')
+    .select(`
+      id,
+      order_id,
+      product_id,
+      quantity,
+      price_at_purchase,
+      selected_variant_json,
+      products(name, price, image_url)
+    `)
+    .eq('order_id', id)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    return NextResponse.json({ error: error.message, stage: 'db.order_items' }, { status: 500 });
+  }
+
+  return NextResponse.json({ data: data || [] });
+}
+
 export async function PATCH(request: NextRequest, context: any) {
   const id = resolveOrderId(request, context);
   if (!supabaseAdmin) {

@@ -1410,12 +1410,20 @@ export async function fetchAdminOrders() {
 }
 
 export async function fetchOrderDetails(orderId: string) {
-    const { data, error } = await supabase
-        .from('order_items')
-        .select('*, products(name, price, image_url)')
-        .eq('order_id', orderId);
-    if (error) logError('fetchOrderDetails', error);
-    return data || [];
+    try {
+        const res = await fetch(`/api/admin/orders/${orderId}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(payload?.error || 'Failed to fetch order details');
+        }
+        return payload?.data || [];
+    } catch (error: any) {
+        logError('fetchOrderDetails', error);
+        return [];
+    }
 }
 
 export async function updateOrderStatus(orderId: string, status: string) {
