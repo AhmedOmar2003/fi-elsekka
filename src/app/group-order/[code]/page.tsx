@@ -65,7 +65,22 @@ export default function GroupOrderPage() {
     }
   }, [storedParticipant?.displayName])
 
-  const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/group-order/${code}` : ""
+  const shareBaseUrl = React.useMemo(() => {
+    const configuredUrl =
+      process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://fi-elsekka.vercel.app"
+
+    if (configuredUrl) {
+      return configuredUrl.replace(/\/+$/, "")
+    }
+
+    if (typeof window !== "undefined") {
+      return window.location.origin.replace(/\/+$/, "")
+    }
+
+    return "https://fi-elsekka.vercel.app"
+  }, [])
+
+  const shareUrl = `${shareBaseUrl}/group-order/${code}`
   const viewerParticipantKey = storedParticipant?.participantKey || null
   const canEditGroup = groupOrder?.groupOrder.status === "open" && !!groupOrder?.viewer.canEdit
 
