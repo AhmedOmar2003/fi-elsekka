@@ -1,14 +1,16 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ProductCard } from "@/components/ui/product-card"
 import Link from "next/link"
+import Image from "next/image"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Tag, Camera, Send, MessageSquare, X, Share2, Copy, MapPin, Banknote, Clock3, Users } from "lucide-react"
+import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Camera, Send, MessageSquare, X, Share2, MapPin, Banknote, Users } from "lucide-react"
 import { fetchProductDetails, fetchRelatedProducts, Product } from "@/services/productsService"
 import { fetchProductReviews, calcReviewStats, createReview, updateReview, fetchUserProductReview, checkUserPurchased, checkUserReviewed, uploadReviewImage, Review, ReviewStats } from "@/services/reviewsService"
 import { useCart } from "@/contexts/CartContext"
@@ -23,54 +25,10 @@ import { CURRENT_DELIVERY_FEE } from "@/lib/order-economics"
 import { formatNumberLatin } from "@/lib/formatters"
 import { addGroupOrderItem, createGroupOrder } from "@/services/groupOrdersService"
 import { getStoredGroupParticipant, saveStoredGroupParticipant } from "@/lib/group-order-session"
-
-function WhatsAppIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
-      <path d="M19.05 4.94A9.86 9.86 0 0 0 12.03 2C6.57 2 2.13 6.43 2.13 11.9c0 1.75.46 3.46 1.33 4.96L2 22l5.3-1.39a9.9 9.9 0 0 0 4.73 1.2h.01c5.46 0 9.9-4.44 9.9-9.9 0-2.64-1.03-5.12-2.89-6.97Zm-7.02 15.2h-.01a8.2 8.2 0 0 1-4.18-1.14l-.3-.18-3.15.83.84-3.07-.2-.31a8.16 8.16 0 0 1-1.27-4.37c0-4.53 3.69-8.22 8.24-8.22 2.2 0 4.27.86 5.82 2.41a8.15 8.15 0 0 1 2.4 5.82c0 4.54-3.69 8.23-8.2 8.23Zm4.5-6.13c-.24-.12-1.4-.69-1.62-.76-.21-.08-.37-.12-.53.12-.15.23-.61.76-.74.92-.14.16-.28.18-.52.06a6.65 6.65 0 0 1-1.95-1.2 7.4 7.4 0 0 1-1.36-1.69c-.14-.24-.01-.36.1-.48.11-.11.24-.28.35-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.53-1.28-.72-1.75-.19-.46-.39-.4-.53-.4h-.45c-.16 0-.42.06-.65.3-.22.24-.84.82-.84 2 0 1.17.86 2.3.98 2.46.12.16 1.68 2.57 4.08 3.6.57.24 1.02.38 1.37.49.57.18 1.1.15 1.52.09.46-.07 1.4-.57 1.6-1.12.2-.56.2-1.03.14-1.13-.05-.1-.2-.16-.44-.28Z" />
-    </svg>
-  )
-}
-
-function FacebookIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
-      <path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.09 4.39 23.08 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.03 1.79-4.7 4.53-4.7 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.95.93-1.95 1.88v2.27h3.33l-.53 3.49h-2.8V24C19.61 23.08 24 18.09 24 12.07Z" />
-    </svg>
-  )
-}
-
-function XIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
-      <path d="M18.9 2H22l-6.76 7.73L23.2 22h-6.24l-4.9-6.4L6.46 22H3.35l7.23-8.26L1 2h6.4l4.43 5.84L18.9 2Zm-1.1 18h1.72L6.45 3.9H4.61L17.8 20Z" />
-    </svg>
-  )
-}
-
-function TelegramIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
-      <path d="M21.94 4.66c.17-.8-.4-1.38-1.16-1.09L2.6 10.55c-.74.3-.73 1.34.02 1.62l4.62 1.45 1.79 5.64c.23.72 1.15.84 1.54.2l2.55-4.11 4.95 3.67c.6.44 1.45.11 1.6-.62l2.27-13.74ZM9.4 13.11l9.77-6.18-7.93 7.68a.8.8 0 0 0-.21.37l-.9 3.6-.73-2.3a.8.8 0 0 0-.52-.52l-2.3-.72 3.6-.93c.08-.02.16-.06.22-.12Z" />
-    </svg>
-  )
-}
-
-function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
-      <path d="M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9a5.5 5.5 0 0 1-5.5 5.5h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2Zm0 1.8A3.7 3.7 0 0 0 3.8 7.5v9a3.7 3.7 0 0 0 3.7 3.7h9a3.7 3.7 0 0 0 3.7-3.7v-9a3.7 3.7 0 0 0-3.7-3.7h-9Zm9.7 1.35a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.8A3.2 3.2 0 1 0 12 15.2 3.2 3.2 0 0 0 12 8.8Z" />
-    </svg>
-  )
-}
-
-function TikTokIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
-      <path d="M14.52 2c.28 1.95 1.38 3.4 3.38 4.1.6.21 1.26.32 1.98.34v2.87a8.37 8.37 0 0 1-4.1-1.1v6.13c0 3.5-2.56 6.18-6.08 6.18A6.1 6.1 0 0 1 3.6 14.4c0-3.37 2.74-6.12 6.12-6.12.33 0 .67.03 1 .08v2.96a3.13 3.13 0 0 0-1-.17 3.2 3.2 0 0 0 0 6.4 3.2 3.2 0 0 0 3.2-3.2V2h1.6Z" />
-    </svg>
-  )
-}
+const ProductShareSheet = dynamic(
+  () => import("./product-share-sheet").then((mod) => mod.ProductShareSheet),
+  { ssr: false }
+)
 
 export default function ProductPage({
   initialProduct = null,
@@ -584,59 +542,6 @@ export default function ProductPage({
     setIsShareSheetOpen(true)
   }, [shareMessage, shareTitle, shareUrl])
 
-  const shareTargets = React.useMemo(() => {
-    if (!shareUrl) return []
-
-    const encodedUrl = encodeURIComponent(shareUrl)
-    const encodedText = encodeURIComponent(`${shareMessage}\n${shareUrl}`)
-    const encodedTitle = encodeURIComponent(shareTitle)
-
-    return [
-      {
-        label: "واتساب",
-        icon: WhatsAppIcon,
-        iconClassName: "text-[#25D366]",
-        helper: "شاركها على واتساب",
-        action: () => openShareUrl(`https://wa.me/?text=${encodedText}`),
-      },
-      {
-        label: "فيسبوك",
-        icon: FacebookIcon,
-        iconClassName: "text-[#1877F2]",
-        helper: "انشرها على فيسبوك",
-        action: () => openShareUrl(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`),
-      },
-      {
-        label: "X / تويتر",
-        icon: XIcon,
-        iconClassName: "text-white",
-        helper: "شاركها على X",
-        action: () => openShareUrl(`https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`),
-      },
-      {
-        label: "تيليجرام",
-        icon: TelegramIcon,
-        iconClassName: "text-[#229ED9]",
-        helper: "ابعتها على تيليجرام",
-        action: () => openShareUrl(`https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`),
-      },
-      {
-        label: "إنستجرام",
-        icon: InstagramIcon,
-        iconClassName: "text-[#E4405F]",
-        helper: "هننسخ الرابط وانت شاركه هناك",
-        action: () => copyShareLink("إنستجرام"),
-      },
-      {
-        label: "تيك توك",
-        icon: TikTokIcon,
-        iconClassName: "text-white",
-        helper: "هننسخ الرابط وانت شاركه هناك",
-        action: () => copyShareLink("تيك توك"),
-      },
-    ]
-  }, [copyShareLink, openShareUrl, shareMessage, shareTitle, shareUrl])
-
   if (isLoading) {
     return (
       <>
@@ -716,10 +621,16 @@ export default function ProductPage({
               {/* Main image */}
               <div className="relative aspect-[4/3] sm:aspect-[16/10] w-full rounded-3xl bg-surface border border-surface-hover overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent pointer-events-none z-10" />
-                <img
+                <Image
+                  key={product.images[activeImage]}
                   src={product.images[activeImage]}
-                  className="object-cover w-full h-full transform transition-transform duration-700 group-hover:scale-105"
                   alt={product.title}
+                  fill
+                  priority={activeImage === 0}
+                  fetchPriority={activeImage === 0 ? "high" : "auto"}
+                  quality={68}
+                  sizes="(max-width: 640px) calc(100vw - 2rem), (max-width: 1024px) calc(100vw - 3rem), 50vw"
+                  className="object-cover w-full h-full transform transition-transform duration-700 group-hover:scale-105"
                 />
               </div>
 
@@ -728,13 +639,24 @@ export default function ProductPage({
                 {product.images.map((img: string, idx: number) => (
                   <button
                     key={idx}
+                    type="button"
                     onClick={() => setActiveImage(idx)}
                     className={`snap-start relative aspect-[4/3] w-[28vw] min-w-[80px] sm:w-28 shrink-0 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${activeImage === idx
                       ? "border-primary ring-2 ring-primary/20 shadow-md"
                       : "border-surface-hover hover:border-gray-500 scale-95 opacity-70 hover:opacity-100"
                       }`}
+                    aria-label={`عرض صورة المنتج رقم ${idx + 1}`}
+                    aria-pressed={activeImage === idx}
                   >
-                    <img src={img} className="object-cover w-full h-full" alt="" />
+                    <Image
+                      src={img}
+                      alt=""
+                      fill
+                      loading="lazy"
+                      quality={52}
+                      sizes="(max-width: 640px) 28vw, 112px"
+                      className="object-cover w-full h-full"
+                    />
                   </button>
                 ))}
               </div>
@@ -792,14 +714,14 @@ export default function ProductPage({
                   <div className="mb-2 inline-flex rounded-xl bg-primary/10 p-2 text-primary">
                     <MapPin className="h-5 w-5" />
                   </div>
-                  <p className="text-sm font-black text-foreground">التوصيل الحالي</p>
+                  <h2 className="text-sm font-black text-foreground">التوصيل الحالي</h2>
                   <p className="mt-1 text-xs leading-6 text-gray-500">بنوصّل حاليًا داخل قرية ميت العامل فقط، وقريبًا القرى المجاورة.</p>
                 </div>
                 <div className="rounded-2xl border border-surface-hover bg-surface/55 p-4">
                   <div className="mb-2 inline-flex rounded-xl bg-emerald-500/10 p-2 text-emerald-500">
                     <Banknote className="h-5 w-5" />
                   </div>
-                  <p className="text-sm font-black text-foreground">الشحن والدفع</p>
+                  <h2 className="text-sm font-black text-foreground">الشحن والدفع</h2>
                   <p className="mt-1 text-xs leading-6 text-gray-500">الشحن الحالي {CURRENT_DELIVERY_FEE} ج.م، والدفع كاش وقت الاستلام.</p>
                 </div>
               </div>
@@ -846,7 +768,7 @@ export default function ProductPage({
               {product.restaurantSizeOptions.length > 0 && (
                 <div className="mb-6">
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <p className="text-sm font-black text-foreground">اختار الحجم</p>
+                    <h2 className="text-sm font-black text-foreground">اختار الحجم</h2>
                     <p className="text-xs text-gray-500">السعر بيتغير تلقائي حسب الحجم اللي تختاره</p>
                   </div>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -997,15 +919,19 @@ export default function ProductPage({
                       <span className="text-sm font-bold text-gray-500">الكمية</span>
                       <div className="flex items-center rounded-2xl border border-surface-hover bg-background h-12 shadow-inner">
                         <button
+                          type="button"
                           onClick={() => setQuantity(Math.max(1, quantity - 1))}
                           className="px-5 h-full text-gray-500 hover:text-foreground hover:bg-surface-hover rounded-e-2xl active:scale-90 transition-all"
+                          aria-label="تقليل الكمية"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
                         <span className="w-10 text-center font-heading font-black text-xl select-none">{quantity}</span>
                         <button
+                          type="button"
                           onClick={() => setQuantity(quantity + 1)}
                           className="px-5 h-full text-gray-500 hover:text-foreground hover:bg-surface-hover rounded-s-2xl active:scale-90 transition-all"
+                          aria-label="زيادة الكمية"
                         >
                           <Plus className="w-4 h-4" />
                         </button>
@@ -1021,6 +947,7 @@ export default function ProductPage({
                         size="lg"
                         className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all active:scale-95 gap-2"
                         onClick={handleAddToCart}
+                        aria-label={isAdded ? "تمت إضافة المنتج إلى السلة" : "أضف المنتج إلى السلة"}
                       >
                         {isAdded ? <Check className="w-6 h-6" /> : <ShoppingCart className="w-6 h-6" />}
                         <span>{isAdded ? "تمت الإضافة بنجاح ✔" : "أضف للسلة"}</span>
@@ -1029,6 +956,7 @@ export default function ProductPage({
 
                     {/* Buy Now button */}
                     <button
+                      type="button"
                       disabled={product.isRestaurantItem && !product.isRestaurantAvailable}
                       className={[
                         "w-full h-14 rounded-2xl text-xl font-black text-white shadow-xl transition-all inline-flex items-center justify-center",
@@ -1037,6 +965,7 @@ export default function ProductPage({
                           : "bg-blue-600 hover:bg-blue-700 shadow-blue-600/20 hover:shadow-blue-600/40 active:scale-95",
                       ].join(" ")}
                       onClick={handleBuyNow}
+                      aria-label={product.isRestaurantItem && !product.isRestaurantAvailable ? "المنتج غير متاح الآن" : "اشترِ المنتج الآن"}
                     >
                       {product.isRestaurantItem && !product.isRestaurantAvailable ? "غير متاح الآن" : "اخلص واشتري دلوقتي"}
                     </button>
@@ -1047,6 +976,7 @@ export default function ProductPage({
                           type="button"
                           onClick={handleCreateGroupOrder}
                           className="h-11 rounded-2xl border border-primary/20 bg-primary/5 px-4 text-sm font-bold text-primary inline-flex items-center justify-center gap-2 hover:bg-primary/10 transition-colors"
+                          aria-label="ابدأ طلبًا جماعيًا لهذا المنتج"
                         >
                           <Users className="w-4.5 h-4.5" />
                           طلب جماعي
@@ -1095,10 +1025,10 @@ export default function ProductPage({
                 </div>
               </div>
 
-              <div className="mb-8 rounded-3xl border border-surface-hover bg-surface/40 p-5">
+              <div className="content-visibility-auto mb-8 rounded-3xl border border-surface-hover bg-surface/40 p-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="max-w-2xl">
-                    <p className="text-sm font-black text-foreground">ليه تكمّل الطلب من هنا؟</p>
+                    <h2 className="text-sm font-black text-foreground">ليه تكمّل الطلب من هنا؟</h2>
                     <p className="mt-2 text-sm leading-7 text-gray-500">
                       وضحنا لك التوصيل الحالي والشحن والدفع من بدري، علشان تبقى عارف كل حاجة قبل ما تكمل. ولو المنتج مش مناسبك، هتلاقي منتجات مشابهة في نفس الصفحة.
                     </p>
@@ -1116,8 +1046,8 @@ export default function ProductPage({
 
               {/* Description & Specs */}
               <div className="space-y-8">
-                <section>
-                  <h3 className="text-xl font-bold mb-3 pb-2 border-b border-surface-hover">عن المنتج</h3>
+                <section className="content-visibility-auto">
+                  <h2 className="text-xl font-bold mb-3 pb-2 border-b border-surface-hover">عن المنتج</h2>
                   <p className="text-gray-500 leading-relaxed text-sm md:text-base">{product.description}</p>
                   <ul className="mt-4 space-y-2">
                     {product.features.map((feature: string, idx: number) => (
@@ -1132,8 +1062,8 @@ export default function ProductPage({
                 </section>
 
                 {product.productMode === "bundle" && product.bundleItems.length > 0 && (
-                  <section>
-                    <h3 className="text-xl font-bold mb-3 pb-2 border-b border-surface-hover">جوه الباكج إيه؟</h3>
+                  <section className="content-visibility-auto">
+                    <h2 className="text-xl font-bold mb-3 pb-2 border-b border-surface-hover">جوه الباكج إيه؟</h2>
                     <div className="rounded-2xl border border-primary/15 bg-surface/70 p-4 space-y-3">
                       {product.bundleItems.map((item: any, idx: number) => (
                         <div key={`${item.name}-${idx}`} className="flex items-start justify-between gap-3 rounded-xl bg-surface px-4 py-3 border border-surface-hover">
@@ -1150,8 +1080,8 @@ export default function ProductPage({
                   </section>
                 )}
 
-                <section>
-                  <h3 className="text-xl font-bold mb-3 pb-2 border-b border-surface-hover">المواصفات</h3>
+                <section className="content-visibility-auto">
+                  <h2 className="text-xl font-bold mb-3 pb-2 border-b border-surface-hover">المواصفات</h2>
                   <div className="rounded-xl overflow-hidden border border-surface-hover divide-y divide-surface-hover">
                     {product.specs.map((spec: any, idx: number) => (
                       <div key={idx} className="flex flex-col sm:flex-row sm:items-center bg-surface px-4 py-3">
@@ -1167,10 +1097,10 @@ export default function ProductPage({
             </div>
 
             {relatedProducts.length > 0 && (
-              <section className="mt-14 w-full border-t border-surface-hover pt-10">
+              <section className="content-visibility-auto mt-14 w-full border-t border-surface-hover pt-10">
                 <div className="mb-6 flex items-end justify-between gap-3">
                   <div>
-                    <h3 className="text-2xl font-black text-foreground">منتجات مشابهة</h3>
+                    <h2 className="text-2xl font-black text-foreground">منتجات مشابهة</h2>
                     <p className="mt-1 text-sm text-gray-500">اختيارات قريبة من نفس النوع علشان تلاقي بديل أو تكمل طلبك بحاجة أنسب.</p>
                   </div>
                   {dbProduct?.category_id ? (
@@ -1202,9 +1132,9 @@ export default function ProductPage({
             )}
 
             {/* ── Reviews Section ────────────────────────────────────────── */}
-            <div className="mt-16 pt-10 border-t border-surface-hover w-full" id="reviews">
+            <div className="content-visibility-auto mt-16 pt-10 border-t border-surface-hover w-full" id="reviews">
               <div className="flex items-center gap-3 mb-8">
-                <h3 className="text-2xl font-black text-foreground">تقييمات العملاء</h3>
+                <h2 className="text-2xl font-black text-foreground">تقييمات العملاء</h2>
                 <MessageSquare className="w-6 h-6 text-primary" />
               </div>
 
@@ -1298,13 +1228,14 @@ export default function ProductPage({
                             type="button"
                             onClick={() => setShowReviewForm(false)}
                             className="absolute top-4 end-4 text-gray-400 hover:text-gray-600 p-1 bg-surface-hover rounded-full"
+                            aria-label="إغلاق نموذج التقييم"
                           >
                             <X className="w-4 h-4" />
                           </button>
                           
-                          <h4 className="font-bold text-lg mb-4 text-foreground">
+                          <h3 className="font-bold text-lg mb-4 text-foreground">
                             {alreadyReviewed ? "عدّل تقييمك للمنتج" : "تقييمك للمنتج"}
-                          </h4>
+                          </h3>
                           
                           {/* Star picker */}
                           <div className="flex gap-2 mb-6">
@@ -1314,6 +1245,7 @@ export default function ProductPage({
                                 type="button"
                                 onClick={() => setReviewRating(star)}
                                 className="focus:outline-none transition-transform hover:scale-110 active:scale-90"
+                                aria-label={`اختيار تقييم ${star} من 5`}
                               >
                                 <Star className={`w-8 h-8 ${star <= reviewRating ? 'fill-[#ffc107] text-[#ffc107]' : 'fill-gray-200 text-gray-200 dark:fill-gray-800 dark:text-gray-800'}`} />
                               </button>
@@ -1336,8 +1268,10 @@ export default function ProductPage({
                                 <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-surface-hover group">
                                   <img src={url} alt="Review" className="w-full h-full object-cover" />
                                   <button
+                                    type="button"
                                     onClick={() => setReviewImages(prev => prev.filter((_, i) => i !== idx))}
                                     className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    aria-label={`حذف صورة التقييم رقم ${idx + 1}`}
                                   >
                                     <X className="w-5 h-5" />
                                   </button>
@@ -1381,7 +1315,7 @@ export default function ProductPage({
                       {reviews.length === 0 ? (
                         <div className="bg-[#11161d] rounded-3xl p-10 text-center border border-surface-hover flex flex-col items-center justify-center h-full mt-8">
                           <MessageSquare className="w-12 h-12 text-gray-300 dark:text-gray-700 mb-4" />
-                          <h4 className="font-bold text-lg text-foreground mb-1">مفيش تقييمات لسه</h4>
+                          <h3 className="font-bold text-lg text-foreground mb-1">مفيش تقييمات لسه</h3>
                           <p className="text-gray-500 text-sm">كن أول شخص يشارك رأيه في المنتج ده!</p>
                         </div>
                       ) : (
@@ -1473,11 +1407,11 @@ export default function ProductPage({
                 )}
               </div>
             <div className="flex items-center rounded-2xl border border-surface-hover bg-surface h-11 shadow-inner">
-              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 h-full text-gray-500 hover:text-foreground hover:bg-surface-hover rounded-e-2xl active:scale-90 transition-all">
+              <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 h-full text-gray-500 hover:text-foreground hover:bg-surface-hover rounded-e-2xl active:scale-90 transition-all" aria-label="تقليل الكمية">
                 <Minus className="w-4 h-4" />
               </button>
               <span className="w-9 text-center font-heading font-black text-lg select-none">{quantity}</span>
-              <button onClick={() => setQuantity(quantity + 1)} className="px-4 h-full text-gray-500 hover:text-foreground hover:bg-surface-hover rounded-s-2xl active:scale-90 transition-all">
+              <button type="button" onClick={() => setQuantity(quantity + 1)} className="px-4 h-full text-gray-500 hover:text-foreground hover:bg-surface-hover rounded-s-2xl active:scale-90 transition-all" aria-label="زيادة الكمية">
                 <Plus className="w-4 h-4" />
               </button>
             </div>
@@ -1487,6 +1421,7 @@ export default function ProductPage({
             <div className="space-y-2.5">
               <div className="grid grid-cols-2 gap-2.5">
                 <button
+                  type="button"
                   onClick={handleAddToCart}
                   className={[
                     "relative flex h-14 w-full rounded-2xl font-heading font-black text-base overflow-hidden transition-all duration-300 active:scale-[0.96] text-white",
@@ -1494,6 +1429,7 @@ export default function ProductPage({
                       ? "bg-emerald-600 shadow-lg shadow-emerald-600/30"
                       : "bg-primary shadow-[0_6px_24px_rgba(16,185,129,0.4)]",
                   ].join(" ")}
+                  aria-label={isAdded ? "تمت إضافة المنتج إلى السلة" : "أضف المنتج إلى السلة"}
                 >
                   <span className="flex w-full items-center justify-center gap-2">
                     {isAdded ? <Check className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
@@ -1502,6 +1438,7 @@ export default function ProductPage({
                 </button>
 
                 <button
+                  type="button"
                   disabled={product.isRestaurantItem && !product.isRestaurantAvailable}
                   onClick={handleBuyNow}
                   className={[
@@ -1510,6 +1447,7 @@ export default function ProductPage({
                       ? "cursor-not-allowed bg-blue-600/45 opacity-60"
                       : "bg-blue-600 hover:bg-blue-700 active:scale-[0.96]",
                   ].join(" ")}
+                  aria-label={product.isRestaurantItem && !product.isRestaurantAvailable ? "المنتج غير متاح حاليًا" : "اشترِ المنتج الآن"}
                 >
                   {product.isRestaurantItem && !product.isRestaurantAvailable ? "غير متاح" : "اخلص واشتري دلوقتي"}
                 </button>
@@ -1521,6 +1459,7 @@ export default function ProductPage({
                     type="button"
                     onClick={handleCreateGroupOrder}
                     className="flex-1 h-10 rounded-2xl border border-primary/15 bg-primary/5 px-4 text-xs font-black text-primary inline-flex items-center justify-center gap-2 active:scale-[0.96] transition-all duration-300"
+                    aria-label="ابدأ طلبًا جماعيًا لهذا المنتج"
                   >
                     <Users className="w-4.5 h-4.5" />
                     طلب جماعي
@@ -1545,77 +1484,17 @@ export default function ProductPage({
         </div>
       </div>
 
-      {isShareSheetOpen && (
-        <div className="fixed inset-0 z-[80] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm px-4" onClick={() => setIsShareSheetOpen(false)}>
-          <div
-            className="w-full max-w-md rounded-t-[2rem] md:rounded-[2rem] border border-surface-hover bg-[#0b1016] p-5 md:p-6 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3 mb-5">
-              <div>
-                <p className="text-sm font-bold text-primary mb-1">شارك المنتج وخلي ناس أكتر تشوفه ✨</p>
-                <h3 className="text-xl font-black text-white leading-snug">لو المنتج عاجبك ابعته لحد ممكن يستفيد بيه</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsShareSheetOpen(false)}
-                className="w-10 h-10 rounded-2xl border border-surface-hover text-gray-400 hover:text-white hover:bg-surface transition-colors inline-flex items-center justify-center shrink-0"
-                aria-label="إغلاق"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 mb-4">
-              <p className="text-white font-bold line-clamp-2">{product.title}</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <button
-                type="button"
-                onClick={handleNativeShare}
-                className="col-span-2 h-12 rounded-2xl bg-primary text-white font-bold inline-flex items-center justify-center gap-2 hover:bg-primary-hover transition-colors"
-              >
-                <Share2 className="w-5 h-5" />
-                مشاركة سريعة
-              </button>
-
-              {shareTargets.map((target) => (
-                <button
-                  key={target.label}
-                  type="button"
-                  onClick={target.action}
-                  className="rounded-2xl border border-surface-hover bg-surface px-4 py-3 text-start hover:bg-surface-hover transition-colors"
-                >
-                  <div className="flex items-center gap-2 text-white font-bold mb-1">
-                    <target.icon className={`w-5 h-5 shrink-0 ${target.iconClassName}`} />
-                    <span>{target.label}</span>
-                  </div>
-                  <p className="text-xs text-gray-400 leading-relaxed">{target.helper}</p>
-                </button>
-              ))}
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => copyShareLink()}
-                className="flex-1 h-11 rounded-2xl border border-surface-hover bg-surface text-white font-bold inline-flex items-center justify-center gap-2 hover:bg-surface-hover transition-colors"
-              >
-                <Copy className="w-4 h-4" />
-                انسخ الرابط
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsShareSheetOpen(false)}
-                className="flex-1 h-11 rounded-2xl bg-white/5 text-gray-300 font-bold hover:bg-white/10 transition-colors"
-              >
-                تمام
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProductShareSheet
+        isOpen={isShareSheetOpen}
+        onClose={() => setIsShareSheetOpen(false)}
+        productTitle={product.title}
+        onNativeShare={handleNativeShare}
+        onCopyLink={() => void copyShareLink()}
+        onOpenUrl={openShareUrl}
+        shareUrl={shareUrl}
+        shareTitle={shareTitle}
+        shareMessage={shareMessage}
+      />
 
       <Footer />
     </>
