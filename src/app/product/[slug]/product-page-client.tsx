@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { ProductCard } from "@/components/ui/product-card"
 import Link from "next/link"
 import Image from "next/image"
-import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Star, ShieldCheck, Truck, ChevronRight, Check, Minus, Plus, ShoppingCart, Camera, Send, MessageSquare, X, Share2, MapPin, Banknote, Users } from "lucide-react"
 import { fetchProductDetails, fetchRelatedProducts, Product } from "@/services/productsService"
 import { fetchProductReviews, calcReviewStats, createReview, updateReview, fetchUserProductReview, checkUserPurchased, checkUserReviewed, uploadReviewImage, Review, ReviewStats } from "@/services/reviewsService"
@@ -31,18 +31,20 @@ const ProductShareSheet = dynamic(
 )
 
 export default function ProductPage({
+  slug,
+  initialGroupOrderCode = null,
   initialProduct = null,
   initialRelatedProducts = [],
 }: {
+  slug: string
+  initialGroupOrderCode?: string | null
   initialProduct?: Product | null
   initialRelatedProducts?: Product[]
 }) {
-  const params = useParams()
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { addItem } = useCart()
   const { user } = useAuth()
-  const activeGroupOrderCode = searchParams.get("groupOrder")
+  const activeGroupOrderCode = initialGroupOrderCode
 
   const [quantity, setQuantity] = React.useState(1)
   const [isAdded, setIsAdded] = React.useState(false)
@@ -156,7 +158,7 @@ export default function ProductPage({
     }
   }, [])
 
-  const slugOrId = typeof params.slug === 'string' ? params.slug : ''
+  const slugOrId = slug
 
   const [dbProduct, setDbProduct] = React.useState<Product | null>(initialProduct)
   const [relatedProducts, setRelatedProducts] = React.useState<Product[]>(initialRelatedProducts)
@@ -280,7 +282,27 @@ export default function ProductPage({
 
   // Load reviews when product is available
   React.useEffect(() => {
-    loadReviews()
+    let cancelled = false
+
+    const run = () => {
+      if (!cancelled) {
+        void loadReviews()
+      }
+    }
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(run, { timeout: 1500 })
+      return () => {
+        cancelled = true
+        window.cancelIdleCallback(id)
+      }
+    }
+
+    const timeoutId = globalThis.setTimeout(run, 350)
+    return () => {
+      cancelled = true
+      globalThis.clearTimeout(timeoutId)
+    }
   }, [loadReviews])
 
   // Refetch reviews when window gains focus (e.g. after admin deletes in another tab)
@@ -628,8 +650,8 @@ export default function ProductPage({
                   fill
                   priority={activeImage === 0}
                   fetchPriority={activeImage === 0 ? "high" : "auto"}
-                  quality={68}
-                  sizes="(max-width: 640px) calc(100vw - 2rem), (max-width: 1024px) calc(100vw - 3rem), 50vw"
+                  quality={58}
+                  sizes="(max-width: 640px) calc(100vw - 2rem), (max-width: 1024px) 46vw, 42vw"
                   className="object-cover w-full h-full transform transition-transform duration-700 group-hover:scale-105"
                 />
               </div>

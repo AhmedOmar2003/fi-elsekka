@@ -120,7 +120,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-4 text-base font-black text-white">الأقسام</h4>
+            <h2 className="mb-4 text-base font-black text-white">الأقسام</h2>
             <ul className="font-heading space-y-2 text-sm text-white/78">
               {footerCategories.map((category) => (
                 <li key={category.id}>
@@ -133,7 +133,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-4 text-base font-black text-white">خليك مطمن</h4>
+            <h2 className="mb-4 text-base font-black text-white">خليك مطمن</h2>
             <ul className="font-heading space-y-2 text-sm text-white/78">
               <li><Link href="/about" className="inline-flex rounded-full px-2 py-1 font-bold hover:bg-white/6 hover:text-white transition-colors">احنا مين</Link></li>
               <li><Link href="/faq" className="inline-flex rounded-full px-2 py-1 font-bold hover:bg-white/6 hover:text-white transition-colors">الأسئلة الشائعة</Link></li>
@@ -144,7 +144,7 @@ export function Footer() {
           </div>
 
           <div className="md:col-span-1">
-             <h4 className="mb-4 text-base font-black text-white">ادفع وقت الاستلام</h4>
+             <h2 className="mb-4 text-base font-black text-white">ادفع وقت الاستلام</h2>
              <div className="rounded-[28px] border border-white/8 bg-white/[0.04] p-4 shadow-[var(--shadow-material-2)] backdrop-blur-sm">
                <div className="flex items-center gap-3">
                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary">

@@ -466,6 +466,9 @@ export function Header() {
             alt="في السكة Logo"
             width={40}
             height={40}
+            priority
+            fetchPriority="high"
+            sizes="40px"
             className="rounded-2xl shadow-[var(--shadow-material-2)] ring-1 ring-primary/10 group-hover:shadow-[var(--shadow-material-3)] transition-all"
           />
           <div className="hidden sm:flex flex-col leading-none">
@@ -571,16 +574,15 @@ export function Header() {
 
         {/* ── Mobile top-right utility icons ─────────────────────────────────── */}
         <div className="ms-auto flex items-center gap-1 md:hidden">
-          <Link href="/offers">
-            <button
-              className="relative flex items-center justify-center w-10 h-10 rounded-2xl text-white/70 hover:text-white hover:bg-white/6 active:scale-95 transition-all"
-              aria-label="العروض"
-            >
-              <BadgePercent className="h-5 w-5" />
-              <span className="absolute top-2 end-2 flex h-2 w-2 rounded-full bg-rose-500">
-                <span className="animate-ping absolute h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-              </span>
-            </button>
+          <Link
+            href="/offers"
+            className="relative flex items-center justify-center w-10 h-10 rounded-2xl text-white/70 hover:text-white hover:bg-white/6 active:scale-95 transition-all"
+            aria-label="العروض"
+          >
+            <BadgePercent className="h-5 w-5" />
+            <span className="absolute top-2 end-2 flex h-2 w-2 rounded-full bg-rose-500">
+              <span className="animate-ping absolute h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+            </span>
           </Link>
 
           {user && <NotificationBell />}

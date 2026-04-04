@@ -70,12 +70,22 @@ export async function generateMetadata({
 
 export default async function ProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ groupOrder?: string }>
 }) {
   const { slug } = await params
+  const resolvedSearchParams = await searchParams
   const product = await getProductForPage(slug)
   const relatedProducts = product ? await fetchRelatedProducts(product.id, 8) : []
 
-  return <ProductPageClient initialProduct={product} initialRelatedProducts={relatedProducts} />
+  return (
+    <ProductPageClient
+      slug={slug}
+      initialGroupOrderCode={typeof resolvedSearchParams.groupOrder === "string" ? resolvedSearchParams.groupOrder : null}
+      initialProduct={product}
+      initialRelatedProducts={relatedProducts}
+    />
+  )
 }

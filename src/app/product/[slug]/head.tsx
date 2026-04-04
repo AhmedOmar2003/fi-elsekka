@@ -17,7 +17,7 @@ export default async function Head({
   const { slug } = await params
   const product = await fetchProductDetails(slug)
   const heroImage = toAbsoluteUrl(product?.image_url || product?.images?.[0] || "")
-  const imageSizes = "(max-width: 640px) calc(100vw - 2rem), (max-width: 1024px) calc(100vw - 3rem), 50vw"
+  const imageSizes = "(max-width: 640px) calc(100vw - 2rem), (max-width: 1024px) 46vw, 42vw"
 
   if (!heroImage) return null
 
@@ -34,7 +34,7 @@ export default async function Head({
     alt: product?.name || "صورة المنتج",
     width: 1200,
     height: 900,
-    quality: 68,
+    quality: 58,
     sizes: imageSizes,
   })
 
