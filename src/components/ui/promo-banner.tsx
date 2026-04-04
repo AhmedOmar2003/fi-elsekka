@@ -1,44 +1,11 @@
-"use client"
-
-import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
-import { fetchActivePromotion, Promotion } from '@/services/promotionsService';
-import { useAuth } from '@/contexts/AuthContext';
+import { fetchActivePromotionServer } from '@/services/serverPromotionsService';
 
-export function PromoBanner() {
-    const { user, isLoading: authLoading } = useAuth();
-    const [promo, setPromo] = useState<Promotion | null>(null);
-    const [copied, setCopied] = useState(false);
-
-    useEffect(() => {
-        fetchActivePromotion().then(setPromo);
-
-        const channel = supabase
-            .channel('public:promotions:banner')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'promotions' }, () => {
-                fetchActivePromotion().then(setPromo);
-            })
-            .subscribe();
-
-        return () => { supabase.removeChannel(channel); };
-    }, []);
-
-    // While auth is loading, render nothing to avoid flash
-    if (authLoading) return null;
+export async function PromoBanner() {
+    const promo = await fetchActivePromotionServer();
 
     // If no active promotion is set by admin, hide the section
     if (!promo) return null;
-
-    const handleCopy = () => {
-        if (promo.discount_code) {
-            navigator.clipboard.writeText(promo.discount_code);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        }
-    };
-
-    const handleLogout = () => { }; // unused but kept for safety
 
     return (
         <section className="py-12 sm:py-16">
@@ -60,35 +27,23 @@ export function PromoBanner() {
                             </p>
                         )}
                         {promo.discount_code && (
-                            <button
-                                onClick={handleCopy}
-                                title="انقر لنسخ الكود"
-                                className="mt-4 inline-flex cursor-pointer select-none items-center gap-2 rounded-2xl border border-white/15 bg-black/20 px-4 py-2.5 font-mono text-lg tracking-widest text-white backdrop-blur-sm transition-all hover:bg-black/30 active:scale-95"
+                            <div
+                                className="mt-4 inline-flex select-none items-center gap-2 rounded-2xl border border-white/15 bg-black/20 px-4 py-2.5 font-mono text-lg tracking-widest text-white backdrop-blur-sm"
                             >
                                 <span className="text-sm text-white/60 font-sans ml-1">استخدم كود:</span>
                                 {promo.discount_code}
-                                <span className="text-xs text-white/50 font-sans">{copied ? '✓ تم النسخ' : '📋 نسخ'}</span>
-                            </button>
+                            </div>
                         )}
                     </div>
 
-                    {/* CTA Button — guest goes to register, logged-in goes to /offers with admin's button text */}
+                    {/* CTA Button */}
                     <div className="shrink-0 z-10 w-full sm:w-auto mx-auto sm:mx-0">
-                        {user ? (
-                            <Link
-                                href="/offers"
-                                className="flex items-center justify-center rounded-[24px] border border-white/40 bg-white px-10 py-4 text-center text-lg font-black text-primary shadow-[var(--shadow-material-2)] transition-all hover:-translate-y-0.5 active:scale-95"
-                            >
-                                {promo.button_text || 'شوف العروض'}
-                            </Link>
-                        ) : (
-                            <Link
-                                href="/register"
-                                className="flex items-center justify-center rounded-[24px] border border-white/40 bg-white px-10 py-4 text-center text-lg font-black text-primary shadow-[var(--shadow-material-2)] transition-all hover:-translate-y-0.5 active:scale-95"
-                            >
-                                سجل حساب جديد
-                            </Link>
-                        )}
+                        <Link
+                            href={promo.button_link || "/offers"}
+                            className="flex items-center justify-center rounded-[24px] border border-white/40 bg-white px-10 py-4 text-center text-lg font-black text-primary shadow-[var(--shadow-material-2)] transition-all hover:-translate-y-0.5 active:scale-95"
+                        >
+                            {promo.button_text || 'شوف العروض'}
+                        </Link>
                     </div>
 
                     {/* Decorative bg blobs */}

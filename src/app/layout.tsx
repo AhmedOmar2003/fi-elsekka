@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans_Arabic, Lalezar, Cairo } from "next/font/google";
+import { Lalezar, Cairo } from "next/font/google";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Providers } from "@/components/providers";
 import { Toaster } from "sonner";
@@ -8,13 +8,6 @@ import { fetchPublicAppSettingsServer } from "@/services/serverAppSettingsServic
 import "./globals.css";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://fi-elsekka.vercel.app";
-
-const ibmPlex = IBM_Plex_Sans_Arabic({
-  subsets: ["arabic"],
-  weight: ["100", "200", "300", "400", "500", "600", "700"],
-  variable: "--font-ibm",
-  display: "swap",
-});
 
 const lalezar = Lalezar({
   subsets: ["arabic"],
@@ -115,8 +108,6 @@ export const viewport: Viewport = {
   themeColor: "#10b981",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default function RootLayout({
@@ -127,7 +118,7 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body
-        className={`${cairo.variable} ${ibmPlex.variable} ${lalezar.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col transition-colors duration-300 selection:bg-primary/20 selection:text-foreground`}
+        className={`${cairo.variable} ${lalezar.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col transition-colors duration-300 selection:bg-primary/20 selection:text-foreground`}
       >
         <a 
           href="#main-content" 
