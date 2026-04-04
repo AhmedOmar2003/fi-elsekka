@@ -15,7 +15,7 @@ import { Select } from "@/components/ui/select"
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react"
 import { Product } from "@/services/productsService"
 import type { Restaurant } from "@/services/restaurantsService"
-import { useProducts } from "@/contexts/ProductsContext"
+import { fetchCategories } from "@/services/categoriesService"
 import { isRequestOnlyTextCategory } from "@/lib/text-category-orders"
 import { CategoryRequestPanel } from "@/components/categories/category-request-panel"
 import { toProductCardProps } from "@/lib/product-presentation"
@@ -56,7 +56,7 @@ export default function CategoryPageClient({
   const slug = typeof params.slug === "string" ? params.slug : "all"
 
   const [isFilterOpen, setIsFilterOpen] = React.useState(false)
-  const { categories } = useProducts()
+  const [allCategories, setAllCategories] = React.useState<Category[]>([])
 
   const isAllPage = slug === "all"
   const isBestSellersView = isAllPage && listingMode === "best-sellers"
@@ -73,6 +73,22 @@ export default function CategoryPageClient({
       setCategoryProducts(initialProducts)
     }
   }, [initialProducts, isAllPage])
+
+  React.useEffect(() => {
+    if (!isAllPage) return
+
+    let mounted = true
+
+    void fetchCategories().then((data) => {
+      if (mounted) {
+        setAllCategories(data)
+      }
+    })
+
+    return () => {
+      mounted = false
+    }
+  }, [isAllPage])
 
   const allProducts = isAllPage ? allPageProducts : categoryProducts
   const searchQuery = searchParams.get("q") || initialSearchQuery
@@ -95,8 +111,8 @@ export default function CategoryPageClient({
 
   const currentCategory = React.useMemo(() => {
     if (isAllPage) return null
-    return categories.find(c => c.id === slug) || initialCategory || null
-  }, [categories, slug, isAllPage, initialCategory])
+    return initialCategory || null
+  }, [slug, isAllPage, initialCategory])
 
   const categoryName = isBestSellersView ? "الأكثر طلبًا" : currentCategory?.name || (isAllPage ? "كل المنتجات" : "قسم المنتجات")
   const isRequestOnlyCategoryPage = !!currentCategory && isRequestOnlyTextCategory(currentCategory.name)
@@ -425,11 +441,11 @@ export default function CategoryPageClient({
                     ))}
                   </div>
                 </div>
-                {isAllPage && categories.length > 0 && (
+                {isAllPage && allCategories.length > 0 && (
                   <div className="space-y-4">
                     <h3 className="font-bold text-lg text-foreground pb-2 border-b border-surface-hover">النوع</h3>
                     <div className="space-y-3">
-                      {categories.map(cat => (
+                      {allCategories.map(cat => (
                         <div key={cat.id} className="flex items-center space-x-3 rtl:space-x-reverse">
                           <Checkbox id={`cat-${cat.id}`} checked={categoryFilters.has(cat.id)} onChange={() => toggleCategoryFilter(cat.id)} />
                           <Label htmlFor={`cat-${cat.id}`} className="text-foreground cursor-pointer">{cat.name}</Label>

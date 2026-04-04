@@ -4,10 +4,10 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Banknote } from "lucide-react"
-import { useProducts } from "@/contexts/ProductsContext"
 import { useAppSettings } from "@/contexts/AppSettingsContext"
 import { getSupportWhatsAppEntries } from "@/services/appSettingsService"
 import { WhatsAppIcon } from "@/components/ui/whatsapp-icon"
+import { fetchCategories, type Category } from "@/services/categoriesService"
 
 // Same motorcycle icon as the header
 function MotorcycleIcon({ className }: { className?: string }) {
@@ -26,8 +26,22 @@ function MotorcycleIcon({ className }: { className?: string }) {
 }
 
 export function Footer() {
-  const { categories } = useProducts()
   const { settings } = useAppSettings()
+  const [categories, setCategories] = React.useState<Category[]>([])
+
+  React.useEffect(() => {
+    let mounted = true
+
+    void fetchCategories().then((data) => {
+      if (mounted) {
+        setCategories(data)
+      }
+    })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const footerCategoryNames = React.useMemo(
     () => ["ملابس وأزياء", "سوبر ماركت", "طعام", "صيدلية", "أدوات منزلية"],

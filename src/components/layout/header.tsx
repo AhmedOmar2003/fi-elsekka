@@ -16,9 +16,9 @@ import {
 } from "lucide-react"
 import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
-import { useProducts } from "@/contexts/ProductsContext"
 import { signOut } from "@/services/authService"
 import { useAppSettings } from "@/contexts/AppSettingsContext"
+import { fetchCategories, type Category } from "@/services/categoriesService"
 import { toast } from "sonner"
 
 const NotificationBell = dynamic(
@@ -333,8 +333,10 @@ export function Header() {
   const router = useRouter()
   const { cartCount } = useCart()
   const { user, profile } = useAuth()
-  const { categories, ensureCategoriesLoaded } = useProducts()
   const { settings: appSettings } = useAppSettings()
+  const [categories, setCategories] = React.useState<Category[]>([])
+  const categoriesLoadedRef = React.useRef(false)
+  const categoriesLoadingRef = React.useRef(false)
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
   const [isSearchOpen, setIsSearchOpen] = React.useState(false)
@@ -389,8 +391,19 @@ export function Header() {
   }, [])
   
   const warmCategories = React.useCallback(() => {
-    void ensureCategoriesLoaded()
-  }, [ensureCategoriesLoaded])
+    if (categoriesLoadedRef.current || categoriesLoadingRef.current) return
+
+    categoriesLoadingRef.current = true
+
+    void fetchCategories()
+      .then((data) => {
+        setCategories(data)
+        categoriesLoadedRef.current = true
+      })
+      .finally(() => {
+        categoriesLoadingRef.current = false
+      })
+  }, [])
 
   const userDisplayName = profile?.full_name || user?.email?.split('@')[0] || "حسابي"
   const userInitial = userDisplayName.trim().charAt(0)

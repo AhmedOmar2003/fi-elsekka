@@ -6,13 +6,27 @@ import { useParams } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { ArrowRight } from "lucide-react"
-import { useProducts } from "@/contexts/ProductsContext"
+import { fetchCategories, type Category } from "@/services/categoriesService"
 import { CategoryRequestPanel } from "@/components/categories/category-request-panel"
 
 export default function CategoryRequestPage() {
   const params = useParams()
   const slug = typeof params.slug === "string" ? params.slug : ""
-  const { categories } = useProducts()
+  const [categories, setCategories] = React.useState<Category[]>([])
+
+  React.useEffect(() => {
+    let mounted = true
+
+    void fetchCategories().then((data) => {
+      if (mounted) {
+        setCategories(data)
+      }
+    })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const currentCategory = React.useMemo(
     () => categories.find(category => category.id === slug) || null,

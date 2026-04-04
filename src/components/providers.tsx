@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { AppSettingsProvider } from '@/contexts/AppSettingsContext';
 import { CartProvider } from '@/contexts/CartContext';
-import { ProductsProvider } from '@/contexts/ProductsContext';
 import { FavoritesProvider } from '@/contexts/FavoritesContext';
 import { ThemeProvider } from 'next-themes';
 
@@ -19,14 +18,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
             <AppSettingsProvider>
                 <AuthProvider>
-                    <ProductsProvider>
-                        <CartProvider>
-                            <FavoritesProvider>
-                                <SiteVisitTracker />
-                                {children}
-                            </FavoritesProvider>
-                        </CartProvider>
-                    </ProductsProvider>
+                    <CartProvider>
+                        <FavoritesProvider>
+                            <SiteVisitTracker />
+                            {children}
+                        </FavoritesProvider>
+                    </CartProvider>
                 </AuthProvider>
             </AppSettingsProvider>
         </ThemeProvider>
