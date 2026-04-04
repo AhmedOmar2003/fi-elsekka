@@ -4,6 +4,9 @@
   :root {
     --background: #f7f7f5;
     --foreground: #1d2723;
+    --background-radial-top: rgba(35, 130, 103, 0.05);
+    --background-radial-left: rgba(182, 106, 123, 0.04);
+    --background-overlay: rgba(255, 255, 255, 0.32);
 
     --brand-primary: #238267;
     --brand-primary-hover: #1d7059;
@@ -46,6 +49,9 @@
   .dark {
     --background: #0f1513;
     --foreground: #e9efeb;
+    --background-radial-top: rgba(61, 161, 132, 0.08);
+    --background-radial-left: rgba(207, 122, 143, 0.05);
+    --background-overlay: rgba(0, 0, 0, 0.08);
 
     --brand-primary: #3da184;
     --brand-primary-hover: #31886f;
@@ -98,7 +104,7 @@
   --animate-slide-up: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-pulse-slow: pulse-slow 4s ease-in-out infinite;
 
-  --font-sans: var(--font-inter), "IBM Plex Sans Arabic", var(--font-ibm), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans Arabic", var(--font-ibm), var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-cairo), "Cairo", var(--font-ibm), ui-sans-serif, system-ui, sans-serif;
   --font-logo: var(--font-lalezar), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -129,16 +135,31 @@
   to { transform: translateX(200%); }
 }
 
+html {
+  scroll-behavior: smooth;
+  background: var(--background);
+  color-scheme: dark;
+}
+
+.light {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
   background-image:
-    radial-gradient(circle at top right, rgba(35, 130, 103, 0.05), transparent 32%),
-    radial-gradient(circle at top left, rgba(182, 106, 123, 0.04), transparent 24%),
-    linear-gradient(180deg, rgba(255,255,255,0.32), transparent 30%);
+    radial-gradient(circle at top right, var(--background-radial-top), transparent 32%),
+    radial-gradient(circle at top left, var(--background-radial-left), transparent 24%),
+    linear-gradient(180deg, var(--background-overlay), transparent 30%);
   background-attachment: fixed;
   min-height: 100vh;
+  color-scheme: inherit;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -151,11 +172,6 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Base utility overrides for RTL if needed, but Tailwind handles most natively */
-
-/* Global Smooth Scrolling */
-html {
-  scroll-behavior: smooth;
-}
 
 /* Smooth Image Transitions */
 img {

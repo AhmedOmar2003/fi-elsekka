@@ -120,10 +120,11 @@ export default async function Home() {
                 <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] border border-surface-border bg-surface-container p-2.5 shadow-premium transition-all duration-700 group transform hover:-translate-y-2 hover:shadow-glow-primary sm:rounded-[32px] sm:p-4">
                   <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-secondary/20 opacity-60 mix-blend-overlay"></div>
                   <Image
-                    src="https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop"
+                    src="https://images.unsplash.com/photo-1628102491629-778571d893a3?q=72&w=640&auto=format&fit=crop"
                     alt="Shopping Box"
                     fill
                     priority
+                    quality={72}
                     sizes="(max-width: 1024px) 100vw, 50vw"
                     className="h-full w-full rounded-[18px] object-cover transition-transform duration-1000 group-hover:scale-110 sm:rounded-2xl"
                   />

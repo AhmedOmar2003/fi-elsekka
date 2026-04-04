@@ -62,7 +62,7 @@ export function Footer() {
                 <span className="font-black text-2xl text-primary">السِّكَّةِ</span>
               </div>
             </Link>
-            <p className="max-w-xs text-sm leading-relaxed text-white/64">
+            <p className="max-w-xs text-sm leading-relaxed text-white/74">
               {siteTagline}
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
@@ -70,7 +70,7 @@ export function Footer() {
               <span className="inline-flex items-center rounded-full border border-white/8 bg-white/6 px-3 py-1.5 text-xs font-bold text-white/82">ادفع وقت الاستلام</span>
             </div>
             {(settings.supportEmail || settings.supportPhone || whatsappEntries.length > 0) && (
-              <div className="mt-5 space-y-2 text-sm text-white/70">
+              <div className="mt-5 space-y-2 text-sm text-white/78">
                 {settings.supportPhone && (
                   <a href={`tel:${settings.supportPhone}`} className="flex items-center gap-2 transition-colors hover:text-white">
                     <span className="font-bold">رقم الدعم:</span>
@@ -101,10 +101,10 @@ export function Footer() {
 
           <div>
             <h4 className="mb-4 text-base font-black text-white">الأقسام</h4>
-            <ul className="font-heading space-y-2 text-sm text-white/62">
+            <ul className="font-heading space-y-2 text-sm text-white/78">
               {footerCategories.map((category) => (
                 <li key={category.id}>
-                  <Link href={`/category/${category.id}`} className="inline-flex rounded-full px-2 py-1 transition-colors hover:bg-white/6 hover:text-white">
+                    <Link href={`/category/${category.id}`} className="inline-flex rounded-full px-2 py-1 font-bold transition-colors hover:bg-white/6 hover:text-white">
                     {category.name}
                   </Link>
                 </li>
@@ -114,12 +114,12 @@ export function Footer() {
 
           <div>
             <h4 className="mb-4 text-base font-black text-white">خليك مطمن</h4>
-            <ul className="font-heading space-y-2 text-sm text-white/62">
-              <li><Link href="/about" className="inline-flex rounded-full px-2 py-1 hover:bg-white/6 hover:text-white transition-colors">احنا مين</Link></li>
-              <li><Link href="/faq" className="inline-flex rounded-full px-2 py-1 hover:bg-white/6 hover:text-white transition-colors">الأسئلة الشائعة</Link></li>
-              <li><Link href="/account" className="inline-flex rounded-full px-2 py-1 hover:bg-white/6 hover:text-white transition-colors">حسابي</Link></li>
-              <li><Link href="/orders" className="inline-flex rounded-full px-2 py-1 hover:bg-white/6 hover:text-white transition-colors">طلباتي</Link></li>
-              <li><Link href="/contact" className="inline-flex rounded-full px-2 py-1 hover:bg-white/6 hover:text-white transition-colors">تواصل معنا</Link></li>
+            <ul className="font-heading space-y-2 text-sm text-white/78">
+              <li><Link href="/about" className="inline-flex rounded-full px-2 py-1 font-bold hover:bg-white/6 hover:text-white transition-colors">احنا مين</Link></li>
+              <li><Link href="/faq" className="inline-flex rounded-full px-2 py-1 font-bold hover:bg-white/6 hover:text-white transition-colors">الأسئلة الشائعة</Link></li>
+              <li><Link href="/account" className="inline-flex rounded-full px-2 py-1 font-bold hover:bg-white/6 hover:text-white transition-colors">حسابي</Link></li>
+              <li><Link href="/orders" className="inline-flex rounded-full px-2 py-1 font-bold hover:bg-white/6 hover:text-white transition-colors">طلباتي</Link></li>
+              <li><Link href="/contact" className="inline-flex rounded-full px-2 py-1 font-bold hover:bg-white/6 hover:text-white transition-colors">تواصل معنا</Link></li>
             </ul>
           </div>
 
