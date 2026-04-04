@@ -1,10 +1,13 @@
+"use client"
+
+import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Banknote } from "lucide-react"
+import { useProducts } from "@/contexts/ProductsContext"
+import { useAppSettings } from "@/contexts/AppSettingsContext"
 import { getSupportWhatsAppEntries } from "@/services/appSettingsService"
 import { WhatsAppIcon } from "@/components/ui/whatsapp-icon"
-import { fetchCategoriesServer } from "@/services/serverCategoriesService"
-import { fetchPublicAppSettingsServer } from "@/services/serverAppSettingsService"
 
 // Same motorcycle icon as the header
 function MotorcycleIcon({ className }: { className?: string }) {
@@ -22,13 +25,14 @@ function MotorcycleIcon({ className }: { className?: string }) {
   )
 }
 
-export async function Footer() {
-  const [categories, settings] = await Promise.all([
-    fetchCategoriesServer(),
-    fetchPublicAppSettingsServer(),
-  ])
+export function Footer() {
+  const { categories } = useProducts()
+  const { settings } = useAppSettings()
 
-  const footerCategoryNames = ["ملابس وأزياء", "سوبر ماركت", "طعام", "صيدلية", "أدوات منزلية"]
+  const footerCategoryNames = React.useMemo(
+    () => ["ملابس وأزياء", "سوبر ماركت", "طعام", "صيدلية", "أدوات منزلية"],
+    []
+  )
 
   const footerCategories = footerCategoryNames
     .map((name) => categories.find((category) => category.name === name))
