@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -13,9 +13,9 @@ import { CURRENT_DELIVERY_FEE } from '@/lib/order-economics';
 import { createGroupOrder } from '@/services/groupOrdersService';
 import { saveStoredGroupParticipant } from '@/lib/group-order-session';
 import { getSelectedVariantLabel } from '@/lib/product-variants';
+import { formatNumberLatin } from '@/lib/formatters';
 import { toast } from 'sonner';
 import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft, Users } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { getBundleItemCount, getBundleItems } from '@/lib/product-presentation';
 
 export default function CartPage() {
@@ -23,27 +23,7 @@ export default function CartPage() {
    const { user } = useAuth();
    const router = useRouter();
    const [updatingItems, setUpdatingItems] = useState<{ [key: string]: boolean }>({});
-   const [showDesktopSummaryCheckout, setShowDesktopSummaryCheckout] = useState(false);
    const [isCreatingGroupOrder, setIsCreatingGroupOrder] = useState(false);
-
-   useEffect(() => {
-      if (typeof window === 'undefined') return;
-
-      const mediaQuery = window.matchMedia('(min-width: 1024px)');
-      const updateVisibility = () => {
-         setShowDesktopSummaryCheckout(mediaQuery.matches);
-      };
-
-      updateVisibility();
-
-      if (typeof mediaQuery.addEventListener === 'function') {
-         mediaQuery.addEventListener('change', updateVisibility);
-         return () => mediaQuery.removeEventListener('change', updateVisibility);
-      }
-
-      mediaQuery.addListener(updateVisibility);
-      return () => mediaQuery.removeListener(updateVisibility);
-   }, []);
 
    // Handler for quantity updates to show local loading state
    const handleUpdateQuantity = async (id: string, newQuantity: number) => {
@@ -65,6 +45,7 @@ export default function CartPage() {
 
    const shippingCost: number = CURRENT_DELIVERY_FEE;
    const grandTotal = cartTotal + shippingCost;
+   const formatPrice = React.useCallback((value: number) => formatNumberLatin(Math.max(0, Math.round(value))), []);
 
    const handleCreateGroupOrder = async () => {
       if (items.length === 0) {
@@ -196,14 +177,9 @@ export default function CartPage() {
 
                      {/* Left Column: Cart Items (8 cols) */}
                      <div className="lg:col-span-8 space-y-4">
-                        <AnimatePresence initial={false}>
-                           {items.map((item) => (
-                              <motion.div
+                           {items.map((item, index) => (
+                              <div
                                  key={item.id}
-                                 initial={{ opacity: 0, y: 20 }}
-                                 animate={{ opacity: 1, y: 0 }}
-                                 exit={{ opacity: 0, x: -50, scale: 0.95 }}
-                                 layout
                                  className="bg-surface-container-low/50 border border-surface-border/50 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row gap-5 items-center sm:items-stretch relative overflow-hidden group hover:shadow-sm transition-shadow"
                               >
                                  {/* Item Image */}
@@ -213,6 +189,9 @@ export default function CartPage() {
                                           src={item.product?.image_url}
                                           alt={item.product?.name || "Product image"}
                                           fill
+                                          loading={index === 0 ? "eager" : "lazy"}
+                                          quality={60}
+                                          sizes="(max-width: 640px) 100vw, 128px"
                                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                                        />
                                     ) : (
@@ -265,22 +244,22 @@ export default function CartPage() {
                                           )}
                                           <div className="mt-2 flex flex-col sm:flex-row sm:items-baseline gap-2">
                                              <p className="text-secondary font-black text-lg">
-                                                {(() => {
+                                                {formatPrice((() => {
                                                    const p = item.product;
                                                    if (!p) return 0;
                                                    if (p.discount_percentage && p.discount_percentage > 0) {
                                                       return Math.round(p.price * (1 - p.discount_percentage / 100));
                                                    }
                                                    return p.price || 0;
-                                                })().toLocaleString()} ج.م
+                                                })())} ج.م
                                              </p>
                                              {item.product?.discount_percentage ? (
                                                 <div className="flex items-center gap-2">
                                                    <p className="text-sm text-gray-400 line-through">
-                                                      {(item.product.price || 0).toLocaleString()} ج.م
+                                                      {formatPrice(item.product.price || 0)} ج.م
                                                    </p>
                                                    <span className="text-xs bg-rose-500/10 text-rose-500 font-bold px-2 py-0.5 rounded">
-                                                      خصم {item.product.discount_percentage}%
+                                                      خصم {formatPrice(item.product.discount_percentage)}%
                                                    </span>
                                                 </div>
                                              ) : null}
@@ -289,10 +268,12 @@ export default function CartPage() {
 
                                        {/* Desktop Delete Target */}
                                        <button
+                                          type="button"
                                           onClick={() => handleRemoveItem(item.id)}
                                           disabled={updatingItems[item.id]}
                                           className="hidden sm:flex text-gray-400 hover:text-rose-500 hover:bg-rose-500/10 p-2.5 rounded-xl transition-colors disabled:opacity-50"
                                           title="شيل من السلة"
+                                          aria-label={`حذف ${item.product?.name || 'المنتج'} من السلة`}
                                        >
                                           <Trash2 className="w-5 h-5" />
                                        </button>
@@ -303,9 +284,11 @@ export default function CartPage() {
                                        {/* Quantity Controller */}
                                        <div className="flex items-center bg-background border border-surface-hover rounded-xl p-1 shadow-sm">
                                           <button
+                                             type="button"
                                              onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                                              disabled={updatingItems[item.id]}
                                              className="w-8 h-8 flex items-center justify-center text-foreground hover:bg-surface hover:text-rose-500 rounded-lg transition-colors disabled:opacity-50"
+                                             aria-label={item.quantity <= 1 ? `حذف ${item.product?.name || 'المنتج'} من السلة` : `تقليل كمية ${item.product?.name || 'المنتج'}`}
                                           >
                                              {item.quantity <= 1 ? <Trash2 className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
                                           </button>
@@ -319,9 +302,11 @@ export default function CartPage() {
                                           </span>
 
                                           <button
+                                             type="button"
                                              onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                                              disabled={updatingItems[item.id]}
                                              className="w-8 h-8 flex items-center justify-center text-foreground hover:bg-surface hover:text-primary rounded-lg transition-colors disabled:opacity-50"
+                                             aria-label={`زيادة كمية ${item.product?.name || 'المنتج'}`}
                                           >
                                              <Plus className="w-4 h-4" />
                                           </button>
@@ -329,18 +314,19 @@ export default function CartPage() {
 
                                        {/* Mobile Delete */}
                                        <button
+                                          type="button"
                                           onClick={() => handleRemoveItem(item.id)}
                                           disabled={updatingItems[item.id]}
                                           className="sm:hidden text-gray-400 hover:text-rose-500 flex items-center gap-1.5 text-sm font-medium transition-colors disabled:opacity-50"
+                                          aria-label={`حذف ${item.product?.name || 'المنتج'} من السلة`}
                                        >
                                           <Trash2 className="w-4 h-4" />
                                           حذف
                                        </button>
                                     </div>
                                  </div>
-                              </motion.div>
+                              </div>
                            ))}
-                        </AnimatePresence>
                      </div>
 
                      {/* Right Column: Order Summary (4 cols) */}
@@ -351,24 +337,24 @@ export default function CartPage() {
                            <div className="space-y-4 mb-6">
                               <div className="flex justify-between text-gray-400">
                                  <span>المجموع الأصلي ({items.reduce((t, i) => t + i.quantity, 0)} منتج)</span>
-                                 <span className="font-bold text-foreground">{cartOriginalTotal.toLocaleString()} ج.م</span>
+                                 <span className="font-bold text-foreground">{formatPrice(cartOriginalTotal)} ج.م</span>
                               </div>
                               {cartDiscountTotal > 0 && (
                                  <div className="flex justify-between text-rose-400">
                                     <span>إجمالي الخصم</span>
-                                    <span className="font-bold">- {cartDiscountTotal.toLocaleString()} ج.م</span>
+                                    <span className="font-bold">- {formatPrice(cartDiscountTotal)} ج.م</span>
                                  </div>
                               )}
                               <div className="flex justify-between text-gray-400 pt-2 border-t border-surface-hover/50">
                                  <span>المجموع بعد الخصم</span>
-                                 <span className="font-bold text-foreground">{cartTotal.toLocaleString()} ج.م</span>
+                                 <span className="font-bold text-foreground">{formatPrice(cartTotal)} ج.م</span>
                               </div>
                               <div className="flex justify-between text-gray-400">
                                  <span>مصاريف الشحن</span>
                                  {shippingCost === 0 ? (
                                     <span className="font-bold text-emerald-500">مجانًا</span>
                                  ) : (
-                                    <span className="font-bold text-foreground">{shippingCost.toLocaleString()} ج.م</span>
+                                    <span className="font-bold text-foreground">{formatPrice(shippingCost)} ج.م</span>
                                  )}
                               </div>
                            </div>
@@ -377,18 +363,19 @@ export default function CartPage() {
                               <div className="flex justify-between items-end">
                                  <span className="text-lg font-bold text-foreground">الإجمالي الكلي</span>
                                  <div className="text-end">
-                                    <span className="block text-2xl font-black text-primary">{grandTotal.toLocaleString()} ج.م</span>
+                                    <span className="block text-2xl font-black text-primary">{formatPrice(grandTotal)} ج.م</span>
                                     <span className="text-[11px] text-gray-500">شامل ضريبة القيمة المضافة إن وجدت</span>
                                  </div>
                               </div>
                            </div>
 
-                           {showDesktopSummaryCheckout && (
+                           <div className="hidden lg:block">
                               <div className="space-y-3">
                                  <Button
                                     size="lg"
                                     className="h-14 w-full rounded-2xl px-6 text-base font-black shadow-primary/20 shadow-lg"
                                     onClick={() => router.push('/checkout')}
+                                    aria-label="الانتقال إلى صفحة الدفع"
                                  >
                                     متابعة الدفع
                                     <ArrowLeft className="mr-2 h-5 w-5" />
@@ -399,12 +386,13 @@ export default function CartPage() {
                                     className="h-12 w-full rounded-2xl border border-primary/20 bg-primary/5 px-6 text-sm font-black text-primary hover:bg-primary/10"
                                     onClick={handleCreateGroupOrder}
                                     disabled={isCreatingGroupOrder}
+                                    aria-label="ابدأ طلبًا جماعيًا من السلة"
                                  >
                                     <Users className="ml-2 h-4.5 w-4.5" />
                                     {isCreatingGroupOrder ? 'بنجهز الرابط...' : 'طلب جماعي'}
                                  </Button>
                               </div>
-                           )}
+                           </div>
 
                            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
                               <ShoppingBag className="w-4 h-4" />
@@ -426,13 +414,14 @@ export default function CartPage() {
                            <div className="min-w-0 flex flex-col px-1">
                               <span className="text-[11px] font-medium tracking-wide text-gray-500">الإجمالي الكلي</span>
                               <span className="mt-1 font-heading text-2xl font-black leading-none text-primary">
-                                 {grandTotal.toLocaleString()} <span className="text-sm font-bold">ج.م</span>
+                                 {formatPrice(grandTotal)} <span className="text-sm font-bold">ج.م</span>
                               </span>
                            </div>
                            <Button
                               size="lg"
                               className="h-14 min-w-[190px] rounded-2xl px-6 text-base font-black shadow-primary/20 shadow-lg"
                               onClick={() => router.push('/checkout')}
+                              aria-label="الانتقال إلى صفحة الدفع"
                            >
                               متابعة الدفع
                               <ArrowLeft className="mr-2 h-5 w-5" />
@@ -444,6 +433,7 @@ export default function CartPage() {
                            className="h-12 w-full rounded-2xl border border-primary/20 bg-primary/5 px-6 text-sm font-black text-primary hover:bg-primary/10"
                            onClick={handleCreateGroupOrder}
                            disabled={isCreatingGroupOrder}
+                           aria-label="ابدأ طلبًا جماعيًا من السلة"
                         >
                            <Users className="ml-2 h-4.5 w-4.5" />
                            {isCreatingGroupOrder ? 'بنجهز الرابط...' : 'طلب جماعي'}
