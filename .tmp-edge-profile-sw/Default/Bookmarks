@@ -1,0 +1,167 @@
+{
+   "checksum": "1bc868c88b1c2c91d7dd4130a5ac478e",
+   "roots": {
+      "bookmark_bar": {
+         "children": [ {
+            "date_added": "13366689733852097",
+            "date_last_used": "13419799713690724",
+            "guid": "67aa61e3-ef01-464e-a859-dd0163018333",
+            "id": "7",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "ChatGPT",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://chatgpt.com/c/409583c4-0d87-4f1d-8696-adf9988176da",
+            "visit_count": 477
+         }, {
+            "date_added": "13417298908756223",
+            "date_last_used": "0",
+            "guid": "22b69588-0b02-4083-b460-5cff8b61b029",
+            "id": "8",
+            "name": "",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "file:///D:/Downloads/download.png",
+            "visit_count": 0
+         }, {
+            "date_added": "13386172178289926",
+            "date_last_used": "13415653253362865",
+            "guid": "2f8d300a-48cd-491e-81cb-ec9f10e565fa",
+            "id": "9",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "Minus1 - إنشاء جدول منتجات",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://chatgpt.com/g/g-p-67a90423348c8191bd9af983860f543f-minus1/c/67c9cdcd-0fc8-8001-a948-ec2f77f7e373",
+            "visit_count": 26
+         }, {
+            "date_added": "13410789772576015",
+            "date_last_used": "0",
+            "guid": "9fed7f1b-96cf-4105-ae77-5c5c33e82152",
+            "id": "10",
+            "name": "",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "file:///D:/Desktop/Yaser/Yaser%20Dera.xlsx",
+            "visit_count": 0
+         }, {
+            "date_added": "13389136021202369",
+            "date_last_used": "13395241120607432",
+            "guid": "b451b7f8-063c-4c2f-9e7c-e5a1776ebcfc",
+            "id": "11",
+            "name": "ذكاء اصطناعي Grok 3: مساعدة وفكاهة - Grok",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://grok.com/chat/4bdbd154-4253-4eb2-9dac-9ee3037d05f0",
+            "visit_count": 28
+         }, {
+            "date_added": "13391963285983767",
+            "date_last_used": "13411697458122592",
+            "guid": "d6d4711e-ff8e-445f-a4d1-b31dfc2dc06a",
+            "id": "12",
+            "name": "Settings | Cursor - The AI Code Editor",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://www.cursor.com/settings",
+            "visit_count": 3
+         }, {
+            "date_added": "13395278050710504",
+            "date_last_used": "0",
+            "guid": "791e57a4-77e1-42a8-94ec-511d525e9073",
+            "id": "13",
+            "name": "متجر أحمد - أفضل المنتجات بأفضل الأسعار",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "file:///D:/E-commerce/index.html#",
+            "visit_count": 1
+         }, {
+            "date_added": "13398141588406437",
+            "date_last_used": "13400973746397844",
+            "guid": "c00036a7-54a9-4f91-9d4d-f73308cd8c06",
+            "id": "14",
+            "name": "quest-design-chronicles",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://preview--quest-design-chronicles.lovable.app/",
+            "visit_count": 2
+         }, {
+            "date_added": "13415408534804855",
+            "date_last_used": "0",
+            "guid": "7363b5bf-d852-4a27-9dbf-35b689869f3b",
+            "id": "15",
+            "name": "مشاريع - Canva",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://www.canva.com/projects",
+            "visit_count": 1
+         }, {
+            "date_added": "13417667382594814",
+            "date_last_used": "0",
+            "guid": "2eed0f02-b863-4a4f-9972-ace81ae41762",
+            "id": "16",
+            "name": "SQL Editor | fi-elsekka | AhmedOmar2003's Org | Supabase",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://supabase.com/dashboard/project/pldqqrndyzyyfnvbotga/sql/1c0dd3d4-5fa2-4931-96cd-3d6d36faa60d",
+            "visit_count": 1
+         } ],
+         "date_added": "13419809032879521",
+         "date_last_used": "0",
+         "date_modified": "13417667382594814",
+         "guid": "0bc5d13f-2cba-5d74-951f-3f233fe6c908",
+         "id": "1",
+         "name": "Favorites bar",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "other": {
+         "children": [  ],
+         "date_added": "13419809032879521",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "82b081ec-3dd3-529c-8475-ab6c344590dd",
+         "id": "2",
+         "name": "Other favorites",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "synced": {
+         "children": [  ],
+         "date_added": "13419809032879521",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "4cf2e351-0e85-532b-bb37-df045d8f8d0f",
+         "id": "3",
+         "name": "Mobile favorites",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "workspaces_v2": {
+         "children": [  ],
+         "date_added": "13419809032879521",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "75aa6670-344f-549d-b742-660f029506ab",
+         "id": "5",
+         "name": "Workspaces",
+         "source": "unknown",
+         "type": "folder"
+      }
+   },
+   "sync_metadata": "CjEKDgiIgQISCP68rlmdAQAAEgAqGFROTW9ESm9vUTI4MEVHdXNwVU9TaEE9PUgDoAYHEq0BCBASqAEKHDNBbEtJbkl1emNKYkdockZQK1gva3hEK3Z0Yz0SJDJlZWQwZjAyLWI4NjMtNGE0Zi05OTcyLWFjZTgxYWU0MTc2MhgAIAAoADDMqdjUzTM49qvY1M0zQPar2NTNM0ocSmh6aVhEcHBRYUZad0RyWGRpTkNoVWxmNFNnPVofIh3/UkxKZ2QvVGhCbHdzMTdnWlhkOXFCNnVEbXBzPWWPfvhowj4CYAUSrQEIDxKoAQocbE5rM0xZZVZPM3ZMV3VGUnFLQTYzVnJUcmxnPRIkNzM2M2I1YmYtZDg1Mi00YTI3LTlkYmYtMzViNjg5ODY5ZjNiGAAgACgAMMbIyp/FMzid1MqfxTNAndTKn8UzShxDZjZ3cVdjNlUvdUJkUGFUSlgrc05WeldIZkU9Wh8iHf4xSWFFeHlmRHE5bG1LVHdOQ3U3L0I4KzJlaE09ZXYfjuHCPgJgBRKtAQgNEqgBChxxelJCeGJTK3pMaEI4VjlRMEcvemp5Q3pVWXM9EiQ3OTFlNTdhNC03N2UxLTQyYTgtOTRlYy01MTFkNTI1ZTkwNzMYACAAKAAwwZ/PoPoyOK2hz6D6MkCtoc+g+jJKHGx1bVZFaWFqWVNtZmZndFJKNlFmYm90VTJoZz1aHyId+lVsdGM2T00xa2JkejN2UnIxNVJSVnUxdnZKMD1lAAAAAMI+AmAFEq0BCAoSqAEKHG9qT2dHSU9rQUFTcDFDL1Y5TXJLVlc0SFpiQT0SJDlmZWQ3ZjFiLTk2Y2YtNDEwNS1hZTc3LTVjNWMzM2U4MjE1MhgAIAAoADCN0ZeFtDM4zNGXhbQzQMzRl4W0M0ocYkdheElDNTJjTzYvY01kL2lqV2ZHd1p1WFQwPVofIh3gRlYxM0UydEphS2tVTzRDQnlIaHFvWDFwRXFnPWUAAAAAwj4CYAUSrQEIDBKoAQoceXlwOXA1Mk1hQ1lMS05lSjFCWXBMWFc5THhBPRIkZDZkNDcxMWUtZmY4ZS00NDVmLWE0ZDEtYjMxZGZjMmRjMDZhGAAgACgAMMeA1bbFMzi9lIL07TJAvZSC9O0yShxFTDdYcDM5amgxV1M5dkZ5VkFFZEdiNlBmckk9Wh8iHfVLWUhoTEV1MGNaVE9SMEVrcHhmWDFrREprZ1U9ZVW6CsrCPgJgBRKtAQgJEqgBChxkckJJWndPa002dmwrNUZpcFhZd3NFcXVSVjg9EiQyZjhkMzAwYS00OGNkLTQ5MWUtODFjYi1lYzlmMTBlNTY1ZmEYACAAKAAwzuyilMYzOPyCzarYMkD8gs2q2DJKHE4vZml5dE1mYXh6Y2hMMGFZQUg3QVB1YURnQT1aHyId1jQvWXNJZm8zYjlpSW9BRWtNaWVCUEp3RGZzTT1lhqXYyMI+AmAFEq0BCAsSqAEKHFU5QTVvUVFGYWh3clVGaGJNZDVDUGowcUNwTT0SJGI0NTFiN2Y4LTA2M2MtNGMyZi05ZTdjLWU1YTE3NzZlYmNmYxgAIAAoADCtlIGP+jI49tDvr+MyQPbQ76/jMkocWktraU5STG9tSmNqbE1pOG1HMVRXMnlPcUQ0PVofIh3rTlJSQTJDdEkwME1LQmo5YzVMMDE3MzlDRlBNPWWbBc00wj4CYAUSjgEIARKJAQoceXhKLzZmdmtlY3I3a3A1RVF6QjR0V0xwZGJFPRIkYWQ2NzgzOWMtNDI2OS01MTRkLTgzNzAtMDY2MzE2ZDg5YWI3GAAgACgAMImb+cuDMTi1nfnLgzFAtZ35y4MxShxhUkNXTGdoRjliNUlucUtJRHZ1Si9qdlFrRmM9WgBlAAAAAMI+AmAAEo4BCAISiQEKHFljU1RvbnZFU1B3cUNzNEwyY3JWaHY2OEw5OD0SJDI1NjUxMzMxLTdmNWEtNWFkMS1hMDkzLWI1ZGU3NjUzMDk5YRgAIAAoADCKm/nLgzE4y535y4MxQMud+cuDMUocb1BWa2h3QlJiVjY1S0NXUjIrSU9OSFdvT3U4PVoAZQAAAADCPgJgABKOAQgDEokBChxuamdEdTg4ZUNydlhwODZwRDdmSEdjcUZwODg9EiRlMzczOGM0Yy1mNWUzLTVhOTItYjU1ZC0yZDMxZWUxZWNkMmMYACAAKAAwj5v5y4MxONGe+cuDMUDRnvnLgzFKHHl6TkIwMWNuNTRBN2NSVTB1VCsvUGdtVHRVbz1aAGUAAAAAwj4CYAASrQEICBKoAQocdjJENFA3dXdBb3VHQ1NvYnBKeFRjMnBPUk1VPRIkMjJiNjk1ODgtMGIwMi00MDgzLWI0NjAtNWNmZjhiNjFiMDI5GAAgACgAMMTw/aTMMzj58P2kzDNA+fD9pMwzShxRdjkzeFFzKzZXYmdhRWhMVmptWkZBK09PYmM9Wh8iHcFVem44WktWcGZKVEFTOXdZQXJIR0VPRktIaWc9ZQAAAADCPgJgBRKtAQgOEqgBChxoNHgwU0taZHlZU0ZMdVJuNHJXY2dSVGVQT2M9EiRjMDAwMzZhNy01NGE5LTRmOTEtOWQ0ZC1mNzMzMDhjZDhjMDYYACAAKAAwuf/EvI8zOMLqh/aEM0DC6of2hDNKHGNDakNUQUp1azRiSDM1ZkpyU3AwUDhMZzU2MD1aHyId/Thrc2w1R2xHRE9vekIyZnBGdkVqMDhkMm1BTT1l0tgY2cI+AmAFEq0BCAcSqAEKHFhRUndRZ21raFRFcXorRlVwT2hhUlllL3lZdz0SJDY3YWE2MWUzLWVmMDEtNDY0ZS1hODU5LWRkMDE2MzAxODMzMxgAIAAoADD9+brN1TM4ku3S4I8yQJLt0uCPMkoca0kyZUVmcHhweFc4Z3BxaEdEYWNydHErQXQ4PVofIh2sVlMzSjNSTmsyL01HOFhRV2kwREVOS2h3dnlVPWX4kgPVwj4CYAUSjgEIBRKJAQocd1JCclpMKzZQQTlhdktnak5QN0pYRExjZnZzPRIkODFjZjE5NTMtNjMyMy01ZDhhLWI3YjItNjE2NGQwOTI1ODYxGAAgACgAMJvYvsGmMzjf2L7BpjNA39i+waYzShxubXg2NXNRRHZ4SThUZ0VlditBK250dG9TbjQ9WgBlAAAAAMI+AmAAMAA4AA==",
+   "version": 1
+}

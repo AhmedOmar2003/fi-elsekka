@@ -1,0 +1,5 @@
+2026/04/04-22:43:56.078 44a0 Creating DB D:\FI-ELSEKKA\frontend\.tmp-edge-profile-sw\Default\EdgeCoupons/coupons_data.db since it was missing.
+2026/04/04-22:43:56.082 44a0 Reusing MANIFEST D:\FI-ELSEKKA\frontend\.tmp-edge-profile-sw\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/04/04-22:43:59.814 dad8 Level-0 table #5: started
+2026/04/04-22:43:59.824 dad8 Level-0 table #5: 681988 bytes OK
+2026/04/04-22:43:59.826 dad8 Delete type=0 #3

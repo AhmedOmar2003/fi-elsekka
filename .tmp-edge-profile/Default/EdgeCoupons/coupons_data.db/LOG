@@ -1,0 +1,6 @@
+2026/04/04-22:43:08.591 ba5c Reusing MANIFEST D:\FI-ELSEKKA\frontend\.tmp-edge-profile\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/04/04-22:43:08.591 ba5c Recovering log #3
+2026/04/04-22:43:08.592 ba5c Reusing old log D:\FI-ELSEKKA\frontend\.tmp-edge-profile\Default\EdgeCoupons/coupons_data.db/000003.log 
+2026/04/04-22:43:08.690 bf14 Level-0 table #5: started
+2026/04/04-22:43:08.693 bf14 Level-0 table #5: 682011 bytes OK
+2026/04/04-22:43:08.696 bf14 Delete type=0 #3

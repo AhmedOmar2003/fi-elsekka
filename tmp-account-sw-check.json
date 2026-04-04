@@ -1,0 +1,77 @@
+{
+  "first": {
+    "href": "https://fi-elsekka.vercel.app/login?redirect=/account",
+    "swCount": 1,
+    "swScopes": [
+      "https://fi-elsekka.vercel.app/"
+    ],
+    "body": "القفز إلى المحتوى الرئيسي\nبتدوّر على إيه؟ اكتب هنا...\nأهلاً بيك تاني! 👋\n\nسجل دخول عشان تتابع طلباتك وتشوف مشترياتك\n\nالبريد الإلكتروني\nكلمة المرور\nنسيت كلمة المرور؟\nتسجيل الدخول\nمعندكش حساب؟ أنشئ حساب جديد\nفِي \nالسِّكَّةِ\n\nبالسكة الصح\n\nتوصيل سريع\nادف"
+  },
+  "second": {
+    "href": "https://fi-elsekka.vercel.app/login?redirect=/account",
+    "swCount": 1,
+    "swScopes": [
+      "https://fi-elsekka.vercel.app/"
+    ],
+    "body": "القفز إلى المحتوى الرئيسي\nبتدوّر على إيه؟ اكتب هنا...\nأهلاً بيك تاني! 👋\n\nسجل دخول عشان تتابع طلباتك وتشوف مشترياتك\n\nالبريد الإلكتروني\nكلمة المرور\nنسيت كلمة المرور؟\nتسجيل الدخول\nمعندكش حساب؟ أنشئ حساب جديد\nفِي \nالسِّكَّةِ\n\nبالسكة الصح\n\nتوصيل سريع\nادف",
+    "perfEntries": [
+      "https://fi-elsekka.vercel.app/cart?_rsc=m8m8p",
+      "https://fi-elsekka.vercel.app/cart?_rsc=yrv56",
+      "https://fi-elsekka.vercel.app/cart?_rsc=a75gb",
+      "https://fi-elsekka.vercel.app/_next/static/chunks/app/forgot-password/page-b22cce55e4eda1b4.js",
+      "https://fi-elsekka.vercel.app/offers?_rsc=m8m8p",
+      "https://fi-elsekka.vercel.app/offers?_rsc=1xbf7",
+      "https://fi-elsekka.vercel.app/offers?_rsc=kwdm3",
+      "https://fi-elsekka.vercel.app/_next/static/chunks/app/cart/page-3b5356dbb6620bee.js",
+      "https://fi-elsekka.vercel.app/register?_rsc=17yrj",
+      "https://fi-elsekka.vercel.app/_next/static/chunks/app/offers/page-bcd6ac88ba5abaa6.js"
+    ]
+  },
+  "events": {
+    "exceptions": [],
+    "console": [],
+    "network": [],
+    "log": [
+      {
+        "source": "intervention",
+        "level": "info",
+        "text": "Images loaded lazily and replaced with placeholders. Load events are deferred. See https://go.microsoft.com/fwlink/?linkid=2048113",
+        "timestamp": 1775335437434.701,
+        "url": "https://fi-elsekka.vercel.app/account",
+        "lineNumber": 0
+      },
+      {
+        "source": "recommendation",
+        "level": "verbose",
+        "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://www.chromium.org/developers/design-documents/create-amazing-password-forms) %o",
+        "timestamp": 1775335438895.518,
+        "url": "https://fi-elsekka.vercel.app/login?redirect=/account",
+        "args": [
+          {
+            "type": "object",
+            "subtype": "node",
+            "className": "HTMLInputElement",
+            "description": "input.flex.h-12.w-full.rounded-2xl.border.border-surface-border.bg-surface-container.px-4.py-2.text-sm.text-foreground.shadow-[var(--shadow-material-1)].transition-all.duration-200.placeholder:text-gray-400/80.focus-visible:outline-none.focus-visible:ring-[4px].focus-visible:ring-primary/10.focus-visible:border-primary/40.focus-visible:bg-surface.hover:border-surface-border/80.disabled:cursor-not-allowed.disabled:opacity-50.pr-11.text-start.direction-ltr",
+            "objectId": "4227567129995300323.2.1"
+          }
+        ]
+      },
+      {
+        "source": "recommendation",
+        "level": "verbose",
+        "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://www.chromium.org/developers/design-documents/create-amazing-password-forms) %o",
+        "timestamp": 1775335444392.745,
+        "url": "https://fi-elsekka.vercel.app/login?redirect=/account",
+        "args": [
+          {
+            "type": "object",
+            "subtype": "node",
+            "className": "HTMLInputElement",
+            "description": "input.flex.h-12.w-full.rounded-2xl.border.border-surface-border.bg-surface-container.px-4.py-2.text-sm.text-foreground.shadow-[var(--shadow-material-1)].transition-all.duration-200.placeholder:text-gray-400/80.focus-visible:outline-none.focus-visible:ring-[4px].focus-visible:ring-primary/10.focus-visible:border-primary/40.focus-visible:bg-surface.hover:border-surface-border/80.disabled:cursor-not-allowed.disabled:opacity-50.pr-11.text-start.direction-ltr",
+            "objectId": "4227567129995300323.3.1"
+          }
+        ]
+      }
+    ]
+  }
+}
