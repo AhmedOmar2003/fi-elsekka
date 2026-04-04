@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { getUserProfile, UserProfile } from '@/services/authService';
+import { getSafeLocalStorage, safeJsonParse } from '@/lib/browser-storage';
 
 interface AuthContextType {
     session: Session | null;
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 const PERSISTED_SESSION_KEY = 'fi-elsekka-auth-session';
+const storage = getSafeLocalStorage();
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [session, setSession] = useState<Session | null>(null);
@@ -87,20 +89,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const persistSessionSnapshot = (nextSession?: Session | null) => {
         if (typeof window === 'undefined') return;
         if (nextSession) {
-            localStorage.setItem(PERSISTED_SESSION_KEY, JSON.stringify(nextSession));
+            storage.setItem(PERSISTED_SESSION_KEY, JSON.stringify(nextSession));
         } else {
-            localStorage.removeItem(PERSISTED_SESSION_KEY);
+            storage.removeItem(PERSISTED_SESSION_KEY);
         }
     };
 
     const getPersistedSessionSnapshot = (): Session | null => {
         if (typeof window === 'undefined') return null;
-        try {
-            const raw = localStorage.getItem(PERSISTED_SESSION_KEY);
-            return raw ? JSON.parse(raw) as Session : null;
-        } catch {
-            return null;
-        }
+        return safeJsonParse<Session | null>(storage.getItem(PERSISTED_SESSION_KEY), null);
     };
 
     useEffect(() => {

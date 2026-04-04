@@ -100,10 +100,17 @@ export default function AccountPage() {
     React.useEffect(() => {
         if (user && activeTab === 'favorites') {
             setFavLoading(true)
-            fetchUserFavorites(user.id).then(data => {
-                setFavProducts(data)
-                setFavLoading(false)
-            })
+            fetchUserFavorites(user.id)
+                .then(data => {
+                    setFavProducts(data)
+                })
+                .catch(() => {
+                    setFavProducts([])
+                    toast.error("مقدرناش نجيب المفضلة دلوقتي")
+                })
+                .finally(() => {
+                    setFavLoading(false)
+                })
         }
     }, [user, activeTab])
 
@@ -183,7 +190,32 @@ export default function AccountPage() {
         )
     }
 
-    if (!user) return null
+    if (!user) {
+        return (
+            <>
+                <Header />
+                <main className="flex-1 pb-24 md:pb-12 bg-background min-h-[80vh]">
+                    <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12">
+                        <div className="rounded-3xl border border-surface-hover bg-surface p-8 text-center shadow-premium">
+                            <h1 className="text-2xl font-black text-foreground">سجل دخولك الأول</h1>
+                            <p className="mt-3 text-sm leading-7 text-gray-500">
+                                صفحة الحساب محتاجة تسجيل دخول علشان نعرض بياناتك وطلباتك ومفضلتك بشكل صحيح.
+                            </p>
+                            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                                <Button asChild className="rounded-xl px-8">
+                                    <Link href="/login?redirect=/account">ادخل على حسابك</Link>
+                                </Button>
+                                <Button asChild variant="outline" className="rounded-xl px-8">
+                                    <Link href="/">ارجع للرئيسية</Link>
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+                <Footer />
+            </>
+        )
+    }
 
     const displayName = profile?.full_name || user.email || "أنت"
     const initials = displayName.slice(0, 2).toUpperCase()

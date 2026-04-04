@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { normalizeAuthEmail, validateCustomerEmail, validateStrongPassword } from '@/lib/auth-validation';
 import { optimizeImageForUpload } from '@/lib/image-upload';
+import { getSafeLocalStorage } from '@/lib/browser-storage';
 
 export interface UserProfile {
     id: string;
@@ -48,9 +49,10 @@ export const signIn = async (email: string, password: string) => {
 };
 
 export const signOut = async () => {
+    const storage = getSafeLocalStorage();
     if (typeof window !== 'undefined') {
-        localStorage.removeItem('guestCart');
-        localStorage.removeItem('fi-elsekka-auth-session');
+        storage.removeItem('guestCart');
+        storage.removeItem('fi-elsekka-auth-session');
     }
     if (typeof document !== 'undefined') {
         document.cookie = `sb-access-token=; path=/; max-age=0; SameSite=Lax;${window.location.protocol === 'https:' ? ' Secure' : ''}`;
@@ -66,9 +68,17 @@ export const signOut = async () => {
         
         // Failsafe: clear standard supabase auth keys from local storage
         if (typeof window !== 'undefined') {
-            Object.keys(localStorage).forEach(key => {
+            const rawStorage = (() => {
+                try {
+                    return window.localStorage;
+                } catch {
+                    return null;
+                }
+            })();
+
+            Object.keys(rawStorage || {}).forEach(key => {
                 if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
-                    localStorage.removeItem(key);
+                    storage.removeItem(key);
                 }
             });
         }

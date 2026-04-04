@@ -3,8 +3,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { fetchFavoriteIds, addFavorite, removeFavorite, clearAllFavorites as clearAllFavoritesApi } from '@/services/favoritesService';
+import { getSafeLocalStorage, safeJsonParse } from '@/lib/browser-storage';
 
 const GUEST_KEY = 'guest_favorites';
+const storage = getSafeLocalStorage()
 
 interface FavoritesContextValue {
     favoriteIds: Set<string>;
@@ -38,13 +40,8 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
             });
         } else {
             // Guest: load from localStorage
-            try {
-                const stored = localStorage.getItem(GUEST_KEY);
-                const ids: string[] = stored ? JSON.parse(stored) : [];
-                setFavoriteIds(new Set(ids));
-            } catch {
-                setFavoriteIds(new Set());
-            }
+            const ids = safeJsonParse<string[]>(storage.getItem(GUEST_KEY), []);
+            setFavoriteIds(new Set(ids));
         }
     }, [user]);
 
@@ -77,7 +74,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
             // Persist in localStorage for guests
             setFavoriteIds(prev => {
                 const ids = Array.from(prev);
-                localStorage.setItem(GUEST_KEY, JSON.stringify(ids));
+                storage.setItem(GUEST_KEY, JSON.stringify(ids));
                 return prev;
             });
         }
@@ -88,7 +85,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         if (user) {
             await clearAllFavoritesApi(user.id);
         } else {
-            localStorage.removeItem(GUEST_KEY);
+            storage.removeItem(GUEST_KEY);
         }
     }, [user]);
 

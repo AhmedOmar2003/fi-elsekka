@@ -400,6 +400,9 @@ export function Header() {
         setCategories(data)
         categoriesLoadedRef.current = true
       })
+      .catch(() => {
+        setCategories([])
+      })
       .finally(() => {
         categoriesLoadingRef.current = false
       })

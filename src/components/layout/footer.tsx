@@ -32,11 +32,17 @@ export function Footer() {
   React.useEffect(() => {
     let mounted = true
 
-    void fetchCategories().then((data) => {
-      if (mounted) {
-        setCategories(data)
-      }
-    })
+    void fetchCategories()
+      .then((data) => {
+        if (mounted) {
+          setCategories(data)
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setCategories([])
+        }
+      })
 
     return () => {
       mounted = false

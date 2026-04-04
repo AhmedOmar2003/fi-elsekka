@@ -16,11 +16,20 @@ export function SearchRequestsPanel({ userId }: { userId: string }) {
     let mounted = true
     setOrdersLoading(true)
 
-    void fetchUserOrders(userId).then((data) => {
-      if (!mounted) return
-      setOrders(data)
-      setOrdersLoading(false)
-    })
+    void fetchUserOrders(userId)
+      .then((data) => {
+        if (!mounted) return
+        setOrders(data)
+      })
+      .catch(() => {
+        if (!mounted) return
+        setOrders([])
+        toast.error("مقدرناش نجيب طلبات البحث دلوقتي")
+      })
+      .finally(() => {
+        if (!mounted) return
+        setOrdersLoading(false)
+      })
 
     return () => {
       mounted = false

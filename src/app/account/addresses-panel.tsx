@@ -11,6 +11,7 @@ import {
 } from "@/services/deliveryService"
 import { normalizeDisplayCity } from "@/lib/delivery-location"
 import { MapPin, Plus, Star, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 
 export function AddressesPanel({ userId }: { userId: string }) {
   const [addresses, setAddresses] = React.useState<DeliveryInfo[]>([])
@@ -25,9 +26,15 @@ export function AddressesPanel({ userId }: { userId: string }) {
 
   const refreshAddresses = React.useCallback(async () => {
     setAddrLoading(true)
-    const data = await fetchUserDeliveryAddresses(userId)
-    setAddresses(data)
-    setAddrLoading(false)
+    try {
+      const data = await fetchUserDeliveryAddresses(userId)
+      setAddresses(data)
+    } catch {
+      setAddresses([])
+      toast.error("مقدرناش نجيب العناوين دلوقتي")
+    } finally {
+      setAddrLoading(false)
+    }
   }, [userId])
 
   React.useEffect(() => {
@@ -53,16 +60,26 @@ export function AddressesPanel({ userId }: { userId: string }) {
       setAddrArea("")
       setAddrStreet("")
       setAddrPhone("")
+    } else {
+      toast.error("مقدرناش نحفظ العنوان دلوقتي")
     }
   }
 
   const handleDeleteAddress = async (id: string) => {
-    await deleteDeliveryAddress(id)
+    const { error } = await deleteDeliveryAddress(id)
+    if (error) {
+      toast.error("مقدرناش نحذف العنوان دلوقتي")
+      return
+    }
     setAddresses((prev) => prev.filter((a) => a.id !== id))
   }
 
   const handleSetDefault = async (id: string) => {
-    await setDefaultDeliveryAddress(id, userId)
+    const { error } = await setDefaultDeliveryAddress(id, userId)
+    if (error) {
+      toast.error("مقدرناش نغيّر العنوان الافتراضي دلوقتي")
+      return
+    }
     await refreshAddresses()
   }
 

@@ -7,6 +7,7 @@ import { fetchUserCart, addToCart, removeFromCart, updateCartItemQuantity, clear
 import { fetchProductById } from '@/services/productsService';
 import { isSameSelectedVariant, normalizeSelectedVariant, type SelectedVariantJson } from '@/lib/product-variants';
 import { toast } from 'sonner';
+import { getSafeLocalStorage, safeJsonParse } from '@/lib/browser-storage';
 
 // ─── Guest cart item (has full product embedded) ───────────────────────────
 export interface GuestCartItem {
@@ -59,22 +60,18 @@ const CartContext = createContext<CartContextType>({
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 const GUEST_KEY = 'guestCart';
+const storage = getSafeLocalStorage()
 
 function readGuestCart(): GuestCartItem[] {
-    try {
-        const raw = localStorage.getItem(GUEST_KEY);
-        return raw ? JSON.parse(raw) : [];
-    } catch {
-        return [];
-    }
+    return safeJsonParse<GuestCartItem[]>(storage.getItem(GUEST_KEY), []);
 }
 
 function writeGuestCart(items: GuestCartItem[]) {
-    localStorage.setItem(GUEST_KEY, JSON.stringify(items));
+    storage.setItem(GUEST_KEY, JSON.stringify(items));
 }
 
 function clearGuestCart() {
-    localStorage.removeItem(GUEST_KEY);
+    storage.removeItem(GUEST_KEY);
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────
