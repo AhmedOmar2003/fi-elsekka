@@ -4,6 +4,7 @@ import * as React from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
 import Image from "next/image"
+import dynamic from "next/dynamic"
 import { usePathname, useRouter } from "next/navigation"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
@@ -17,10 +18,18 @@ import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { useProducts } from "@/contexts/ProductsContext"
 import { signOut } from "@/services/authService"
-import { LogoutModal } from "@/components/ui/logout-modal"
-import { NotificationBell } from "../ui/notification-bell"
 import { useAppSettings } from "@/contexts/AppSettingsContext"
 import { toast } from "sonner"
+
+const NotificationBell = dynamic(
+  () => import("../ui/notification-bell").then((mod) => mod.NotificationBell),
+  { ssr: false }
+)
+
+const LogoutModal = dynamic(
+  () => import("@/components/ui/logout-modal").then((mod) => mod.LogoutModal),
+  { ssr: false }
+)
 
 // ── Motorcycle SVG Logo Icon ──────────────────────────────────────────────────
 function MotorcycleIcon({ className }: { className?: string }) {

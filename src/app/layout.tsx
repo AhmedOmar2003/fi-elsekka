@@ -13,7 +13,8 @@ const lalezar = Lalezar({
   subsets: ["arabic"],
   weight: ["400"],
   variable: "--font-lalezar",
-  display: "swap",
+  display: "optional",
+  preload: false,
 });
 
 const cairo = Cairo({
