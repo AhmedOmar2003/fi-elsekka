@@ -17,6 +17,7 @@ import { toast } from "sonner"
 
 const DUPLICATE_NOTIFICATION_WINDOW_MS = 10000
 const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_KEY || ""
+const FALLBACK_SYNC_INTERVAL_MS = 20000
 
 type PushSetupState = "checking" | "enabled" | "prompt" | "blocked" | "unsupported" | "error"
 
@@ -295,10 +296,11 @@ export function NotificationBell() {
         if (!user) return
 
         const poll = () => {
+            if (document.visibilityState !== "visible") return
             void syncNotifications(true)
         }
 
-        const interval = window.setInterval(poll, 5000)
+        const interval = window.setInterval(poll, FALLBACK_SYNC_INTERVAL_MS)
         const onFocus = () => poll()
         const onVisible = () => {
             if (document.visibilityState === "visible") {

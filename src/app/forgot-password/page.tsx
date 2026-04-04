@@ -95,6 +95,7 @@ function ForgotPasswordContent() {
                 onChange={e => setEmail(e.target.value)}
                 placeholder="example@mail.com"
                 className="h-12 rounded-xl bg-background border-surface-hover focus-visible:border-primary text-start direction-ltr"
+                autoComplete="email"
                 required
                 disabled={status === 'loading'}
               />

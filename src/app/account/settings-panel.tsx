@@ -104,20 +104,20 @@ export function SettingsPanel({ userId, currentEmail, initialFullName, initialPh
         </h2>
         <div className="space-y-2 md:col-span-2">
           <Label>الاسم بالكامل</Label>
-          <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="اسمك هنا" />
+          <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="اسمك هنا" autoComplete="name" />
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label>رقم الموبايل</Label>
-          <Input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="01xxxxxxxxx" dir="ltr" className="text-right" />
+          <Input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="01xxxxxxxxx" dir="ltr" className="text-right" autoComplete="tel" />
         </div>
         <div className="space-y-2 md:col-span-2 border-t border-surface-hover pt-4 mt-2">
           <Label>الإيميل بتاع الدخول</Label>
-          <Input value={emailInput} onChange={(e) => setEmailInput(e.target.value)} type="email" dir="ltr" className="text-right" />
+          <Input value={emailInput} onChange={(e) => setEmailInput(e.target.value)} type="email" dir="ltr" className="text-right" autoComplete="email" />
           <p className="text-[11px] text-gray-500">لو غيرته، غالبًا هيوصلك إيميل تأكيد.</p>
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label>كلمة المرور الجديدة</Label>
-          <Input value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} type="password" placeholder="سيبه فاضي لو مش عاوز تغيّره" dir="ltr" className="text-right" />
+          <Input value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} type="password" placeholder="سيبه فاضي لو مش عاوز تغيّره" dir="ltr" className="text-right" autoComplete="new-password" />
           <div className="rounded-2xl border border-surface-hover bg-surface p-3">
             <div className="flex items-center justify-between gap-3">
               <div>

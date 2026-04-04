@@ -140,6 +140,7 @@ function LoginContent() {
             onChange={e => setEmail(e.target.value)}
             placeholder="example@mail.com"
             className="text-start direction-ltr"
+            autoComplete="email"
             required
           />
         </div>
@@ -154,6 +155,7 @@ function LoginContent() {
             onChange={e => setPassword(e.target.value)}
             placeholder="••••••••"
             className="text-start direction-ltr"
+            autoComplete="current-password"
             required
           />
         </div>

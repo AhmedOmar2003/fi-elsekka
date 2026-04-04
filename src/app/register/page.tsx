@@ -137,6 +137,7 @@ function RegisterContent() {
               value={fullName}
               onChange={e => setFullName(e.target.value)}
               placeholder="أحمد محمد"
+              autoComplete="name"
               required
             />
           </div>
@@ -149,6 +150,7 @@ function RegisterContent() {
               onChange={e => setEmail(e.target.value)}
               placeholder="name@gmail.com"
               className="text-start direction-ltr"
+              autoComplete="email"
               required
             />
             <p className="px-1 text-xs text-muted-foreground">لازم البريد الإلكتروني العادي يكون Gmail مثل: `name@gmail.com`</p>
@@ -161,6 +163,7 @@ function RegisterContent() {
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
               className="text-start direction-ltr"
+              autoComplete="new-password"
               required
               minLength={8}
             />
@@ -187,7 +190,7 @@ function RegisterContent() {
                 <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={applySuggestedPassword}>
                   استخدمها
                 </Button>
-                <Button type="button" variant="ghost" className="rounded-xl px-3" onClick={copySuggestedPassword}>
+                <Button type="button" variant="ghost" className="rounded-xl px-3" onClick={copySuggestedPassword} aria-label="نسخ كلمة المرور المقترحة">
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>

@@ -187,6 +187,7 @@ function UpdatePasswordContent() {
             onChange={e => setPassword(e.target.value)}
             placeholder="••••••••"
             className="h-12 rounded-xl bg-background border-surface-hover focus-visible:border-primary text-start direction-ltr"
+            autoComplete="new-password"
             required
             disabled={status === 'loading'}
             minLength={8}
@@ -203,6 +204,7 @@ function UpdatePasswordContent() {
             onChange={e => setConfirmPassword(e.target.value)}
             placeholder="••••••••"
             className="h-12 rounded-xl bg-background border-surface-hover focus-visible:border-primary text-start direction-ltr"
+            autoComplete="new-password"
             required
             disabled={status === 'loading'}
             minLength={8}
