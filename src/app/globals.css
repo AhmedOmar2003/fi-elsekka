@@ -278,3 +278,8 @@ button:active {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-primary rounded-full hover:bg-emerald-400 transition-colors;
 }
+
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 900px;
+}

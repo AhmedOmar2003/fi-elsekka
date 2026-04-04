@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Lalezar, Cairo } from "next/font/google";
-import { MobileNav } from "@/components/layout/mobile-nav";
 import { Providers } from "@/components/providers";
-import { Toaster } from "sonner";
-import { MaintenanceModeOverlay } from "@/components/system/maintenance-mode-overlay";
+import { ClientShell } from "@/components/client-shell";
 import { fetchPublicAppSettingsServer } from "@/services/serverAppSettingsService";
 import "./globals.css";
 
@@ -128,12 +126,10 @@ export default function RootLayout({
           القفز إلى المحتوى الرئيسي
         </a>
         <Providers>
-          <MaintenanceModeOverlay />
           <div id="main-content" className="flex-1 flex w-full flex-col outline-none animate-fade-in" tabIndex={-1}>
             {children}
           </div>
-          <MobileNav />
-          <Toaster className="font-sans" position="top-center" richColors />
+          <ClientShell />
         </Providers>
       </body>
     </html>

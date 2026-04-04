@@ -15,6 +15,10 @@ const withPWA = withPWAInit({
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  compress: true,
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
   images: {
     // Auto-serve WebP/AVIF — typically 50-80% smaller than JPEG/PNG
     formats: ['image/avif', 'image/webp'],

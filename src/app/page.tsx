@@ -124,6 +124,7 @@ export default async function Home() {
                     alt="Shopping Box"
                     fill
                     priority
+                    fetchPriority="high"
                     quality={72}
                     sizes="(max-width: 1024px) 100vw, 50vw"
                     className="h-full w-full rounded-[18px] object-cover transition-transform duration-1000 group-hover:scale-110 sm:rounded-2xl"
@@ -145,7 +146,7 @@ export default async function Home() {
         </section>
 
         {/* Categories Section */}
-        <section className="py-12">
+        <section className="content-visibility-auto py-12">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-8 flex items-end justify-between">
               <div>
@@ -162,7 +163,7 @@ export default async function Home() {
         </section>
 
         {/* Featured Offers Section */}
-        <section className="py-12">
+        <section className="content-visibility-auto py-12">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-6 flex items-end justify-between sm:mb-8">
               <div>
@@ -207,7 +208,7 @@ export default async function Home() {
         <PromoBanner />
 
         {/* Best Sellers Section */}
-        <section className="py-12">
+        <section className="content-visibility-auto py-12">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-6 flex items-end justify-between sm:mb-8">
               <div>
@@ -245,7 +246,7 @@ export default async function Home() {
         </section>
 
         {/* Delivery Trust Section */}
-        <section className="relative mt-12 overflow-hidden py-16">
+        <section className="content-visibility-auto relative mt-12 overflow-hidden py-16">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
           <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px]"></div>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">

@@ -63,15 +63,26 @@ export function SiteVisitTracker() {
             window.localStorage.setItem(visitKey, '1');
         }
 
+        const payload = JSON.stringify({
+            path: pathname,
+            visitorId,
+            sessionId,
+            previousPath,
+        });
+
+        const beaconSent =
+            typeof navigator !== 'undefined' &&
+            typeof navigator.sendBeacon === 'function' &&
+            navigator.sendBeacon('/api/analytics/visit', new Blob([payload], { type: 'application/json' }));
+
+        if (beaconSent) {
+            return;
+        }
+
         fetch('/api/analytics/visit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                path: pathname,
-                visitorId,
-                sessionId,
-                previousPath,
-            }),
+            body: payload,
             keepalive: true,
         }).then(async (res) => {
             if (!res.ok && shouldCountVisitor) {

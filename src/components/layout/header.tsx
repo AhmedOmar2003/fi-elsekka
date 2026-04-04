@@ -387,8 +387,8 @@ export function Header() {
   React.useEffect(() => {
     setIsClient(true)
   }, [])
-
-  React.useEffect(() => {
+  
+  const warmCategories = React.useCallback(() => {
     void ensureCategoriesLoaded()
   }, [ensureCategoriesLoaded])
 
@@ -433,7 +433,10 @@ export function Header() {
 
         {/* Mobile: Hamburger */}
         <button
-          onClick={() => setIsMobileMenuOpen(true)}
+          onClick={() => {
+            warmCategories()
+            setIsMobileMenuOpen(true)
+          }}
           className="md:hidden flex items-center justify-center w-11 h-11 rounded-2xl text-white/70 hover:text-white hover:bg-white/6 active:scale-95 transition-all shrink-0"
           aria-label="القائمة"
         >
@@ -447,7 +450,6 @@ export function Header() {
             alt="في السكة Logo"
             width={40}
             height={40}
-            priority
             className="rounded-2xl shadow-[var(--shadow-material-2)] ring-1 ring-primary/10 group-hover:shadow-[var(--shadow-material-3)] transition-all"
           />
           <div className="hidden sm:flex flex-col leading-none">
@@ -471,10 +473,14 @@ export function Header() {
               className="h-12 w-full rounded-full border-white/6 bg-white/6 ps-10 pe-4 text-sm text-white placeholder:text-white/40 shadow-none focus-visible:ring-primary/30"
               value={desktopQuery}
               onChange={(e) => {
+                warmCategories()
                 setDesktopQuery(e.target.value)
                 setShowDesktopResults(true)
               }}
-              onFocus={() => setShowDesktopResults(true)}
+              onFocus={() => {
+                warmCategories()
+                setShowDesktopResults(true)
+              }}
               onKeyDown={handleDesktopSearch}
             />
             {/* Autocomplete dropdown */}
@@ -579,7 +585,10 @@ export function Header() {
       {!hideMobileInlineSearch && (
         <div className="md:hidden border-t border-white/8 bg-[#101816] px-3 pb-3 pt-2">
           <button
-            onClick={() => setIsSearchOpen(true)}
+            onClick={() => {
+              warmCategories()
+              setIsSearchOpen(true)
+            }}
             className="flex h-12 w-full items-center gap-3 rounded-[24px] border border-white/8 bg-white/6 px-4 text-start text-sm text-white/55 shadow-[var(--shadow-material-1)] transition-colors hover:bg-white/8"
             aria-label="ابحث عن منتج"
           >

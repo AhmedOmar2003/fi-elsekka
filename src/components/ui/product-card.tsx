@@ -103,7 +103,7 @@ export function ProductCard({
             alt={title}
             fill
             quality={70}
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            sizes="(max-width: 640px) 46vw, (max-width: 1024px) 33vw, 25vw"
             className="w-full h-full object-cover object-center scale-[1.06] transition-transform duration-500 group-hover:scale-[1.14]"
           />
         </div>
@@ -116,7 +116,7 @@ export function ProductCard({
             </span>
           )}
           {discountBadge && (
-            <span className="inline-flex items-center rounded-full border border-secondary-hover/40 bg-secondary-hover px-3 py-1 text-[11px] font-black tracking-wide text-white shadow-[var(--shadow-material-1)]">
+            <span className="inline-flex items-center rounded-full border border-rose-200/25 bg-rose-700/95 px-3 py-1 text-[11px] font-black tracking-wide text-white shadow-[var(--shadow-material-1)]">
               {discountBadge}
             </span>
           )}
