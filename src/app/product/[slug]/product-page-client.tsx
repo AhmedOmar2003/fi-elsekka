@@ -515,10 +515,7 @@ export default function ProductPage({
   const [activeImage, setActiveImage] = React.useState(0)
 
   const trustHighlights = React.useMemo(() => {
-    const items: string[] = [
-      "مصاريف الشحن واضحة قبل التأكيد",
-      "دفع كاش وقت الاستلام",
-    ]
+    const items: string[] = []
 
     if (reviewStats.totalReviews > 0) {
       items.push(`عليه ${reviewStats.totalReviews} تقييم من العملاء`)
@@ -531,7 +528,7 @@ export default function ProductPage({
     if (!product.isRestaurantItem && (product.stockQty ?? 0) > 0 && (product.stockQty ?? 0) <= 5) {
       items.push(`متبقي ${product.stockQty} قطع فقط`)
     }
-    return items.slice(0, 4)
+    return items.slice(0, 3)
   }, [product.isBestSeller, product.stockQty, reviewStats.totalReviews])
 
   const shareTitle = React.useMemo(() => `شوف ${dbProduct?.name || "المنتج ده"} على في السكة`, [dbProduct?.name])
@@ -737,14 +734,14 @@ export default function ProductPage({
                     <MapPin className="h-5 w-5" />
                   </div>
                   <h2 className="text-sm font-black text-foreground">التوصيل الحالي</h2>
-                  <p className="mt-1 text-xs leading-6 text-gray-500">بنوصّل حاليًا داخل قرية ميت العامل فقط، وقريبًا القرى المجاورة.</p>
+                  <p className="mt-1 text-xs leading-6 text-gray-500">داخل ميت العامل فقط.</p>
                 </div>
                 <div className="rounded-2xl border border-surface-hover bg-surface/55 p-4">
                   <div className="mb-2 inline-flex rounded-xl bg-emerald-500/10 p-2 text-emerald-500">
                     <Banknote className="h-5 w-5" />
                   </div>
                   <h2 className="text-sm font-black text-foreground">الشحن والدفع</h2>
-                  <p className="mt-1 text-xs leading-6 text-gray-500">الشحن الحالي {CURRENT_DELIVERY_FEE} ج.م، والدفع كاش وقت الاستلام.</p>
+                  <p className="mt-1 text-xs leading-6 text-gray-500">{CURRENT_DELIVERY_FEE} ج.م والدفع عند الاستلام.</p>
                 </div>
               </div>
 
@@ -1032,8 +1029,8 @@ export default function ProductPage({
                     <ShieldCheck className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="font-heading font-bold text-sm text-foreground mb-1">الدفع كاش عند الاستلام</p>
-                    <p className="text-xs text-gray-500 leading-relaxed">عاين المنتج براحتك قبل ما تدفع أي حاجة</p>
+                    <p className="font-heading font-bold text-sm text-foreground mb-1">الدفع عند الاستلام</p>
+                    <p className="text-xs text-gray-500 leading-relaxed">عاين المنتج وبعدين ادفع.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-4 rounded-2xl bg-surface/50 border border-surface-hover hover:border-primary/30 transition-colors">
@@ -1042,7 +1039,7 @@ export default function ProductPage({
                   </div>
                   <div>
                     <p className="font-heading font-bold text-sm text-foreground mb-1">توصيل سريع ومضمون</p>
-                    <p className="text-xs text-gray-500 leading-relaxed">هنعرفك مصاريف الشحن بالضبط قبل التأكيد</p>
+                    <p className="text-xs text-gray-500 leading-relaxed">الشحن واضح من البداية.</p>
                   </div>
                 </div>
               </div>
@@ -1050,19 +1047,21 @@ export default function ProductPage({
               <div className="content-visibility-auto mb-8 rounded-3xl border border-surface-hover bg-surface/40 p-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="max-w-2xl">
-                    <h2 className="text-sm font-black text-foreground">ليه تكمّل الطلب من هنا؟</h2>
+                    <h2 className="text-sm font-black text-foreground">قبل ما تكمل</h2>
                     <p className="mt-2 text-sm leading-7 text-gray-500">
-                      وضحنا لك التوصيل الحالي والشحن والدفع من بدري، علشان تبقى عارف كل حاجة قبل ما تكمل. ولو المنتج مش مناسبك، هتلاقي منتجات مشابهة في نفس الصفحة.
+                      التوصيل والشحن واضحين من الأول، ولو غيرت رأيك هتلاقي بدائل قريبة هنا.
                     </p>
                   </div>
-                  <div className="grid min-w-[240px] gap-2 text-xs text-gray-400">
-                    {trustHighlights.map((item) => (
-                      <div key={item} className="inline-flex items-center gap-2 rounded-2xl border border-surface-hover bg-surface px-3 py-2">
-                        <Check className="h-4 w-4 text-primary" />
-                        {item}
-                      </div>
-                    ))}
-                  </div>
+                  {trustHighlights.length > 0 && (
+                    <div className="grid min-w-[240px] gap-2 text-xs text-gray-400">
+                      {trustHighlights.map((item) => (
+                        <div key={item} className="inline-flex items-center gap-2 rounded-2xl border border-surface-hover bg-surface px-3 py-2">
+                          <Check className="h-4 w-4 text-primary" />
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
