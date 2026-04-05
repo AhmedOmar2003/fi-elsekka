@@ -1153,8 +1153,9 @@ export default function ProductPage({
             )}
 
             {/* ── Reviews Section ────────────────────────────────────────── */}
-            <div className="content-visibility-auto mt-16 pt-10 border-t border-surface-hover w-full" id="reviews">
-              <div className="flex items-center gap-3 mb-8">
+            <div className="content-visibility-auto mt-16 w-full border-t border-surface-hover pt-10" id="reviews">
+              <div className="rounded-3xl border border-surface-hover bg-surface/35 p-6 md:p-8">
+              <div className="mb-8 flex items-center gap-3">
                 <h2 className="text-2xl font-black text-foreground">تقييمات العملاء</h2>
                 <MessageSquare className="w-6 h-6 text-primary" />
               </div>
@@ -1164,11 +1165,11 @@ export default function ProductPage({
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+                <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8">
                   
                   {/* Stats Column - Now on the Right (lg:col-span-4) visually left in RTL */}
                   <div className="lg:col-span-4 flex flex-col gap-4 order-1">
-                    <div className="bg-[#11161d] rounded-[2rem] p-8 border border-surface-hover shadow-sm">
+                    <div className="rounded-[2rem] border border-surface-hover bg-background/35 p-8 shadow-sm">
                       <div className="text-center mb-8">
                         <span className="font-heading text-6xl font-black text-white block mb-4 leading-none">{reviewStats.averageRating}</span>
                         <div className="flex justify-center gap-1 mb-3">
@@ -1201,7 +1202,7 @@ export default function ProductPage({
                     </div>
 
                     {canReview && !showReviewForm && (
-                      <div className={`rounded-[2rem] p-6 border flex flex-col gap-4 items-center ${alreadyReviewed ? 'bg-[#0a2318] border-[#10b981]/20' : 'bg-[#11161d] border-surface-hover'}`}>
+                      <div className={`rounded-[2rem] border p-6 ${alreadyReviewed ? 'border-[#10b981]/20 bg-[#0a2318]' : 'border-surface-hover bg-background/35'}`}>
                         {alreadyReviewed ? (
                           <div className="w-full flex items-center gap-4 rounded-2xl bg-[#10b981]/5 border border-[#10b981]/10 px-4 py-4">
                             <div className="w-12 h-12 rounded-full bg-[#10b981]/10 flex items-center justify-center text-[#10b981] shrink-0">
@@ -1215,14 +1216,14 @@ export default function ProductPage({
                             </div>
                           </div>
                         ) : (
-                          <p className="w-full text-sm text-gray-400 text-center leading-relaxed">
+                          <p className="w-full text-center text-sm leading-relaxed text-gray-400">
                             جرّبت المنتج؟ شاركنا رأيك الحقيقي وساعد الناس تاخد قرار أريح.
                           </p>
                         )}
 
                         <Button
                           onClick={openReviewForm}
-                          className="w-full h-14 rounded-2xl font-bold bg-[#10b981] text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 text-base"
+                          className="mt-4 h-14 w-full rounded-2xl bg-[#10b981] text-base font-bold text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-600"
                         >
                           {alreadyReviewed ? "تعديل تقييمك" : "اكتب تقييمك للمنتج"}
                         </Button>
@@ -1230,7 +1231,7 @@ export default function ProductPage({
                     )}
 
                     {!user && (
-                      <div className="bg-[#11161d] rounded-[2rem] p-6 text-center border border-surface-hover">
+                      <div className="rounded-[2rem] border border-surface-hover bg-background/35 p-6 text-center">
                         <p className="text-sm text-gray-400 mb-4">سجل دخول عشان تقدر تكتب تقييم</p>
                         <Button asChild variant="outline" className="w-full h-12 rounded-xl border-surface-hover text-white hover:bg-surface-hover">
                           <Link href="/login">تسجيل الدخول</Link>
@@ -1241,10 +1242,10 @@ export default function ProductPage({
 
                     {/* Reviews List & Form Column - Now on the left (lg:col-span-8) visually right in RTL to take more space */}
                     <div className="lg:col-span-8 flex flex-col gap-6 order-2">
-                      
+                    
                       {/* Review Form */}
                       {showReviewForm && (
-                        <div className="bg-[#11161d] rounded-3xl p-6 border border-primary/30 shadow-[0_0_20px_rgba(16,185,129,0.1)] relative origin-top animate-in fade-in zoom-in-95 duration-200">
+                        <div className="relative origin-top animate-in zoom-in-95 fade-in rounded-3xl border border-primary/25 bg-background/40 p-6 shadow-[0_0_20px_rgba(16,185,129,0.08)] duration-200">
                           <button 
                             type="button"
                             onClick={() => setShowReviewForm(false)}
@@ -1334,15 +1335,15 @@ export default function ProductPage({
 
                       {/* List of reviews */}
                       {reviews.length === 0 ? (
-                        <div className="bg-[#11161d] rounded-3xl p-10 text-center border border-surface-hover flex flex-col items-center justify-center h-full mt-8">
+                        <div className="mt-2 flex h-full flex-col items-center justify-center rounded-3xl border border-surface-hover bg-background/35 p-10 text-center">
                           <MessageSquare className="w-12 h-12 text-gray-300 dark:text-gray-700 mb-4" />
                           <h3 className="font-bold text-lg text-foreground mb-1">مفيش تقييمات لسه</h3>
                           <p className="text-gray-500 text-sm">كن أول شخص يشارك رأيه في المنتج ده!</p>
                         </div>
                       ) : (
-                        <div className="space-y-4 w-full mt-8">
+                        <div className="mt-2 w-full space-y-3">
                           {reviews.map((review) => (
-                            <div key={review.id} className="bg-[#11161d] rounded-3xl p-6 border border-surface-hover transition-all w-full">
+                            <div key={review.id} className="w-full rounded-3xl border border-surface-hover bg-background/35 p-6 transition-all">
                               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
                                 <div className="flex flex-col gap-2">
                                   <div className="flex items-center gap-3">
@@ -1384,8 +1385,9 @@ export default function ProductPage({
                       )}
                     </div>
                   </div>
-                )}
+              )}
               </div>
+            </div>
 
             </div>
       </main>
