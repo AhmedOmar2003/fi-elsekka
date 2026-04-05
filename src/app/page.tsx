@@ -252,9 +252,9 @@ export default async function Home() {
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
           <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px]"></div>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="material-card grid grid-cols-1 gap-10 rounded-[34px] p-8 text-center sm:gap-8 md:grid-cols-3 md:divide-x md:divide-x-reverse md:divide-y-0 lg:p-12 divide-y divide-surface-border/50">
+            <div className="material-card grid grid-cols-1 gap-10 rounded-[34px] p-8 text-center sm:gap-8 md:grid-cols-3 lg:p-12">
 
-              <div className="flex flex-col items-center pt-8 md:pt-0 group">
+              <div className="group flex flex-col items-center pt-0">
                 <div className="h-20 w-20 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 text-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/5 group-hover:scale-110 transition-transform duration-500">
                   <Banknote className="w-10 h-10" />
                 </div>
@@ -262,7 +262,7 @@ export default async function Home() {
                 <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">استلم طلبك، اتطمن عليه، وبعدها ادفع كاش وإنت مرتاح.</p>
               </div>
 
-              <div className="flex flex-col items-center pt-8 md:pt-0 group">
+              <div className="group flex flex-col items-center border-t border-surface-border/50 pt-8 md:border-x md:border-y-0 md:border-surface-border/50 md:px-8 md:pt-0">
                 <div className="h-20 w-20 bg-gradient-to-br from-amber-500/20 to-amber-500/5 border border-amber-500/20 text-amber-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-amber-500/5 group-hover:scale-110 transition-transform duration-500">
                   <Clock className="w-10 h-10" />
                 </div>
@@ -270,7 +270,7 @@ export default async function Home() {
                 <p className="text-gray-400 text-sm max-w-[250px] mx-auto leading-relaxed">طلباتك بتوصلك بسرعة ومن غير لف كتير.</p>
               </div>
 
-              <div className="flex flex-col items-center pt-8 md:pt-0 group">
+              <div className="group flex flex-col items-center border-t border-surface-border/50 pt-8 md:border-t-0 md:pt-0">
                 <div className="h-20 w-20 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/20 text-blue-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-500/5 group-hover:scale-110 transition-transform duration-500">
                   <ShieldCheck className="w-10 h-10" />
                 </div>
