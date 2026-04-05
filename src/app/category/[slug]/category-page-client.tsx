@@ -116,7 +116,7 @@ export default function CategoryPageClient({
 
   const categoryName = isBestSellersView ? "الأكثر طلبًا" : currentCategory?.name || (isAllPage ? "كل المنتجات" : "قسم المنتجات")
   const isRequestOnlyCategoryPage = !!currentCategory && isRequestOnlyTextCategory(currentCategory.name)
-  const canShowRequestPageLink = !!currentCategory && !isAllPage
+  const canShowRequestPageLink = !!currentCategory && !isAllPage && !isRequestOnlyCategoryPage
   const isFoodCategoryPage = currentCategory?.name === "طعام"
   const taxonomyConfig = getCategoryTaxonomyConfig(currentCategory?.name)
   const taxonomyPrimaryOptions = getTaxonomyPrimaryOptions(currentCategory?.name)
