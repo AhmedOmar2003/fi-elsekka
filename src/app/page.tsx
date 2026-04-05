@@ -81,26 +81,26 @@ export default async function Home() {
                 <p className="storefront-subtle-text mx-auto mb-5 max-w-xl text-sm font-medium leading-7 sm:mx-0 sm:mb-8 sm:text-xl">
                   {siteTagline} من السوبر ماركت للصيدلية، ومن اللبس للإلكترونيات. اختار اللي نفسك فيه وادفع كاش وإنت بتستلم. ✨
                 </p>
-                <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:justify-start sm:gap-4">
+                <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:justify-start">
                   <Button size="lg" className="h-12 w-full rounded-full px-6 text-sm shadow-premium sm:h-14 sm:w-auto sm:px-8 sm:text-base" asChild>
                     <Link href="/category/all">ابدأ التسوق</Link>
                   </Button>
-                  <Button size="lg" variant="outline" className="h-12 w-full rounded-full px-6 text-sm backdrop-blur-md sm:h-14 sm:w-auto sm:px-8 sm:text-base" asChild>
-                    <Link href="/offers">شوف العروض</Link>
-                  </Button>
                 </div>
 
-                {/* Trust mini-badges */}
-                <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-xs font-medium text-gray-400 sm:mt-8 sm:justify-start sm:gap-6 sm:text-sm">
-                  <div className="material-chip text-xs sm:text-sm">
-                    <ShieldCheck className="w-5 h-5 text-emerald-500" />
-                    <span>دفع عند الاستلام</span>
-                  </div>
-                  <div className="material-chip text-xs sm:text-sm">
-                    <Zap className="w-5 h-5 text-amber-500" />
-                    <span>سريع ومريح</span>
-                  </div>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-bold text-gray-400 sm:mt-6 sm:justify-start sm:text-sm">
+                  <span className="inline-flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                    دفع عند الاستلام
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-amber-500" />
+                    سريع ومريح
+                  </span>
+                  <Link href="/offers" className="inline-flex items-center gap-2 text-primary transition-colors hover:text-primary/80">
+                    شوف العروض
+                  </Link>
                 </div>
+
                 <p className="mt-4 text-xs leading-6 text-gray-500 sm:mt-5 sm:text-sm">
                   لو ملقتش المنتج اللي عاوزه، تقدر تطلبه من زر <span className="font-black text-primary">ملقتش المنتج؟</span> وإحنا نرجعلك بالسعر قبل ما تكمل.
                 </p>
