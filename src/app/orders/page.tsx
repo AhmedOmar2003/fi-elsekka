@@ -308,6 +308,13 @@ function OrderCard({
   const pricingUpdatedAt = order.shipping_address?.pricing_updated_at
   const [isSubmittingQuoteResponse, setIsSubmittingQuoteResponse] = useState<null | 'approve' | 'reject'>(null)
   const restaurantOrder = getRestaurantOrderSnapshot(order.shipping_address)
+  const isDeliveredOrder = order.status === 'delivered'
+  const isCancelledOrder = order.status === 'cancelled'
+  const cardToneClass = isDeliveredOrder
+    ? "border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 via-surface to-surface shadow-[0_10px_32px_rgba(16,185,129,0.08)]"
+    : isCancelledOrder
+      ? "border-rose-500/20 bg-gradient-to-br from-rose-500/8 via-surface to-surface"
+      : "border-surface-hover bg-surface hover:border-primary/30 hover:shadow-premium"
 
   const handleCancelledOrderDecision = async (decision: 'insist' | 'confirm_cancel') => {
     setIsSubmittingCancelResponse(decision)
@@ -352,7 +359,7 @@ function OrderCard({
   }
 
   return (
-    <div className="bg-surface border border-surface-hover rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-premium transition-all">
+    <div className={`rounded-2xl overflow-hidden border transition-all ${cardToneClass}`}>
       {/* Header row */}
       <div className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -714,6 +721,7 @@ export default function OrdersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [quotePromptOrderId, setQuotePromptOrderId] = useState<string | null>(null)
   const [popupSubmittingDecision, setPopupSubmittingDecision] = useState<'approve' | 'reject' | null>(null)
+  const [orderFilter, setOrderFilter] = useState<'all' | 'active' | 'delivered' | 'cancelled'>('all')
 
   useEffect(() => {
     if (!user) return
@@ -768,6 +776,18 @@ export default function OrdersPage() {
     const isTextRequestOrder = order.shipping_address?.request_mode === 'custom_category_text'
     return !(isTextRequestOrder && order.shipping_address?.pricing_pending === true)
   })
+  const filteredOrders = visibleOrders.filter(order => {
+    if (orderFilter === 'active') return order.status !== 'delivered' && order.status !== 'cancelled'
+    if (orderFilter === 'delivered') return order.status === 'delivered'
+    if (orderFilter === 'cancelled') return order.status === 'cancelled'
+    return true
+  })
+  const orderFilterOptions: Array<{ key: 'all' | 'active' | 'delivered' | 'cancelled'; label: string; count: number }> = [
+    { key: 'all', label: 'الكل', count: visibleOrders.length },
+    { key: 'active', label: 'الجارية', count: visibleOrders.filter(order => order.status !== 'delivered' && order.status !== 'cancelled').length },
+    { key: 'delivered', label: 'المكتملة', count: visibleOrders.filter(order => order.status === 'delivered').length },
+    { key: 'cancelled', label: 'الملغية', count: visibleOrders.filter(order => order.status === 'cancelled').length },
+  ]
 
   useEffect(() => {
     const activePromptOrder = orders.find(order => order.id === quotePromptOrderId)
@@ -889,6 +909,35 @@ export default function OrdersPage() {
             </div>
           </div>
 
+          {visibleOrders.length > 0 && (
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              {orderFilterOptions.map((option) => {
+                const isActive = orderFilter === option.key
+                return (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => setOrderFilter(option.key)}
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-black transition-colors ${
+                      isActive
+                        ? option.key === 'delivered'
+                          ? 'border-emerald-500 bg-emerald-500 text-white'
+                          : option.key === 'cancelled'
+                            ? 'border-rose-500 bg-rose-500 text-white'
+                            : 'border-primary bg-primary text-white'
+                        : 'border-surface-hover bg-surface text-gray-300 hover:border-primary/30'
+                    }`}
+                  >
+                    <span>{option.label}</span>
+                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-black ${isActive ? 'bg-white/15 text-white' : 'bg-background text-gray-400'}`}>
+                      {option.count}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
           {/* Orders list */}
           {visibleOrders.length === 0 ? (
             <div className="text-center py-20">
@@ -924,9 +973,19 @@ export default function OrdersPage() {
                 </>
               )}
             </div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="rounded-3xl border border-surface-hover bg-surface/40 p-8 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-surface-hover">
+                <Package className="h-7 w-7 text-gray-500" />
+              </div>
+              <h2 className="text-lg font-black text-foreground">مفيش طلبات في القسم ده</h2>
+              <p className="mt-2 text-sm text-gray-500">
+                بدّل الفلتر وهتلاقي باقي طلباتك متقسمة بشكل أوضح.
+              </p>
+            </div>
           ) : (
             <div className="space-y-4">
-              {visibleOrders.map(order => (
+              {filteredOrders.map(order => (
                 <OrderCard
                   key={order.id}
                   order={order}
