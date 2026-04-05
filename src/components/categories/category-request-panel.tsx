@@ -181,12 +181,12 @@ export function CategoryRequestPanel({
           </div>
         </div>
 
-        <div className="mt-6 rounded-3xl border border-surface-hover bg-background/70 p-4">
+        <div className="mt-6 rounded-3xl border border-surface-hover/70 bg-background/45 p-4">
           <div className="flex items-center gap-2 text-primary">
             <Sparkles className="h-4 w-4" />
-            <p className="text-xs font-black">مثال سريع</p>
+            <p className="text-xs font-black text-primary/85">مثال سريع</p>
           </div>
-          <div className="mt-3 text-sm leading-7 text-gray-500">
+          <div className="mt-3 text-sm leading-7 text-gray-500/85">
             {isPharmacy ? (
               <>
                 أوجمنتين 1 جم - عبوة
@@ -222,9 +222,9 @@ export function CategoryRequestPanel({
                   ? `مثال:\nأوجمنتين 1 جم - عبوة\nكونجستال - 2 شريط\nلو في بديل كلموني الأول`
                   : `مثال:\nتيشيرت أسود قطن مقاس L\nأو خلاط يدوي ماركة معروفة\nأو لعبة مناسبة لطفل 7 سنين`
               }
-              className="w-full resize-none rounded-[1.5rem] border border-surface-hover bg-background px-4 py-4 text-sm leading-7 text-foreground outline-none transition-colors focus:border-primary/40"
+              className="w-full resize-none rounded-[1.5rem] border border-primary/35 bg-background px-4 py-4 text-sm leading-7 text-foreground shadow-[var(--shadow-material-1)] outline-none transition-colors focus:border-primary/50"
             />
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-gray-400">
               {isPharmacy
                 ? "كل ما كتبت الاسم أو التركيز بشكل أوضح، هيساعدنا نراجع الطلب أسرع."
                 : "وصف بسيط وواضح يكفّي جدًا، ومش لازم تكتب كلام كثير."}
