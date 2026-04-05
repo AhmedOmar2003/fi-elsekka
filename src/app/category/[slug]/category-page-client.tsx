@@ -347,7 +347,7 @@ export default function CategoryPageClient({
           {isRequestOnlyCategoryPage ? (
             currentCategory ? <CategoryRequestPanel category={currentCategory} compact /> : null
           ) : (
-            <div className="flex flex-col md:flex-row gap-8">
+            <div className="flex flex-col md:flex-row gap-8 md:gap-10">
               {!isBestSellersView && (
               <div className="flex items-center justify-between mb-4 md:hidden">
                 <span className="text-sm text-gray-500 font-medium">
@@ -365,7 +365,7 @@ export default function CategoryPageClient({
               )}
 
                 {!isBestSellersView && (
-                <aside className={`md:w-64 shrink-0 flex-col gap-8 ${isFilterOpen ? "flex" : "hidden md:flex"}`}>
+                <aside className={`md:w-72 shrink-0 flex-col gap-8 rounded-3xl border border-primary/10 bg-surface/35 p-5 shadow-[0_14px_40px_rgba(0,0,0,0.12)] ${isFilterOpen ? "flex" : "hidden md:flex"}`}>
                   {hasActiveFilters && (
                   <button onClick={clearAllFilters} className="flex items-center gap-1.5 text-xs font-bold text-rose-500 hover:text-rose-400 mb-2 transition-colors">
                     <X className="w-3.5 h-3.5" />مسح كل الفلاتر
@@ -459,7 +459,7 @@ export default function CategoryPageClient({
               </aside>
                 )}
 
-              <div className="flex-1">
+              <div className="flex-1 md:border-r md:border-surface-hover/70 md:pr-6">
                 <div className="hidden md:flex justify-between items-center mb-6">
                   <span className="text-sm text-gray-500">
                     {showRestaurantsView ? `عرض ${restaurantCards.length} مطعم` : isBestSellersView ? `عرض ${productCards.length} من ${totalItems} منتج` : `عرض ${productCards.length} نتيجة`}
