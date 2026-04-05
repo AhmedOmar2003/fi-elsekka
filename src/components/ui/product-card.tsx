@@ -102,8 +102,8 @@ export function ProductCard({
             src={imageUrl}
             alt={title}
             fill
-            quality={70}
-            sizes="(max-width: 640px) 46vw, (max-width: 1024px) 33vw, 25vw"
+            quality={60}
+            sizes="(max-width: 640px) 44vw, (max-width: 1024px) 31vw, 24vw"
             className="w-full h-full object-cover object-center scale-[1.06] transition-transform duration-500 group-hover:scale-[1.14]"
           />
         </div>

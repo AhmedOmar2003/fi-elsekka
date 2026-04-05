@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/footer"
 import Link from "next/link"
 import Image from "next/image"
 import { ShieldCheck, Zap, Banknote, Clock, MapPin } from "lucide-react"
+import heroShoppingBox from "../../public/hero-shopping-box.webp"
 import { fetchHomeProducts, fetchOffers } from "@/services/productsService"
 import { HomeCategoriesList } from "@/components/ui/home-categories"
 import { PromoBanner } from "@/components/ui/promo-banner"
@@ -120,13 +121,14 @@ export default async function Home() {
                 <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] border border-surface-border bg-surface-container p-2.5 shadow-premium transition-all duration-700 group transform hover:-translate-y-2 hover:shadow-glow-primary sm:rounded-[32px] sm:p-4">
                   <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-secondary/20 opacity-60 mix-blend-overlay"></div>
                   <Image
-                    src="/hero-shopping-box.webp"
+                    src={heroShoppingBox}
                     alt="Shopping Box"
                     fill
                     priority
                     fetchPriority="high"
-                    quality={68}
-                    sizes="(max-width: 640px) calc(100vw - 5rem), (max-width: 1024px) min(30rem, 100vw - 8rem), 40vw"
+                    placeholder="blur"
+                    quality={60}
+                    sizes="(max-width: 640px) 280px, (max-width: 1024px) 448px, 40vw"
                     className="h-full w-full rounded-[18px] object-cover transition-transform duration-1000 group-hover:scale-110 sm:rounded-2xl"
                   />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
