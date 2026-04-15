@@ -1,7 +1,9 @@
 import { supabase } from '@/lib/supabase';
+import { getSafeLocalStorage } from '@/lib/browser-storage';
 
 const LEGACY_APPLIED_DISCOUNT_CODE_KEY = 'applied_discount_code';
 const APPLIED_DISCOUNT_CODES_KEY = 'applied_discount_codes';
+const APPLIED_CART_DISCOUNT_CODE_KEY = 'applied_cart_discount_code';
 
 export interface DiscountCode {
     id: number;
@@ -25,16 +27,13 @@ interface DiscountValidationContext {
 }
 
 type AppliedDiscountCodesMap = Record<string, string>;
-
-const isBrowser = () => typeof window !== 'undefined';
+const storage = getSafeLocalStorage();
 
 const normalizeDiscountCode = (code: string) => code.trim().toUpperCase();
 
 const readAppliedDiscountCodesMap = (): AppliedDiscountCodesMap => {
-    if (!isBrowser()) return {};
-
     try {
-        const raw = localStorage.getItem(APPLIED_DISCOUNT_CODES_KEY);
+        const raw = storage.getItem(APPLIED_DISCOUNT_CODES_KEY);
         if (!raw) return {};
 
         const parsed = JSON.parse(raw);
@@ -53,23 +52,37 @@ const readAppliedDiscountCodesMap = (): AppliedDiscountCodesMap => {
 };
 
 const writeAppliedDiscountCodesMap = (codes: AppliedDiscountCodesMap) => {
-    if (!isBrowser()) return;
-
     const entries = Object.entries(codes).filter(
         ([key, value]) => !!key && typeof value === 'string' && value.trim().length > 0
     );
 
     if (entries.length === 0) {
-        localStorage.removeItem(APPLIED_DISCOUNT_CODES_KEY);
+        storage.removeItem(APPLIED_DISCOUNT_CODES_KEY);
         return;
     }
 
-    localStorage.setItem(APPLIED_DISCOUNT_CODES_KEY, JSON.stringify(Object.fromEntries(entries)));
+    storage.setItem(APPLIED_DISCOUNT_CODES_KEY, JSON.stringify(Object.fromEntries(entries)));
 };
 
 export const clearLegacyAppliedDiscountCode = () => {
-    if (!isBrowser()) return;
-    localStorage.removeItem(LEGACY_APPLIED_DISCOUNT_CODE_KEY);
+    storage.removeItem(LEGACY_APPLIED_DISCOUNT_CODE_KEY);
+};
+
+export const getAppliedCartDiscountCode = (): string | null => {
+    const raw = storage.getItem(APPLIED_CART_DISCOUNT_CODE_KEY);
+    if (!raw || !raw.trim()) return null;
+    return normalizeDiscountCode(raw);
+};
+
+export const setAppliedCartDiscountCode = (code: string) => {
+    const normalized = normalizeDiscountCode(code);
+    if (!normalized) return;
+    storage.setItem(APPLIED_CART_DISCOUNT_CODE_KEY, normalized);
+    clearLegacyAppliedDiscountCode();
+};
+
+export const removeAppliedCartDiscountCode = () => {
+    storage.removeItem(APPLIED_CART_DISCOUNT_CODE_KEY);
 };
 
 export const getAppliedDiscountCodeForProduct = (productId?: string | null): string | null => {
@@ -120,6 +133,24 @@ export const clearAppliedDiscountCodesForProducts = (productIds: string[]) => {
     }
 
     clearLegacyAppliedDiscountCode();
+};
+
+export const hasActiveProductDiscountCode = async (productId?: string | null): Promise<boolean> => {
+    if (!productId) return false;
+
+    const { data, error } = await supabase
+        .from('discount_codes')
+        .select('id, expires_at')
+        .eq('is_active', true)
+        .eq('applicable_product_id', productId)
+        .limit(5);
+
+    if (error) {
+        console.error('hasActiveProductDiscountCode:', error.message);
+        return false;
+    }
+
+    return (data || []).some((item) => !item.expires_at || new Date(item.expires_at) >= new Date());
 };
 
 /**

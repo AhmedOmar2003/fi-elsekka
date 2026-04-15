@@ -14,6 +14,7 @@ import { createGroupOrder } from '@/services/groupOrdersService';
 import { saveStoredGroupParticipant } from '@/lib/group-order-session';
 import { getSelectedVariantLabel } from '@/lib/product-variants';
 import { formatNumberLatin } from '@/lib/formatters';
+import { DiscountCodeInput } from '@/components/ui/discount-code-input';
 import { toast } from 'sonner';
 import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft, Users } from 'lucide-react';
 import { getBundleItemCount, getBundleItems } from '@/lib/product-presentation';
@@ -24,6 +25,9 @@ export default function CartPage() {
    const router = useRouter();
    const [updatingItems, setUpdatingItems] = useState<{ [key: string]: boolean }>({});
    const [isCreatingGroupOrder, setIsCreatingGroupOrder] = useState(false);
+   const [cartCouponTotal, setCartCouponTotal] = useState<number | null>(null);
+   const [cartCouponSavedAmount, setCartCouponSavedAmount] = useState(0);
+   const [cartCouponLabel, setCartCouponLabel] = useState<string | null>(null);
 
    // Handler for quantity updates to show local loading state
    const handleUpdateQuantity = async (id: string, newQuantity: number) => {
@@ -44,7 +48,8 @@ export default function CartPage() {
    };
 
    const shippingCost: number = CURRENT_DELIVERY_FEE;
-   const grandTotal = cartTotal + shippingCost;
+   const effectiveCartTotal = cartCouponTotal ?? cartTotal;
+   const grandTotal = effectiveCartTotal + shippingCost;
    const formatPrice = React.useCallback((value: number) => formatNumberLatin(Math.max(0, Math.round(value))), []);
 
    const handleCreateGroupOrder = async () => {
@@ -345,10 +350,16 @@ export default function CartPage() {
                                     <span className="font-bold">- {formatPrice(cartDiscountTotal)} ج.م</span>
                                  </div>
                               )}
-                              <div className="flex justify-between text-gray-400 pt-2 border-t border-surface-hover/50">
-                                 <span>المجموع بعد الخصم</span>
-                                 <span className="font-bold text-foreground">{formatPrice(cartTotal)} ج.م</span>
-                              </div>
+                               {cartCouponSavedAmount > 0 && (
+                                  <div className="flex justify-between text-amber-300">
+                                     <span>خصم الكوبون</span>
+                                     <span className="font-bold">- {formatPrice(cartCouponSavedAmount)} ج.م</span>
+                                  </div>
+                               )}
+                               <div className="flex justify-between text-gray-400 pt-2 border-t border-surface-hover/50">
+                                  <span>المجموع بعد الخصم</span>
+                                  <span className="font-bold text-foreground">{formatPrice(effectiveCartTotal)} ج.م</span>
+                               </div>
                               <div className="flex justify-between text-gray-400">
                                  <span>مصاريف الشحن</span>
                                  {shippingCost === 0 ? (
@@ -359,15 +370,35 @@ export default function CartPage() {
                               </div>
                            </div>
 
-                           <div className="pt-4 border-t border-surface-hover mb-8">
-                              <div className="flex justify-between items-end">
-                                 <span className="text-lg font-bold text-foreground">الإجمالي الكلي</span>
-                                 <div className="text-end">
-                                    <span className="block text-2xl font-black text-primary">{formatPrice(grandTotal)} ج.م</span>
-                                    <span className="text-[11px] text-gray-500">شامل ضريبة القيمة المضافة إن وجدت</span>
-                                 </div>
-                              </div>
-                           </div>
+                            <div className="pt-4 border-t border-surface-hover mb-8">
+                               <DiscountCodeInput
+                                  originalPrice={cartTotal}
+                                  userId={user?.id}
+                                  title="كود الخصم على السلة"
+                                  placeholder="اكتب كود الخصم العام"
+                                  helperText="لو الإدارة عيّنت الكود على كل المنتجات، اكتبه هنا وهيتطبق على السلة كلها."
+                                  onDiscountApplied={(finalPrice, savedAmount, label) => {
+                                     setCartCouponTotal(finalPrice);
+                                     setCartCouponSavedAmount(savedAmount);
+                                     setCartCouponLabel(label);
+                                  }}
+                                  onDiscountRemoved={() => {
+                                     setCartCouponTotal(null);
+                                     setCartCouponSavedAmount(0);
+                                     setCartCouponLabel(null);
+                                  }}
+                               />
+
+                               <div className="flex justify-between items-end">
+                                  <span className="text-lg font-bold text-foreground">الإجمالي الكلي</span>
+                                  <div className="text-end">
+                                     <span className="block text-2xl font-black text-primary">{formatPrice(grandTotal)} ج.م</span>
+                                     <span className="text-[11px] text-gray-500">
+                                        {cartCouponLabel ? `الكود مطبّق: ${cartCouponLabel}` : 'شامل ضريبة القيمة المضافة إن وجدت'}
+                                     </span>
+                                  </div>
+                               </div>
+                            </div>
 
                            <div className="hidden lg:block">
                               <div className="space-y-3">

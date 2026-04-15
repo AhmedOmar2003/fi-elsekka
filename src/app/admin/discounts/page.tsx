@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useEffect, useState } from 'react';
-import { Ticket, Plus, Pencil, Trash2, X, ToggleLeft, ToggleRight, Percent, CircleDollarSign, Users } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Ticket, Plus, Pencil, Trash2, X, ToggleLeft, ToggleRight, Percent, CircleDollarSign, Users, Search, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
     DiscountCode, fetchAllDiscountCodes, createDiscountCode, 
@@ -30,6 +30,7 @@ export default function AdminDiscountsPage() {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [form, setForm] = useState({ ...EMPTY_FORM });
     const [isSaving, setIsSaving] = useState(false);
+    const [productQuery, setProductQuery] = useState('');
 
     const load = async () => {
         setIsLoading(true);
@@ -49,6 +50,7 @@ export default function AdminDiscountsPage() {
     const openNew = () => {
         setEditingId(null);
         setForm({ ...EMPTY_FORM });
+        setProductQuery('');
         setIsModalOpen(true);
     };
 
@@ -67,8 +69,27 @@ export default function AdminDiscountsPage() {
             applicable_product_id: c.applicable_product_id || '',
             applicable_category_id: c.applicable_category_id || '',
         });
+        const linkedProduct = c.applicable_product_id
+            ? products.find((product) => product.id === c.applicable_product_id)
+            : null;
+        setProductQuery(linkedProduct?.name || '');
         setIsModalOpen(true);
     };
+
+    const filteredProducts = useMemo(() => {
+        const query = productQuery.trim().toLowerCase();
+        if (!query) {
+            return products.slice(0, 8);
+        }
+        return products
+            .filter((product) => product.name.toLowerCase().includes(query))
+            .slice(0, 8);
+    }, [productQuery, products]);
+
+    const selectedProduct = useMemo(
+        () => products.find((product) => product.id === form.applicable_product_id) || null,
+        [form.applicable_product_id, products]
+    );
 
     const handleSave = async () => {
         if (!form.code.trim()) { toast.error('كود الخصم مطلوب!'); return; }
@@ -150,7 +171,7 @@ export default function AdminDiscountsPage() {
             return category ? `قسم: ${category.name}` : 'قسم محدد';
         }
 
-        return 'كل المنتجات';
+        return 'كل المنتجات / السلة';
     };
 
     return (
@@ -312,10 +333,13 @@ export default function AdminDiscountsPage() {
                                 <div className="grid grid-cols-3 gap-2 bg-surface-hover p-1 rounded-xl">
                                     <button
                                         type="button"
-                                        onClick={() => setForm({ ...form, target_scope: 'all', applicable_product_id: '', applicable_category_id: '' })}
+                                        onClick={() => {
+                                            setForm({ ...form, target_scope: 'all', applicable_product_id: '', applicable_category_id: '' });
+                                            setProductQuery('');
+                                        }}
                                         className={`py-2 text-xs font-bold rounded-lg transition-all ${form.target_scope === 'all' ? 'bg-surface border border-surface-hover text-foreground shadow-sm' : 'text-gray-500 hover:text-foreground'}`}
                                     >
-                                        كل المنتجات
+                                        تعيين لكل المنتجات
                                     </button>
                                     <button
                                         type="button"
@@ -326,7 +350,10 @@ export default function AdminDiscountsPage() {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setForm({ ...form, target_scope: 'category', applicable_product_id: '' })}
+                                        onClick={() => {
+                                            setForm({ ...form, target_scope: 'category', applicable_product_id: '' });
+                                            setProductQuery('');
+                                        }}
                                         className={`py-2 text-xs font-bold rounded-lg transition-all ${form.target_scope === 'category' ? 'bg-surface border border-surface-hover text-foreground shadow-sm' : 'text-gray-500 hover:text-foreground'}`}
                                     >
                                         قسم معيّن
@@ -336,20 +363,48 @@ export default function AdminDiscountsPage() {
 
                             {form.target_scope === 'product' && (
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 mb-1.5">اختار المنتج</label>
-                                    <select
-                                        value={form.applicable_product_id}
-                                        onChange={(e) => setForm({ ...form, applicable_product_id: e.target.value })}
-                                        className="w-full bg-surface-hover border border-surface-hover rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
-                                    >
-                                        <option value="">اختار منتج</option>
-                                        {products.map((product) => (
-                                            <option key={product.id} value={product.id}>
-                                                {product.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <p className="mt-1 text-[11px] text-gray-500">الكود ده هيتطبق على المنتج ده فقط، وبرضه المستخدم الواحد له مرة واحدة فقط.</p>
+                                    <label className="block text-xs font-bold text-gray-500 mb-1.5">ابحث عن المنتج اللي هياخد الكود</label>
+                                    <div className="relative">
+                                        <Search className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-gray-500" />
+                                        <input
+                                            type="text"
+                                            value={productQuery}
+                                            onChange={(e) => {
+                                                setProductQuery(e.target.value);
+                                                setForm((prev) => ({ ...prev, applicable_product_id: '' }));
+                                            }}
+                                            placeholder="اكتب اسم المنتج..."
+                                            className="w-full rounded-xl border border-surface-hover bg-surface-hover px-10 py-2.5 text-sm text-foreground placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                                        />
+                                    </div>
+                                    <div className="mt-2 max-h-44 overflow-y-auto rounded-2xl border border-surface-hover bg-background/40 p-2">
+                                        {filteredProducts.length > 0 ? (
+                                            filteredProducts.map((product) => {
+                                                const isSelected = form.applicable_product_id === product.id;
+                                                return (
+                                                    <button
+                                                        key={product.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setForm((prev) => ({ ...prev, applicable_product_id: product.id }));
+                                                            setProductQuery(product.name);
+                                                        }}
+                                                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-right text-sm transition-colors ${isSelected ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-surface-hover'}`}
+                                                    >
+                                                        <span className="line-clamp-1">{product.name}</span>
+                                                        {isSelected ? <Check className="h-4 w-4 shrink-0" /> : null}
+                                                    </button>
+                                                );
+                                            })
+                                        ) : (
+                                            <p className="px-3 py-2 text-xs text-gray-500">مفيش منتج مطابق لاسم البحث ده.</p>
+                                        )}
+                                    </div>
+                                    {selectedProduct ? (
+                                        <p className="mt-2 text-[11px] text-primary">الكود متعيّن الآن على: {selectedProduct.name}</p>
+                                    ) : (
+                                        <p className="mt-2 text-[11px] text-gray-500">اختار منتج واحد فقط، وساعتها الكود هيظهر في صفحة المنتج دي فقط.</p>
+                                    )}
                                 </div>
                             )}
 

@@ -25,6 +25,7 @@ import { CURRENT_DELIVERY_FEE } from "@/lib/order-economics"
 import { formatNumberLatin } from "@/lib/formatters"
 import { addGroupOrderItem, createGroupOrder } from "@/services/groupOrdersService"
 import { getStoredGroupParticipant, saveStoredGroupParticipant } from "@/lib/group-order-session"
+import { hasActiveProductDiscountCode } from "@/services/discountCodesService"
 const ProductShareSheet = dynamic(
   () => import("./product-share-sheet").then((mod) => mod.ProductShareSheet),
   { ssr: false }
@@ -54,6 +55,7 @@ export default function ProductPage({
   
   const [appliedDiscountPrice, setAppliedDiscountPrice] = React.useState<number | null>(null)
   const [appliedDiscountLabel, setAppliedDiscountLabel] = React.useState<string | null>(null)
+  const [canUseProductCode, setCanUseProductCode] = React.useState(false)
   const [selectedRestaurantSizeId, setSelectedRestaurantSizeId] = React.useState("")
 
   React.useEffect(() => {
@@ -189,6 +191,31 @@ export default function ProductPage({
       return restaurantSizeOptions[0].id
     })
   }, [restaurantSizeOptions])
+
+  React.useEffect(() => {
+    let isActive = true
+
+    if (!dbProduct?.id) {
+      setCanUseProductCode(false)
+      return
+    }
+
+    hasActiveProductDiscountCode(dbProduct.id)
+      .then((hasCode) => {
+        if (isActive) {
+          setCanUseProductCode(hasCode)
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setCanUseProductCode(false)
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [dbProduct?.id])
 
   const normalizedSpecs = React.useMemo(() => {
     if (!dbProduct) return []
@@ -839,15 +866,16 @@ export default function ProductPage({
               </div>
 
               {/* Discount Code Input */}
-              {product.price > 0 && (
+              {product.price > 0 && canUseProductCode && (
                 <DiscountCodeInput
-                  originalPrice={product.price}
+                  originalPrice={effectiveUnitPrice}
                   productId={dbProduct?.id}
                   categoryId={dbProduct?.category_id}
                   userId={user?.id}
+                  helperText="الكود هنا يظهر فقط لو الإدارة خصصت خصمًا لهذا المنتج بعينه."
                   onDiscountApplied={(finalPrice, savedAmount, label) => {
-                    setAppliedDiscountPrice(finalPrice);
-                    setAppliedDiscountLabel(label);
+                     setAppliedDiscountPrice(finalPrice);
+                     setAppliedDiscountLabel(label);
                   }}
                   onDiscountRemoved={() => {
                     setAppliedDiscountPrice(null);

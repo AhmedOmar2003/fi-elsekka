@@ -16,10 +16,14 @@ import { useCart } from "@/contexts/CartContext"
 import { createOrder } from "@/services/ordersService"
 import { getDefaultDeliveryAddress, saveDeliveryAddress } from "@/services/deliveryService"
 import {
+   applyDiscount,
    clearAppliedDiscountCodesForProducts,
+   getAppliedCartDiscountCode,
    clearLegacyAppliedDiscountCode,
    getAppliedDiscountCodesForProducts,
    incrementDiscountCodeUsage,
+   removeAppliedCartDiscountCode,
+   validateDiscountCode,
 } from "@/services/discountCodesService"
 import { CURRENT_DELIVERY_FEE } from "@/lib/order-economics"
 import {
@@ -173,6 +177,13 @@ export default function CheckoutPageClient({
       )
    }, [groupOrder])
 
+   const [isSubmitting, setIsSubmitting] = React.useState(false)
+   const [errorMsg, setErrorMsg] = React.useState("")
+   const [showSearchConfirmPopup, setShowSearchConfirmPopup] = React.useState(false)
+   const [appliedCartCode, setAppliedCartCode] = React.useState<string | null>(null)
+   const [cartCodeSavedAmount, setCartCodeSavedAmount] = React.useState(0)
+   const [cartCodeLabel, setCartCodeLabel] = React.useState<string | null>(null)
+
    const displayItems = isGroupOrderCheckout ? groupOrderDisplayItems : isUsingOverride ? [{
       id: "override-item",
       product_id: overrideProduct.id,
@@ -208,11 +219,55 @@ export default function CheckoutPageClient({
       displayDiscount = displayCartOriginal - displayCartTotal;
    }
 
-   const isCartLoading = (isTextRequestCheckout || isGroupOrderCheckout ? false : cart.isLoading) || isOverrideLoading || isTextRequestLoading || isGroupOrderLoading
+   React.useEffect(() => {
+      if (isGroupOrderCheckout || isTextRequestCheckout || isUsingOverride) {
+         setAppliedCartCode(null)
+         setCartCodeSavedAmount(0)
+         setCartCodeLabel(null)
+         return
+      }
 
-   const [isSubmitting, setIsSubmitting] = React.useState(false)
-   const [errorMsg, setErrorMsg] = React.useState("")
-   const [showSearchConfirmPopup, setShowSearchConfirmPopup] = React.useState(false)
+      const savedCode = getAppliedCartDiscountCode()
+      if (!savedCode || !user || displayCartTotal <= 0) {
+         setAppliedCartCode(null)
+         setCartCodeSavedAmount(0)
+         setCartCodeLabel(null)
+         return
+      }
+
+      let isActive = true
+
+      validateDiscountCode(savedCode, { userId: user.id })
+         .then(({ discount }) => {
+            if (!isActive || !discount) {
+               removeAppliedCartDiscountCode()
+               setAppliedCartCode(null)
+               setCartCodeSavedAmount(0)
+               setCartCodeLabel(null)
+               return
+            }
+
+            const result = applyDiscount(displayCartTotal, discount)
+            setAppliedCartCode(savedCode)
+            setCartCodeSavedAmount(result.savedAmount)
+            setCartCodeLabel(result.label)
+         })
+         .catch(() => {
+            if (!isActive) return
+            removeAppliedCartDiscountCode()
+            setAppliedCartCode(null)
+            setCartCodeSavedAmount(0)
+            setCartCodeLabel(null)
+         })
+
+      return () => {
+         isActive = false
+      }
+   }, [displayCartTotal, isGroupOrderCheckout, isTextRequestCheckout, isUsingOverride, user])
+
+   const finalDisplayCartTotal = Math.max(0, displayCartTotal - cartCodeSavedAmount)
+
+   const isCartLoading = (isTextRequestCheckout || isGroupOrderCheckout ? false : cart.isLoading) || isOverrideLoading || isTextRequestLoading || isGroupOrderLoading
 
    // Form states
    const [firstName, setFirstName] = React.useState("")
@@ -276,6 +331,11 @@ export default function CheckoutPageClient({
       const shippingDetails = {
          recipient: `${firstName} ${lastName}`,
          phone, city, area, street: address, notes,
+         ...(appliedCartCode ? {
+            cart_discount_code: appliedCartCode,
+            cart_discount_saved_amount: cartCodeSavedAmount,
+            cart_discount_label: cartCodeLabel,
+         } : {}),
          is_grace_period: !isTextRequestCheckout && !isGroupOrderCheckout,
          ...(isGroupOrderCheckout ? {
             group_order: true,
@@ -300,7 +360,7 @@ export default function CheckoutPageClient({
          } : {}),
       }
 
-      const { data: newOrder, error } = await createOrder(user.id, displayItems, shippingDetails, displayCartTotal, {
+      const { data: newOrder, error } = await createOrder(user.id, displayItems, shippingDetails, finalDisplayCartTotal, {
          clearCartAfterOrder: !isUsingOverride && !isTextRequestCheckout && !isGroupOrderCheckout,
       })
       setIsSubmitting(false)
@@ -338,12 +398,15 @@ export default function CheckoutPageClient({
       )
       if (!isGroupOrderCheckout) {
          const appliedCodes = getAppliedDiscountCodesForProducts(orderedProductIds)
-         if (appliedCodes.length > 0 && user) {
-            await Promise.all(appliedCodes.map((appliedCode) => incrementDiscountCodeUsage(appliedCode, user.id)))
+         const allAppliedCodes = appliedCartCode ? Array.from(new Set([...appliedCodes, appliedCartCode])) : appliedCodes
+         if (allAppliedCodes.length > 0 && user) {
+            await Promise.all(allAppliedCodes.map((appliedCode) => incrementDiscountCodeUsage(appliedCode, user.id)))
             clearAppliedDiscountCodesForProducts(orderedProductIds)
-         } else {
-            clearLegacyAppliedDiscountCode()
-         }
+            removeAppliedCartDiscountCode()
+          } else {
+             clearLegacyAppliedDiscountCode()
+             removeAppliedCartDiscountCode()
+          }
       }
 
       if (isSearchRequestCheckout) {
@@ -691,10 +754,16 @@ export default function CheckoutPageClient({
                                        <span className="font-heading font-semibold text-rose-400">- {displayDiscount.toLocaleString()} ج.م</span>
                                     </div>
                                  )}
+                                 {cartCodeSavedAmount > 0 && (
+                                    <div className="flex justify-between items-center text-amber-300">
+                                       <span>خصم الكوبون</span>
+                                       <span className="font-heading font-semibold text-amber-300">- {cartCodeSavedAmount.toLocaleString()} ج.م</span>
+                                    </div>
+                                 )}
                                  <div className="flex justify-between items-center text-gray-400 pt-2 border-t border-surface-hover/50">
                                     <span>المجموع بعد الخصم</span>
-                                    <span className="font-heading font-semibold text-foreground">{displayCartTotal.toLocaleString()} ج.م</span>
-                                 </div>
+                                    <span className="font-heading font-semibold text-foreground">{finalDisplayCartTotal.toLocaleString()} ج.م</span>
+                                  </div>
                               </>
                            )}
                            <div className="flex justify-between items-center text-gray-400">
@@ -706,7 +775,7 @@ export default function CheckoutPageClient({
                         <div className="flex justify-between items-center border-t border-surface-hover pt-6 mb-8 bg-surface-lighter/50 rounded-xl p-4 mt-2">
                            <span className="text-lg font-bold text-foreground">{isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'السعر النهائي' : 'حالة الطلب') : 'الإجمالي للدفع'}</span>
                            <span className="font-heading text-3xl font-black text-primary drop-shadow-sm">
-                              {isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'بانتظار التسعير' : 'بندور عليه') : `${(displayCartTotal + CURRENT_DELIVERY_FEE).toFixed(0)} `}
+                              {isTextRequestCheckout ? (isPharmacyTextRequestCheckout ? 'بانتظار التسعير' : 'بندور عليه') : `${(finalDisplayCartTotal + CURRENT_DELIVERY_FEE).toFixed(0)} `}
                               {!isTextRequestCheckout && <span className="text-sm">ج.م</span>}
                            </span>
                         </div>

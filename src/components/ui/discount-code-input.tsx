@@ -6,8 +6,11 @@ import {
     validateDiscountCode,
     applyDiscount,
     clearLegacyAppliedDiscountCode,
+    getAppliedCartDiscountCode,
     getAppliedDiscountCodeForProduct,
+    removeAppliedCartDiscountCode,
     removeAppliedDiscountCodeForProduct,
+    setAppliedCartDiscountCode,
     setAppliedDiscountCodeForProduct,
 } from '@/services/discountCodesService';
 
@@ -16,21 +19,35 @@ interface DiscountCodeInputProps {
     productId?: string;
     categoryId?: string | null;
     userId?: string;
+    title?: string;
+    placeholder?: string;
+    helperText?: string;
     onDiscountApplied: (finalPrice: number, savedAmount: number, label: string) => void;
     onDiscountRemoved: () => void;
 }
 
-export function DiscountCodeInput({ originalPrice, productId, categoryId, userId, onDiscountApplied, onDiscountRemoved }: DiscountCodeInputProps) {
+export function DiscountCodeInput({
+    originalPrice,
+    productId,
+    categoryId,
+    userId,
+    title = 'كود الخصم',
+    placeholder = 'أدخل كود الخصم',
+    helperText,
+    onDiscountApplied,
+    onDiscountRemoved
+}: DiscountCodeInputProps) {
     const [code, setCode] = useState('');
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [appliedCode, setAppliedCode] = useState('');
     const [message, setMessage] = useState('');
+    const isCartScope = !productId;
 
     useEffect(() => {
         const loadSavedCode = async () => {
             clearLegacyAppliedDiscountCode();
 
-            if (!productId || originalPrice <= 0) {
+            if (originalPrice <= 0) {
                 setCode('');
                 setAppliedCode('');
                 setStatus('idle');
@@ -38,7 +55,7 @@ export function DiscountCodeInput({ originalPrice, productId, categoryId, userId
                 return;
             }
 
-            const savedCode = getAppliedDiscountCodeForProduct(productId);
+            const savedCode = isCartScope ? getAppliedCartDiscountCode() : getAppliedDiscountCodeForProduct(productId);
             if (!savedCode) {
                 setCode('');
                 setAppliedCode('');
@@ -59,7 +76,11 @@ export function DiscountCodeInput({ originalPrice, productId, categoryId, userId
                 onDiscountApplied(result.finalPrice, result.savedAmount, result.label);
             } else {
                 setStatus('idle');
-                removeAppliedDiscountCodeForProduct(productId);
+                if (isCartScope) {
+                    removeAppliedCartDiscountCode();
+                } else {
+                    removeAppliedDiscountCodeForProduct(productId);
+                }
                 if (error) setMessage(error);
                 onDiscountRemoved();
             }
@@ -67,7 +88,7 @@ export function DiscountCodeInput({ originalPrice, productId, categoryId, userId
 
         loadSavedCode();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [categoryId, originalPrice, productId, userId]);
+    }, [categoryId, isCartScope, originalPrice, productId, userId]);
 
     const handleApply = async () => {
         if (!code.trim()) return;
@@ -88,6 +109,7 @@ export function DiscountCodeInput({ originalPrice, productId, categoryId, userId
         if (productId) {
             setAppliedDiscountCodeForProduct(productId, code.trim().toUpperCase());
         } else {
+            setAppliedCartDiscountCode(code.trim().toUpperCase());
             clearLegacyAppliedDiscountCode();
         }
         onDiscountApplied(result.finalPrice, result.savedAmount, result.label);
@@ -98,7 +120,11 @@ export function DiscountCodeInput({ originalPrice, productId, categoryId, userId
         setAppliedCode('');
         setStatus('idle');
         setMessage('');
-        removeAppliedDiscountCodeForProduct(productId);
+        if (isCartScope) {
+            removeAppliedCartDiscountCode();
+        } else {
+            removeAppliedDiscountCodeForProduct(productId);
+        }
         clearLegacyAppliedDiscountCode();
         onDiscountRemoved();
     };
@@ -109,8 +135,11 @@ export function DiscountCodeInput({ originalPrice, productId, categoryId, userId
         <div className="mb-6">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2.5 flex items-center gap-1.5">
                 <Tag className="w-3.5 h-3.5 text-primary" />
-                كود الخصم
+                {title}
             </p>
+            {helperText ? (
+                <p className="mb-2 text-[11px] leading-6 text-gray-500">{helperText}</p>
+            ) : null}
 
             <div className="flex gap-2">
                 <input
@@ -118,7 +147,7 @@ export function DiscountCodeInput({ originalPrice, productId, categoryId, userId
                     value={isApplied ? appliedCode : code}
                     onChange={e => { if (!isApplied) setCode(e.target.value.toUpperCase()); }}
                     onKeyDown={e => { if (e.key === 'Enter' && !isApplied) handleApply(); }}
-                    placeholder="أدخل كود الخصم"
+                    placeholder={placeholder}
                     className={`flex-1 bg-surface border rounded-xl px-4 py-3 text-sm font-mono tracking-widest text-foreground placeholder-gray-500 focus:outline-none transition-colors disabled:opacity-70 disabled:cursor-not-allowed ${isApplied
                         ? 'border-emerald-500/40 bg-emerald-500/5 text-emerald-500'
                         : status === 'error'
