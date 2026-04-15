@@ -499,7 +499,7 @@ export default function AdminProductsPage() {
     };
 
     const handleClearAllProducts = async () => {
-        const confirmed = window.confirm('هيمسح كل المنتجات التجريبية. لو عندك طلبات قديمة مرتبطة بمنتجات، امسح الطلبات الأول. متأكد؟');
+        const confirmed = window.confirm('سيتم مسح المنتجات التجريبية بالكامل. هل أنت متأكد؟');
         if (!confirmed) return;
 
         setIsClearingAllProducts(true);
@@ -755,11 +755,11 @@ export default function AdminProductsPage() {
                         <div className="p-5 space-y-4">
                             {/* Images */}
                             <div>
-                                <label className="block text-sm font-black text-gray-200 mb-3 border-b border-surface-hover pb-2">صور المنتج (صورة أساسية + 4 إضافية)</label>
+                                <label className="block text-sm font-black text-gray-200 mb-3 border-b border-surface-hover pb-2">صور المنتج</label>
                                 <div className="space-y-4">
                                     {/* Main Image */}
                                     <div className={`${modalSoftPanelClass} p-3`}>
-                                        <label className={modalSectionLabelClass}>الصورة الأساسية (الغلاف)</label>
+                                        <label className={modalSectionLabelClass}>الغلاف</label>
                                         <div
                                             onClick={() => fileInput.current?.click()}
                                             className="w-full h-32 rounded-xl border-2 border-dashed border-gray-400/30 hover:border-primary/40 flex items-center justify-center cursor-pointer transition-colors relative overflow-hidden"

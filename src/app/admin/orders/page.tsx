@@ -117,7 +117,7 @@ export default function AdminOrdersPage() {
     const [etaDays, setEtaDays] = useState(0);
     const [driverNote, setDriverNote] = useState('');
     const [cancellationReason, setCancellationReason] = useState('');
-    const [cancellationMessage, setCancellationMessage] = useState('لو كنت ما زلت تريد هذا الطلب، ادينا فرصة نجهزه على أكمل وجه، ولو أصبح جاهزًا هنرسل لك إشعارًا جديدًا بموعد الوصول المتوقع.');
+    const [cancellationMessage, setCancellationMessage] = useState('تم إلغاء الطلب بناءً على تحديثات المخزون أو طلبك.');
     const [isCancellingOrder, setIsCancellingOrder] = useState(false);
     const [isReopeningOrder, setIsReopeningOrder] = useState(false);
     const [quotedSubtotalInput, setQuotedSubtotalInput] = useState(0);
@@ -297,7 +297,7 @@ export default function AdminOrdersPage() {
         setCancellationReason(order.shipping_address?.cancellation_reason || '');
         setCancellationMessage(
             order.shipping_address?.cancellation_message ||
-            'لو كنت ما زلت تريد هذا الطلب، ادينا فرصة نجهزه على أكمل وجه، ولو أصبح جاهزًا هنرسل لك إشعارًا جديدًا بموعد الوصول المتوقع.'
+            'تم إلغاء الطلب بناءً على تحديثات المخزون أو طلبك.'
         );
         setQuotedSubtotalInput(Number(order.shipping_address?.quoted_products_total || order.shipping_address?.subtotal_amount || 0));
         setSelectedDriverId(order.shipping_address?.driver?.id || '');

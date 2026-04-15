@@ -42,7 +42,7 @@ export default function AdminUsersPage() {
     };
 
     const handleDeleteAll = async () => {
-        const confirmed = confirm('سيتم حذف كل المستخدمين العاديين مع الطلبات والمفضلة والإشعارات والبيانات المرتبطة بهم، ثم إعادة مزامنة قسم الأكثر مبيعًا. هل أنت متأكد؟');
+        const confirmed = confirm('سيتم مسح مستخدمي التجربة بالكامل. هل أنت متأكد؟');
         if (!confirmed) return;
 
         setIsCleaning(true);
@@ -80,12 +80,6 @@ export default function AdminUsersPage() {
                     </button>
                 )}
             </div>
-
-            {['super_admin', 'admin'].includes(profile?.role || '') && (
-                <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-500">
-                    هذا الزر مخصص لمرحلة التجربة فقط. سيحذف العملاء العاديين وكل الطلبات والبيانات المرتبطة بهم، ثم يعيد حساب `الأكثر مبيعًا` من الطلبات المتبقية.
-                </div>
-            )}
 
             {/* Search */}
             <div className="relative w-full max-w-sm">

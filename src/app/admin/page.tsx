@@ -316,42 +316,42 @@ export default function AdminPage() {
     const metricCards = [
         { label: 'المستخدمون', value: stats.totalUsers, icon: Users, color: 'text-violet-400', bg: 'bg-violet-400/10', href: '/admin/users' },
         { label: 'المنتجات', value: stats.totalProducts, icon: Package, color: 'text-sky-400', bg: 'bg-sky-400/10', href: '/admin/products' },
-        { label: 'الطلبات العادية', value: stats.totalOrders, icon: ShoppingCart, color: 'text-amber-400', bg: 'bg-amber-400/10', href: '/admin/orders' },
-        { label: 'طلبات بندور عليها', value: stats.totalSearchRequests, icon: Clock, color: 'text-violet-400', bg: 'bg-violet-400/10', href: '/admin/orders/search-requests' },
-        { label: 'إيراد المنصة', value: `${stats.totalRevenue.toLocaleString()} ج.م`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', href: '/admin/orders' },
+        { label: 'الطلبات', value: stats.totalOrders, icon: ShoppingCart, color: 'text-amber-400', bg: 'bg-amber-400/10', href: '/admin/orders' },
+        { label: 'طلبات بحث', value: stats.totalSearchRequests, icon: Clock, color: 'text-violet-400', bg: 'bg-violet-400/10', href: '/admin/orders/search-requests' },
+        { label: 'الإيراد', value: `${stats.totalRevenue.toLocaleString()} ج.م`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', href: '/admin/orders' },
     ];
 
     const operationAlerts = [
         {
-            label: 'طلبات تنتظر التعيين',
+            label: 'تنتظر التعيين',
             value: overview.orderHealth.needsAssignment,
             href: '/admin/orders',
             icon: Truck,
             tone: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
         },
         {
-            label: 'طلبات شحن متأخرة',
+            label: 'شحن متأخر',
             value: overview.orderHealth.overdueShipping,
             href: '/admin/orders',
             icon: AlertTriangle,
             tone: 'text-rose-400 bg-rose-400/10 border-rose-400/20',
         },
         {
-            label: 'طلبات لسه بندور عليها',
+            label: 'جاري البحث',
             value: overview.orderHealth.searchingRequests,
             href: '/admin/orders/search-requests?state=searching',
             icon: Clock,
             tone: 'text-violet-400 bg-violet-400/10 border-violet-400/20',
         },
         {
-            label: 'لقيناها ومستنية رد العميل',
+            label: 'بانتظار الرد',
             value: overview.orderHealth.pricedSearchRequests,
             href: '/admin/orders/search-requests?state=priced',
             icon: CircleDot,
             tone: 'text-sky-400 bg-sky-400/10 border-sky-400/20',
         },
         {
-            label: 'موظفون يحتاجون تحديث كلمة المرور',
+            label: 'تحديث كلمة مرور',
             value: overview.teamHealth.mustChangePassword,
             href: '/admin/staff',
             icon: ShieldAlert,
@@ -387,35 +387,30 @@ export default function AdminPage() {
         {
             label: 'طلبات اليوم',
             value: overview.orderHealth.ordersToday,
-            helper: `${overview.orderHealth.deliveredToday} تم توصيلها اليوم`,
             icon: ShoppingCart,
             tone: 'text-amber-400 bg-amber-400/10',
         },
         {
             label: 'نصيب المنصة اليوم',
             value: `${overview.financeHealth.deliveredRevenueToday.toLocaleString()} ج.م`,
-            helper: 'ثابت 10 ج.م من الشحن لكل طلب تم توصيله',
             icon: TrendingUp,
             tone: 'text-emerald-400 bg-emerald-400/10',
         },
         {
             label: 'نصيب المندوبين اليوم',
             value: `${overview.financeHealth.deliveredDriverRevenueToday.toLocaleString()} ج.م`,
-            helper: `ثابت 10 ج.م لكل طلب تم توصيله`,
             icon: Truck,
             tone: 'text-sky-400 bg-sky-400/10',
         },
         {
             label: 'مستحقات المحلات اليوم',
             value: `${overview.financeHealth.deliveredMerchantSettlementToday.toLocaleString()} ج.م`,
-            helper: 'قيمة المنتجات بدون أي خصومات محاسبية داخل المنصة',
             icon: Warehouse,
             tone: 'text-violet-400 bg-violet-400/10',
         },
         {
             label: 'تحصيلات مفتوحة',
             value: `${overview.financeHealth.openOrderValue.toLocaleString()} ج.م`,
-            helper: `منها نصيب منصة متوقع ${overview.financeHealth.openPlatformRevenue.toLocaleString()} ج.م`,
             icon: Users,
             tone: 'text-amber-400 bg-amber-400/10',
         },
@@ -425,7 +420,6 @@ export default function AdminPage() {
         {
             title: 'تدخل تشغيلي فوري',
             value: overview.orderHealth.needsAssignment + overview.orderHealth.overdueShipping,
-            description: `${overview.orderHealth.needsAssignment} طلبات بدون مندوب و${overview.orderHealth.overdueShipping} طلبات شحن متأخرة`,
             href: '/admin/orders',
             icon: AlertTriangle,
             tone: 'border-rose-500/20 bg-rose-500/10 text-rose-400',
@@ -452,8 +446,7 @@ export default function AdminPage() {
         <div className="space-y-6">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <h1 className="text-2xl font-heading font-black text-foreground">لوحة متابعة الشغل</h1>
-                    <p className="text-sm text-gray-500 mt-1">كل اللي محتاجه قدامك بسرعة، من الطلبات العادية لحد الطلبات اللي لسه بندور عليها</p>
+                    <h1 className="text-2xl font-heading font-black text-foreground">الرئيسية</h1>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <Link href="/admin/staff" className="rounded-2xl border border-violet-500/20 bg-violet-500/10 px-4 py-2.5 text-sm font-bold text-violet-400 transition-colors hover:bg-violet-500/15">
@@ -493,7 +486,6 @@ export default function AdminPage() {
                                 <div>
                                     <p className="text-xs font-bold text-gray-500">{card.label}</p>
                                     <p className="mt-2 text-2xl font-black text-foreground">{isLoading ? '...' : card.value}</p>
-                                    <p className="mt-2 text-xs text-gray-500">{card.helper}</p>
                                 </div>
                                 <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${card.tone}`}>
                                     <Icon className="h-5 w-5" />
@@ -543,7 +535,6 @@ export default function AdminPage() {
                                     <div className="min-w-0 flex-1">
                                         <p className="text-xs font-bold opacity-80">{item.label}</p>
                                         <p className="mt-2 truncate text-lg font-black">{isLoading ? '...' : item.value}</p>
-                                        <p className="mt-2 text-xs opacity-80">{item.helper}</p>
                                     </div>
                                     <div className="rounded-xl bg-black/10 p-2">
                                         <Icon className="w-5 h-5" />
