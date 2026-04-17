@@ -77,7 +77,6 @@ export default function ContactPage() {
                              ) : (
                                <p className="text-gray-500 mt-1">أول ما تضيف رقم الدعم من الإعدادات هيظهر هنا على طول.</p>
                              )}
-                             <p className="text-xs text-emerald-500 mt-1">ضيف الرقم وقت ما تحب، والموقع هيتحدّث لوحده.</p>
                           </div>
                        </div>
 
